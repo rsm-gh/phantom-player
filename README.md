@@ -1,5 +1,4 @@
-![Mini Window](https://github.com/rsm-gh/vlist-player/blob/master/preview/mini-window.png)
-![Full Window](https://github.com/rsm-gh/vlist-player/blob/master/preview/full-window.png)
+
 ![Player Window](https://github.com/rsm-gh/vlist-player/blob/master/preview/player.png)
 
 GNU/Linux Video list player. Make lists of videos (tv, series, movies) and play them in order, random, ignore some files, etc..
