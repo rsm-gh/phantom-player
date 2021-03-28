@@ -6,4 +6,4 @@ GNU/Linux Video list player. Make lists of videos (tv, series, movies) and play 
 
 ## Installation
 
-The software doesn't needs to be installed to used, if the dependencies are satisfied (python3), you can simply launch vListPlayer.py. Anyways if you wish to install it, just execute the 'setup' file as root.
+The software doesn't needs to be installed to used, if the dependencies are satisfied (python3, GTK+), you can simply launch vListPlayer.py. Anyways if you wish to install it, just execute the 'setup' file as root.
