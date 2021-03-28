@@ -876,7 +876,7 @@ class GUI(object):
 
     
     def on_imagemenuitem_bugs_activate(self, button, data=None):
-        webbrowser.open('https://www.rsm.website/software/gnu-linux/software/vlist-player/bugs',new=2)
+        webbrowser.open('https://github.com/rsm-gh/vlist-player/issues',new=2)
     
     def on_imagemenuitem_preferences_activate(self, button, data=None):
         self.window_preferences.show()
