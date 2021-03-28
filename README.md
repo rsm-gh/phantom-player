@@ -1,8 +1,7 @@
-![root window](https://github.com/rsm-gh/vlist-player/raw/master/root_window.png)
 
-[player image missing]
+![Player Window](https://github.com/rsm-gh/vlist-player/blob/master/preview/player.png)
 
-GNU/Linux Video list player. Make lists of videos (tv, series, movies) and play them in order, random, etc..
+GNU/Linux Video list player. Make lists of videos (tv, series, movies) and play them in order, random, ignore some files, etc..
 
 
 ## Installation
