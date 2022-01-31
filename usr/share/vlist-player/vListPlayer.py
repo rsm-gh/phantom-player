@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 
-#  Copyright (C) 2014-2016  Rafael Senties Martinelli 
+#  Copyright (C) 2014-2016, 2022  Rafael Senties Martinelli 
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -19,8 +19,11 @@
 
 import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('WebKit', '3.0')
-from gi.repository import Gtk, GObject, Gdk, WebKit
+gi.require_version('WebKit2', '4.0')
+from gi.repository import Gtk, GObject, Gdk
+from gi.repository import WebKit2 as WebKit
+
+
 import sys
 import threading
 import time
