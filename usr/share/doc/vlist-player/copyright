@@ -11,10 +11,10 @@ Copyright: http://www.iconarchive.com/show/oxygen-icons-by-oxygen-icons.org/Acti
 License: LGPL
 
 Files: vlc.py
-Copyright: Copyright (C) 2009-2012 the VideoLAN team
-License: GPL3
+Copyright: Copyright (C) 2009-2017 the VideoLAN team
+License: GPL C2.1+
 
-Files: *.py
+Files: *
 Copyright: Rafael Senties Martinelli 
 License: GPL3
 

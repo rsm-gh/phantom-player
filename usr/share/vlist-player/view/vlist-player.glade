@@ -275,12 +275,12 @@ Author: Rafael Senties Martinelli
                       </object>
                     </child>
                     <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_warning_missingserie">
+                      <object class="GtkCheckMenuItem" id="checkbox_hide_warning_missing_series">
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="label" translatable="yes">Hide Warning: Missing Serie</property>
-                        <signal name="toggled" handler="on_checkbox_hide_warning_missingserie_toggled" swapped="no"/>
+                        <signal name="toggled" handler="on_checkbox_hide_warning_missing_series_toggled" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -380,7 +380,7 @@ Author: Rafael Senties Martinelli
                 <property name="vexpand">True</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkBox" id="box_serie_data">
+                  <object class="GtkBox" id="box_series_data">
                     <property name="width_request">220</property>
                     <property name="height_request">200</property>
                     <property name="visible">True</property>
@@ -391,7 +391,7 @@ Author: Rafael Senties Martinelli
                     <property name="orientation">vertical</property>
                     <property name="spacing">1</property>
                     <child>
-                      <object class="GtkLabel" id="label_current_serie">
+                      <object class="GtkLabel" id="label_current_series">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="margin_bottom">10</property>
@@ -408,10 +408,10 @@ Author: Rafael Senties Martinelli
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkEventBox" id="eventbox_selected_serie_name">
+                      <object class="GtkEventBox" id="eventbox_selected_series_name">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <signal name="button-press-event" handler="on_eventbox_selected_serie_name_button_press_event" swapped="no"/>
+                        <signal name="button-press-event" handler="on_eventbox_selected_series_name_button_press_event" swapped="no"/>
                         <child>
                           <placeholder/>
                         </child>
@@ -891,7 +891,7 @@ Author: Rafael Senties Martinelli
       </object>
     </child>
   </object>
-  <object class="GtkDialog" id="window_controlls">
+  <object class="GtkDialog" id="window_controls">
     <property name="width_request">600</property>
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
@@ -923,7 +923,7 @@ Author: Rafael Senties Martinelli
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="image">image13</property>
-                <signal name="clicked" handler="on_button_close_controlls_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_button_close_controls_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -978,8 +978,8 @@ Author: Rafael Senties Martinelli
                         <property name="yalign">0</property>
                         <property name="label" translatable="yes">- Switch the modes "Full" and "Mini" by doing a double right-click on the root window.
 - Play a single video by doing a double left-lick on it.
-- Play a serie by double left-click on it or in the image.
-- If a right-click is done in a serie or a video a menu will appear.</property>
+- Play a series by double left-click on it or in the image.
+- If a right-click is done in a series or a video a menu will appear.</property>
                         <attributes>
                           <attribute name="gravity" value="east"/>
                         </attributes>
@@ -1135,7 +1135,7 @@ Author: Rafael Senties Martinelli
                 <property name="xalign">0</property>
                 <property name="yalign">0</property>
                 <property name="label" translatable="yes">Configuration File:  ~/.config/vlist-player.ini
-Series Files: ~/.local/share/vlist-player/serie name.csv
+Series Files: ~/.local/share/vlist-player/series name.csv
 
 *Do not modify the extensions.
 </property>
@@ -1371,7 +1371,7 @@ If the name had modifications it won't find them.</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="image">image2</property>
-                <signal name="clicked" handler="on_button_okey_rename_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_button_okay_rename_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
