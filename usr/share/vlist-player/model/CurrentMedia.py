@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/usr/bin/python3
+#
 
-#  Copyright (C) 2015 Rafael Senties Martinelli
+#  Copyright (C) 2014-2015, 2024 Rafael Senties Martinelli.
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -15,28 +16,9 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-
-
-if [ "$EUID" -ne 0 ]
-  then echo "Please run as root."
-  exit
-fi
-
-if [ -d /usr/share/vlist-player ]; then
-	rm -rf /usr/share/vlist-player
-fi
-
-if [ -d /usr/share/doc/vlist-player ]; then
-	rm -rf /usr/share/doc/vlist-player
-fi
-
-if [ -f /usr/share/applications/vlist-player.desktop ]; then
-	rm -f /usr/share/applications/vlist-player.desktop
-fi
-
-if [ -f /usr/bin/vlist-player ]; then
-	rm -f /usr/bin/vlist-player
-fi
-
-echo "The removal is complete."
+class CurrentMedia:
+    def __init__(self, series=None, video=None, random=None, mark=None):
+        self.series = series
+        self.video = video
+        self.random = random
+        self.mark = mark
