@@ -590,16 +590,33 @@ class VListPlayer(object):
             Gtk.main_quit()
 
     def on_spinbutton_audio_value_changed(self, spinbutton):
+        series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+
+        if series_name is None:
+            return
+
         value = spinbutton.get_value_as_int()
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        Series.series_dictionary[selected_series_name].set_audio_track(value)
+
+        Series.series_dictionary[series_name].set_audio_track(value)
 
     def on_spinbutton_subtitles_value_changed(self, spinbutton):
+
+        series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+
+        if series_name is None:
+            return
+
         value = spinbutton.get_value_as_int()
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        Series.series_dictionary[selected_series_name].set_subtitles_track(value)
+
+        Series.series_dictionary[series_name].set_subtitles_track(value)
 
     def on_spinbutton_start_at_value_changed(self, spinbutton):
+
+        series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+
+        if series_name is None:
+            return
+
         value = float(spinbutton.get_value())
 
         str_value = str(value).split('.')
@@ -609,17 +626,24 @@ class VListPlayer(object):
             minutes += 1
             spinbutton.set_value(minutes + 0.00)
 
-        series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
         Series.series_dictionary[series_name].set_start_at(value)
 
     def on_checkbutton_random_toggled(self, radiobutton, *_):
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+
+        if series_name is None:
+            return
+
         radiobutton_state = radiobutton.get_active()
-        Series.series_dictionary[selected_series_name].set_random(radiobutton_state)
+        Series.series_dictionary[series_name].set_random(radiobutton_state)
         self.__episodes_populate_liststore(False)
 
     def on_checkbutton_keep_playing_toggled(self, radiobutton, *_):
         series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+
+        if series_name is None:
+            return
+
         radiobutton_state = radiobutton.get_active()
         Series.series_dictionary[series_name].set_keep_playing(radiobutton_state)
 
@@ -936,7 +960,7 @@ class VListPlayer(object):
     def on_treeview_series_press_event(self, _, event, inside_treeview=True):
 
         # check if some row is selected
-        if self.treeview_selection_series.count_selected_rows() < 0:
+        if self.treeview_selection_series.count_selected_rows() <= 0:
             return
 
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
