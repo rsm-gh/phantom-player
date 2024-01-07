@@ -177,65 +177,50 @@ class VListPlayer(object):
         """
             Load the saved lists
         """
-        if os.path.exists(FOLDER_LIST_PATH):
-            data_files = [f for f in os.listdir(FOLDER_LIST_PATH) if os.path.isfile(os.path.join(FOLDER_LIST_PATH, f))]
-            data_files.sort()
-            for data_file in data_files:
-                if data_file.lower().endswith('.csv'):
-                    data_path = '{}/{}'.format(FOLDER_LIST_PATH, data_file)
+        for file_name in sorted(os.listdir(FOLDER_LIST_PATH)):
 
-                    with open(data_path, mode='rt', encoding='utf-8') as f:
-                        series_info = f.readline().split('|')
+            if not file_name.lower().endswith('.csv'):
+                continue
 
-                    path = ''
-                    recursive = False
-                    keep_playing = True
-                    random = False
-                    audio_track = -2
-                    subtitles_track = -2
-                    start_at = -2
+            file_path = os.path.join(FOLDER_LIST_PATH, file_name)
 
-                    try:  # support for versions <= 0.0~0
-                        path = series_info[0]
-                        recursive = series_info[1]
-                        try:  # support for versions < 0.1~7
-                            random = series_info[2]
-                            keep_playing = series_info[3]
-                            try:  # support for versions < 0.7~2
-                                start_at = series_info[4]
-                                audio_track = series_info[5]
-                                subtitles_track = series_info[6]
-                            except Exception as e:
-                                print("__series_load_data error(3):")
-                                print(str(e))
-                        except Exception as e:
-                            print("__series_load_data error(2):")
-                            print(str(e))
-                    except Exception as e:
-                        print("__series_load_data error(1):")
-                        print(str(e))
+            with open(file_path, mode='rt', encoding='utf-8') as f:
+                series_info = f.readline().split('|')
 
-                    if '/' in path:
-                        self.__series_load_from_path(path,
-                                                     data_path,
-                                                     recursive,
-                                                     random,
-                                                     keep_playing,
-                                                     start_at,
-                                                     audio_track,
-                                                     subtitles_track)
+            if len(series_info) < 7:
+                print("Error, Wrong format for series file = ", file_path)
+                continue
 
-            """
-                Load the last series that has been played
-            """
-            current_series_name = self.__ccp.get_str('current_series')
+            path = series_info[0]
+            recursive = series_info[1]
+            random = series_info[2]
+            keep_playing = series_info[3]
+            start_at = series_info[4]
+            audio_track = series_info[5]
+            subtitles_track = series_info[6]
 
-            for i, row in enumerate(self.liststore_series):
-                if row[1] == current_series_name:
-                    Gdk.threads_enter()
-                    self.treeview_series.set_cursor(i)
-                    Gdk.threads_leave()
-                    break
+
+            if '/' in path:
+                self.__series_load_from_path(path,
+                                             file_path,
+                                             recursive,
+                                             random,
+                                             keep_playing,
+                                             start_at,
+                                             audio_track,
+                                             subtitles_track)
+
+        """
+            Load the last series that has been played
+        """
+        current_series_name = self.__ccp.get_str('current_series')
+
+        for i, row in enumerate(self.liststore_series):
+            if row[1] == current_series_name:
+                Gdk.threads_enter()
+                self.treeview_series.set_cursor(i)
+                Gdk.threads_leave()
+                break
 
     def __thread_scan_media_player(self):
         self.__thread_vlc_scan = True
@@ -949,6 +934,7 @@ class VListPlayer(object):
         self.on_treeview_series_press_event(self.treeview_series, event, False)
 
     def on_treeview_series_press_event(self, _, event, inside_treeview=True):
+
         # check if some row is selected
         if self.treeview_selection_series.count_selected_rows() < 0:
             return

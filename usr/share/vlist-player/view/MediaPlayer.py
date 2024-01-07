@@ -23,6 +23,11 @@
     To do:
         - I'm currently working on how to display the mouse when it moves over the VLCWidget.
         - An option to set the audio output device.
+
+
+    Note: There is a problem, and to work, this script must be called as:
+
+    GDK_BACKEND=x11 python3 MediaPlayer.py
 """
 
 import os
@@ -69,15 +74,15 @@ class MediaPlayer(Gtk.Window):
         self.__stopped_position = 0
         self.__kill_player_on_quit = False
         self.__update__scale_progress = True
-        self.__thread_player_activity = False
-        self.__thread_mouse_motion = False
+        self.__thread_player_activity_status = False
+        self.__thread_mouse_motion_status = False
 
-        self.vlc_instance_widget = VLCWidget(self)
-        self.vlc_instance_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
+        self.__vlc_widget = VLCWidget(self)
+        self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
 
         overlay = Gtk.Overlay()
         self.add(overlay)
-        overlay.add(self.vlc_instance_widget)
+        overlay.add(self.__vlc_widget)
 
         # Buttons box
         self.__buttons_box = Gtk.VBox()
@@ -168,7 +173,7 @@ class MediaPlayer(Gtk.Window):
         threading.Thread(target=self.__thread_player_activity).start()
 
     def __on_button_destroy_window(self, *_):
-        self.vlc_instance_widget.player.stop()
+        self.__vlc_widget.player.stop()
         turn_off_screensaver(False)
 
         if self.__kill_player_on_quit:
@@ -179,8 +184,8 @@ class MediaPlayer(Gtk.Window):
             return True  # this prevents the window from being destroyed !!
 
     def __on_button_player_stop(self, *_):
-        self.__stopped_position = self.vlc_instance_widget.player.get_position()
-        self.vlc_instance_widget.player.stop()
+        self.__stopped_position = self.__vlc_widget.player.get_position()
+        self.__vlc_widget.player.stop()
         turn_off_screensaver(False)
         self.hide()
 
@@ -188,13 +193,13 @@ class MediaPlayer(Gtk.Window):
         #
         # Update the icon of the "playing" button
         #
-        if not self.vlc_instance_widget.is_playing():
+        if not self.__vlc_widget.is_playing():
             self.__button_play_pause.set_stock_id('gtk-media-pause')
-            self.vlc_instance_widget.player.play()
+            self.__vlc_widget.player.play()
             turn_off_screensaver(True)
         else:
             self.__button_play_pause.set_stock_id('gtk-media-play')
-            self.vlc_instance_widget.player.pause()
+            self.__vlc_widget.player.pause()
             turn_off_screensaver(False)
 
     @staticmethod
@@ -208,12 +213,12 @@ class MediaPlayer(Gtk.Window):
         #
         #   Hide or display the toolboxes
         #
-        self.__thread_mouse_motion = True
+        self.__thread_mouse_motion_status = True
         state = '?'
 
-        while self.__thread_mouse_motion:
+        while self.__thread_mouse_motion_status:
 
-            movement_time = time.time() - self.vlc_instance_widget._mouse_time
+            movement_time = time.time() - self.__vlc_widget.get_mouse_time()
 
             if state != 'hidden' and movement_time >= 3:
                 state = 'hidden'
@@ -236,19 +241,19 @@ class MediaPlayer(Gtk.Window):
             This method scans the state of the player to update the tool buttons, volume, play-stop etc
         """
 
-        self.__thread_player_activity = True
-        while self.__thread_player_activity:
+        self.__thread_player_activity_status = True
+        while self.__thread_player_activity_status:
 
             time.sleep(0.2)
 
             # Stop the player?
             #
-            if self.vlc_instance_widget._die:
+            if self.__vlc_widget.get_quit_status():
                 self.__on_button_destroy_window()
 
-            vlc_is_playing = self.vlc_instance_widget.is_playing()
-            vlc_volume = self.vlc_instance_widget.player.audio_get_volume()
-            vlc_position = self.vlc_instance_widget.player.get_position()
+            vlc_is_playing = self.__vlc_widget.is_playing()
+            vlc_volume = self.__vlc_widget.player.audio_get_volume()
+            vlc_position = self.__vlc_widget.player.get_position()
             scale_volume_value = int(self.__scale_volume.get_value() * 100)
             scale_progres_value = self.__scale_progress.get_value()
 
@@ -296,16 +301,16 @@ class MediaPlayer(Gtk.Window):
                 Verify if the window is on top
             """
             if get_active_window_title() == self.get_title():
-                self.vlc_instance_widget._vlc_widget_on_top = True
+                self.__vlc_widget._vlc_widget_on_top = True
             else:
-                self.vlc_instance_widget._vlc_widget_on_top = False
+                self.__vlc_widget._vlc_widget_on_top = False
 
             """
                 Update the time of the player
             """
             if vlc_is_playing:
-                video_length = format_milliseconds_to_time(self.vlc_instance_widget.player.get_length()) + "   "
-                video_time = format_milliseconds_to_time(self.vlc_instance_widget.player.get_time())
+                video_length = format_milliseconds_to_time(self.__vlc_widget.player.get_length()) + "   "
+                video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
 
                 Gdk.threads_enter()
                 self.__label_length.set_markup(
@@ -354,7 +359,7 @@ class MediaPlayer(Gtk.Window):
 
             else:
                 if vlc_is_playing:
-                    self.vlc_instance_widget.player.stop()
+                    self.__vlc_widget.player.stop()
 
     def __on_key_pressed(self, _, ev):
         esc_key = 65307
@@ -370,7 +375,7 @@ class MediaPlayer(Gtk.Window):
 
         # display the toolbox if the arrows are shown
         if key == arrow_left or key == arrow_right:
-            self.vlc_instance_widget._mouse_time = time.time()
+            self.__vlc_widget._mouse_time = time.time()
 
         if key == esc_key:
             self.unfullscreen()
@@ -382,31 +387,31 @@ class MediaPlayer(Gtk.Window):
             self.__on_button_play_pause_clicked(None, None)
 
         elif key == arrow_up:
-            self.vlc_instance_widget.volume_up()
+            self.__vlc_widget.volume_up()
 
         elif key == arrow_down:
-            self.vlc_instance_widget.volume_down()
+            self.__vlc_widget.volume_down()
 
     def __scale_volume_changed(self, _, value):
         value = int(value * 100)
 
         self.__label_volume2.set_markup(
             '<span font="{1}" color="white"> Vol: {0}% </span>'.format(value, self.__height / 30.0))
-        if self.vlc_instance_widget.player.audio_get_volume() != value:
-            self.vlc_instance_widget.player.audio_set_volume(value)
+        if self.__vlc_widget.player.audio_get_volume() != value:
+            self.__vlc_widget.player.audio_set_volume(value)
 
     def __scale_button_press(self, *_):
         self.__update__scale_progress = False
 
     def __scale_button_release(self, *_):
-        self.vlc_instance_widget.player.set_position(self.__scale_progress.get_value())
+        self.__vlc_widget.player.set_position(self.__scale_progress.get_value())
         self.__update__scale_progress = True
 
     def __on_button_restart_the_video(self, *_):
-        self.vlc_instance_widget.player.set_position(0)
+        self.__vlc_widget.player.set_position(0)
 
     def __on_button_end_the_video(self, *_):
-        self.vlc_instance_widget.player.set_position(1)
+        self.__vlc_widget.player.set_position(1)
         self.__stopped_position = 0
 
     @staticmethod
@@ -428,7 +433,7 @@ class MediaPlayer(Gtk.Window):
             I chose 0.05 seconds
         """
 
-        video_length = self.vlc_instance_widget.player.get_length()
+        video_length = self.__vlc_widget.player.get_length()
         start_at = str(start_at).split('.')
         str_seconds = str(start_at[1])
         minutes = int(start_at[0])
@@ -452,11 +457,11 @@ class MediaPlayer(Gtk.Window):
 
         if start_time > 0:
             Gdk.threads_enter()
-            self.vlc_instance_widget.player.set_position(start_time)
+            self.__vlc_widget.player.set_position(start_time)
             Gdk.threads_leave()
 
     def is_playing_or_paused(self):
-        if self.vlc_instance_widget.is_playing() or self.vlc_instance_widget.is_paused():
+        if self.__vlc_widget.is_playing() or self.__vlc_widget.is_paused():
             return True
 
         return False
@@ -465,20 +470,20 @@ class MediaPlayer(Gtk.Window):
         self.__kill_player_on_quit = True
 
     def stop_threads(self):
-        self.__thread_player_activity = False
-        self.__thread_mouse_motion = False
+        self.__thread_player_activity_status = False
+        self.__thread_mouse_motion_status = False
 
     def get_stopped_position(self):
         return self.__stopped_position
 
     def stop_position(self):
-        self.vlc_instance_widget.player.stop()
+        self.__vlc_widget.player.stop()
 
     def get_position(self):
-        return self.vlc_instance_widget.player.get_position()
+        return self.__vlc_widget.player.get_position()
 
     def get_state(self):
-        return self.vlc_instance_widget.player.get_state()
+        return self.__vlc_widget.player.get_state()
 
     def play_video(self, file_path, position=0, subtitles_track=-2, audio_track=-2, start_at=0.0, thread=False):
 
@@ -486,14 +491,14 @@ class MediaPlayer(Gtk.Window):
 
             self.__stopped_position = position
 
-            media = self.vlc_instance_widget.vlc_instance.media_new(file_path)
+            media = self.__vlc_widget.vlc_instance.media_new(file_path)
             media.parse()
 
             turn_off_screensaver(True)
 
             if thread:
                 Gdk.threads_enter()
-                self.vlc_instance_widget.player.set_media(media)
+                self.__vlc_widget.player.set_media(media)
                 Gdk.threads_leave()
 
                 Gdk.threads_enter()
@@ -501,7 +506,7 @@ class MediaPlayer(Gtk.Window):
                 Gdk.threads_leave()
 
                 Gdk.threads_enter()
-                self.vlc_instance_widget.player.play()
+                self.__vlc_widget.player.play()
                 Gdk.threads_leave()
 
                 if not self.get_property('visible'):
@@ -509,9 +514,9 @@ class MediaPlayer(Gtk.Window):
                     self.show_all()
                     Gdk.threads_leave()
             else:
-                self.vlc_instance_widget.player.set_media(media)
+                self.__vlc_widget.player.set_media(media)
                 self.set_title(media.get_meta(0))
-                self.vlc_instance_widget.player.play()
+                self.__vlc_widget.player.play()
                 if not self.get_property('visible'):
                     self.show_all()
 
@@ -519,20 +524,18 @@ class MediaPlayer(Gtk.Window):
 
             if subtitles_track == -1 or subtitles_track >= 0:
                 threading.Thread(target=self.__delayed_method, args=[0.05,
-                                                                     self.vlc_instance_widget.player.video_set_spu,
+                                                                     self.__vlc_widget.player.video_set_spu,
                                                                      subtitles_track]
                                  ).start()
 
             if audio_track > -2:
                 threading.Thread(target=self.__delayed_method, args=[0.05,
-                                                                     self.vlc_instance_widget.player.audio_set_track,
+                                                                     self.__vlc_widget.player.audio_set_track,
                                                                      audio_track]
                                  ).start()
 
 
 if __name__ == '__main__':
-    GObject.threads_init()
-    Gdk.threads_init()
 
     player = MediaPlayer()
     player.die_on_quit()
