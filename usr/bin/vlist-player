@@ -1,7 +1,6 @@
-#!/usr/bin/python3
-#
+#!/bin/bash
 
-#  Copyright (C) 2014-2016 Rafael Senties Martinelli 
+#  Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -16,16 +15,4 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
-import os
-import sys
-
-current_dir=os.getcwd()
-
-os.chdir('/usr/share/vlist-player/')
-sys.path.insert(1, '/usr/share/vlist-player/')
-
-from view.VListPlayer import run
-run()
-
-os.chdir(current_dir)
+python3 /usr/share/vlist-player/view/VlistPlayer.py
