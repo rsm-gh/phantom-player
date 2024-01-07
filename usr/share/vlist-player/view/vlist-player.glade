@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.40.0 
 
-Copyright (C) 2014 - 2015 Rafael Senties Martinelli
+Copyright (C) 2014-2015, 2024 Rafael Senties Martinelli
 
 This file is part of vlist-player.
 
@@ -26,7 +26,7 @@ Author: Rafael Senties Martinelli
   <!-- interface-license-type gplv3 -->
   <!-- interface-name vlist-player -->
   <!-- interface-description This package allows you to create and reproduce playlists from folders containing videos. -->
-  <!-- interface-copyright 2014 - 2015 Rafael Senties Martinelli -->
+  <!-- interface-copyright 2014-2015, 2024 Rafael Senties Martinelli -->
   <!-- interface-authors Rafael Senties Martinelli -->
   <object class="GtkAdjustment" id="adjustment_audio">
     <property name="lower">-2</property>
@@ -1132,10 +1132,7 @@ Author: Rafael Senties Martinelli
                 <property name="can-focus">False</property>
                 <property name="hexpand">True</property>
                 <property name="label" translatable="yes">Configuration File:  ~/.config/vlist-player.ini
-Series Files: ~/.local/share/vlist-player/series name.csv
-
-*Do not modify the extensions.
-</property>
+Series Files: ~/.local/share/vlist-player/series name.csv</property>
                 <property name="xalign">0</property>
                 <property name="yalign">0</property>
                 <attributes>
