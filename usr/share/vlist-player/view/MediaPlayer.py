@@ -25,6 +25,8 @@
         - An option to set the audio output device.
 """
 
+import os
+import sys
 import gi
 import time
 import threading
@@ -33,6 +35,10 @@ from datetime import timedelta
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0')
 from gi.repository import Gtk, GObject, Gdk
+
+_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+_PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
+sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
 from system_utils import turn_off_screensaver, get_active_window_title
