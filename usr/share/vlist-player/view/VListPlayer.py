@@ -1049,12 +1049,6 @@ class VListPlayer(object):
                 return True
 
 
-def run():
-    GObject.threads_init()
-    Gdk.threads_init()
+if __name__ == '__main__':
     _ = VListPlayer()
     Gtk.main()
-
-
-if __name__ == '__main__':
-    run()

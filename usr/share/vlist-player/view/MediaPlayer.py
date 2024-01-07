@@ -299,18 +299,20 @@ class MediaPlayer(Gtk.Window):
             """
             if vlc_is_playing:
                 video_length = format_milliseconds_to_time(self.vlc_instance_widget.player.get_length()) + "   "
+                video_time = format_milliseconds_to_time(self.vlc_instance_widget.player.get_time())
 
                 Gdk.threads_enter()
                 self.__label_length.set_markup(
                     '<span font="{1}" color="white">{0}</span>'.format(video_length, self.__height / 29.0))
                 Gdk.threads_leave()
 
-                video_time = format_milliseconds_to_time(self.vlc_instance_widget.player.get_time())
-
                 Gdk.threads_enter()
                 self.__label_progress.set_markup(
                     '<span font="{1}" color="white">{0}</span>'.format(video_time, self.__height / 29.0))
                 Gdk.threads_leave()
+            else:
+                video_length = self.__label_length.get_text().strip()
+                video_time = self.__label_progress.get_text().strip()
 
             """
                 Update the size of the widgets
@@ -329,10 +331,6 @@ class MediaPlayer(Gtk.Window):
                     self.__label_volume2.set_markup(
                         '<span font="{1}" color="white"> Vol: {0}% </span>'.format(vlc_volume, self.__height / 30.0))
                     Gdk.threads_leave()
-
-                    if not vlc_is_playing:
-                        video_length = self.__label_length.get_text().strip()
-                        video_time = self.__label_progress.get_text().strip()
 
                     Gdk.threads_enter()
                     self.__label_length.set_markup(

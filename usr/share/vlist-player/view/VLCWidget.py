@@ -25,12 +25,11 @@
         - An option to set the audio output device.
 """
 
-import gi
 import time
-
+import gi
 gi.require_version('Gtk', '3.0')
-gi.require_version('GdkX11', '3.0')
-from gi.repository import Gtk, GObject, Gdk
+gi.require_version('Gdk', '3.0')
+from gi.repository import Gtk, Gdk
 
 from Paths import *
 from controller import vlc
@@ -99,7 +98,7 @@ class VLCWidget(Gtk.DrawingArea):
         self.__volume_increment = 3  # %
         self.__die = False
 
-        self.vlc_instance = vlc.Instance(['--no-xlib'])
+        self.vlc_instance = vlc.Instance('--no-xlib')
         self.player = self.vlc_instance.media_player_new()
 
         self.connect('map', self.__handle_embed)
@@ -116,8 +115,10 @@ class VLCWidget(Gtk.DrawingArea):
         self.set_size_request(320, 200)
 
     def __handle_embed(self, *_):
+        print("__handle_embed")
         # This makes that the player starts in the root_window
         self.player.set_xwindow(self.get_window().get_xid())
+
         return True
 
     def __on_menu_video_subs_audio(self, _, player_type, track):
