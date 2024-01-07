@@ -23,12 +23,17 @@
     To do:
         - I'm currently working on how to display the mouse when it moves over the VLCWidget.
         - An option to set the audio output device.
+
+
+    Note: There is a problem, and to work, this script must be called as:
+
+    GDK_BACKEND=x11 python3 VLCWidget.py
 """
 
 import gi
 import os
 import sys
-import time
+from time import time
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
@@ -100,10 +105,10 @@ class VLCWidget(Gtk.DrawingArea):
         super().__init__()
 
         self.__window_root = root_window
-        self.__vlc_instance_widget_on_top = False
-        self.__mouse_time = time.time()
+        self.____vlc_widget_on_top = False
+        self.__mouse_time = time()
         self.__volume_increment = 3  # %
-        self.__die = False
+        self.__quit_status = False
 
         self.vlc_instance = vlc.Instance('--no-xlib')
         self.player = self.vlc_instance.media_player_new()
@@ -152,7 +157,7 @@ class VLCWidget(Gtk.DrawingArea):
 
             if event.button == 1:  # left click
 
-                if self.__vlc_instance_widget_on_top and self.is_playing():
+                if self.____vlc_widget_on_top and self.is_playing():
                     self.player.pause()
                     turn_off_screensaver(False)
                 else:
@@ -253,7 +258,7 @@ class VLCWidget(Gtk.DrawingArea):
 
     def __on_motion_notify_event(self, *_):
         if self.__window_root.is_active():
-            self.__mouse_time = time.time()
+            self.__mouse_time = time()
 
     def __on_mouse_scroll(self, _, event):
         if event.direction == Gdk.ScrollDirection.UP:
@@ -261,6 +266,9 @@ class VLCWidget(Gtk.DrawingArea):
 
         elif event.direction == Gdk.ScrollDirection.DOWN:
             self.volume_down()
+
+    def get_mouse_time(self):
+        return self.__mouse_time
 
     def set_subtitles_from_file(self, *_):
         """
@@ -278,7 +286,10 @@ class VLCWidget(Gtk.DrawingArea):
         return True
 
     def quit(self, *_):
-        self.__die = True
+        self.__quit_status = True
+
+    def get_quit_status(self):
+        return self.__quit_status
 
     def fullscreen(self, *_):
         if Gdk.WindowState.FULLSCREEN & self.__window_root.get_window().get_state():
