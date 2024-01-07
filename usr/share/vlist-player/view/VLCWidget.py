@@ -25,11 +25,18 @@
         - An option to set the audio output device.
 """
 
-import time
 import gi
+import os
+import sys
+import time
+
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
 from gi.repository import Gtk, Gdk
+
+_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+_PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
+sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
 from controller import vlc

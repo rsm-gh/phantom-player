@@ -16,11 +16,17 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
+import os
 import gi
+import sys
+
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')
 from gi.repository import Gtk, Gdk
+
+_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+_PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
+sys.path.insert(0, _PROJECT_DIR)
 
 from Texts import *
 from model import Series
