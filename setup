@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#  Copyright (C) 2015 Rafael Senties Martinelli
+#  Copyright (C) 2015, 2024 Rafael Senties Martinelli
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -15,24 +15,49 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-cd $DIR
-#
-#
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root."
   exit
 fi
 
-chmod -R 0755 $DIR
-chown root:root -R $DIR
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+cd "$DIR" || exit
 
-echo -e "\n Removing previous versions...\n"
+#
+# Set the scripts permissions
+#
+chmod a+x ./remove
+
+#
+# Remove previous versions
+#
+echo -e "Removing previous versions..."
 ./remove
 
-echo -e "\nInstalling...\n"
-cp -ar $DIR/usr/. /usr/
+#
+# Install the new files
+#
+echo -e "\nInstalling the software files..."
 
-#
-#
-echo -e "\n \e[00;32m The installation is complete. I hope you enjoy the software! -RSM \e[00m"
+function install_files(){
+
+    echo "installing: $1"
+
+    if [ -d "$DIR$1/__pycache__" ]; then
+      rm -rf "$DIR$1/__pycache__"
+    fi
+
+    install -d "$1"
+    install -D "$DIR$1/"* "$1"
+
+}
+
+install_files "/usr/bin"
+install_files "/usr/share/applications"
+install_files "/usr/share/doc/vlist-player"
+install_files "/usr/share/vlist-player"
+install_files "/usr/share/vlist-player/controller"
+install_files "/usr/share/vlist-player/model"
+install_files "/usr/share/vlist-player/view"
+install_files "/usr/share/vlist-player/view/img"
+

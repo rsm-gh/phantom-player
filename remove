@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#  Copyright (C) 2015 Rafael Senties Martinelli
+#  Copyright (C) 2015, 2024 Rafael Senties Martinelli
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -15,28 +15,29 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-
 
 if [ "$EUID" -ne 0 ]
   then echo "Please run as root."
   exit
 fi
 
-if [ -d /usr/share/vlist-player ]; then
-	rm -rf /usr/share/vlist-player
-fi
+function remove_file(){
 
-if [ -d /usr/share/doc/vlist-player ]; then
-	rm -rf /usr/share/doc/vlist-player
-fi
+    if [ -f "$1" ]; then
+        rm -f "$1"
+        echo "removed.f: $1"
+    fi
+}
 
-if [ -f /usr/share/applications/vlist-player.desktop ]; then
-	rm -f /usr/share/applications/vlist-player.desktop
-fi
+function remove_dir(){
 
-if [ -f /usr/bin/vlist-player ]; then
-	rm -f /usr/bin/vlist-player
-fi
+    if [ -d "$1" ]; then
+        rm -rf "$1"
+        echo "removed.d: $1"
+    fi
+}
 
-echo "The removal is complete."
+remove_dir "/usr/share/vlist-player"
+remove_dir "/usr/share/doc/vlist-player"
+remove_file "/usr/share/applications/vlist-player.desktop"
+remove_file "/usr/bin/vlist-player"
