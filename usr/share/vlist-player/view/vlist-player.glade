@@ -141,7 +141,7 @@ Author: Rafael Senties Martinelli
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">Video List Player</property>
     <property name="window-position">center</property>
-    <property name="icon">images/movie-icon-small.png</property>
+    <property name="icon">img/movie-icon-small.png</property>
     <signal name="button-press-event" handler="on_window_root_button_press_event" swapped="no"/>
     <child>
       <object class="GtkBox" id="box1">
@@ -859,13 +859,13 @@ Author: Rafael Senties Martinelli
     <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="window-position">center-on-parent</property>
-    <property name="icon">images/movie-icon-small.png</property>
+    <property name="icon">img/movie-icon-small.png</property>
     <property name="type-hint">dialog</property>
     <property name="transient-for">window_root</property>
     <property name="program-name">vList-Player</property>
     <property name="copyright" translatable="yes">Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli.</property>
     <property name="website">https://github.com/rsm-gh/vlist-player</property>
-    <property name="logo">images/movie-icon-big.png</property>
+    <property name="logo">img/movie-icon-big.png</property>
     <property name="license-type">gpl-3-0</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="aboutdialog-vbox1">
@@ -1349,7 +1349,7 @@ If the name had modifications it won't find them.</property>
     <property name="border-width">5</property>
     <property name="title" translatable="yes">Rename Serie</property>
     <property name="modal">True</property>
-    <property name="icon">images/movie-icon-small.png</property>
+    <property name="icon">img/movie-icon-small.png</property>
     <property name="type-hint">dialog</property>
     <property name="deletable">False</property>
     <property name="transient-for">window_root</property>
