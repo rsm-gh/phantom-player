@@ -47,9 +47,6 @@ from Paths import *
 from controller import vlc
 from system_utils import turn_off_screensaver
 
-GLOBAL_FILE_PATH = ''
-
-
 def gtk_file_chooser(parent, start_path=''):
     window_choose_file = Gtk.FileChooserDialog('Video List Player',
                                                parent,
@@ -127,7 +124,6 @@ class VLCWidget(Gtk.DrawingArea):
         self.set_size_request(320, 200)
 
     def __handle_embed(self, *_):
-        print("__handle_embed")
         # This makes that the player starts in the root_window
         self.player.set_xwindow(self.get_window().get_xid())
 
@@ -275,10 +271,7 @@ class VLCWidget(Gtk.DrawingArea):
             Todo: read the result of player.video_set_subtitle_file(path) and display a message
             in case of problem.
         """
-        if os.path.exists(GLOBAL_FILE_PATH):
-            path = gtk_file_chooser(self.__window_root, os.path.dirname(GLOBAL_FILE_PATH))
-        else:
-            path = gtk_file_chooser(self.__window_root)
+        path = gtk_file_chooser(self.__window_root)
 
         if path is not None:
             self.player.video_set_subtitle_file(path)
