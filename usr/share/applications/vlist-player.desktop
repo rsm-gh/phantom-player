@@ -3,5 +3,5 @@ Name=V-List Player
 Exec=vlist-player
 Terminal=false
 Type=Application
-Icon=/usr/share/vlist-player/img/movie-icon-medium.png
+Icon=/usr/share/vlist-player/view/img/movie-icon-medium.png
 Categories=Video
