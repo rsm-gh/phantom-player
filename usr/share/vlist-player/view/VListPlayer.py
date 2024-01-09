@@ -626,6 +626,7 @@ class VListPlayer(object):
             minutes += 1
             spinbutton.set_value(minutes + 0.00)
 
+
         Series.series_dictionary[series_name].set_start_at(value)
 
     def on_checkbutton_random_toggled(self, radiobutton, *_):

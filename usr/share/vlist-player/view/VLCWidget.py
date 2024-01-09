@@ -18,7 +18,8 @@
 #
 
 """
-    Special thanks to the VideoLAN Team!
+    Special thanks to the VideoLAN Team! This file was created by using as example the
+    gtk3 example/widget for VLC Python bindings of Olivier Aubert <contact@olivieraubert.net>
 
     To do:
         - I'm currently working on how to display the mouse when it moves over the VLCWidget.
@@ -26,13 +27,13 @@
 
 
     Note: There is a problem, and to work, this script must be called as:
-
-    GDK_BACKEND=x11 python3 VLCWidget.py
+        GDK_BACKEND=x11 python3 VLCWidget.py
 """
 
 import gi
 import os
 import sys
+import ctypes
 from time import time
 
 gi.require_version('Gtk', '3.0')
@@ -46,6 +47,14 @@ sys.path.insert(0, _PROJECT_DIR)
 from Paths import *
 from controller import vlc
 from system_utils import turn_off_screensaver
+
+# Create a single vlc.Instance() to be shared by (possible) multiple players.
+if 'linux' in sys.platform:
+    # Inform libvlc that Xlib is not initialized for threads
+    VLC_INSTANCE = vlc.Instance("--no-xlib")
+else:
+    VLC_INSTANCE = vlc.Instance()
+
 
 def gtk_file_chooser(parent, start_path=''):
     window_choose_file = Gtk.FileChooserDialog('Video List Player',
@@ -94,6 +103,14 @@ def format_track(track):
 
     return ' {}   {}'.format(numb, content)
 
+def get_window_pointer(window):
+    """ Use the window.__gpointer__ PyCapsule to get the C void* pointer to the window"""
+    # get the c gpointer of the gdk window
+    ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
+    ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
+    return ctypes.pythonapi.PyCapsule_GetPointer(window.__gpointer__, None)
+
+
 class VLCWidget(Gtk.DrawingArea):
     """ This class creates a vlc player built in a Gtk.DrawingArea """
 
@@ -102,15 +119,13 @@ class VLCWidget(Gtk.DrawingArea):
         super().__init__()
 
         self.__window_root = root_window
-        self.____vlc_widget_on_top = False
+        self.__vlc_widget_on_top = False
         self.__mouse_time = time()
         self.__volume_increment = 3  # %
-        self.__quit_status = False
 
-        self.vlc_instance = vlc.Instance('--no-xlib')
-        self.player = self.vlc_instance.media_player_new()
+        self.player = VLC_INSTANCE.media_player_new()
 
-        self.connect('map', self.__handle_embed)
+        self.connect('realize', self.__handle_embed)
 
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.connect('button-press-event', self.__on_mouse_button_press)
@@ -123,9 +138,24 @@ class VLCWidget(Gtk.DrawingArea):
 
         self.set_size_request(320, 200)
 
+
     def __handle_embed(self, *_):
-        # This makes that the player starts in the root_window
-        self.player.set_xwindow(self.get_window().get_xid())
+
+        if sys.platform == 'win32':
+            # get the win32 handle
+            gdkdll = ctypes.CDLL('libgdk-3-0.dll')
+            handle = gdkdll.gdk_win32_window_get_handle(get_window_pointer(self.get_window()))
+            self.player.set_hwnd(handle)
+
+        elif sys.platform == 'darwin':
+            # get the nsview pointer. NB need to manually specify function signature
+            gdkdll = ctypes.CDLL('libgdk-3.0.dll')
+            get_nsview = gdkdll.gdk_quaerz_window_get_nsview
+            get_nsview.restype, get_nsview.argtypes = [ctypes.c_void_p], ctypes.c_void_p
+            self.player.set_nsobject(get_nsview(get_window_pointer(self.get_window())))
+
+        else:
+            self.player.set_xwindow(self.get_window().get_xid())
 
         return True
 
@@ -153,7 +183,7 @@ class VLCWidget(Gtk.DrawingArea):
 
             if event.button == 1:  # left click
 
-                if self.____vlc_widget_on_top and self.is_playing():
+                if self.__vlc_widget_on_top and self.is_playing():
                     self.player.pause()
                     turn_off_screensaver(False)
                 else:
@@ -164,7 +194,7 @@ class VLCWidget(Gtk.DrawingArea):
                 """
                     Audio, Sound and Subtitles Menu
                 """
-                self.menu = Gtk.Menu()
+                self.__menu = Gtk.Menu()
 
                 # Full screen button
                 #
@@ -175,19 +205,13 @@ class VLCWidget(Gtk.DrawingArea):
                 else:
                     menuitem = Gtk.ImageMenuItem("Fullscreen")
                 menuitem.connect('activate', self.fullscreen)
-                self.menu.append(menuitem)
-
-                #   Quit
-                #
-                menuitem = Gtk.ImageMenuItem("Close")
-                menuitem.connect('activate', self.quit)
-                self.menu.append(menuitem)
+                self.__menu.append(menuitem)
 
                 """
                     Audio Menu
                 """
                 menuitem = Gtk.ImageMenuItem("Audio")
-                self.menu.append(menuitem)
+                self.__menu.append(menuitem)
                 submenu = Gtk.Menu()
                 menuitem.set_submenu(submenu)
 
@@ -219,7 +243,7 @@ class VLCWidget(Gtk.DrawingArea):
                     Subtitles
                 """
                 menuitem = Gtk.ImageMenuItem("Subtitles")
-                self.menu.append(menuitem)
+                self.__menu.append(menuitem)
                 submenu = Gtk.Menu()
                 menuitem.set_submenu(submenu)
 
@@ -247,9 +271,15 @@ class VLCWidget(Gtk.DrawingArea):
                             item.set_active(True)
                         submenu.append(item)
 
-                self.menu.show_all()
-                self.menu.popup(None, None, None, None, event.button, event.time)
+                """
+                    Exit Button
+                """
+                menuitem = Gtk.ImageMenuItem("Exit")
+                menuitem.connect('activate', self.__on_button_close)
+                self.__menu.append(menuitem)
 
+                self.__menu.show_all()
+                self.__menu.popup(None, None, None, None, event.button, event.time)
                 return True
 
     def __on_motion_notify_event(self, *_):
@@ -262,6 +292,9 @@ class VLCWidget(Gtk.DrawingArea):
 
         elif event.direction == Gdk.ScrollDirection.DOWN:
             self.volume_down()
+
+    def set_on_top(self, value):
+        self.__vlc_widget_on_top = value
 
     def get_mouse_time(self):
         return self.__mouse_time
@@ -278,11 +311,8 @@ class VLCWidget(Gtk.DrawingArea):
 
         return True
 
-    def quit(self, *_):
-        self.__quit_status = True
-
-    def get_quit_status(self):
-        return self.__quit_status
+    def __on_button_close(self, *_):
+        self.__window_root.quit()
 
     def fullscreen(self, *_):
         if Gdk.WindowState.FULLSCREEN & self.__window_root.get_window().get_state():

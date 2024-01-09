@@ -47,7 +47,7 @@ sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
 from system_utils import turn_off_screensaver, get_active_window_title
-from view.VLCWidget import VLCWidget
+from view.VLCWidget import VLCWidget, VLC_INSTANCE
 
 
 def format_milliseconds_to_time(number):
@@ -62,27 +62,26 @@ def format_milliseconds_to_time(number):
 
     return time_string
 
-class MediaPlayer(Gtk.Window):
-    """ This class creates a media player built in a Gtk.Window """
+class MediaPlayerWidget(Gtk.Overlay):
 
-    def __init__(self):
+    def __init__(self, root_window):
 
         super().__init__()
+
+        self.__root_window = root_window
 
         self.__width = 600
         self.__height = 300
         self.__stopped_position = 0
-        self.__kill_player_on_quit = False
         self.__update__scale_progress = True
         self.__thread_player_activity_status = False
         self.__thread_mouse_motion_status = False
 
-        self.__vlc_widget = VLCWidget(self)
+        self.__vlc_widget = VLCWidget(self.__root_window)
         self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
 
-        overlay = Gtk.Overlay()
-        self.add(overlay)
-        overlay.add(self.__vlc_widget)
+
+        self.add(self.__vlc_widget)
 
         # Buttons box
         self.__buttons_box = Gtk.VBox()
@@ -111,7 +110,7 @@ class MediaPlayer(Gtk.Window):
         self.__buttons_box.pack_start(self.__button_stop, True, True, 0)
         self.__buttons_box.pack_start(self.__button_end_video, True, True, 0)
 
-        overlay.add_overlay(self.__buttons_box)
+        self.add_overlay(self.__buttons_box)
 
         # Scales Box        
 
@@ -150,7 +149,7 @@ class MediaPlayer(Gtk.Window):
         self.__scales_box.pack_start(self.__label_length, True, True, 3)
         self.__scales_box.pack_start(self.__scale_volume, True, True, 3)
 
-        overlay.add_overlay(self.__scales_box)
+        self.add_overlay(self.__scales_box)
 
         #   Extra volume label
 
@@ -160,28 +159,15 @@ class MediaPlayer(Gtk.Window):
             '<span font="{1}" color="white"> Vol: {0}% </span>'.format(0, self.__height / 30.0))
         self.__label_volume2.set_valign(Gtk.Align.START)
         self.__label_volume2.set_halign(Gtk.Align.END)
-        overlay.add_overlay(self.__label_volume2)
+        self.add_overlay(self.__label_volume2)
 
         self.connect('key-press-event', self.__on_key_pressed)
-        self.connect('delete-event', self.__on_button_destroy_window)
-        self.set_size_request(self.__width, self.__height)
 
         """
             Init the threads
         """
         threading.Thread(target=self.__thread_mouse_motion).start()
         threading.Thread(target=self.__thread_player_activity).start()
-
-    def __on_button_destroy_window(self, *_):
-        self.__vlc_widget.player.stop()
-        turn_off_screensaver(False)
-
-        if self.__kill_player_on_quit:
-            Gtk.main_quit()
-        else:
-            self.__stopped_position = 0
-            self.hide()
-            return True  # this prevents the window from being destroyed !!
 
     def __on_button_player_stop(self, *_):
         self.__stopped_position = self.__vlc_widget.player.get_position()
@@ -246,11 +232,6 @@ class MediaPlayer(Gtk.Window):
 
             time.sleep(0.2)
 
-            # Stop the player?
-            #
-            if self.__vlc_widget.get_quit_status():
-                self.__on_button_destroy_window()
-
             vlc_is_playing = self.__vlc_widget.is_playing()
             vlc_volume = self.__vlc_widget.player.audio_get_volume()
             vlc_position = self.__vlc_widget.player.get_position()
@@ -300,10 +281,7 @@ class MediaPlayer(Gtk.Window):
             """
                 Verify if the window is on top
             """
-            if get_active_window_title() == self.get_title():
-                self.__vlc_widget._vlc_widget_on_top = True
-            else:
-                self.__vlc_widget._vlc_widget_on_top = False
+            self.__vlc_widget.set_on_top(get_active_window_title() == self.__root_window.get_title())
 
             """
                 Update the time of the player
@@ -329,7 +307,8 @@ class MediaPlayer(Gtk.Window):
                 Update the size of the widgets
             """
             if self.get_property('visible'):
-                width, height = self.get_size()
+                width, height = self.__root_window.get_size()
+
                 if width != self.__width or height != self.__height:
                     self.__width = width
                     self.__height = height
@@ -466,10 +445,8 @@ class MediaPlayer(Gtk.Window):
 
         return False
 
-    def die_on_quit(self):
-        self.__kill_player_on_quit = True
-
-    def stop_threads(self):
+    def quit(self):
+        self.__vlc_widget.player.stop()
         self.__thread_player_activity_status = False
         self.__thread_mouse_motion_status = False
 
@@ -491,7 +468,7 @@ class MediaPlayer(Gtk.Window):
 
             self.__stopped_position = position
 
-            media = self.__vlc_widget.vlc_instance.media_new(file_path)
+            media = VLC_INSTANCE.media_new(file_path)
             media.parse()
 
             turn_off_screensaver(True)
@@ -502,7 +479,7 @@ class MediaPlayer(Gtk.Window):
                 Gdk.threads_leave()
 
                 Gdk.threads_enter()
-                self.set_title(media.get_meta(0))
+                self.__root_window.set_title(media.get_meta(0))
                 Gdk.threads_leave()
 
                 Gdk.threads_enter()
@@ -515,7 +492,7 @@ class MediaPlayer(Gtk.Window):
                     Gdk.threads_leave()
             else:
                 self.__vlc_widget.player.set_media(media)
-                self.set_title(media.get_meta(0))
+                self.__root_window.set_title(media.get_meta(0))
                 self.__vlc_widget.player.play()
                 if not self.get_property('visible'):
                     self.show_all()
@@ -535,11 +512,33 @@ class MediaPlayer(Gtk.Window):
                                  ).start()
 
 
+class MediaPlayer(Gtk.Window):
+    """ This class creates a media player built in a Gtk.Window """
+
+    def __init__(self):
+
+        super().__init__()
+
+        self.__media_player_widget = MediaPlayerWidget(self)
+        self.add(self.__media_player_widget)
+
+        self.connect('delete-event', self.quit)
+
+        self.set_size_request(600, 300)
+        self.show_all()
+
+    def quit(self, *_):
+        self.__media_player_widget.quit()
+        turn_off_screensaver(False)
+        Gtk.main_quit()
+
+    def play_video(self, path):
+        self.__media_player_widget.play_video(path)
+
+
 if __name__ == '__main__':
 
     player = MediaPlayer()
-    player.die_on_quit()
-
     player.play_video('/home/cadweb/Downloads/Seed/InkMaster/Ink.Master.S15E06.1080p.WEB.h264-EDITH[eztv.re].mkv')
-
     Gtk.main()
+    VLC_INSTANCE.release()
