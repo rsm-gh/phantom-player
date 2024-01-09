@@ -449,6 +449,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__vlc_widget.player.stop()
         self.__thread_player_activity_status = False
         self.__thread_mouse_motion_status = False
+        turn_off_screensaver(False)
 
     def get_stopped_position(self):
         return self.__stopped_position
@@ -529,7 +530,6 @@ class MediaPlayer(Gtk.Window):
 
     def quit(self, *_):
         self.__media_player_widget.quit()
-        turn_off_screensaver(False)
         Gtk.main_quit()
 
     def play_video(self, path):
@@ -537,6 +537,9 @@ class MediaPlayer(Gtk.Window):
 
 
 if __name__ == '__main__':
+
+    GObject.threads_init()
+    Gdk.threads_init()
 
     player = MediaPlayer()
     player.play_video('/home/cadweb/Downloads/Seed/InkMaster/Ink.Master.S15E06.1080p.WEB.h264-EDITH[eztv.re].mkv')

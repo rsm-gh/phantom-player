@@ -24,7 +24,7 @@ import threading
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GObject
 
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
@@ -76,11 +76,9 @@ def gtk_file_chooser(parent, mode='', start_path=''):
     return file_path
 
 
-class VListPlayer(Gtk.Window):
+class VListPlayer(object):
 
     def __init__(self):
-
-        super().__init__()
 
         self.__thread_vlc_scan = True
         self.__rc_menu = None
@@ -125,7 +123,7 @@ class VListPlayer(Gtk.Window):
             Media Player
         """
         self.__current_media = CurrentMedia()
-        self.__mp_widget = MediaPlayerWidget(self)
+        self.__mp_widget = MediaPlayerWidget(self.window_root)
         self.box_episodes.pack_start(self.__mp_widget, True, True, 0)
         self.box_episodes.reorder_child(self.__mp_widget, 0)
         threading.Thread(target=self.__thread_scan_media_player).start()
@@ -151,7 +149,7 @@ class VListPlayer(Gtk.Window):
         # extra
 
         self.window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        self.window_root.connect('delete-event', self.quit_the_program)
+        self.window_root.connect('delete-event', self.quit)
 
         self.__ccp = CCParser(CONFIGURATION_FILE, 'vlist-player')
 
@@ -584,16 +582,9 @@ class VListPlayer(Gtk.Window):
 
             self.__episodes_populate_liststore(True)
 
-    def quit_the_program(self, *_):
-
-        if self.__mp_widget.get_property('visible'):
-            self.window_root.hide()
-            self.__mp_widget.die_on_quit()
-            return True
-        else:
-            self.__thread_vlc_scan = False
-            self.__mp_widget.stop_threads()
-            Gtk.main_quit()
+    def quit(self, *_):
+        self.__media_player_widget.quit()
+        Gtk.main_quit()
 
     def on_spinbutton_audio_value_changed(self, spinbutton):
         series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
@@ -1067,6 +1058,9 @@ class VListPlayer(Gtk.Window):
 
 
 if __name__ == '__main__':
+    GObject.threads_init()
+    Gdk.threads_init()
+
     _ = VListPlayer()
     Gtk.main()
     VLC_INSTANCE.release()
