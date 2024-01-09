@@ -40,5 +40,4 @@ else:
 
 FOLDER_LIST_PATH = os.path.join(HOME_PATH, ".local/share/vlist-player")
 CONFIGURATION_FILE = os.path.join(HOME_PATH,  ".config/vlist-player.ini")
-GLADE_FILE = os.path.join(SRC_DIR, "view/vlist-player.glade")
 SERIES_PATH = FOLDER_LIST_PATH + '''/{0}.csv'''

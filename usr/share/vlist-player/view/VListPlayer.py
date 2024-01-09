@@ -19,6 +19,8 @@
 import os
 import gi
 import sys
+import time
+import threading
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')
@@ -28,10 +30,11 @@ _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
 sys.path.insert(0, _PROJECT_DIR)
 
+from Paths import *
 from Texts import *
 from model import Series
 from model.CurrentMedia import CurrentMedia
-from view.MediaPlayer import *
+from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 from view.gtk_utils import *
 from controller.CCParser import CCParser
 from system_utils import open_directory, open_link
@@ -73,9 +76,11 @@ def gtk_file_chooser(parent, mode='', start_path=''):
     return file_path
 
 
-class VListPlayer(object):
+class VListPlayer(Gtk.Window):
 
     def __init__(self):
+
+        super().__init__()
 
         self.__thread_vlc_scan = True
         self.__rc_menu = None
@@ -84,7 +89,7 @@ class VListPlayer(object):
             load items from glade
         """
         builder = Gtk.Builder()
-        builder.add_from_file(GLADE_FILE)
+        builder.add_from_file(os.path.join(_SCRIPT_DIR, "vlist-player.glade"))
         builder.connect_signals(self)
 
         glade_objects_ids = (
@@ -120,8 +125,9 @@ class VListPlayer(object):
             Media Player
         """
         self.__current_media = CurrentMedia()
-        self.__media_player = MediaPlayer()
-        self.__media_player.set_icon_from_file(ICON_LOGO_SMALL)
+        self.__mp_widget = MediaPlayerWidget(self)
+        self.box_episodes.pack_start(self.__mp_widget, True, True, 0)
+        self.box_episodes.reorder_child(self.__mp_widget, 0)
         threading.Thread(target=self.__thread_scan_media_player).start()
 
         """
@@ -229,8 +235,8 @@ class VListPlayer(object):
 
             if self.__current_media.series is not None:
 
-                position = self.__media_player.get_position()
-                stopped_position = self.__media_player.get_stopped_position()
+                position = self.__mp_widget.get_position()
+                stopped_position = self.__mp_widget.get_stopped_position()
                 series = self.__current_media.series
 
                 # If the player was stopped
@@ -251,7 +257,7 @@ class VListPlayer(object):
 
                     if self.checkbutton_keep_playing.get_active():
                         if self.__current_media.video:
-                            self.__media_player.play_video(self.__current_media.video.get_path(),
+                            self.__mp_widget.play_video(self.__current_media.video.get_path(),
                                                            self.__current_media.video.get_position(),
                                                            series.get_subtitles_track(),
                                                            series.get_audio_track(),
@@ -260,17 +266,17 @@ class VListPlayer(object):
 
                         else:
                             Gdk.threads_enter()
-                            self.__media_player.hide()
+                            self.__mp_widget.hide()
                             Gdk.threads_leave()
                             Gdk.threads_enter()
                             gtk_info(self.window_root, TEXT_END_OF_SERIES)
                             Gdk.threads_leave()
                     else:
                         Gdk.threads_enter()
-                        self.__media_player.stop_position()
+                        self.__mp_widget.stop_position()
                         Gdk.threads_leave()
                         Gdk.threads_enter()
-                        self.__media_player.hide()
+                        self.__mp_widget.hide()
                         Gdk.threads_leave()
 
             time.sleep(0.5)
@@ -566,7 +572,7 @@ class VListPlayer(object):
 
     def __series_dont_ignore_episode(self, _):
 
-        (model, treepaths) = self.treeview_selection_episodes.get_selected_rows()
+        model, treepaths = self.treeview_selection_episodes.get_selected_rows()
 
         if not treepaths == []:
             selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
@@ -580,13 +586,13 @@ class VListPlayer(object):
 
     def quit_the_program(self, *_):
 
-        if self.__media_player.get_property('visible'):
+        if self.__mp_widget.get_property('visible'):
             self.window_root.hide()
-            self.__media_player.die_on_quit()
+            self.__mp_widget.die_on_quit()
             return True
         else:
             self.__thread_vlc_scan = False
-            self.__media_player.stop_threads()
+            self.__mp_widget.stop_threads()
             Gtk.main_quit()
 
     def on_spinbutton_audio_value_changed(self, spinbutton):
@@ -865,7 +871,7 @@ class VListPlayer(object):
             path = series.get_path_from_video_name(episode_name)
 
             if path and os.path.exists(path):
-                self.__media_player.play_video(path, 0, series.get_subtitles_track(), series.get_audio_track(),
+                self.__mp_widget.play_video(path, 0, series.get_subtitles_track(), series.get_audio_track(),
                                                series.get_start_at())
             else:
                 gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
@@ -979,27 +985,27 @@ class VListPlayer(object):
                 """
                 self.__ccp.write('current_series', selected_series_name)
 
-                if not self.__media_player.is_playing_or_paused() or self.__current_media.series.get_name() != selected_series_name:
+                if not self.__mp_widget.is_playing_or_paused() or self.__current_media.series.get_name() != selected_series_name:
                     self.__episode_update()
 
                     if not self.__current_media.video:
                         gtk_info(self.window_root, TEXT_END_OF_SERIES)
-                        self.__media_player.hide()
+                        self.__mp_widget.hide()
 
                     elif not os.path.exists(self.__current_media.video.get_path()):
                         gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
-                        self.__media_player.hide()
+                        self.__mp_widget.hide()
                     else:
-                        self.__media_player.play_video(self.__current_media.video.get_path(),
+                        self.__mp_widget.play_video(self.__current_media.video.get_path(),
                                                        self.__current_media.video.get_position(),
                                                        series.get_subtitles_track(),
                                                        series.get_audio_track(),
                                                        series.get_start_at(),
                                                        )
 
-                        self.__media_player.present()
+                        self.__mp_widget.present()
                 else:
-                    self.__media_player.present()
+                    self.__mp_widget.present()
 
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
@@ -1068,3 +1074,4 @@ class VListPlayer(object):
 if __name__ == '__main__':
     _ = VListPlayer()
     Gtk.main()
+    VLC_INSTANCE.release()
