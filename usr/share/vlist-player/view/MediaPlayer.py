@@ -93,10 +93,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__button_play_pause.connect('clicked', self.__on_button_play_pause_clicked)
         self.__button_play_pause.set_can_focus(False)
 
-        self.__button_stop = Gtk.ToolButton(Gtk.STOCK_MEDIA_STOP)
-        self.__button_stop.connect('clicked', self.__on_button_player_stop)
-        self.__button_stop.set_can_focus(False)
-
         self.__button_restart = Gtk.ToolButton(Gtk.STOCK_MEDIA_PREVIOUS)
         self.__button_restart.connect('clicked', self.__on_button_restart_the_video)
         self.__button_restart.set_can_focus(False)
@@ -107,7 +103,6 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__buttons_box.pack_start(self.__button_restart, True, True, 0)
         self.__buttons_box.pack_start(self.__button_play_pause, True, True, 0)
-        self.__buttons_box.pack_start(self.__button_stop, True, True, 0)
         self.__buttons_box.pack_start(self.__button_end_video, True, True, 0)
 
         self.add_overlay(self.__buttons_box)

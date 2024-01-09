@@ -268,13 +268,6 @@ class VLCWidget(Gtk.DrawingArea):
                             item.set_active(True)
                         submenu.append(item)
 
-                """
-                    Exit Button
-                """
-                menuitem = Gtk.ImageMenuItem("Exit")
-                menuitem.connect('activate', self.__on_button_close)
-                self.__menu.append(menuitem)
-
                 self.__menu.show_all()
                 self.__menu.popup(None, None, None, None, event.button, event.time)
                 return True
@@ -307,9 +300,6 @@ class VLCWidget(Gtk.DrawingArea):
             self.player.video_set_subtitle_file(path)
 
         return True
-
-    def __on_button_close(self, *_):
-        self.__window_root.quit()
 
     def fullscreen(self, *_):
         if Gdk.WindowState.FULLSCREEN & self.__window_root.get_window().get_state():
