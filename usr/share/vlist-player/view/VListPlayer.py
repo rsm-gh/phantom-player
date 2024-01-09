@@ -836,11 +836,6 @@ class VListPlayer(Gtk.Window):
         self.__ccp.write('hide-missing-series', self.checkbox_hide_missing_series.get_active())
         threading.Thread(target=self.__series_populate_liststore).start()
 
-    def on_window_root_button_press_event(self, _, event):
-        if event.type == Gdk.EventType._2BUTTON_PRESS:
-            if event.button == 3:  # right click
-                self.__episodes_hide_rc_menu()
-
     def on_cellrenderertoggle_play_toggled(self, _, row):
         self.on_checkbox_episodes_toggled(int(row), 4)
 

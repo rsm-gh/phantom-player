@@ -142,7 +142,6 @@ Author: Rafael Senties Martinelli
     <property name="title" translatable="yes">Video List Player</property>
     <property name="window-position">center</property>
     <property name="icon">img/movie-icon-small.png</property>
-    <signal name="button-press-event" handler="on_window_root_button_press_event" swapped="no"/>
     <child>
       <object class="GtkBox" id="box1">
         <property name="visible">True</property>
@@ -972,8 +971,7 @@ Author: Rafael Senties Martinelli
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="hexpand">True</property>
-                        <property name="label" translatable="yes">- Switch the modes "Full" and "Mini" by doing a double right-click on the root window.
-- Play a single video by doing a double left-lick on it.
+                        <property name="label" translatable="yes">- Play a single video by doing a double left-lick on it.
 - Play a series by double left-click on it or in the image.
 - If a right-click is done in a series or a video a menu will appear.</property>
                         <property name="xalign">0</property>
