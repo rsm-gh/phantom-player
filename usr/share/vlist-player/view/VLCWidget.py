@@ -136,9 +136,6 @@ class VLCWidget(Gtk.DrawingArea):
         self.add_events(Gdk.EventMask.SCROLL_MASK)
         self.connect('scroll_event', self.__on_mouse_scroll)
 
-        self.set_size_request(320, 200)
-
-
     def __handle_embed(self, *_):
 
         if sys.platform == 'win32':
