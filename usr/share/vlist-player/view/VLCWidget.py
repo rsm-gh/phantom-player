@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 #
 
+#
 #  Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli.
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -17,17 +18,19 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+#
+# Special thanks to the VideoLAN Team! This file was created by using as example the
+# gtk3 example/widget for VLC Python bindings by Olivier Aubert <contact@olivieraubert.net>
+#
+
+
 """
-    Special thanks to the VideoLAN Team! This file was created by using as example the
-    gtk3 example/widget for VLC Python bindings of Olivier Aubert <contact@olivieraubert.net>
-
     To do:
-        - I'm currently working on how to display the mouse when it moves over the VLCWidget.
-        - An option to set the audio output device.
+        - I'm searching how to set the audio output device.
 
-
-    Note: There is a problem, and to work, this script must be called as:
-        GDK_BACKEND=x11 python3 VLCWidget.py
+    Remarks:
+        - It seems to be a problem with the id of GTK windows, so to work, the script must be called as:
+            GDK_BACKEND=x11 python3 VLCWidget.py
 """
 
 import gi
@@ -114,14 +117,14 @@ def get_window_pointer(window):
 class VLCWidget(Gtk.DrawingArea):
     """ This class creates a vlc player built in a Gtk.DrawingArea """
 
-    def __init__(self, root_window=None):
+    def __init__(self, root_window=None, fullscreen_window=None):
 
         super().__init__()
-
-        self.__window_root = root_window
+        self.__root_window = root_window
         self.__vlc_widget_on_top = False
         self.__mouse_time = time()
         self.__volume_increment = 3  # %
+
 
         self.player = VLC_INSTANCE.media_player_new()
 
@@ -195,7 +198,7 @@ class VLCWidget(Gtk.DrawingArea):
 
                 # Full screen button
                 #
-                state = self.__window_root.get_window().get_state()
+                state = self.__root_window.get_window().get_state()
 
                 if Gdk.WindowState.FULLSCREEN & state:
                     menuitem = Gtk.ImageMenuItem("Un-Fullscreen")
@@ -273,7 +276,9 @@ class VLCWidget(Gtk.DrawingArea):
                 return True
 
     def __on_motion_notify_event(self, *_):
-        if self.__window_root.is_active():
+
+        print("MOTION IS CALLED")
+        if self.__root_window.is_active():
             self.__mouse_time = time()
 
     def __on_mouse_scroll(self, _, event):
@@ -294,7 +299,7 @@ class VLCWidget(Gtk.DrawingArea):
             Todo: read the result of player.video_set_subtitle_file(path) and display a message
             in case of problem.
         """
-        path = gtk_file_chooser(self.__window_root)
+        path = gtk_file_chooser(self.__root_window)
 
         if path is not None:
             self.player.video_set_subtitle_file(path)
@@ -302,10 +307,10 @@ class VLCWidget(Gtk.DrawingArea):
         return True
 
     def fullscreen(self, *_):
-        if Gdk.WindowState.FULLSCREEN & self.__window_root.get_window().get_state():
-            self.__window_root.unfullscreen()
+        if Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
+            self.__root_window.unfullscreen()
         else:
-            self.__window_root.fullscreen()
+            self.__root_window.fullscreen()
 
     def volume_up(self):
         actual_volume = self.player.audio_get_volume()

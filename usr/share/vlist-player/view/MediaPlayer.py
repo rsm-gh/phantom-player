@@ -17,19 +17,6 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-"""
-    Special thanks to the VideoLAN Team!
-
-    To do:
-        - I'm currently working on how to display the mouse when it moves over the VLCWidget.
-        - An option to set the audio output device.
-
-
-    Note: There is a problem, and to work, this script must be called as:
-
-    GDK_BACKEND=x11 python3 MediaPlayer.py
-"""
-
 import os
 import sys
 import gi
@@ -171,9 +158,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.hide()
 
     def __on_button_play_pause_clicked(self, *_):
-        #
-        # Update the icon of the "playing" button
-        #
         if not self.__vlc_widget.is_playing():
             self.__button_play_pause.set_stock_id('gtk-media-pause')
             self.__vlc_widget.player.play()
@@ -301,6 +285,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             """
                 Update the size of the widgets
             """
+
             if self.get_property('visible'):
                 width, height = self.__root_window.get_size()
 
