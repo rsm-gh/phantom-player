@@ -61,14 +61,12 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__height = 300
         self.__stopped_position = 0
         self.__update__scale_progress = True
-        self.__thread_player_activity_status = False
 
         self.__vlc_widget = VLCWidget(self.__root_window)
         self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
 
         self.__widgets_shown = True
         self.__motion_time = time()
-        self.__motion_thread = None
         self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         self.__vlc_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
@@ -96,7 +94,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__buttons_box.pack_start(self.__button_restart, True, True, 0)
         self.__buttons_box.pack_start(self.__button_play_pause, True, True, 0)
         self.__buttons_box.pack_start(self.__button_end_video, True, True, 0)
-
         self.add_overlay(self.__buttons_box)
 
         # Scales Box        
@@ -150,46 +147,45 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.connect('key-press-event', self.__on_key_pressed)
 
+
+
         """
             Init the threads
         """
-        threading.Thread(target=self.__thread_player_activity).start()
+        self.__thread_player_activity = threading.Thread(target=self.__on_thread_player_activity)
+        self.__thread_player_activity.start()
 
+        self.__thread_scan_motion = threading.Thread(target=self.__on_thread_scan_motion)
+        self.__thread_scan_motion.start()
 
     def __on_motion_notify_event(self, *_):
-
-        event_time = time()
-        self.__motion_time = event_time
+        self.__motion_time = time()
 
         if not self.__widgets_shown:
             self.__widgets_shown = True
+            #Gdk.threads_enter()
             self.__buttons_box.show()
             self.__scales_box.show()
             self.__label_volume2.show()
-
-        try: # try will be faster than "if is not None"
-            self.__motion_thread.stop()
-        except AttributeError:
-            pass
-
-        self.__motion_thread = threading.Thread(target=self.__on_thread_hide_widgets, args=[event_time])
-        self.__motion_thread.start()
+            #Gdk.threads_leave()
 
 
+    def __on_thread_scan_motion(self, *_):
 
-    def __on_thread_hide_widgets(self, motion_time):
+        current_thread = threading.current_thread()
 
-        sleep(3)
+        while getattr(current_thread, "do_run", True):
 
-        if motion_time != self.__motion_time:
-            return
+            time_delta = time() - self.__motion_time
 
-        self.__widgets_shown = False
+            if time_delta > 3 and self.__widgets_shown:
+                self.__widgets_shown = False
+                Gdk.threads_enter()
+                self.__buttons_box.hide()
+                self.__scales_box.hide()
+                Gdk.threads_leave()
 
-        Gdk.threads_enter()
-        self.__buttons_box.hide()
-        self.__scales_box.hide()
-        Gdk.threads_leave()
+            sleep(.5)
 
 
 
@@ -216,13 +212,14 @@ class MediaPlayerWidget(Gtk.Overlay):
         label.hide()
         Gdk.threads_leave()
 
-    def __thread_player_activity(self):
+    def __on_thread_player_activity(self):
         """
             This method scans the state of the player to update the tool buttons, volume, play-stop etc
         """
 
-        self.__thread_player_activity_status = True
-        while self.__thread_player_activity_status:
+        current_thread = threading.current_thread()
+
+        while getattr(current_thread, "do_run", True):
 
             sleep(0.2)
 
@@ -441,9 +438,18 @@ class MediaPlayerWidget(Gtk.Overlay):
         return False
 
     def quit(self):
+
         self.__vlc_widget.player.stop()
-        self.__thread_player_activity_status = False
+
+        self.__thread_scan_motion.do_run = False
+        self.__thread_player_activity.do_run = False
+
+        self.__thread_player_activity.join()
+        self.__thread_scan_motion.join()
+
         turn_off_screensaver(False)
+
+
 
     def get_stopped_position(self):
         return self.__stopped_position

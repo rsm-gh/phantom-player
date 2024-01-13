@@ -583,7 +583,7 @@ class VListPlayer(object):
             self.__episodes_populate_liststore(True)
 
     def quit(self, *_):
-        self.__media_player_widget.quit()
+        self.__mp_widget.quit()
         Gtk.main_quit()
 
     def on_spinbutton_audio_value_changed(self, spinbutton):
