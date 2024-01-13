@@ -20,8 +20,8 @@
 import os
 import sys
 import gi
-import time
 import threading
+from time import time, sleep
 from datetime import timedelta
 
 gi.require_version('Gtk', '3.0')
@@ -62,10 +62,15 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__stopped_position = 0
         self.__update__scale_progress = True
         self.__thread_player_activity_status = False
-        self.__thread_mouse_motion_status = False
 
         self.__vlc_widget = VLCWidget(self.__root_window)
         self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
+
+        self.__widgets_shown = True
+        self.__motion_time = time()
+        self.__motion_thread = None
+        self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
+        self.__vlc_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
 
         self.add(self.__vlc_widget)
@@ -148,8 +153,45 @@ class MediaPlayerWidget(Gtk.Overlay):
         """
             Init the threads
         """
-        threading.Thread(target=self.__thread_mouse_motion).start()
         threading.Thread(target=self.__thread_player_activity).start()
+
+
+    def __on_motion_notify_event(self, *_):
+
+        event_time = time()
+        self.__motion_time = event_time
+
+        if not self.__widgets_shown:
+            self.__widgets_shown = True
+            self.__buttons_box.show()
+            self.__scales_box.show()
+            self.__label_volume2.show()
+
+        try: # try will be faster than "if is not None"
+            self.__motion_thread.stop()
+        except AttributeError:
+            pass
+
+        self.__motion_thread = threading.Thread(target=self.__on_thread_hide_widgets, args=[event_time])
+        self.__motion_thread.start()
+
+
+
+    def __on_thread_hide_widgets(self, motion_time):
+
+        sleep(3)
+
+        if motion_time != self.__motion_time:
+            return
+
+        self.__widgets_shown = False
+
+        Gdk.threads_enter()
+        self.__buttons_box.hide()
+        self.__scales_box.hide()
+        Gdk.threads_leave()
+
+
 
     def __on_button_player_stop(self, *_):
         self.__stopped_position = self.__vlc_widget.player.get_position()
@@ -169,37 +211,10 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     @staticmethod
     def __thread_hide_label(label):
-        time.sleep(1.5)
+        sleep(1.5)
         Gdk.threads_enter()
         label.hide()
         Gdk.threads_leave()
-
-    def __thread_mouse_motion(self):
-        #
-        #   Hide or display the toolboxes
-        #
-        self.__thread_mouse_motion_status = True
-        state = '?'
-
-        while self.__thread_mouse_motion_status:
-
-            movement_time = time.time() - self.__vlc_widget.get_mouse_time()
-
-            if state != 'hidden' and movement_time >= 3:
-                state = 'hidden'
-                Gdk.threads_enter()
-                self.__buttons_box.hide()
-                self.__scales_box.hide()
-                Gdk.threads_leave()
-            elif state != 'shown' and movement_time < 3:
-                state = 'shown'
-                Gdk.threads_enter()
-                self.__buttons_box.show()
-                self.__scales_box.show()
-                self.__label_volume2.show()
-                Gdk.threads_leave()
-
-            time.sleep(0.3)
 
     def __thread_player_activity(self):
         """
@@ -209,7 +224,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__thread_player_activity_status = True
         while self.__thread_player_activity_status:
 
-            time.sleep(0.2)
+            sleep(0.2)
 
             vlc_is_playing = self.__vlc_widget.is_playing()
             vlc_volume = self.__vlc_widget.player.audio_get_volume()
@@ -334,7 +349,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         # display the toolbox if the arrows are shown
         if key == arrow_left or key == arrow_right:
-            self.__vlc_widget._mouse_time = time.time()
+            self.__motion_time = time()
 
         if key == esc_key:
             self.unfullscreen()
@@ -376,7 +391,7 @@ class MediaPlayerWidget(Gtk.Overlay):
     @staticmethod
     def __delayed_method(delay, method, arg=None):
 
-        time.sleep(delay)
+        sleep(delay)
 
         Gdk.threads_enter()
         if arg is None:
@@ -428,7 +443,6 @@ class MediaPlayerWidget(Gtk.Overlay):
     def quit(self):
         self.__vlc_widget.player.stop()
         self.__thread_player_activity_status = False
-        self.__thread_mouse_motion_status = False
         turn_off_screensaver(False)
 
     def get_stopped_position(self):

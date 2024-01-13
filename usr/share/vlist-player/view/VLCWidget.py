@@ -37,7 +37,6 @@ import gi
 import os
 import sys
 import ctypes
-from time import time
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
@@ -122,7 +121,6 @@ class VLCWidget(Gtk.DrawingArea):
         super().__init__()
         self.__root_window = root_window
         self.__vlc_widget_on_top = False
-        self.__mouse_time = time()
         self.__volume_increment = 3  # %
 
 
@@ -132,9 +130,6 @@ class VLCWidget(Gtk.DrawingArea):
 
         self.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.connect('button-press-event', self.__on_mouse_button_press)
-
-        self.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
-        self.connect('motion_notify_event', self.__on_motion_notify_event)
 
         self.add_events(Gdk.EventMask.SCROLL_MASK)
         self.connect('scroll_event', self.__on_mouse_scroll)
@@ -275,12 +270,6 @@ class VLCWidget(Gtk.DrawingArea):
                 self.__menu.popup(None, None, None, None, event.button, event.time)
                 return True
 
-    def __on_motion_notify_event(self, *_):
-
-        print("MOTION IS CALLED")
-        if self.__root_window.is_active():
-            self.__mouse_time = time()
-
     def __on_mouse_scroll(self, _, event):
         if event.direction == Gdk.ScrollDirection.UP:
             self.volume_up()
@@ -290,9 +279,6 @@ class VLCWidget(Gtk.DrawingArea):
 
     def set_on_top(self, value):
         self.__vlc_widget_on_top = value
-
-    def get_mouse_time(self):
-        return self.__mouse_time
 
     def set_subtitles_from_file(self, *_):
         """
