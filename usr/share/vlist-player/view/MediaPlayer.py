@@ -20,9 +20,9 @@
 import os
 import sys
 import gi
-import threading
 from time import time, sleep
 from datetime import timedelta
+from threading import Thread, current_thread
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0')
@@ -33,8 +33,9 @@ _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
 sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
-from system_utils import turn_off_screensaver, get_active_window_title
+from controller import vlc
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
+from system_utils import turn_off_screensaver, get_active_window_title
 
 
 def format_milliseconds_to_time(number):
@@ -49,7 +50,57 @@ def format_milliseconds_to_time(number):
 
     return time_string
 
+
+def format_track(track):
+    """ Format the tracks provided by pyVLC. Track must be a tuple (int, string)"""
+
+    number = str(track[0])
+
+    try:
+        content = track[1].strip().replace('[', '').replace(']', '').replace('_', ' ').title()
+    except Exception as e:
+        content = track[1]
+        print(str(e))
+
+    if len(number) == 0:
+        numb = '  '
+    elif len(number) == 1:
+        numb = ' {}'.format(number)
+    else:
+        numb = str(number)
+
+    return ' {}   {}'.format(numb, content)
+
+
+def gtk_file_chooser(parent, start_path=''):
+    window_choose_file = Gtk.FileChooserDialog('Video List Player',
+                                               parent,
+                                               Gtk.FileChooserAction.OPEN,
+                                               (Gtk.STOCK_CANCEL,
+                                                Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN,
+                                                Gtk.ResponseType.OK))
+
+    window_choose_file.set_default_response(Gtk.ResponseType.NONE)
+    window_choose_file.set_icon_from_file(ICON_LOGO_SMALL)
+    window_choose_file.set_transient_for(parent)
+
+    if start_path == '':
+        window_choose_file.set_current_folder(HOME_PATH)
+    else:
+        window_choose_file.set_current_folder(start_path)
+
+    response = window_choose_file.run()
+    if response == Gtk.ResponseType.OK:
+        file_path = window_choose_file.get_filename()
+    else:
+        file_path = None
+
+    window_choose_file.destroy()
+    return file_path
+
+
 class MediaPlayerWidget(Gtk.Overlay):
+    __gtype_name__ = 'MediaPlayerWidget'
 
     def __init__(self, root_window):
 
@@ -57,6 +108,8 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__root_window = root_window
 
+        self.__vlc_widget_on_top = False
+        self.__volume_increment = 3  # %
         self.__width = 600
         self.__height = 300
         self.__stopped_position = 0
@@ -67,9 +120,15 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__widgets_shown = True
         self.__motion_time = time()
+
         self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         self.__vlc_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
+        self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
+
+        self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
+        self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
 
         self.add(self.__vlc_widget)
 
@@ -147,34 +206,165 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.connect('key-press-event', self.__on_key_pressed)
 
-
-
         """
             Init the threads
         """
-        self.__thread_player_activity = threading.Thread(target=self.__on_thread_player_activity)
+        self.__thread_player_activity = Thread(target=self.__on_thread_player_activity)
         self.__thread_player_activity.start()
 
-        self.__thread_scan_motion = threading.Thread(target=self.__on_thread_scan_motion)
+        self.__thread_scan_motion = Thread(target=self.__on_thread_scan_motion)
         self.__thread_scan_motion.start()
 
-    def __on_motion_notify_event(self, *_):
-        self.__motion_time = time()
+    def is_playing_or_paused(self):
+        if self.is_playing() or self.is_paused():
+            return True
 
-        if not self.__widgets_shown:
-            self.__widgets_shown = True
-            #Gdk.threads_enter()
-            self.__buttons_box.show()
-            self.__scales_box.show()
-            self.__label_volume2.show()
-            #Gdk.threads_leave()
+        return False
 
+    def get_stopped_position(self):
+        return self.__stopped_position
+
+    def stop(self):
+        self.__vlc_widget.player.stop()
+
+    def get_position(self):
+        return self.__vlc_widget.player.get_position()
+
+    def get_state(self):
+        return self.__vlc_widget.player.get_state()
+
+    def is_playing(self):
+        if self.get_state() == vlc.State.Playing:
+            return True
+
+        return False
+
+    def is_paused(self):
+        if self.get_state() == vlc.State.Paused:
+            return True
+
+        return False
+
+    def fullscreen(self, *_):
+        if Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
+            self.__root_window.unfullscreen()
+        else:
+            self.__root_window.fullscreen()
+
+    def volume_up(self):
+        actual_volume = self.__vlc_widget.player.audio_get_volume()
+        if actual_volume + self.__volume_increment <= 100:
+            self.__vlc_widget.player.audio_set_volume(actual_volume + self.__volume_increment)
+        else:
+            self.__vlc_widget.player.audio_set_volume(100)
+
+    def volume_down(self):
+        actual_volume = self.__vlc_widget.player.audio_get_volume()
+        if actual_volume >= self.__volume_increment:
+            self.__vlc_widget.player.audio_set_volume(actual_volume - self.__volume_increment)
+        else:
+            self.__vlc_widget.player.audio_set_volume(0)
+
+    def set_subtitles_from_file(self, *_):
+        """
+            Todo: read the result of player.video_set_subtitle_file(path) and display a message
+            in case of problem.
+        """
+        path = gtk_file_chooser(self.__root_window)
+
+        if path is not None:
+            self.__vlc_widget.player.video_set_subtitle_file(path)
+
+        return True
+
+    def play_video(self, file_path, position=0, subtitles_track=-2, audio_track=-2, start_at=0.0, thread=False):
+
+        if os.path.exists(file_path):
+
+            self.__stopped_position = position
+
+            media = VLC_INSTANCE.media_new(file_path)
+            media.parse()
+
+            turn_off_screensaver(True)
+
+            if thread:
+                Gdk.threads_enter()
+                self.__vlc_widget.player.set_media(media)
+                Gdk.threads_leave()
+
+                Gdk.threads_enter()
+                self.__root_window.set_title(media.get_meta(0))
+                Gdk.threads_leave()
+
+                Gdk.threads_enter()
+                self.__vlc_widget.player.play()
+                Gdk.threads_leave()
+
+                if not self.get_property('visible'):
+                    Gdk.threads_enter()
+                    self.show_all()
+                    Gdk.threads_leave()
+            else:
+                self.__vlc_widget.player.set_media(media)
+                self.__root_window.set_title(media.get_meta(0))
+                self.__vlc_widget.player.play()
+                if not self.get_property('visible'):
+                    self.show_all()
+
+            Thread(target=self.__start_video_at, args=[position, start_at]).start()
+
+            if subtitles_track == -1 or subtitles_track >= 0:
+                Thread(target=self.__delayed_method, args=[0.05,
+                                                           self.__vlc_widget.player.video_set_spu,
+                                                           subtitles_track]
+                       ).start()
+
+            if audio_track > -2:
+                Thread(target=self.__delayed_method, args=[0.05,
+                                                           self.__vlc_widget.player.audio_set_track,
+                                                           audio_track]
+                       ).start()
+
+    def quit(self):
+
+        self.__vlc_widget.player.stop()
+
+        self.__thread_scan_motion.do_run = False
+        self.__thread_player_activity.do_run = False
+
+        # self.__thread_player_activity.join()
+        # self.__thread_scan_motion.join()
+
+        turn_off_screensaver(False)
+
+    @staticmethod
+    def __thread_hide_label(label):
+        sleep(1.5)
+        Gdk.threads_enter()
+        label.hide()
+        Gdk.threads_leave()
+
+    def __scale_volume_changed(self, _, value):
+        value = int(value * 100)
+
+        self.__label_volume2.set_markup(
+            '<span font="{1}" color="white"> Vol: {0}% </span>'.format(value, self.__height / 30.0))
+        if self.__vlc_widget.player.audio_get_volume() != value:
+            self.__vlc_widget.player.audio_set_volume(value)
+
+    def __scale_button_press(self, *_):
+        self.__update__scale_progress = False
+
+    def __scale_button_release(self, *_):
+        self.__vlc_widget.player.set_position(self.__scale_progress.get_value())
+        self.__update__scale_progress = True
 
     def __on_thread_scan_motion(self, *_):
 
-        current_thread = threading.current_thread()
+        this_thread = current_thread()
 
-        while getattr(current_thread, "do_run", True):
+        while getattr(this_thread, "do_run", True):
 
             time_delta = time() - self.__motion_time
 
@@ -187,7 +377,19 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             sleep(.5)
 
+    def __on_menu_video_subs_audio(self, _, player_type, track):
+        """
+            Todo: self.__vlc_widget.player.XXX_set_track returns a status.
+            It would be good to read the status and display a message in case of problem.
+        """
+        if player_type == 0:
+            self.__vlc_widget.player.audio_set_track(track)
 
+        elif player_type == 1:
+            self.__vlc_widget.player.video_set_track(track)
+
+        elif player_type == 2:
+            self.__vlc_widget.player.video_set_spu(track)
 
     def __on_button_player_stop(self, *_):
         self.__stopped_position = self.__vlc_widget.player.get_position()
@@ -196,7 +398,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.hide()
 
     def __on_button_play_pause_clicked(self, *_):
-        if not self.__vlc_widget.is_playing():
+        if not self.is_playing():
             self.__button_play_pause.set_stock_id('gtk-media-pause')
             self.__vlc_widget.player.play()
             turn_off_screensaver(True)
@@ -205,25 +407,16 @@ class MediaPlayerWidget(Gtk.Overlay):
             self.__vlc_widget.player.pause()
             turn_off_screensaver(False)
 
-    @staticmethod
-    def __thread_hide_label(label):
-        sleep(1.5)
-        Gdk.threads_enter()
-        label.hide()
-        Gdk.threads_leave()
-
     def __on_thread_player_activity(self):
         """
             This method scans the state of the player to update the tool buttons, volume, play-stop etc
         """
 
-        current_thread = threading.current_thread()
+        this_thread = current_thread()
 
-        while getattr(current_thread, "do_run", True):
+        while getattr(this_thread, "do_run", True):
 
-            sleep(0.2)
-
-            vlc_is_playing = self.__vlc_widget.is_playing()
+            vlc_is_playing = self.is_playing()
             vlc_volume = self.__vlc_widget.player.audio_get_volume()
             vlc_position = self.__vlc_widget.player.get_position()
             scale_volume_value = int(self.__scale_volume.get_value() * 100)
@@ -259,7 +452,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
 
             elif not self.__scales_box.get_property('visible') and self.__label_volume2.get_property('visible'):
-                threading.Thread(target=self.__thread_hide_label, args=[self.__label_volume2]).start()
+                Thread(target=self.__thread_hide_label, args=[self.__label_volume2]).start()
 
             """
                 Update the progress scale
@@ -272,7 +465,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             """
                 Verify if the window is on top
             """
-            self.__vlc_widget.set_on_top(get_active_window_title() == self.__root_window.get_title())
+            self.__vlc_widget_on_top = get_active_window_title() == self.__root_window.get_title()
 
             """
                 Update the time of the player
@@ -332,11 +525,13 @@ class MediaPlayerWidget(Gtk.Overlay):
                 if vlc_is_playing:
                     self.__vlc_widget.player.stop()
 
+            sleep(0.2)
+
     def __on_key_pressed(self, _, ev):
         esc_key = 65307
         f11_key = 65480
         space_bar = 32
-        #enter_key = 65293
+        # enter_key = 65293
         arrow_up = 65362
         arrow_down = 65364
         arrow_right = 65363
@@ -363,27 +558,125 @@ class MediaPlayerWidget(Gtk.Overlay):
         elif key == arrow_down:
             self.__vlc_widget.volume_down()
 
-    def __scale_volume_changed(self, _, value):
-        value = int(value * 100)
-
-        self.__label_volume2.set_markup(
-            '<span font="{1}" color="white"> Vol: {0}% </span>'.format(value, self.__height / 30.0))
-        if self.__vlc_widget.player.audio_get_volume() != value:
-            self.__vlc_widget.player.audio_set_volume(value)
-
-    def __scale_button_press(self, *_):
-        self.__update__scale_progress = False
-
-    def __scale_button_release(self, *_):
-        self.__vlc_widget.player.set_position(self.__scale_progress.get_value())
-        self.__update__scale_progress = True
-
     def __on_button_restart_the_video(self, *_):
         self.__vlc_widget.player.set_position(0)
 
     def __on_button_end_the_video(self, *_):
         self.__vlc_widget.player.set_position(1)
         self.__stopped_position = 0
+
+    def __on_motion_notify_event(self, *_):
+        self.__motion_time = time()
+
+        if not self.__widgets_shown:
+            self.__widgets_shown = True
+            # Gdk.threads_enter()
+            self.__buttons_box.show()
+            self.__scales_box.show()
+            self.__label_volume2.show()
+            # Gdk.threads_leave()
+
+    def __on_mouse_button_press(self, _, event):
+
+        if event.type == Gdk.EventType._2BUTTON_PRESS:
+            if event.button == 1:  # left click
+                self.fullscreen()
+
+        elif event.type == Gdk.EventType.BUTTON_PRESS:
+
+            if event.button == 1:  # left click
+
+                if self.__vlc_widget_on_top and self.is_playing():
+                    self.__vlc_widget.player.pause()
+                    turn_off_screensaver(False)
+                else:
+                    self.__vlc_widget.player.play()
+                    turn_off_screensaver(True)
+
+            elif event.button == 3:  # right click
+                """
+                    Audio, Sound and Subtitles Menu
+                """
+                self.__menu = Gtk.Menu()
+
+                # Full screen button
+                #
+                state = self.__root_window.get_window().get_state()
+
+                if Gdk.WindowState.FULLSCREEN & state:
+                    menuitem = Gtk.ImageMenuItem("Un-Fullscreen")
+                else:
+                    menuitem = Gtk.ImageMenuItem("Fullscreen")
+                menuitem.connect('activate', self.fullscreen)
+                self.__menu.append(menuitem)
+
+                """
+                    Audio Menu
+                """
+                menuitem = Gtk.ImageMenuItem("Audio")
+                self.__menu.append(menuitem)
+                submenu = Gtk.Menu()
+                menuitem.set_submenu(submenu)
+
+                selected_track = self.__vlc_widget.player.audio_get_track()
+
+                item = Gtk.CheckMenuItem("-1  Disable")
+                item.connect('activate', self.__on_menu_video_subs_audio, 0, -1)
+                if selected_track == -1:
+                    item.set_active(True)
+
+                submenu.append(item)
+
+                try:
+                    tracks = [(audio[0], audio[1].decode('utf-8')) for audio in
+                              self.__vlc_widget.player.audio_get_track_description()]
+                except Exception as e:
+                    tracks = self.__vlc_widget.player.audio_get_track_description()
+                    print(str(e))
+
+                for track in tracks:
+                    if 'Disable' not in track:
+                        item = Gtk.CheckMenuItem(format_track(track))
+                        item.connect('activate', self.__on_menu_video_subs_audio, 0, track[0])
+                        if selected_track == track[0]:
+                            item.set_active(True)
+                        submenu.append(item)
+
+                """
+                    Subtitles
+                """
+                menuitem = Gtk.ImageMenuItem("Subtitles")
+                self.__menu.append(menuitem)
+                submenu = Gtk.Menu()
+                menuitem.set_submenu(submenu)
+
+                selected_track = self.__vlc_widget.player.video_get_spu()
+
+                item = Gtk.CheckMenuItem("-1  Disable")
+                item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
+                if selected_track == -1:
+                    item.set_active(True)
+
+                submenu.append(item)
+
+                try:
+                    tracks = [(video_spu[0], video_spu[1].decode('utf-8')) for video_spu in
+                              self.__vlc_widget.player.video_get_spu_description()]
+                except Exception as e:
+                    tracks = self.__vlc_widget.player.video_get_spu_description()
+                    print(str(e))
+
+                for track in tracks:
+                    if 'Disable' not in track:
+                        item = Gtk.CheckMenuItem(format_track(track))
+                        item.connect('activate', self.__on_menu_video_subs_audio, 2, track[0])
+                        if selected_track == track[0]:
+                            item.set_active(True)
+                        submenu.append(item)
+
+                self.__menu.show_all()
+                self.__menu.popup(None, None, None, None, event.button, event.time)
+                return True
 
     @staticmethod
     def __delayed_method(delay, method, arg=None):
@@ -431,93 +724,18 @@ class MediaPlayerWidget(Gtk.Overlay):
             self.__vlc_widget.player.set_position(start_time)
             Gdk.threads_leave()
 
-    def is_playing_or_paused(self):
-        if self.__vlc_widget.is_playing() or self.__vlc_widget.is_paused():
-            return True
+    def __on_mouse_scroll(self, _, event):
+        if event.direction == Gdk.ScrollDirection.UP:
+            self.volume_up()
 
-        return False
-
-    def quit(self):
-
-        self.__vlc_widget.player.stop()
-
-        self.__thread_scan_motion.do_run = False
-        self.__thread_player_activity.do_run = False
-
-        self.__thread_player_activity.join()
-        self.__thread_scan_motion.join()
-
-        turn_off_screensaver(False)
-
-
-
-    def get_stopped_position(self):
-        return self.__stopped_position
-
-    def stop_position(self):
-        self.__vlc_widget.player.stop()
-
-    def get_position(self):
-        return self.__vlc_widget.player.get_position()
-
-    def get_state(self):
-        return self.__vlc_widget.player.get_state()
-
-    def play_video(self, file_path, position=0, subtitles_track=-2, audio_track=-2, start_at=0.0, thread=False):
-
-        if os.path.exists(file_path):
-
-            self.__stopped_position = position
-
-            media = VLC_INSTANCE.media_new(file_path)
-            media.parse()
-
-            turn_off_screensaver(True)
-
-            if thread:
-                Gdk.threads_enter()
-                self.__vlc_widget.player.set_media(media)
-                Gdk.threads_leave()
-
-                Gdk.threads_enter()
-                self.__root_window.set_title(media.get_meta(0))
-                Gdk.threads_leave()
-
-                Gdk.threads_enter()
-                self.__vlc_widget.player.play()
-                Gdk.threads_leave()
-
-                if not self.get_property('visible'):
-                    Gdk.threads_enter()
-                    self.show_all()
-                    Gdk.threads_leave()
-            else:
-                self.__vlc_widget.player.set_media(media)
-                self.__root_window.set_title(media.get_meta(0))
-                self.__vlc_widget.player.play()
-                if not self.get_property('visible'):
-                    self.show_all()
-
-            threading.Thread(target=self.__start_video_at, args=[position, start_at]).start()
-
-            if subtitles_track == -1 or subtitles_track >= 0:
-                threading.Thread(target=self.__delayed_method, args=[0.05,
-                                                                     self.__vlc_widget.player.video_set_spu,
-                                                                     subtitles_track]
-                                 ).start()
-
-            if audio_track > -2:
-                threading.Thread(target=self.__delayed_method, args=[0.05,
-                                                                     self.__vlc_widget.player.audio_set_track,
-                                                                     audio_track]
-                                 ).start()
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            self.volume_down()
 
 
 class MediaPlayer(Gtk.Window):
     """ This class creates a media player built in a Gtk.Window """
 
     def __init__(self):
-
         super().__init__()
 
         self.__media_player_widget = MediaPlayerWidget(self)
@@ -537,7 +755,6 @@ class MediaPlayer(Gtk.Window):
 
 
 if __name__ == '__main__':
-
     GObject.threads_init()
     Gdk.threads_init()
 

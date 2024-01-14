@@ -271,7 +271,7 @@ class VListPlayer(object):
                             Gdk.threads_leave()
                     else:
                         Gdk.threads_enter()
-                        self.__mp_widget.stop_position()
+                        self.__mp_widget.stop()
                         Gdk.threads_leave()
                         Gdk.threads_enter()
                         self.__mp_widget.hide()
