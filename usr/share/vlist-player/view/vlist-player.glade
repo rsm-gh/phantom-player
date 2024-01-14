@@ -596,7 +596,9 @@ Author: Rafael Senties Martinelli
                             <signal name="button-press-event" handler="on_treeview_episodes_press_event" swapped="no"/>
                             <signal name="drag-end" handler="on_treeview_episodes_drag_end" swapped="no"/>
                             <child internal-child="selection">
-                              <object class="GtkTreeSelection" id="treeview_selection_episodes"/>
+                              <object class="GtkTreeSelection" id="treeview_selection_episodes">
+                                <property name="mode">multiple</property>
+                              </object>
                             </child>
                             <child>
                               <object class="GtkTreeViewColumn" id="column_number">
