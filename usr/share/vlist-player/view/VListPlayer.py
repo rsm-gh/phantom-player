@@ -32,7 +32,7 @@ sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
 from Texts import *
-from model import Series
+from model.Series import Series
 from model.CurrentMedia import CurrentMedia
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 from view.gtk_utils import *
@@ -84,6 +84,7 @@ class VListPlayer(object):
 
         self.__is_full_screen = None
 
+        self.__series_dict = {}
         self.__threads = []
 
         """
@@ -174,21 +175,18 @@ class VListPlayer(object):
         if not self.__ccp.get_bool_defval('fullmode', False):
             self.__episodes_hide_rc_menu(False)
 
-
         """
             Load the existent lists
         """
-        th=Thread(target=self.__series_load_data)
+        th = Thread(target=self.__series_load_data)
         th.start()
         self.__threads.append(th)
-
 
         """
             Display the window
         """
         self.window_root.show_all()
         self.__mp_widget.hide_controls()
-
 
     def __on_configure_event(self, *_):
 
@@ -211,7 +209,6 @@ class VListPlayer(object):
                 self.box_episodes.show()
                 self.__mp_widget.set_margin_end(15)
 
-
     def __series_load_data(self):
         """
             Load the saved lists
@@ -227,16 +224,16 @@ class VListPlayer(object):
                 series_info = f.readline().split('|')
 
             if len(series_info) < 7:
-                print("Error, Wrong format for series file = ", file_path)
+                print("Error, Wrong format for series file = ", file_path) #todo: show user message
                 continue
 
             path = series_info[0]
             recursive = series_info[1]
             random = series_info[2]
             keep_playing = series_info[3]
-            start_at = series_info[4]
-            audio_track = series_info[5]
-            subtitles_track = series_info[6]
+            start_at = float(series_info[4])
+            audio_track = int(series_info[5])
+            subtitles_track = int(series_info[6])
 
             if '/' in path:
                 self.__series_load_from_path(path,
@@ -326,7 +323,7 @@ class VListPlayer(object):
         if self.treeview_selection_episodes.count_selected_rows() >= 0:
 
             selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-            series = Series.series_dictionary[selected_series_name]
+            series = self.__series_dict[selected_series_name]
 
             #
             #    Update the series area
@@ -425,18 +422,17 @@ class VListPlayer(object):
 
     def __episode_open_dir(self, _, video_name):
 
-        series = Series.series_dictionary[
-            gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
-        path = series.get_path_from_video_name(video_name)
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_data = self.__series_dict[selected_series_name]
+        path = series_data.get_path_from_video_name(video_name)
 
         if os.path.exists(path):
             open_directory(path)
 
-
     def __current_media_update_series(self):
 
-        series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series_data = Series.series_dictionary[series_name]
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_data = self.__series_dict[selected_series_name]
 
         self.__current_media.series = series_data
 
@@ -453,7 +449,8 @@ class VListPlayer(object):
 
         self.__current_media.random = self.checkbutton_random.get_active()
 
-    def __series_load_from_path(self, path,
+    def __series_load_from_path(self,
+                                path,
                                 data_path,
                                 recursive,
                                 random,
@@ -462,14 +459,16 @@ class VListPlayer(object):
                                 audio_track=-2,
                                 subtitles_track=-2):
 
-        new_series = Series.Serie(path,
-                                  data_path,
-                                  recursive,
-                                  random,
-                                  keep_playing,
-                                  start_at,
-                                  audio_track,
-                                  subtitles_track)
+        new_series = Series(path,
+                            data_path,
+                            recursive,
+                            random,
+                            keep_playing,
+                            start_at,
+                            audio_track,
+                            subtitles_track)
+
+        self.__series_dict[new_series.get_name()] = new_series
 
         if os.path.exists(new_series.get_path()) or not self.checkbox_hide_missing_series.get_active():
             Gdk.threads_enter()
@@ -482,7 +481,6 @@ class VListPlayer(object):
                 Gdk.threads_enter()
                 self.treeview_series.set_cursor(i)
                 Gdk.threads_leave()
-
                 break
 
     def __series_populate_liststore(self):
@@ -493,8 +491,8 @@ class VListPlayer(object):
         self.liststore_series.clear()
         Gdk.threads_leave()
 
-        for name in sorted(Series.series_dictionary.keys()):
-            series = Series.series_dictionary[name]
+        for name in sorted(self.__series_dict.keys()):
+            series = self.__series_dict[name]
 
             if os.path.exists(series.get_path()) or not self.checkbox_hide_missing_series.get_active():
                 Gdk.threads_enter()
@@ -522,13 +520,13 @@ class VListPlayer(object):
         Gdk.threads_leave()
 
     def __series_open(self, _):
-        series = Series.series_dictionary[
+        series = self.__series_dict[
             gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
         open_directory(series.get_path())
 
     def __series_find_videos(self, _, video_names):
 
-        series = Series.series_dictionary[
+        series = self.__series_dict[
             gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
 
         path = gtk_file_chooser(self.window_root)
@@ -553,7 +551,7 @@ class VListPlayer(object):
         """
         file = gtk_file_chooser(self.window_root, 'picture')
         if file is not None:
-            series = Series.series_dictionary[
+            series = self.__series_dict[
                 gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
 
             series.set_image(file)
@@ -565,7 +563,7 @@ class VListPlayer(object):
         path = gtk_folder_chooser(self.window_root)
 
         if path:
-            series = Series.series_dictionary[
+            series = self.__series_dict[
                 gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
 
             series.find_series(path)
@@ -577,7 +575,7 @@ class VListPlayer(object):
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
 
         if gtk_dialog_question(self.window_root, TEXT_RESET_SERIES.format(selected_series_name), None):
-            series = Series.series_dictionary[selected_series_name]
+            series = self.__series_dict[selected_series_name]
             series.reset_data()
             self.__episodes_populate_liststore(True)
 
@@ -597,7 +595,7 @@ class VListPlayer(object):
 
         if gtk_dialog_question(self.window_root, TEXT_DELETE_SERIES.format(selected_series_name), None):
 
-            Series.series_dictionary.pop(selected_series_name)
+            self.__series_dict.pop(selected_series_name)
 
             gtk_remove_first_selected_row_from_liststore(self.treeview_selection_series)
 
@@ -610,7 +608,7 @@ class VListPlayer(object):
 
         if not treepaths == []:
             selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-            series = Series.series_dictionary[selected_series_name]
+            series = self.__series_dict[selected_series_name]
 
             for treepath in treepaths:
                 episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepath, 1, 2)
@@ -624,7 +622,7 @@ class VListPlayer(object):
 
         if not treepaths == []:
             selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-            series = Series.series_dictionary[selected_series_name]
+            series = self.__series_dict[selected_series_name]
 
             for treepath in treepaths:
                 episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepath, 1, 2)
@@ -644,7 +642,6 @@ class VListPlayer(object):
         self.__thread_scan_media_player.join()
         self.__mp_widget.join()
 
-
     def on_spinbutton_audio_value_changed(self, spinbutton):
         series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
 
@@ -653,7 +650,7 @@ class VListPlayer(object):
 
         value = spinbutton.get_value_as_int()
 
-        Series.series_dictionary[series_name].set_audio_track(value)
+        self.__series_dict[series_name].set_audio_track(value)
 
     def on_spinbutton_subtitles_value_changed(self, spinbutton):
 
@@ -664,7 +661,7 @@ class VListPlayer(object):
 
         value = spinbutton.get_value_as_int()
 
-        Series.series_dictionary[series_name].set_subtitles_track(value)
+        self.__series_dict[series_name].set_subtitles_track(value)
 
     def on_spinbutton_start_at_value_changed(self, spinbutton):
 
@@ -682,7 +679,7 @@ class VListPlayer(object):
             minutes += 1
             spinbutton.set_value(minutes + 0.00)
 
-        Series.series_dictionary[series_name].set_start_at(value)
+        self.__series_dict[series_name].set_start_at(value)
 
     def on_checkbutton_random_toggled(self, radiobutton, *_):
         series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
@@ -691,7 +688,7 @@ class VListPlayer(object):
             return
 
         radiobutton_state = radiobutton.get_active()
-        Series.series_dictionary[series_name].set_random(radiobutton_state)
+        self.__series_dict[series_name].set_random(radiobutton_state)
         self.__episodes_populate_liststore(False)
 
     def on_checkbutton_keep_playing_toggled(self, radiobutton, *_):
@@ -701,7 +698,7 @@ class VListPlayer(object):
             return
 
         radiobutton_state = radiobutton.get_active()
-        Series.series_dictionary[series_name].set_keep_playing(radiobutton_state)
+        self.__series_dict[series_name].set_keep_playing(radiobutton_state)
 
     def on_checkbox_hide_number_toggled(self, *_):
         state = self.checkbox_hide_number.get_active()
@@ -746,7 +743,7 @@ class VListPlayer(object):
 
         self.liststore_episodes[row][column] = state
 
-        series = Series.series_dictionary[
+        series = self.__series_dict[
             gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
         episode_name = '{}{}'.format(self.liststore_episodes[row][1], self.liststore_episodes[row][2])
 
@@ -780,7 +777,7 @@ class VListPlayer(object):
 
             # Update the CSV file
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series = Series.series_dictionary[selected_series_name]
+        series = self.__series_dict[selected_series_name]
         series.reorder(new_order)
 
     def on_button_okay_rename_clicked(self, *_):
@@ -788,15 +785,15 @@ class VListPlayer(object):
         current_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
         new_name = self.entry_rename.get_text()
 
-        if new_name in Series.series_dictionary.keys():
+        if new_name in self.__series_dict.keys():
             gtk_info(self.window_rename, TEXT_SERIES_NEWNAME_ALREADY_EXISTS.format(new_name), None)
 
         elif not current_name == new_name:
 
-            series = Series.series_dictionary[current_name]
+            series = self.__series_dict[current_name]
             series.rename(new_name)
-            Series.series_dictionary.pop(current_name)
-            Series.series_dictionary[new_name] = series
+            self.__series_dict.pop(current_name)
+            self.__series_dict[new_name] = series
             gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
             self.label_current_series.set_label(new_name)
 
@@ -816,7 +813,7 @@ class VListPlayer(object):
         if path:
             series_name = os.path.basename(path)
 
-            for series in Series.series_dictionary.values():
+            for series in self.__series_dict.values():
                 if series.get_path() == path:
                     gtk_info(self.window_root, TEXT_SERIES_ALREADY_EXISTS, None)
                     return
@@ -825,7 +822,7 @@ class VListPlayer(object):
                     gtk_info(self.window_root, TEXT_SERIES_NAME_ALREADY_EXISTS.format(series_name), None)
                     return
 
-            th=Thread(target=self.__series_load_from_path, args=[path, None, True, False, True])
+            th = Thread(target=self.__series_load_from_path, args=[path, None, True, False, True])
             th.start()
             self.__threads.append(th)
 
@@ -836,7 +833,7 @@ class VListPlayer(object):
         if not treepaths == []:
 
             selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-            series = Series.series_dictionary[selected_series_name]
+            series = self.__series_dict[selected_series_name]
 
             episode_names = []
             for treepath in treepaths:
@@ -856,7 +853,7 @@ class VListPlayer(object):
 
             series_name = os.path.basename(path)
 
-            for series in Series.series_dictionary.values():
+            for series in self.__series_dict.values():
                 if series.get_path() == path:
                     gtk_info(self.window_root, TEXT_SERIES_ALREADY_EXISTS, None)
                     return
@@ -865,7 +862,7 @@ class VListPlayer(object):
                     gtk_info(self.window_root, TEXT_SERIES_NAME_ALREADY_EXISTS.format(series_name), None)
                     return
 
-            th=Thread(target=self.__series_load_from_path, args=[path, None, False, False, True])
+            th = Thread(target=self.__series_load_from_path, args=[path, None, False, False, True])
             th.start()
             self.__threads.append(th)
 
@@ -887,7 +884,7 @@ class VListPlayer(object):
 
     def on_checkbox_hide_missing_series_toggled(self, *_):
         self.__ccp.write('hide-missing-series', self.checkbox_hide_missing_series.get_active())
-        th=Thread(target=self.__series_populate_liststore)
+        th = Thread(target=self.__series_populate_liststore)
         th.start()
         self.__threads.append(th)
 
@@ -909,7 +906,7 @@ class VListPlayer(object):
         selection_length = len(treepaths)
 
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series = Series.series_dictionary[selected_series_name]
+        series = self.__series_dict[selected_series_name]
 
         """
             Active or deactivate the buttons move up and down
@@ -1025,7 +1022,7 @@ class VListPlayer(object):
             return
 
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series = Series.series_dictionary[selected_series_name]
+        series = self.__series_dict[selected_series_name]
 
         if event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == 1:  # left click
