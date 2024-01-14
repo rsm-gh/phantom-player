@@ -107,7 +107,8 @@ class MediaPlayerWidget(Gtk.Overlay):
         super().__init__()
 
         self.__root_window = root_window
-
+        self.__widgets_shown = True
+        self.__motion_time = time()
         self.__vlc_widget_on_top = False
         self.__volume_increment = 3  # %
         self.__width = 600
@@ -117,10 +118,9 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__vlc_widget = VLCWidget(self.__root_window)
         self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
+        self.add(self.__vlc_widget)
 
-        self.__widgets_shown = True
-        self.__motion_time = time()
-
+        # Signals
         self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         self.__vlc_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
@@ -130,7 +130,9 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
         self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
 
-        self.add(self.__vlc_widget)
+        self.connect('key-press-event', self.__on_key_pressed)
+        #self.__root_window.connect("configure-event", self.__on_expose_event)
+
 
         # Buttons box
         self.__buttons_box = Gtk.VBox()
@@ -138,15 +140,15 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__buttons_box.set_valign(Gtk.Align.CENTER)
         self.__buttons_box.set_halign(Gtk.Align.START)
 
-        self.__button_play_pause = Gtk.ToolButton(Gtk.STOCK_MEDIA_PLAY)
+        self.__button_play_pause = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_PLAY)
         self.__button_play_pause.connect('clicked', self.__on_button_play_pause_clicked)
         self.__button_play_pause.set_can_focus(False)
 
-        self.__button_restart = Gtk.ToolButton(Gtk.STOCK_MEDIA_PREVIOUS)
+        self.__button_restart = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_PREVIOUS)
         self.__button_restart.connect('clicked', self.__on_button_restart_the_video)
         self.__button_restart.set_can_focus(False)
 
-        self.__button_end_video = Gtk.ToolButton(Gtk.STOCK_MEDIA_NEXT)
+        self.__button_end_video = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_NEXT)
         self.__button_end_video.connect('clicked', self.__on_button_end_the_video)
         self.__button_end_video.set_can_focus(False)
 
@@ -164,7 +166,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__label_progress = Gtk.Label()
         self.__label_progress.set_markup('<span font="{0}" color="white">00:00:00</span>'.format(self.__height / 29.0))
-        self.__label_progress.set_margin_right(5)
+        self.__label_progress.set_margin_end(5)
         self.__label_progress.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
 
         self.__scale_progress = Gtk.Scale()
@@ -181,7 +183,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__label_length = Gtk.Label()
         self.__label_length.set_markup('<span font="{0}" color="white">00:00:00</span>'.format(self.__height / 29.0))
-        self.__label_length.set_margin_right(5)
+        self.__label_length.set_margin_end(5)
         self.__label_length.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
 
         self.__scale_volume = Gtk.VolumeButton()
@@ -203,8 +205,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__label_volume.set_valign(Gtk.Align.START)
         self.__label_volume.set_halign(Gtk.Align.END)
         self.add_overlay(self.__label_volume)
-
-        self.connect('key-press-event', self.__on_key_pressed)
 
         """
             Init the threads
@@ -489,12 +489,13 @@ class MediaPlayerWidget(Gtk.Overlay):
             """
                 Update the size of the widgets
             """
-            """
+
             if self.get_property('visible'):
 
                 width, height = self.__root_window.get_size()
 
                 if width != self.__width or height != self.__height:
+
                     self.__width = width
                     self.__height = height
 
@@ -517,14 +518,13 @@ class MediaPlayerWidget(Gtk.Overlay):
                         '<span font="{1}" color="white">{0}</span>'.format(video_time, self.__height / 29.0))
                     Gdk.threads_leave()
 
-                    # Gdk.threads_enter()
-                    # self.__buttons_box.set_size_request(self.__height/28.0, -1)
-                    # Gdk.threads_leave()
+                    Gdk.threads_enter()
+                    self.__buttons_box.set_size_request(self.__height/28.0, -1)
+                    Gdk.threads_leave()
 
             else:
                 if vlc_is_playing:
                     self.__vlc_widget.player.stop()
-            """
 
             sleep(0.2)
 
