@@ -935,7 +935,7 @@ class VListPlayer(object):
 
                 selected_episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
 
-                menuitem = Gtk.ImageMenuItem(TEXT_FOLDER)
+                menuitem = Gtk.ImageMenuItem(label=TEXT_FOLDER)
                 self.__rc_menu.append(menuitem)
                 menuitem.connect('activate', self.__episode_open_dir, selected_episode_name)
                 img = Gtk.Image(stock=Gtk.STOCK_OPEN)
@@ -946,14 +946,14 @@ class VListPlayer(object):
 
                 for i, label in enumerate((TEXT_PLAY, TEXT_O_PLAYED, TEXT_R_PLAYED), 4):
                     # mark to check
-                    menuitem = Gtk.ImageMenuItem(label)
+                    menuitem = Gtk.ImageMenuItem(label=label)
                     self.__rc_menu.append(menuitem)
                     menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, True)
                     img = Gtk.Image(stock=Gtk.STOCK_APPLY)
                     menuitem.set_image(img)
 
                     # mark to uncheck
-                    menuitem = Gtk.ImageMenuItem(label)
+                    menuitem = Gtk.ImageMenuItem(label=label)
                     self.__rc_menu.append(menuitem)
                     menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, False)
                     img = Gtk.Image(stock=Gtk.STOCK_MISSING_IMAGE)
@@ -966,21 +966,21 @@ class VListPlayer(object):
                              treepaths]
 
             if series.missing_videos(list_of_names):
-                menuitem = Gtk.ImageMenuItem(TEXT_FIND)
+                menuitem = Gtk.ImageMenuItem(label=TEXT_FIND)
                 menuitem.connect('activate', self.__series_find_videos, list_of_names)
                 self.__rc_menu.append(menuitem)
                 img = Gtk.Image(stock=Gtk.STOCK_DIALOG_WARNING)
                 menuitem.set_image(img)
 
             # ignore videos
-            menuitem = Gtk.ImageMenuItem(TEXT_IGNORE)
+            menuitem = Gtk.ImageMenuItem(label=TEXT_IGNORE)
             self.__rc_menu.append(menuitem)
             menuitem.connect('activate', self.__series_ignore_episode)
             img = Gtk.Image(stock=Gtk.STOCK_FIND_AND_REPLACE)
             menuitem.set_image(img)
 
             # don't ignore videos
-            menuitem = Gtk.ImageMenuItem(TEXT_DONT_IGNORE)
+            menuitem = Gtk.ImageMenuItem(label=TEXT_DONT_IGNORE)
             self.__rc_menu.append(menuitem)
             menuitem.connect('activate', self.__series_dont_ignore_episode)
             img = Gtk.Image(stock=Gtk.STOCK_FIND)
@@ -1040,10 +1040,6 @@ class VListPlayer(object):
                                                     series.get_start_at(),
                                                     )
 
-                        self.__mp_widget.present()
-                else:
-                    self.__mp_widget.present()
-
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
 
@@ -1066,37 +1062,37 @@ class VListPlayer(object):
 
                 if os.path.exists(series.get_path()):
 
-                    menuitem = Gtk.ImageMenuItem(TEXT_OPEN_FOLDER)
+                    menuitem = Gtk.ImageMenuItem(label=TEXT_OPEN_FOLDER)
                     self.__rc_menu.append(menuitem)
                     menuitem.connect('activate', self.__series_open)
                     img = Gtk.Image(stock=Gtk.STOCK_OPEN)
                     menuitem.set_image(img)
 
-                    menuitem = Gtk.ImageMenuItem(TEXT_RENAME)
+                    menuitem = Gtk.ImageMenuItem(label=TEXT_RENAME)
                     self.__rc_menu.append(menuitem)
                     menuitem.connect('activate', self.__series_rename)
                     img = Gtk.Image(stock=Gtk.STOCK_BOLD)
                     menuitem.set_image(img)
 
-                    menuitem = Gtk.ImageMenuItem(TEXT_RESET)
+                    menuitem = Gtk.ImageMenuItem(label=TEXT_RESET)
                     self.__rc_menu.append(menuitem)
                     menuitem.connect('activate', self.__series_reset)
                     img = Gtk.Image(stock=Gtk.STOCK_REFRESH)
                     menuitem.set_image(img)
 
-                    menuitem = Gtk.ImageMenuItem(TEXT_ADD_PICTURE)
+                    menuitem = Gtk.ImageMenuItem(label=TEXT_ADD_PICTURE)
                     self.__rc_menu.append(menuitem)
                     menuitem.connect('activate', self.__series_add_picture)
                     img = Gtk.Image(stock=Gtk.STOCK_SELECT_COLOR)
                     menuitem.set_image(img)
                 else:
-                    menuitem = Gtk.ImageMenuItem(TEXT_FIND)
+                    menuitem = Gtk.ImageMenuItem(label=TEXT_FIND)
                     self.__rc_menu.append(menuitem)
                     menuitem.connect('activate', self.__series_find)
                     img = Gtk.Image(stock=Gtk.STOCK_DIALOG_WARNING)
                     menuitem.set_image(img)
 
-                menuitem = Gtk.ImageMenuItem(TEXT_DELETE)
+                menuitem = Gtk.ImageMenuItem(label=TEXT_DELETE)
                 self.__rc_menu.append(menuitem)
                 menuitem.connect('activate', self.__series_delete)
                 img = Gtk.Image(stock=Gtk.STOCK_CANCEL)
