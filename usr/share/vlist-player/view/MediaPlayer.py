@@ -732,11 +732,10 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def __on_mouse_scroll(self, _, event):
         if event.direction == Gdk.ScrollDirection.UP:
-            self.volume_up()
-
-        elif event.direction == Gdk.ScrollDirection.DOWN:
             self.volume_down()
 
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            self.volume_up()
 
 class MediaPlayer(Gtk.Window):
     """ This class creates a media player built in a Gtk.Window """
