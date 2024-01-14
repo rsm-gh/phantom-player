@@ -332,10 +332,12 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__thread_scan_motion.do_run = False
         self.__thread_player_activity.do_run = False
 
-        # self.__thread_player_activity.join()
-        # self.__thread_scan_motion.join()
 
         turn_off_screensaver(False)
+
+    def join(self):
+        self.__thread_player_activity.join()
+        self.__thread_scan_motion.join()
 
     @staticmethod
     def __thread_hide_label(label):
@@ -489,7 +491,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             """
                 Update the size of the widgets
             """
-
+            """
             if self.get_property('visible'):
 
                 width, height = self.__root_window.get_size()
@@ -525,6 +527,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             else:
                 if vlc_is_playing:
                     self.__vlc_widget.player.stop()
+            """
 
             sleep(0.2)
 
@@ -605,23 +608,25 @@ class MediaPlayerWidget(Gtk.Overlay):
                 state = self.__root_window.get_window().get_state()
 
                 if Gdk.WindowState.FULLSCREEN & state:
-                    menuitem = Gtk.ImageMenuItem("Un-Fullscreen")
+                    menuitem_label = "Un-Fullscreen"
                 else:
-                    menuitem = Gtk.ImageMenuItem("Fullscreen")
+                    menuitem_label = "Fullscreen"
+
+                menuitem = Gtk.ImageMenuItem(label=menuitem_label)
                 menuitem.connect('activate', self.fullscreen)
                 self.__menu.append(menuitem)
 
                 """
                     Audio Menu
                 """
-                menuitem = Gtk.ImageMenuItem("Audio")
+                menuitem = Gtk.ImageMenuItem(label="Audio")
                 self.__menu.append(menuitem)
                 submenu = Gtk.Menu()
                 menuitem.set_submenu(submenu)
 
                 selected_track = self.__vlc_widget.player.audio_get_track()
 
-                item = Gtk.CheckMenuItem("-1  Disable")
+                item = Gtk.CheckMenuItem(label="-1  Disable")
                 item.connect('activate', self.__on_menu_video_subs_audio, 0, -1)
                 if selected_track == -1:
                     item.set_active(True)
@@ -637,7 +642,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
                 for track in tracks:
                     if 'Disable' not in track:
-                        item = Gtk.CheckMenuItem(format_track(track))
+                        item = Gtk.CheckMenuItem(label=format_track(track))
                         item.connect('activate', self.__on_menu_video_subs_audio, 0, track[0])
                         if selected_track == track[0]:
                             item.set_active(True)
@@ -646,14 +651,14 @@ class MediaPlayerWidget(Gtk.Overlay):
                 """
                     Subtitles
                 """
-                menuitem = Gtk.ImageMenuItem("Subtitles")
+                menuitem = Gtk.ImageMenuItem(label="Subtitles")
                 self.__menu.append(menuitem)
                 submenu = Gtk.Menu()
                 menuitem.set_submenu(submenu)
 
                 selected_track = self.__vlc_widget.player.video_get_spu()
 
-                item = Gtk.CheckMenuItem("-1  Disable")
+                item = Gtk.CheckMenuItem(label="-1  Disable")
                 item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
                 if selected_track == -1:
                     item.set_active(True)
@@ -669,7 +674,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
                 for track in tracks:
                     if 'Disable' not in track:
-                        item = Gtk.CheckMenuItem(format_track(track))
+                        item = Gtk.CheckMenuItem(label=format_track(track))
                         item.connect('activate', self.__on_menu_video_subs_audio, 2, track[0])
                         if selected_track == track[0]:
                             item.set_active(True)

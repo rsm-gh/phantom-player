@@ -20,7 +20,7 @@ import os
 import gi
 import sys
 import time
-import threading
+from threading import Thread, current_thread
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')
@@ -80,8 +80,9 @@ class VListPlayer(object):
 
     def __init__(self):
 
-        self.__thread_vlc_scan = True
         self.__rc_menu = None
+
+        self.__threads = []
 
         """
             load items from glade
@@ -126,7 +127,8 @@ class VListPlayer(object):
         self.__mp_widget = MediaPlayerWidget(self.window_root)
         self.box_episodes.pack_start(self.__mp_widget, True, True, 0)
         self.box_episodes.reorder_child(self.__mp_widget, 0)
-        threading.Thread(target=self.__thread_scan_media_player).start()
+        self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
+        self.__thread_scan_media_player.start()
 
         """
             configuration
@@ -150,6 +152,7 @@ class VListPlayer(object):
 
         self.window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.window_root.connect('delete-event', self.quit)
+        self.window_root.connect("configure-event", self.__on_configure_event)
 
         self.__ccp = CCParser(CONFIGURATION_FILE, 'vlist-player')
 
@@ -164,15 +167,16 @@ class VListPlayer(object):
         self.checkbox_hidden_items.set_active(self.__ccp.get_bool_defval('hidden', False))
         self.checkbox_hide_missing_series.set_active(self.__ccp.get_bool_defval('hide-missing-series', False))
 
-
-
         if not self.__ccp.get_bool_defval('fullmode', False):
             self.__episodes_hide_rc_menu(False)
+
 
         """
             Load the existent lists
         """
-        threading.Thread(target=self.__series_load_data).start()
+        th=Thread(target=self.__series_load_data)
+        th.start()
+        self.__threads.append(th)
 
 
         """
@@ -180,6 +184,12 @@ class VListPlayer(object):
         """
         self.window_root.show_all()
         self.__mp_widget.hide_controls()
+
+
+    def __on_configure_event(self, _, event):
+
+        if Gdk.WindowState.FULLSCREEN & self.window_root.get_window().get_state():
+            print("IS FULL SCREEN")
 
 
     def __series_load_data(self):
@@ -230,10 +240,12 @@ class VListPlayer(object):
                 Gdk.threads_leave()
                 break
 
-    def __thread_scan_media_player(self):
-        self.__thread_vlc_scan = True
+    def __on_thread_scan_media_player(self):
 
-        while self.__thread_vlc_scan:
+        this_thread = current_thread()
+
+        while getattr(this_thread, "do_run", True):
+
 
             if self.__current_media.series is not None:
 
@@ -588,7 +600,16 @@ class VListPlayer(object):
 
     def quit(self, *_):
         self.__mp_widget.quit()
+        self.__thread_scan_media_player.do_run = False
         Gtk.main_quit()
+
+    def join(self):
+        for th in self.__threads:
+            th.join()
+
+        self.__thread_scan_media_player.join()
+        self.__mp_widget.join()
+
 
     def on_spinbutton_audio_value_changed(self, spinbutton):
         series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
@@ -770,7 +791,9 @@ class VListPlayer(object):
                     gtk_info(self.window_root, TEXT_SERIES_NAME_ALREADY_EXISTS.format(series_name), None)
                     return
 
-            threading.Thread(target=self.__series_load_from_path, args=[path, None, True, False, True]).start()
+            th=Thread(target=self.__series_load_from_path, args=[path, None, True, False, True])
+            th.start()
+            self.__threads.append(th)
 
     def on_menuitem_checkbox_activated(self, _, column, state):
 
@@ -808,7 +831,9 @@ class VListPlayer(object):
                     gtk_info(self.window_root, TEXT_SERIES_NAME_ALREADY_EXISTS.format(series_name), None)
                     return
 
-            threading.Thread(target=self.__series_load_from_path, args=[path, None, False, False, True]).start()
+            th=Thread(target=self.__series_load_from_path, args=[path, None, False, False, True])
+            th.start()
+            self.__threads.append(th)
 
     def on_button_close_find_files_clicked(self, *_):
         self.window_finding_files.hide()
@@ -828,7 +853,9 @@ class VListPlayer(object):
 
     def on_checkbox_hide_missing_series_toggled(self, *_):
         self.__ccp.write('hide-missing-series', self.checkbox_hide_missing_series.get_active())
-        threading.Thread(target=self.__series_populate_liststore).start()
+        th=Thread(target=self.__series_populate_liststore)
+        th.start()
+        self.__threads.append(th)
 
     def on_cellrenderertoggle_play_toggled(self, _, row):
         self.on_checkbox_episodes_toggled(int(row), 4)
@@ -1067,6 +1094,7 @@ if __name__ == '__main__':
     GObject.threads_init()
     Gdk.threads_init()
 
-    _ = VListPlayer()
+    vlist_player = VListPlayer()
     Gtk.main()
+    vlist_player.join()
     VLC_INSTANCE.release()
