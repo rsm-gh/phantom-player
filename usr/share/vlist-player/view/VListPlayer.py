@@ -82,6 +82,8 @@ class VListPlayer(object):
 
         self.__rc_menu = None
 
+        self.__is_full_screen = False
+
         self.__threads = []
 
         """
@@ -94,6 +96,8 @@ class VListPlayer(object):
         glade_objects_ids = (
 
             'window_root',
+            'menubar',
+            'box_right',
             'label_current_series', 'treeview_selection_episodes', 'progressbar', 'checkbox_hidden_items',
             'eventbox_selected_series_name', 'button_root_play_and_stop', 'treeview_episodes', 'treeview_series',
             'treeview_selection_series', 'liststore_series', 'liststore_episodes', 'spinbutton_audio',
@@ -125,8 +129,8 @@ class VListPlayer(object):
         """
         self.__current_media = CurrentMedia()
         self.__mp_widget = MediaPlayerWidget(self.window_root)
-        self.box_episodes.pack_start(self.__mp_widget, True, True, 0)
-        self.box_episodes.reorder_child(self.__mp_widget, 0)
+        self.box_right.pack_start(self.__mp_widget, True, True, 0)
+        self.box_right.reorder_child(self.__mp_widget, 0)
         self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
         self.__thread_scan_media_player.start()
 
@@ -186,10 +190,24 @@ class VListPlayer(object):
         self.__mp_widget.hide_controls()
 
 
-    def __on_configure_event(self, _, event):
+    def __on_configure_event(self, *_):
 
         if Gdk.WindowState.FULLSCREEN & self.window_root.get_window().get_state():
-            print("IS FULL SCREEN")
+            fullscreen = True
+        else:
+            fullscreen = False
+
+        if self.__is_full_screen != fullscreen:
+            self.__is_full_screen = fullscreen
+
+            if fullscreen:
+                self.menubar.hide()
+                self.box_series.hide()
+                self.box_episodes.hide()
+            else:
+                self.menubar.show()
+                self.box_series.show()
+                self.box_episodes.show()
 
 
     def __series_load_data(self):
