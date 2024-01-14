@@ -82,7 +82,7 @@ class VListPlayer(object):
 
         self.__rc_menu = None
 
-        self.__is_full_screen = False
+        self.__is_full_screen = None
 
         self.__threads = []
 
@@ -204,10 +204,12 @@ class VListPlayer(object):
                 self.menubar.hide()
                 self.box_series.hide()
                 self.box_episodes.hide()
+                self.__mp_widget.set_margin_end(0)
             else:
                 self.menubar.show()
                 self.box_series.show()
                 self.box_episodes.show()
+                self.__mp_widget.set_margin_end(15)
 
 
     def __series_load_data(self):
@@ -262,23 +264,29 @@ class VListPlayer(object):
 
         this_thread = current_thread()
 
-        while getattr(this_thread, "do_run", True):
+        cached_video = None
+        cached_position = 0
 
+        while getattr(this_thread, "do_run", True):
 
             if self.__current_media.series is not None:
 
                 position = self.__mp_widget.get_position()
-                stopped_position = self.__mp_widget.get_stopped_position()
                 series = self.__current_media.series
 
-                # If the player was stopped
-                if stopped_position > 0:
-                    series.set_video_position(self.__current_media.video, stopped_position)
+                if self.__current_media.video != cached_video:
+                    cached_video = self.__current_media.video
+                    cached_position = 0
+
+                if self.__mp_widget.is_paused() and position != cached_position:
+                    cached_position = position
+                    series.set_video_position(cached_video, cached_position)
 
                 # If the current video got to the end...
                 if round(position, 3) >= 0.999:
 
-                    self.__current_media.series.mark_episode(self.__current_media.video, self.__current_media.random,
+                    self.__current_media.series.mark_episode(self.__current_media.video,
+                                                             self.__current_media.random,
                                                              True)
 
                     self.__episode_update()
@@ -424,16 +432,24 @@ class VListPlayer(object):
         if os.path.exists(path):
             open_directory(path)
 
-    def __episode_update(self):
-        series = Series.series_dictionary[
-            gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
 
-        self.__current_media.series = series
+    def __current_media_update_series(self):
+
+        series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_data = Series.series_dictionary[series_name]
+
+        self.__current_media.series = series_data
+
+        return series_data
+
+    def __episode_update(self):
+
+        series_data = self.__current_media_update_series()
 
         if self.checkbutton_random.get_active():
-            self.__current_media.video = series.get_r_episode()
+            self.__current_media.video = series_data.get_r_episode()
         else:
-            self.__current_media.video = series.get_o_episode()
+            self.__current_media.video = series_data.get_o_episode()
 
         self.__current_media.random = self.checkbutton_random.get_active()
 
@@ -900,6 +916,10 @@ class VListPlayer(object):
         """
 
         if event.button == 1 and selection_length == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
+
+            if self.__current_media.series is None:
+                self.__current_media_update_series()
+
             episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
 
             path = series.get_path_from_video_name(episode_name)
@@ -1037,8 +1057,7 @@ class VListPlayer(object):
                                                     self.__current_media.video.get_position(),
                                                     series.get_subtitles_track(),
                                                     series.get_audio_track(),
-                                                    series.get_start_at(),
-                                                    )
+                                                    series.get_start_at())
 
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
