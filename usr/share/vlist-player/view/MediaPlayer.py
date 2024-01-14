@@ -220,9 +220,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scales_box.hide()
         self.__label_volume.hide()
 
-    def get_stopped_position(self):
-        return self.__stopped_position
-
     def stop(self):
         self.__vlc_widget.player.stop()
 
