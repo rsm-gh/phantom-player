@@ -164,10 +164,7 @@ class VListPlayer(object):
         self.checkbox_hidden_items.set_active(self.__ccp.get_bool_defval('hidden', False))
         self.checkbox_hide_missing_series.set_active(self.__ccp.get_bool_defval('hide-missing-series', False))
 
-        """
-            Display the window
-        """
-        self.window_root.show_all()
+
 
         if not self.__ccp.get_bool_defval('fullmode', False):
             self.__episodes_hide_rc_menu(False)
@@ -176,6 +173,14 @@ class VListPlayer(object):
             Load the existent lists
         """
         threading.Thread(target=self.__series_load_data).start()
+
+
+        """
+            Display the window
+        """
+        self.window_root.show_all()
+        self.__mp_widget.hide_controls()
+
 
     def __series_load_data(self):
         """
@@ -202,7 +207,6 @@ class VListPlayer(object):
             start_at = series_info[4]
             audio_track = series_info[5]
             subtitles_track = series_info[6]
-
 
             if '/' in path:
                 self.__series_load_from_path(path,
@@ -256,11 +260,11 @@ class VListPlayer(object):
                     if self.checkbutton_keep_playing.get_active():
                         if self.__current_media.video:
                             self.__mp_widget.play_video(self.__current_media.video.get_path(),
-                                                           self.__current_media.video.get_position(),
-                                                           series.get_subtitles_track(),
-                                                           series.get_audio_track(),
-                                                           series.get_start_at(),
-                                                           True)
+                                                        self.__current_media.video.get_position(),
+                                                        series.get_subtitles_track(),
+                                                        series.get_audio_track(),
+                                                        series.get_start_at(),
+                                                        True)
 
                         else:
                             Gdk.threads_enter()
@@ -623,7 +627,6 @@ class VListPlayer(object):
             minutes += 1
             spinbutton.set_value(minutes + 0.00)
 
-
         Series.series_dictionary[series_name].set_start_at(value)
 
     def on_checkbutton_random_toggled(self, radiobutton, *_):
@@ -858,7 +861,7 @@ class VListPlayer(object):
 
             if path and os.path.exists(path):
                 self.__mp_widget.play_video(path, 0, series.get_subtitles_track(), series.get_audio_track(),
-                                               series.get_start_at())
+                                            series.get_start_at())
             else:
                 gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
 
@@ -971,7 +974,10 @@ class VListPlayer(object):
                 """
                 self.__ccp.write('current_series', selected_series_name)
 
-                if not self.__mp_widget.is_playing_or_paused() or self.__current_media.series.get_name() != selected_series_name:
+                if not self.__mp_widget.is_playing() or \
+                        not self.__mp_widget.is_paused() or \
+                        self.__current_media.series.get_name() != selected_series_name:
+
                     self.__episode_update()
 
                     if not self.__current_media.video:
@@ -983,11 +989,11 @@ class VListPlayer(object):
                         self.__mp_widget.hide()
                     else:
                         self.__mp_widget.play_video(self.__current_media.video.get_path(),
-                                                       self.__current_media.video.get_position(),
-                                                       series.get_subtitles_track(),
-                                                       series.get_audio_track(),
-                                                       series.get_start_at(),
-                                                       )
+                                                    self.__current_media.video.get_position(),
+                                                    series.get_subtitles_track(),
+                                                    series.get_audio_track(),
+                                                    series.get_start_at(),
+                                                    )
 
                         self.__mp_widget.present()
                 else:

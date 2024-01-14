@@ -196,13 +196,13 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         #   Extra volume label
 
-        self.__label_volume2 = Gtk.Label()
-        self.__label_volume2.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
-        self.__label_volume2.set_markup(
+        self.__label_volume = Gtk.Label()
+        self.__label_volume.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
+        self.__label_volume.set_markup(
             '<span font="{1}" color="white"> Vol: {0}% </span>'.format(0, self.__height / 30.0))
-        self.__label_volume2.set_valign(Gtk.Align.START)
-        self.__label_volume2.set_halign(Gtk.Align.END)
-        self.add_overlay(self.__label_volume2)
+        self.__label_volume.set_valign(Gtk.Align.START)
+        self.__label_volume.set_halign(Gtk.Align.END)
+        self.add_overlay(self.__label_volume)
 
         self.connect('key-press-event', self.__on_key_pressed)
 
@@ -215,11 +215,10 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__thread_scan_motion = Thread(target=self.__on_thread_scan_motion)
         self.__thread_scan_motion.start()
 
-    def is_playing_or_paused(self):
-        if self.is_playing() or self.is_paused():
-            return True
-
-        return False
+    def hide_controls(self):
+        self.__buttons_box.hide()
+        self.__scales_box.hide()
+        self.__label_volume.hide()
 
     def get_stopped_position(self):
         return self.__stopped_position
@@ -348,7 +347,7 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __scale_volume_changed(self, _, value):
         value = int(value * 100)
 
-        self.__label_volume2.set_markup(
+        self.__label_volume.set_markup(
             '<span font="{1}" color="white"> Vol: {0}% </span>'.format(value, self.__height / 30.0))
         if self.__vlc_widget.player.audio_get_volume() != value:
             self.__vlc_widget.player.audio_set_volume(value)
@@ -442,17 +441,17 @@ class MediaPlayerWidget(Gtk.Overlay):
                 Gdk.threads_leave()
 
                 Gdk.threads_enter()
-                self.__label_volume2.set_markup(
+                self.__label_volume.set_markup(
                     '<span font="{1}" color="white"> Vol: {0}% </span>'.format(vlc_volume, self.__height / 30.0))
                 Gdk.threads_leave()
 
                 Gdk.threads_enter()
-                self.__label_volume2.show()
+                self.__label_volume.show()
                 Gdk.threads_leave()
 
 
-            elif not self.__scales_box.get_property('visible') and self.__label_volume2.get_property('visible'):
-                Thread(target=self.__thread_hide_label, args=[self.__label_volume2]).start()
+            elif not self.__scales_box.get_property('visible') and self.__label_volume.get_property('visible'):
+                Thread(target=self.__thread_hide_label, args=[self.__label_volume]).start()
 
             """
                 Update the progress scale
@@ -490,8 +489,9 @@ class MediaPlayerWidget(Gtk.Overlay):
             """
                 Update the size of the widgets
             """
-
+            """
             if self.get_property('visible'):
+
                 width, height = self.__root_window.get_size()
 
                 if width != self.__width or height != self.__height:
@@ -503,7 +503,7 @@ class MediaPlayerWidget(Gtk.Overlay):
                     Gdk.threads_leave()
 
                     Gdk.threads_enter()
-                    self.__label_volume2.set_markup(
+                    self.__label_volume.set_markup(
                         '<span font="{1}" color="white"> Vol: {0}% </span>'.format(vlc_volume, self.__height / 30.0))
                     Gdk.threads_leave()
 
@@ -524,6 +524,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             else:
                 if vlc_is_playing:
                     self.__vlc_widget.player.stop()
+            """
 
             sleep(0.2)
 
@@ -573,7 +574,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             # Gdk.threads_enter()
             self.__buttons_box.show()
             self.__scales_box.show()
-            self.__label_volume2.show()
+            self.__label_volume.show()
             # Gdk.threads_leave()
 
     def __on_mouse_button_press(self, _, event):
