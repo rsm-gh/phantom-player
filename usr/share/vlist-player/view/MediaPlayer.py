@@ -133,41 +133,33 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.connect('key-press-event', self.__on_key_pressed)
         #self.__root_window.connect("configure-event", self.__on_expose_event)
 
-
-        # Buttons box
-        self.__buttons_box = Gtk.VBox()
+        # Buttons Box
+        self.__buttons_box = Gtk.Box()
         self.__buttons_box.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
-        self.__buttons_box.set_valign(Gtk.Align.CENTER)
-        self.__buttons_box.set_halign(Gtk.Align.START)
-
-        self.__button_play_pause = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_PLAY)
-        self.__button_play_pause.connect('clicked', self.__on_button_play_pause_clicked)
-        self.__button_play_pause.set_can_focus(False)
+        self.__buttons_box.set_valign(Gtk.Align.END)
+        self.__buttons_box.set_halign(Gtk.Align.CENTER)
+        self.add_overlay(self.__buttons_box)
 
         self.__button_restart = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_PREVIOUS)
         self.__button_restart.connect('clicked', self.__on_button_restart_the_video)
         self.__button_restart.set_can_focus(False)
+        self.__buttons_box.pack_start(self.__button_restart, True, True, 3)
+
+        self.__button_play_pause = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_PLAY)
+        self.__button_play_pause.connect('clicked', self.__on_button_play_pause_clicked)
+        self.__button_play_pause.set_can_focus(False)
+        self.__buttons_box.pack_start(self.__button_play_pause, True, True, 3)
 
         self.__button_end_video = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_NEXT)
         self.__button_end_video.connect('clicked', self.__on_button_end_the_video)
         self.__button_end_video.set_can_focus(False)
-
-        self.__buttons_box.pack_start(self.__button_restart, True, True, 0)
-        self.__buttons_box.pack_start(self.__button_play_pause, True, True, 0)
-        self.__buttons_box.pack_start(self.__button_end_video, True, True, 0)
-        self.add_overlay(self.__buttons_box)
-
-        # Scales Box        
-
-        self.__scales_box = Gtk.Box()
-        self.__scales_box.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
-        self.__scales_box.set_valign(Gtk.Align.END)
-        self.__scales_box.set_halign(Gtk.Align.CENTER)
+        self.__buttons_box.pack_start(self.__button_end_video, True, True, 3)
 
         self.__label_progress = Gtk.Label()
         self.__label_progress.set_markup('<span font="{0}" color="white">00:00:00</span>'.format(self.__height / 29.0))
         self.__label_progress.set_margin_end(5)
         self.__label_progress.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
+        self.__buttons_box.pack_start(self.__label_progress, True, True, 3)
 
         self.__scale_progress = Gtk.Scale()
         self.__scale_progress.set_range(0, 1)
@@ -180,24 +172,19 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scale_progress.add_mark(0.75, Gtk.PositionType.TOP, None)
         self.__scale_progress.connect('button-press-event', self.__scale_button_press)
         self.__scale_progress.connect('button-release-event', self.__scale_button_release)
+        self.__buttons_box.pack_start(self.__scale_progress, True, True, 1)
 
         self.__label_length = Gtk.Label()
         self.__label_length.set_markup('<span font="{0}" color="white">00:00:00</span>'.format(self.__height / 29.0))
         self.__label_length.set_margin_end(5)
         self.__label_length.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
+        self.__buttons_box.pack_start(self.__label_length, True, True, 3)
 
         self.__scale_volume = Gtk.VolumeButton()
         self.__scale_volume.connect('value_changed', self.__scale_volume_changed)
-
-        self.__scales_box.pack_start(self.__label_progress, True, True, 3)
-        self.__scales_box.pack_start(self.__scale_progress, True, True, 1)
-        self.__scales_box.pack_start(self.__label_length, True, True, 3)
-        self.__scales_box.pack_start(self.__scale_volume, True, True, 3)
-
-        self.add_overlay(self.__scales_box)
+        self.__buttons_box.pack_start(self.__scale_volume, True, True, 3)
 
         #   Extra volume label
-
         self.__label_volume = Gtk.Label()
         self.__label_volume.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
         self.__label_volume.set_markup(
@@ -217,7 +204,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def hide_controls(self):
         self.__buttons_box.hide()
-        self.__scales_box.hide()
+        self.__buttons_box.hide()
         self.__label_volume.hide()
 
     def stop(self):
@@ -369,8 +356,8 @@ class MediaPlayerWidget(Gtk.Overlay):
             if time_delta > 3 and self.__widgets_shown:
                 self.__widgets_shown = False
                 Gdk.threads_enter()
+                self.__label_volume.hide()
                 self.__buttons_box.hide()
-                self.__scales_box.hide()
                 Gdk.threads_leave()
 
             sleep(.5)
@@ -449,7 +436,7 @@ class MediaPlayerWidget(Gtk.Overlay):
                 Gdk.threads_leave()
 
 
-            elif not self.__scales_box.get_property('visible') and self.__label_volume.get_property('visible'):
+            elif not self.__buttons_box.get_property('visible') and self.__label_volume.get_property('visible'):
                 Thread(target=self.__thread_hide_label, args=[self.__label_volume]).start()
 
             """
@@ -517,10 +504,6 @@ class MediaPlayerWidget(Gtk.Overlay):
                         '<span font="{1}" color="white">{0}</span>'.format(video_time, self.__height / 29.0))
                     Gdk.threads_leave()
 
-                    Gdk.threads_enter()
-                    self.__buttons_box.set_size_request(self.__height/28.0, -1)
-                    Gdk.threads_leave()
-
             else:
                 if vlc_is_playing:
                     self.__vlc_widget.player.stop()
@@ -571,11 +554,8 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         if not self.__widgets_shown:
             self.__widgets_shown = True
-            # Gdk.threads_enter()
             self.__buttons_box.show()
-            self.__scales_box.show()
             self.__label_volume.show()
-            # Gdk.threads_leave()
 
     def __on_mouse_button_press(self, _, event):
 
