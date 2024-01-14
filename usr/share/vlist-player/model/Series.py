@@ -31,25 +31,29 @@ from gi.repository.GdkPixbuf import Pixbuf, InterpType
 from Paths import *
 from model.Video import Video, path_is_video, generate_list_from_videos_folder
 
-series_dictionary = {}
-
-magic_mimetype = magic.open(magic.MAGIC_MIME)
-magic_mimetype.load()
+MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
+MAGIC_MIMETYPE.load()
 
 
-class Serie(object):
+class Series(object):
 
-    def __init__(self, path,
+    def __init__(self,
+                 path,
                  data_path,
                  recursive,
                  is_random,
                  keep_playing,
-                 start_at=0,
+                 start_at=0.0,
                  audio_track=-2,
                  subtitles_track=-2):
 
         self.__path = path
         self.__name = os.path.basename(path)
+        self.__recursive = False
+        self.__random = False
+        self.__start_at = 0.0
+        self.__audio_track = -2
+        self.__subtitles_track = -2
 
         self.set_recursive(recursive, False)
         self.set_random(is_random, False)
@@ -166,8 +170,6 @@ class Serie(object):
         self.clean_episodes()
         self.update_ids()  # this is in case there were videos with duplicated ids
         self._write_data()
-
-        series_dictionary[self.__name] = self
 
     def _write_data(self):
 

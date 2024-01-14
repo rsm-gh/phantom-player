@@ -534,7 +534,7 @@ Author: Rafael Senties Martinelli
                           <object class="GtkTreeViewColumn" id="treeviewcolumn3">
                             <property name="resizable">True</property>
                             <property name="sizing">autosize</property>
-                            <property name="title" translatable="yes">Serie</property>
+                            <property name="title" translatable="yes">Series</property>
                             <property name="clickable">True</property>
                             <property name="sort-indicator">True</property>
                             <property name="sort-column-id">1</property>
@@ -1356,7 +1356,7 @@ If the name had modifications it won't find them.</property>
   <object class="GtkDialog" id="window_rename">
     <property name="can-focus">False</property>
     <property name="border-width">5</property>
-    <property name="title" translatable="yes">Rename Serie</property>
+    <property name="title" translatable="yes">Rename Series</property>
     <property name="modal">True</property>
     <property name="icon">img/movie-icon-small.png</property>
     <property name="type-hint">dialog</property>
@@ -1434,7 +1434,7 @@ If the name had modifications it won't find them.</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="margin-bottom">5</property>
-                <property name="label" translatable="yes">Serie</property>
+                <property name="label" translatable="yes">Series</property>
                 <attributes>
                   <attribute name="weight" value="bold"/>
                 </attributes>
