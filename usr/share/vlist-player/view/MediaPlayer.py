@@ -118,7 +118,9 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__vlc_widget = VLCWidget(self.__root_window)
         self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
+        self.__vlc_widget.connect("draw", self.da_draw_event)
         self.add(self.__vlc_widget)
+
 
         # Signals
         self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
@@ -201,6 +203,10 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__thread_scan_motion = Thread(target=self.__on_thread_scan_motion)
         self.__thread_scan_motion.start()
+
+    def da_draw_event(self, _, cairo_ctx):
+        cairo_ctx.set_source_rgb(0, 0, 0)
+        cairo_ctx.paint()
 
     def hide_controls(self):
         self.__buttons_box.hide()
