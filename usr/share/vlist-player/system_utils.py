@@ -18,10 +18,6 @@
 #
 
 import os
-import webbrowser
-
-def open_link(link):
-    webbrowser.open('https://github.com/rsm-gh/vlist-player/issues', new=2)
 
 def open_directory(path):
     os.system('''exo-open "{0}" '''.format(os.path.dirname(path)))

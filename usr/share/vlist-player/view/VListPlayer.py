@@ -20,6 +20,7 @@ import os
 import gi
 import sys
 import time
+import webbrowser
 from threading import Thread, current_thread
 
 gi.require_version('Gtk', '3.0')
@@ -37,7 +38,7 @@ from model.CurrentMedia import CurrentMedia
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 from view.gtk_utils import *
 from controller.CCParser import CCParser
-from system_utils import open_directory, open_link
+from system_utils import open_directory
 
 
 def gtk_file_chooser(parent, mode='', start_path=''):
@@ -781,7 +782,7 @@ class VListPlayer(object):
 
     @staticmethod
     def on_imagemenuitem_bugs_activate(*_):
-        open_link('https://github.com/rsm-gh/vlist-player/issues')
+        webbrowser.open('https://github.com/rsm-gh/vlist-player/issues', new=2)
 
     def on_imagemenuitem_preferences_activate(self, *_):
         self.window_preferences.show()

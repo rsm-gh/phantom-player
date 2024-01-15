@@ -309,7 +309,7 @@ Author: Rafael Senties Martinelli
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="imagemenuitem_bugs">
-                        <property name="label">Bugs</property>
+                        <property name="label">Issues</property>
                         <property name="use-action-appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
