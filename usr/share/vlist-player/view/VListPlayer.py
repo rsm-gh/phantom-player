@@ -33,13 +33,12 @@ sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
 from Texts import *
-from model.Series import Series
-from model.CurrentMedia import CurrentMedia
-from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 from view.gtk_utils import *
+from model.Series import Series
 from controller.CCParser import CCParser
-from system_utils import open_directory
-
+from model.CurrentMedia import CurrentMedia
+from system_utils import EventCodes, open_directory
+from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 
 def gtk_file_chooser(parent, mode='', start_path=''):
     window_choose_file = Gtk.FileChooserDialog(TEXT_PROGRAM_NAME,
@@ -81,12 +80,11 @@ class VListPlayer(object):
 
     def __init__(self):
 
-        self.__rc_menu = None
-
         self.__is_full_screen = None
-
         self.__series_dict = {}
         self.__threads = []
+
+        self.__ccp = CCParser(CONFIGURATION_FILE, 'vlist-player')
 
         """
             load items from glade
@@ -95,16 +93,16 @@ class VListPlayer(object):
         builder.add_from_file(os.path.join(_SCRIPT_DIR, "vlist-player.glade"))
         builder.connect_signals(self)
 
-        glade_objects_ids = (
-
+        glade_ids = (
             'window_root',
             'menubar',
-            'box_right',
-            'label_current_series', 'treeview_selection_episodes', 'progressbar', 'checkbox_hidden_items',
-            'eventbox_selected_series_name', 'button_root_play_and_stop', 'treeview_episodes', 'treeview_series',
+            'box_main',
+            'box_data',
+            'treeview_selection_episodes', 'progressbar', 'checkbox_hidden_items',
+            'button_root_play_and_stop', 'treeview_episodes', 'treeview_series',
             'treeview_selection_series', 'liststore_series', 'liststore_episodes', 'spinbutton_audio',
             'spinbutton_subtitles',
-            'spinbutton_start_at', 'box_episodes', 'box_series', 'box_main', 'box_series_data',
+            'spinbutton_start_at', 'box_episodes', 'box_series', 'box_series_data',
             'box_series_menu', 'box_main', 'column_number', 'column_name', 'column_extension', 'column_play',
             'column_oplayed',
             'column_rplayed', 'checkbutton_random', 'checkbutton_keep_playing', 'checkbox_hide_extensions',
@@ -123,16 +121,16 @@ class VListPlayer(object):
             'window_finding_files',
         )
 
-        for glade_object_id in glade_objects_ids:
-            setattr(self, glade_object_id, builder.get_object(glade_object_id))
+        for glade_id in glade_ids:
+            setattr(self, glade_id, builder.get_object(glade_id))
 
         """
             Media Player
         """
         self.__current_media = CurrentMedia()
-        self.__mp_widget = MediaPlayerWidget(self.window_root)
-        self.box_right.pack_start(self.__mp_widget, True, True, 0)
-        self.box_right.reorder_child(self.__mp_widget, 0)
+        self.__media_player = MediaPlayerWidget(self.window_root)
+        self.box_main.pack_start(self.__media_player, True, True, 0)
+        self.box_main.reorder_child(self.__media_player, 0)
         self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
         self.__thread_scan_media_player.start()
 
@@ -152,12 +150,9 @@ class VListPlayer(object):
         self.__hidden_font_color = color
 
         # extra
-
         self.window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.window_root.connect('delete-event', self.quit)
         self.window_root.connect("configure-event", self.__on_configure_event)
-
-        self.__ccp = CCParser(CONFIGURATION_FILE, 'vlist-player')
 
         # checkboxes
         self.checkbox_hide_number.set_active(self.__ccp.get_bool('number'))
@@ -170,22 +165,20 @@ class VListPlayer(object):
         self.checkbox_hidden_items.set_active(self.__ccp.get_bool_defval('hidden', False))
         self.checkbox_hide_missing_series.set_active(self.__ccp.get_bool_defval('hide-missing-series', False))
 
-        if not self.__ccp.get_bool_defval('fullmode', False):
-            self.__episodes_hide_rc_menu(False)
-
-        """
-            Load the existent lists
-        """
-        th = Thread(target=self.__series_load_data)
-        th.start()
-        self.__threads.append(th)
-
         """
             Display the window
         """
         self.window_root.maximize()
         self.window_root.show_all()
-        self.__mp_widget.hide_controls()
+        self.__media_player.hide_controls()
+
+        """
+            Load the existent series
+        """
+        th = Thread(target=self.__series_load_data)
+        th.start()
+        self.__threads.append(th)
+
 
     def __on_configure_event(self, *_):
 
@@ -199,14 +192,10 @@ class VListPlayer(object):
 
             if fullscreen:
                 self.menubar.hide()
-                self.box_series.hide()
-                self.box_episodes.hide()
-                self.__mp_widget.set_margin_end(0)
+                self.box_data.hide()
             else:
                 self.menubar.show()
-                self.box_series.show()
-                self.box_episodes.show()
-                self.__mp_widget.set_margin_end(15)
+                self.box_data.show()
 
     def __series_load_data(self):
         """
@@ -223,7 +212,7 @@ class VListPlayer(object):
                 series_info = f.readline().split('|')
 
             if len(series_info) < 7:
-                print("Error, Wrong format for series file = ", file_path) #todo: show user message
+                print("Error, Wrong format for series file = ", file_path)  # todo: show user message
                 continue
 
             path = series_info[0]
@@ -242,10 +231,11 @@ class VListPlayer(object):
                                              keep_playing,
                                              start_at,
                                              audio_track,
-                                             subtitles_track)
+                                             subtitles_track,
+                                             select=False)
 
         """
-            Load the last series that has been played
+            Select the last series that was played
         """
         current_series_name = self.__ccp.get_str('current_series')
 
@@ -254,7 +244,11 @@ class VListPlayer(object):
                 Gdk.threads_enter()
                 self.treeview_series.set_cursor(i)
                 Gdk.threads_leave()
-                break
+                return
+
+        Gdk.threads_enter()
+        self.treeview_series.set_cursor(0)
+        Gdk.threads_leave()
 
     def __on_thread_scan_media_player(self):
 
@@ -267,14 +261,14 @@ class VListPlayer(object):
 
             if self.__current_media.series is not None:
 
-                position = self.__mp_widget.get_position()
+                position = self.__media_player.get_position()
                 series = self.__current_media.series
 
                 if self.__current_media.video != cached_video:
                     cached_video = self.__current_media.video
                     cached_position = 0
 
-                if self.__mp_widget.is_paused() and position != cached_position:
+                if self.__media_player.is_paused() and position != cached_position:
                     cached_position = position
                     series.set_video_position(cached_video, cached_position)
 
@@ -293,114 +287,106 @@ class VListPlayer(object):
 
                     if self.checkbutton_keep_playing.get_active():
                         if next_video:
-                            self.__mp_widget.play_video(next_video.get_path(),
-                                                        next_video.get_position(),
-                                                        series.get_subtitles_track(),
-                                                        series.get_audio_track(),
-                                                        series.get_start_at(),
-                                                        True)
+                            self.__media_player.play_video(next_video.get_path(),
+                                                           next_video.get_position(),
+                                                           series.get_subtitles_track(),
+                                                           series.get_audio_track(),
+                                                           series.get_start_at(),
+                                                           True)
 
                         else:
                             Gdk.threads_enter()
-                            self.__mp_widget.hide()
+                            self.window_root.unfullscreen()
                             Gdk.threads_leave()
                             Gdk.threads_enter()
                             gtk_info(self.window_root, TEXT_END_OF_SERIES)
                             Gdk.threads_leave()
                     else:
                         Gdk.threads_enter()
-                        self.__mp_widget.stop()
+                        self.__media_player.stop()
                         Gdk.threads_leave()
                         Gdk.threads_enter()
-                        self.__mp_widget.hide()
+                        self.window_root.unfullscreen()
                         Gdk.threads_leave()
 
             time.sleep(0.5)
 
     def __episodes_populate_liststore(self, update_liststore):
 
-        if self.treeview_selection_episodes.count_selected_rows() >= 0:
+        if self.treeview_selection_episodes.count_selected_rows() < 0:
+            return
 
-            selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-            series = self.__series_dict[selected_series_name]
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series = self.__series_dict[selected_series_name]
 
-            #
-            #    Update the series area
-            #
+        #
+        #    Update the series area
+        #
 
-            self.checkbutton_keep_playing.set_active(series.get_keep_playing())
-            self.checkbutton_random.set_active(series.get_random())
+        self.checkbutton_keep_playing.set_active(series.get_keep_playing())
+        self.checkbutton_random.set_active(series.get_random())
 
-            self.spinbutton_audio.set_value(series.get_audio_track())
-            self.spinbutton_subtitles.set_value(series.get_subtitles_track())
-            self.spinbutton_start_at.set_value(series.get_start_at())
+        self.spinbutton_audio.set_value(series.get_audio_track())
+        self.spinbutton_subtitles.set_value(series.get_subtitles_track())
+        self.spinbutton_start_at.set_value(series.get_start_at())
 
-            if self.checkbutton_random.get_active():
-                played, total, percent = series.get_r_played_stats()
+        if self.checkbutton_random.get_active():
+            played, total, percent = series.get_r_played_stats()
+        else:
+            played, total, percent = series.get_o_played_stats()
+
+        progress_text = "{}/{}".format(played, total)
+        self.progressbar.set_fraction(percent)
+        self.progressbar.set_text(progress_text)
+        self.progressbar.set_show_text(True)
+
+        """
+            update the episodes area
+        """
+        if not update_liststore:
+            return
+
+        self.liststore_episodes.clear()
+        self.column_name.set_spacing(0)
+
+        if not os.path.exists(series.get_path()):
+            return
+
+        # initialize the list
+        videos_list = []
+        for _ in series.get_videos():
+            videos_list.append(None)
+
+        # sort it by id
+        for video in series.get_videos():
+            try:
+                videos_list[video.get_id() - 1] = video
+            except Exception as e:
+                print(str(e))
+
+        for video in videos_list:
+            if video:
+
+                # get the color of the font
+                if video.get_display():
+                    color = self.__default_font_color
+                else:
+                    color = self.__hidden_font_color
+
+                # add the video to the list store
+                if video.get_display() or not self.checkbox_hidden_items.get_active():
+                    self.liststore_episodes.append([video.get_id(),
+                                                    video.get_empty_name(),
+                                                    video.get_extension(),
+                                                    video.get_state(),
+                                                    video.get_play(),
+                                                    video.get_o_played(),
+                                                    video.get_r_played(),
+                                                    " ",
+                                                    color])
             else:
-                played, total, percent = series.get_o_played_stats()
-
-            progress_text = "{}/{}".format(played, total)
-
-            self.label_current_series.set_label(selected_series_name)
-            self.progressbar.set_fraction(percent)
-
-            self.progressbar.set_text(progress_text)
-            self.progressbar.set_show_text(True)
-
-            #   Update the big image
-            for children in self.eventbox_selected_series_name.get_children():
-                self.eventbox_selected_series_name.remove(children)
-
-            image = series.get_big_image()
-            self.eventbox_selected_series_name.add(image)
-            image.show()
-
-            """
-                update the episodes area
-            """
-            if update_liststore:
-                self.liststore_episodes.clear()
-                self.column_name.set_spacing(0)
-
-                if os.path.exists(series.get_path()):
-
-                    # initialize the list
-                    videos_list = []
-                    for _ in series.get_videos():
-                        videos_list.append(None)
-
-                    # sort it by id
-                    for video in series.get_videos():
-                        try:
-                            videos_list[video.get_id() - 1] = video
-                        except Exception as e:
-                            print(str(e))
-
-                    for video in videos_list:
-                        if video:
-
-                            # get the color of the font
-                            if video.get_display():
-                                color = self.__default_font_color
-                            else:
-                                color = self.__hidden_font_color
-
-                            # add the video to the list store
-                            if video.get_display() or not self.checkbox_hidden_items.get_active():
-                                self.liststore_episodes.append([video.get_id(),
-                                                                video.get_empty_name(),
-                                                                video.get_extension(),
-                                                                video.get_state(),
-                                                                video.get_play(),
-                                                                video.get_o_played(),
-                                                                video.get_r_played(),
-                                                                " ",
-                                                                color,
-                                                                ])
-                        else:
-                            print("Error loading the liststore_episodes. The series '{}' has an empty video.".format(
-                                series.get_name()))
+                print("Error loading the liststore_episodes. The series '{}' has an empty video.".format(
+                    series.get_name()))
 
     def __episodes_hide_rc_menu(self, write=True):
 
@@ -436,7 +422,8 @@ class VListPlayer(object):
                                 keep_playing,
                                 start_at=0.0,
                                 audio_track=-2,
-                                subtitles_track=-2):
+                                subtitles_track=-2,
+                                select=True):
 
         new_series = Series(path,
                             data_path,
@@ -454,13 +441,13 @@ class VListPlayer(object):
             self.liststore_series.append([new_series.get_image(), new_series.get_name()])
             Gdk.threads_leave()
 
-        # select the row once a series has been added
-        for i, row in enumerate(self.liststore_series):
-            if row[1] == new_series.get_name():
-                Gdk.threads_enter()
-                self.treeview_series.set_cursor(i)
-                Gdk.threads_leave()
-                break
+        if select:  # select the row once the series has been added
+            for i, row in enumerate(self.liststore_series):
+                if row[1] == new_series.get_name():
+                    Gdk.threads_enter()
+                    self.treeview_series.set_cursor(i)
+                    Gdk.threads_leave()
+                    break
 
     def __series_populate_liststore(self):
 
@@ -478,11 +465,6 @@ class VListPlayer(object):
                 self.liststore_series.append([series.get_image(), series.get_name()])
                 Gdk.threads_leave()
 
-        if len(self.liststore_series) <= 0:
-            Gdk.threads_enter()
-            self.eventbox_selected_series_name.add(Gtk.Image.new_from_file(ICON_LOGO_BIG))
-            Gdk.threads_leave()
-
         # Select the current series
         #
         current_series_name = self.__ccp.get_str('current_series')
@@ -499,25 +481,25 @@ class VListPlayer(object):
         Gdk.threads_leave()
 
     def __series_open(self, _):
-        series = self.__series_dict[
-            gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
-        open_directory(series.get_path())
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_data = self.__series_dict[selected_series_name]
+        open_directory(series_data.get_path())
 
     def __series_find_videos(self, _, video_names):
 
-        series = self.__series_dict[
-            gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_data = self.__series_dict[selected_series_name]
 
         path = gtk_file_chooser(self.window_root)
 
         if path is not None:
             if len(video_names) == 1:  # if the user only selected one video to find...
-                found_videos = series.find_video(video_names[0], path)
+                found_videos = series_data.find_video(video_names[0], path)
                 if found_videos:
                     gtk_info(self.window_root, TEXT_X_OTHER_VIDEOS_HAVE_BEEN_FOUND.format(found_videos), None)
 
             elif len(video_names) > 1:
-                found_videos = series.find_videos(path)
+                found_videos = series_data.find_videos(path)
 
                 if found_videos:
                     gtk_info(self.window_root, TEXT_X_VIDEOS_HAVE_BEEN_FOUND.format(found_videos), None)
@@ -540,14 +522,15 @@ class VListPlayer(object):
     def __series_find(self, _):
 
         path = gtk_folder_chooser(self.window_root)
+        if not path:
+            return
 
-        if path:
-            series = self.__series_dict[
-                gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_data = self.__series_dict[selected_series_name]
 
-            series.find_series(path)
-            gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0, series.get_image())
-            self.__episodes_populate_liststore(True)
+        series_data.find_series(path)
+        gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0, series_data.get_image())
+        self.__episodes_populate_liststore(True)
 
     def __series_reset(self, _):
 
@@ -610,7 +593,7 @@ class VListPlayer(object):
             self.__episodes_populate_liststore(True)
 
     def quit(self, *_):
-        self.__mp_widget.quit()
+        self.__media_player.quit()
         self.__thread_scan_media_player.do_run = False
         Gtk.main_quit()
 
@@ -619,7 +602,7 @@ class VListPlayer(object):
             th.join()
 
         self.__thread_scan_media_player.join()
-        self.__mp_widget.join()
+        self.__media_player.join()
 
     def on_spinbutton_audio_value_changed(self, spinbutton):
         series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
@@ -774,7 +757,6 @@ class VListPlayer(object):
             self.__series_dict.pop(current_name)
             self.__series_dict[new_name] = series
             gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
-            self.label_current_series.set_label(new_name)
 
             self.__current_media.next_episode(self.checkbutton_random.get_active())
 
@@ -787,63 +769,52 @@ class VListPlayer(object):
     def on_imagemenuitem_preferences_activate(self, *_):
         self.window_preferences.show()
 
-    def on_menuitem_list_from_folder_recursive_activate(self, *_):
+    def on_menuitem_add_series(self, *_):
+        self.__on_menuitem_add_series(False)
+
+    def on_menuitem_add_series_recursive(self, *_):
+        self.__on_menuitem_add_series(True)
+
+    def __on_menuitem_add_series(self, recursive):
+
         path = gtk_folder_chooser(self.window_root)
-        if path:
-            series_name = os.path.basename(path)
+        if not path:
+            return
 
-            for series in self.__series_dict.values():
-                if series.get_path() == path:
-                    gtk_info(self.window_root, TEXT_SERIES_ALREADY_EXISTS, None)
-                    return
+        series_name = os.path.basename(path)
 
-                if series.get_name() == series_name:
-                    gtk_info(self.window_root, TEXT_SERIES_NAME_ALREADY_EXISTS.format(series_name), None)
-                    return
+        for series in self.__series_dict.values():
+            if series.get_path() == path:
+                gtk_info(self.window_root, TEXT_SERIES_ALREADY_EXISTS, None)
+                return
 
-            th = Thread(target=self.__series_load_from_path, args=[path, None, True, False, True])
-            th.start()
-            self.__threads.append(th)
+            elif series.get_name() == series_name:
+                gtk_info(self.window_root, TEXT_SERIES_NAME_ALREADY_EXISTS.format(series_name), None)
+                return
+
+        th = Thread(target=self.__series_load_from_path, args=[path, None, recursive, False, True])
+        th.start()
+        self.__threads.append(th)
 
     def on_menuitem_checkbox_activated(self, _, column, state):
 
-        (model, treepaths) = self.treeview_selection_episodes.get_selected_rows()
+        model, treepaths = self.treeview_selection_episodes.get_selected_rows()
 
-        if not treepaths == []:
+        if len(treepaths) == 0:
+            return
 
-            selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-            series = self.__series_dict[selected_series_name]
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_data = self.__series_dict[selected_series_name]
 
-            episode_names = []
-            for treepath in treepaths:
-                episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepath, 1, 2)
+        episode_names = []
+        for treepath in treepaths:
+            episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepath, 1, 2)
+            self.liststore_episodes[treepath][column] = state
+            episode_names.append(episode_name)
 
-                self.liststore_episodes[treepath][column] = state
+        series_data.change_checkbox_state(episode_names, column, state)
 
-                episode_names.append(episode_name)
-
-            series.change_checkbox_state(episode_names, column, state)
-
-            self.__episodes_populate_liststore(True)
-
-    def on_menuitem_list_from_folder_activate(self, *_):
-        path = gtk_folder_chooser(self.window_root)
-        if path:
-
-            series_name = os.path.basename(path)
-
-            for series in self.__series_dict.values():
-                if series.get_path() == path:
-                    gtk_info(self.window_root, TEXT_SERIES_ALREADY_EXISTS, None)
-                    return
-
-                if series.get_name() == series_name:
-                    gtk_info(self.window_root, TEXT_SERIES_NAME_ALREADY_EXISTS.format(series_name), None)
-                    return
-
-            th = Thread(target=self.__series_load_from_path, args=[path, None, False, False, True])
-            th.start()
-            self.__threads.append(th)
+        self.__episodes_populate_liststore(True)
 
     def on_button_close_find_files_clicked(self, *_):
         self.window_finding_files.hide()
@@ -891,20 +862,25 @@ class VListPlayer(object):
             Active or deactivate the buttons move up and down
         """
 
-        if event.button == 1 and selection_length == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
+        if event.button == EventCodes.Cursor.left_click and \
+                selection_length == 1 and \
+                event.type == Gdk.EventType._2BUTTON_PRESS:
 
             episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
 
             path = series.get_path_from_video_name(episode_name)
 
             if path and os.path.exists(path):
-                self.__mp_widget.play_video(path, 0, series.get_subtitles_track(), series.get_audio_track(),
-                                            series.get_start_at())
+                self.__media_player.play_video(path,
+                                               0,
+                                               series.get_subtitles_track(),
+                                               series.get_audio_track(),
+                                               series.get_start_at())
             else:
                 gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
 
 
-        elif event.button == 3:  # right click
+        elif event.button == EventCodes.Cursor.right_click:
 
             # get the iter where the user is pointing
             try:
@@ -919,7 +895,7 @@ class VListPlayer(object):
                 self.treeview_selection_episodes.unselect_all()
                 self.treeview_selection_episodes.select_path(pointing_treepath)
 
-            self.__rc_menu = Gtk.Menu()
+            menu = Gtk.Menu()
 
             """
                 Open the containing folder (only if the user selected one video)
@@ -929,7 +905,7 @@ class VListPlayer(object):
                 selected_episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
 
                 menuitem = Gtk.ImageMenuItem(label=TEXT_FOLDER)
-                self.__rc_menu.append(menuitem)
+                menu.append(menuitem)
                 menuitem.connect('activate', self.__episode_open_dir, selected_episode_name)
                 img = Gtk.Image(stock=Gtk.STOCK_OPEN)
                 menuitem.set_image(img)
@@ -940,14 +916,14 @@ class VListPlayer(object):
                 for i, label in enumerate((TEXT_PLAY, TEXT_O_PLAYED, TEXT_R_PLAYED), 4):
                     # mark to check
                     menuitem = Gtk.ImageMenuItem(label=label)
-                    self.__rc_menu.append(menuitem)
+                    menu.append(menuitem)
                     menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, True)
                     img = Gtk.Image(stock=Gtk.STOCK_APPLY)
                     menuitem.set_image(img)
 
                     # mark to uncheck
                     menuitem = Gtk.ImageMenuItem(label=label)
-                    self.__rc_menu.append(menuitem)
+                    menu.append(menuitem)
                     menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, False)
                     img = Gtk.Image(stock=Gtk.STOCK_MISSING_IMAGE)
                     menuitem.set_image(img)
@@ -961,35 +937,35 @@ class VListPlayer(object):
             if series.missing_videos(list_of_names):
                 menuitem = Gtk.ImageMenuItem(label=TEXT_FIND)
                 menuitem.connect('activate', self.__series_find_videos, list_of_names)
-                self.__rc_menu.append(menuitem)
+                menu.append(menuitem)
                 img = Gtk.Image(stock=Gtk.STOCK_DIALOG_WARNING)
                 menuitem.set_image(img)
 
             # ignore videos
             menuitem = Gtk.ImageMenuItem(label=TEXT_IGNORE)
-            self.__rc_menu.append(menuitem)
+            menu.append(menuitem)
             menuitem.connect('activate', self.__series_ignore_episode)
             img = Gtk.Image(stock=Gtk.STOCK_FIND_AND_REPLACE)
             menuitem.set_image(img)
 
             # don't ignore videos
             menuitem = Gtk.ImageMenuItem(label=TEXT_DONT_IGNORE)
-            self.__rc_menu.append(menuitem)
+            menu.append(menuitem)
             menuitem.connect('activate', self.__series_dont_ignore_episode)
             img = Gtk.Image(stock=Gtk.STOCK_FIND)
             menuitem.set_image(img)
 
-            self.__rc_menu.show_all()
-            self.__rc_menu.popup(None, None, None, None, event.button, event.time)
+            menu.show_all()
+            menu.popup(None, None, None, None, event.button, event.time)
 
             return True
 
     def on_treeview_selection_series_changed(self, treeselection):
         if treeselection.count_selected_rows() > 0:
-            self.__episodes_populate_liststore(True)
             selected_series_name = gtk_get_first_selected_cell_from_selection(treeselection, 1)
             series_data = self.__series_dict[selected_series_name]
             self.__current_media = CurrentMedia(series_data)
+            self.__episodes_populate_liststore(True)
 
     def on_eventbox_selected_series_name_button_press_event(self, _, event):
         self.on_treeview_series_press_event(self.treeview_series, event, False)
@@ -1001,102 +977,103 @@ class VListPlayer(object):
             return
 
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series = self.__series_dict[selected_series_name]
+        series_data = self.__series_dict[selected_series_name]
 
         if event.type == Gdk.EventType._2BUTTON_PRESS:
-            if event.button == 1:  # left click
+            if event.button == EventCodes.Cursor.left_click:
 
                 # check if the liststore is empty
                 if len(self.liststore_episodes) <= 0 and not self.checkbox_hide_warning_missing_series.get_active():
                     gtk_info(self.window_root, TEXT_CANT_PLAY_SERIES_MISSING, None)
+                    return
 
                 """
                     Play a video of the series
                 """
                 self.__ccp.write('current_series', selected_series_name)
 
-                if not self.__mp_widget.is_playing() or \
-                        not self.__mp_widget.is_paused() or \
+                if not self.__media_player.is_playing() or \
+                        not self.__media_player.is_paused() or \
                         self.__current_media.series.get_name() != selected_series_name:
 
                     next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
 
-                    if not self.__current_media.video:
+                    if not next_video:
                         gtk_info(self.window_root, TEXT_END_OF_SERIES)
-                        self.__mp_widget.hide()
 
-                    elif not os.path.exists(self.__current_media.video.get_path()):
+                    elif not os.path.exists(next_video.get_path()):
                         gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
-                        self.__mp_widget.hide()
+
                     else:
-                        self.__mp_widget.play_video(next_video.get_path(),
-                                                    next_video.get_position(),
-                                                    series.get_subtitles_track(),
-                                                    series.get_audio_track(),
-                                                    series.get_start_at())
+                        self.__media_player.play_video(next_video.get_path(),
+                                                       next_video.get_position(),
+                                                       series_data.get_subtitles_track(),
+                                                       series_data.get_audio_track(),
+                                                       series_data.get_start_at())
 
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
 
-            if self.treeview_selection_series.count_selected_rows() >= 0 and event.button == 3:  # right click
+            if self.treeview_selection_series.count_selected_rows() >= 0 and event.button == EventCodes.Cursor.right_click:
 
-                # get the iter where the user is pointing
+                # Get the iter where the user is pointing
                 pointing_treepath = self.treeview_series.get_path_at_pos(event.x, event.y)[0]
 
-                # if the iter is not in the selected iters, remove the previous selection
+                # If the iter is not in the selected iters, remove the previous selection
                 model, treepaths = self.treeview_selection_series.get_selected_rows()
 
                 if pointing_treepath not in treepaths and inside_treeview:
                     self.treeview_selection_series.unselect_all()
                     self.treeview_selection_series.select_path(pointing_treepath)
 
-                """ 
-                    Right click menu
-                """
-                self.__rc_menu = Gtk.Menu()
+                self.__display_series_rc_menu(series_data, event)
 
-                if os.path.exists(series.get_path()):
+    def __display_series_rc_menu(self, series_data, event):
 
-                    menuitem = Gtk.ImageMenuItem(label=TEXT_OPEN_FOLDER)
-                    self.__rc_menu.append(menuitem)
-                    menuitem.connect('activate', self.__series_open)
-                    img = Gtk.Image(stock=Gtk.STOCK_OPEN)
-                    menuitem.set_image(img)
+        menu = Gtk.Menu()
 
-                    menuitem = Gtk.ImageMenuItem(label=TEXT_RENAME)
-                    self.__rc_menu.append(menuitem)
-                    menuitem.connect('activate', self.__series_rename)
-                    img = Gtk.Image(stock=Gtk.STOCK_BOLD)
-                    menuitem.set_image(img)
+        if not os.path.exists(series_data.get_path()):
+            menuitem = Gtk.ImageMenuItem(label=TEXT_FIND)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__series_find)
+            img = Gtk.Image(stock=Gtk.STOCK_DIALOG_WARNING)
+            menuitem.set_image(img)
 
-                    menuitem = Gtk.ImageMenuItem(label=TEXT_RESET)
-                    self.__rc_menu.append(menuitem)
-                    menuitem.connect('activate', self.__series_reset)
-                    img = Gtk.Image(stock=Gtk.STOCK_REFRESH)
-                    menuitem.set_image(img)
+        else:
+            menuitem = Gtk.ImageMenuItem(label=TEXT_OPEN_FOLDER)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__series_open)
+            img = Gtk.Image(stock=Gtk.STOCK_OPEN)
+            menuitem.set_image(img)
 
-                    menuitem = Gtk.ImageMenuItem(label=TEXT_ADD_PICTURE)
-                    self.__rc_menu.append(menuitem)
-                    menuitem.connect('activate', self.__series_add_picture)
-                    img = Gtk.Image(stock=Gtk.STOCK_SELECT_COLOR)
-                    menuitem.set_image(img)
-                else:
-                    menuitem = Gtk.ImageMenuItem(label=TEXT_FIND)
-                    self.__rc_menu.append(menuitem)
-                    menuitem.connect('activate', self.__series_find)
-                    img = Gtk.Image(stock=Gtk.STOCK_DIALOG_WARNING)
-                    menuitem.set_image(img)
+            menuitem = Gtk.ImageMenuItem(label=TEXT_RENAME)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__series_rename)
+            img = Gtk.Image(stock=Gtk.STOCK_BOLD)
+            menuitem.set_image(img)
 
-                menuitem = Gtk.ImageMenuItem(label=TEXT_DELETE)
-                self.__rc_menu.append(menuitem)
-                menuitem.connect('activate', self.__series_delete)
-                img = Gtk.Image(stock=Gtk.STOCK_CANCEL)
-                menuitem.set_image(img)
+            menuitem = Gtk.ImageMenuItem(label=TEXT_RESET)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__series_reset)
+            img = Gtk.Image(stock=Gtk.STOCK_REFRESH)
+            menuitem.set_image(img)
 
-                self.__rc_menu.show_all()
-                self.__rc_menu.popup(None, None, None, None, event.button, event.time)
+            menuitem = Gtk.ImageMenuItem(label=TEXT_ADD_PICTURE)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__series_add_picture)
+            img = Gtk.Image(stock=Gtk.STOCK_SELECT_COLOR)
+            menuitem.set_image(img)
 
-                return True
+        menuitem = Gtk.ImageMenuItem(label=TEXT_DELETE)
+        menu.append(menuitem)
+        menuitem.connect('activate', self.__series_delete)
+        img = Gtk.Image(stock=Gtk.STOCK_CANCEL)
+        menuitem.set_image(img)
+
+        menu.show_all()
+        menu.popup(None, None, None, None, event.button, event.time)
+
+        return True
 
 
 if __name__ == '__main__':
