@@ -35,7 +35,7 @@ sys.path.insert(0, _PROJECT_DIR)
 from Paths import *
 from controller import vlc
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
-from system_utils import EventCodes, turn_off_screensaver, get_active_window_title
+from system_utils import EventCodes, turn_off_screensaver
 
 def format_milliseconds_to_time(number):
     time_string = str(timedelta(milliseconds=number)).split('.')[0]
@@ -110,7 +110,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__has_media = False
         self.__widgets_shown = True
         self.__motion_time = time()
-        self.__vlc_widget_on_top = False
         self.__volume_increment = 3  # %
         self.__width = 600
         self.__height = 300
@@ -448,11 +447,6 @@ class MediaPlayerWidget(Gtk.Overlay):
                 Gdk.threads_leave()
 
             """
-                Verify if the window is on top
-            """
-            self.__vlc_widget_on_top = get_active_window_title() == self.__root_window.get_title()
-
-            """
                 Update the time of the player
             """
             if vlc_is_playing:
@@ -653,7 +647,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             if event.button == EventCodes.Cursor.left_click:
 
-                if self.__vlc_widget_on_top and self.is_playing():
+                if self.is_playing():
                     self.__vlc_widget.player.pause()
                     turn_off_screensaver(False)
                 else:

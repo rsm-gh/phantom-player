@@ -42,17 +42,6 @@ def turn_off_screensaver(state):
             print("It wasn't possible to turn on the screensaver")
 
 
-def get_active_window_title():
-    output = os.popen('''xprop -id $(xprop -root _NET_ACTIVE_WINDOW | cut -d ' ' -f 5) WM_NAME''')
-    output = str(output.read())
-
-    try:
-        return output.split('''= "''')[1][:-2]
-    except Exception:
-        print("It wasn't possible to get the window name")
-        return None
-
-
 class EventCodes:
     class Cursor:
         left_click = 1
