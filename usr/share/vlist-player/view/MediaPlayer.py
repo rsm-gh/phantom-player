@@ -35,8 +35,7 @@ sys.path.insert(0, _PROJECT_DIR)
 from Paths import *
 from controller import vlc
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
-from system_utils import turn_off_screensaver, get_active_window_title
-
+from system_utils import EventCodes, turn_off_screensaver, get_active_window_title
 
 def format_milliseconds_to_time(number):
     time_string = str(timedelta(milliseconds=number)).split('.')[0]
@@ -77,7 +76,8 @@ def gtk_file_chooser(parent, start_path=''):
                                                parent,
                                                Gtk.FileChooserAction.OPEN,
                                                (Gtk.STOCK_CANCEL,
-                                                Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN,
+                                                Gtk.ResponseType.CANCEL,
+                                                Gtk.STOCK_OPEN,
                                                 Gtk.ResponseType.OK))
 
     window_choose_file.set_default_response(Gtk.ResponseType.NONE)
@@ -118,9 +118,8 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__vlc_widget = VLCWidget(self.__root_window)
         self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
-        self.__vlc_widget.connect("draw", self.da_draw_event)
+        self.__vlc_widget.connect("draw", self.__redraw_bg)
         self.add(self.__vlc_widget)
-
 
         # Signals
         self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
@@ -132,8 +131,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
         self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
 
-        self.connect('key-press-event', self.__on_key_pressed)
-        #self.__root_window.connect("configure-event", self.__on_expose_event)
+        self.__root_window.connect('key-press-event', self.__on_key_pressed)
 
         # Buttons Box
         self.__buttons_box = Gtk.Box()
@@ -204,10 +202,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__thread_scan_motion = Thread(target=self.__on_thread_scan_motion)
         self.__thread_scan_motion.start()
 
-    def da_draw_event(self, _, cairo_ctx):
-        cairo_ctx.set_source_rgb(0, 0, 0)
-        cairo_ctx.paint()
-
     def hide_controls(self):
         self.__buttons_box.hide()
         self.__buttons_box.hide()
@@ -233,12 +227,6 @@ class MediaPlayerWidget(Gtk.Overlay):
             return True
 
         return False
-
-    def fullscreen(self, *_):
-        if Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
-            self.__root_window.unfullscreen()
-        else:
-            self.__root_window.fullscreen()
 
     def volume_up(self):
         actual_volume = self.__vlc_widget.player.audio_get_volume()
@@ -328,7 +316,6 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__thread_scan_motion.do_run = False
         self.__thread_player_activity.do_run = False
-
 
         turn_off_screensaver(False)
 
@@ -524,36 +511,30 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             sleep(0.2)
 
-    def __on_key_pressed(self, _, ev):
-        esc_key = 65307
-        f11_key = 65480
-        space_bar = 32
-        # enter_key = 65293
-        arrow_up = 65362
-        arrow_down = 65364
-        arrow_right = 65363
-        arrow_left = 65361
+    def __on_key_pressed(self, _, event):
 
-        key = ev.keyval
+        key = event.keyval
 
-        # display the toolbox if the arrows are shown
-        if key == arrow_left or key == arrow_right:
-            self.__motion_time = time()
+        if key == EventCodes.Keyboard.f11 and self.__has_media:
+            self.__root_window.fullscreen()
 
-        if key == esc_key:
-            self.unfullscreen()
+        elif Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
 
-        elif key == f11_key:
-            self.fullscreen()
+            # display the toolbox if the arrows are shown
+            if key in (EventCodes.Keyboard.arrow_left, EventCodes.Keyboard.arrow_right):
+                self.__motion_time = time()
 
-        elif key == space_bar:
-            self.__on_button_play_pause_clicked(None, None)
+            if key == EventCodes.Keyboard.esc:
+                self.__root_window.unfullscreen()
 
-        elif key == arrow_up:
-            self.__vlc_widget.volume_up()
+            elif key in (EventCodes.Keyboard.space_bar, EventCodes.Keyboard.enter):
+                self.__on_button_play_pause_clicked(None, None)
 
-        elif key == arrow_down:
-            self.__vlc_widget.volume_down()
+            elif key == EventCodes.Keyboard.arrow_up:
+                self.volume_up()
+
+            elif key == EventCodes.Keyboard.arrow_down:
+                self.volume_down()
 
     def __on_button_restart_the_video(self, *_):
         self.__vlc_widget.player.set_position(0)
@@ -561,6 +542,92 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __on_button_end_the_video(self, *_):
         self.__vlc_widget.player.set_position(1)
         self.__stopped_position = 0
+
+    def __vlc_rc_menu(self, event):
+
+        menu = Gtk.Menu()
+
+        """
+            Audio Menu
+        """
+        state = self.__root_window.get_window().get_state()
+
+        if Gdk.WindowState.FULLSCREEN & state:
+            menuitem = Gtk.ImageMenuItem(label="Un-Fullscreen")
+            menuitem.connect('activate', self.__unfullscreen)
+        else:
+            menuitem = Gtk.ImageMenuItem(label="Fullscreen")
+            menuitem.connect('activate', self.__fullscreen)
+
+        menu.append(menuitem)
+
+        """
+            Audio Menu
+        """
+        menuitem = Gtk.ImageMenuItem(label="Audio")
+        menu.append(menuitem)
+        submenu = Gtk.Menu()
+        menuitem.set_submenu(submenu)
+
+        selected_track = self.__vlc_widget.player.audio_get_track()
+
+        item = Gtk.CheckMenuItem(label="-1  Disable")
+        item.connect('activate', self.__on_menu_video_subs_audio, 0, -1)
+        if selected_track == -1:
+            item.set_active(True)
+
+        submenu.append(item)
+
+        try:
+            tracks = [(audio[0], audio[1].decode('utf-8')) for audio in
+                      self.__vlc_widget.player.audio_get_track_description()]
+        except Exception as e:
+            tracks = self.__vlc_widget.player.audio_get_track_description()
+            print(str(e))
+
+        for track in tracks:
+            if 'Disable' not in track:
+                item = Gtk.CheckMenuItem(label=format_track(track))
+                item.connect('activate', self.__on_menu_video_subs_audio, 0, track[0])
+                if selected_track == track[0]:
+                    item.set_active(True)
+                submenu.append(item)
+
+        """
+            Subtitles
+        """
+        menuitem = Gtk.ImageMenuItem(label="Subtitles")
+        menu.append(menuitem)
+        submenu = Gtk.Menu()
+        menuitem.set_submenu(submenu)
+
+        selected_track = self.__vlc_widget.player.video_get_spu()
+
+        item = Gtk.CheckMenuItem(label="-1  Disable")
+        item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
+        if selected_track == -1:
+            item.set_active(True)
+
+        submenu.append(item)
+
+        try:
+            tracks = [(video_spu[0], video_spu[1].decode('utf-8')) for video_spu in
+                      self.__vlc_widget.player.video_get_spu_description()]
+        except Exception as e:
+            tracks = self.__vlc_widget.player.video_get_spu_description()
+            print(str(e))
+
+        for track in tracks:
+            if 'Disable' not in track:
+                item = Gtk.CheckMenuItem(label=format_track(track))
+                item.connect('activate', self.__on_menu_video_subs_audio, 2, track[0])
+                if selected_track == track[0]:
+                    item.set_active(True)
+                submenu.append(item)
+
+        menu.show_all()
+        menu.popup(None, None, None, None, event.button, event.time)
+        return True
 
     def __on_motion_notify_event(self, *_):
         self.__motion_time = time()
@@ -576,12 +643,15 @@ class MediaPlayerWidget(Gtk.Overlay):
             return
 
         elif event.type == Gdk.EventType._2BUTTON_PRESS:
-            if event.button == 1:  # left click
-                self.fullscreen()
+            if event.button == EventCodes.Cursor.left_click:
+                if Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
+                    self.__root_window.unfullscreen()
+                else:
+                    self.__root_window.fullscreen()
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
 
-            if event.button == 1:  # left click
+            if event.button == EventCodes.Cursor.left_click:
 
                 if self.__vlc_widget_on_top and self.is_playing():
                     self.__vlc_widget.player.pause()
@@ -590,92 +660,8 @@ class MediaPlayerWidget(Gtk.Overlay):
                     self.__vlc_widget.player.play()
                     turn_off_screensaver(True)
 
-            elif event.button == 3:  # right click
-                """
-                    Audio, Sound and Subtitles Menu
-                """
-                self.__menu = Gtk.Menu()
-
-                # Full screen button
-                #
-                state = self.__root_window.get_window().get_state()
-
-                if Gdk.WindowState.FULLSCREEN & state:
-                    menuitem_label = "Un-Fullscreen"
-                else:
-                    menuitem_label = "Fullscreen"
-
-                menuitem = Gtk.ImageMenuItem(label=menuitem_label)
-                menuitem.connect('activate', self.fullscreen)
-                self.__menu.append(menuitem)
-
-                """
-                    Audio Menu
-                """
-                menuitem = Gtk.ImageMenuItem(label="Audio")
-                self.__menu.append(menuitem)
-                submenu = Gtk.Menu()
-                menuitem.set_submenu(submenu)
-
-                selected_track = self.__vlc_widget.player.audio_get_track()
-
-                item = Gtk.CheckMenuItem(label="-1  Disable")
-                item.connect('activate', self.__on_menu_video_subs_audio, 0, -1)
-                if selected_track == -1:
-                    item.set_active(True)
-
-                submenu.append(item)
-
-                try:
-                    tracks = [(audio[0], audio[1].decode('utf-8')) for audio in
-                              self.__vlc_widget.player.audio_get_track_description()]
-                except Exception as e:
-                    tracks = self.__vlc_widget.player.audio_get_track_description()
-                    print(str(e))
-
-                for track in tracks:
-                    if 'Disable' not in track:
-                        item = Gtk.CheckMenuItem(label=format_track(track))
-                        item.connect('activate', self.__on_menu_video_subs_audio, 0, track[0])
-                        if selected_track == track[0]:
-                            item.set_active(True)
-                        submenu.append(item)
-
-                """
-                    Subtitles
-                """
-                menuitem = Gtk.ImageMenuItem(label="Subtitles")
-                self.__menu.append(menuitem)
-                submenu = Gtk.Menu()
-                menuitem.set_submenu(submenu)
-
-                selected_track = self.__vlc_widget.player.video_get_spu()
-
-                item = Gtk.CheckMenuItem(label="-1  Disable")
-                item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
-                if selected_track == -1:
-                    item.set_active(True)
-
-                submenu.append(item)
-
-                try:
-                    tracks = [(video_spu[0], video_spu[1].decode('utf-8')) for video_spu in
-                              self.__vlc_widget.player.video_get_spu_description()]
-                except Exception as e:
-                    tracks = self.__vlc_widget.player.video_get_spu_description()
-                    print(str(e))
-
-                for track in tracks:
-                    if 'Disable' not in track:
-                        item = Gtk.CheckMenuItem(label=format_track(track))
-                        item.connect('activate', self.__on_menu_video_subs_audio, 2, track[0])
-                        if selected_track == track[0]:
-                            item.set_active(True)
-                        submenu.append(item)
-
-                self.__menu.show_all()
-                self.__menu.popup(None, None, None, None, event.button, event.time)
-                return True
+            elif event.button == EventCodes.Cursor.right_click:
+                self.__vlc_rc_menu(event)
 
     @staticmethod
     def __delayed_method(delay, method, arg=None):
@@ -733,6 +719,21 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         elif event.direction == Gdk.ScrollDirection.DOWN:
             self.volume_up()
+
+    @staticmethod
+    def __redraw_bg(_, cairo_ctx):
+        """To redraw the black background when resized"""
+        cairo_ctx.set_source_rgb(0, 0, 0)
+        cairo_ctx.paint()
+
+    def __fullscreen(self, *_):
+        """This is only for the Gtk.Menu"""
+        self.__root_window.fullscreen()
+
+    def __unfullscreen(self, *_):
+        """This is only for the Gtk.Menu"""
+        self.__root_window.unfullscreen()
+
 
 class MediaPlayer(Gtk.Window):
     """ This class creates a media player built in a Gtk.Window """

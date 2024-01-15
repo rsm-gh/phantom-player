@@ -51,3 +51,19 @@ def get_active_window_title():
     except Exception:
         print("It wasn't possible to get the window name")
         return None
+
+
+class EventCodes:
+    class Cursor:
+        left_click = 1
+        right_click = 3
+
+    class Keyboard:
+        esc = 65307
+        f11 = 65480
+        space_bar = 32
+        enter = 65293
+        arrow_up = 65362
+        arrow_down = 65364
+        arrow_right = 65363
+        arrow_left = 65361
