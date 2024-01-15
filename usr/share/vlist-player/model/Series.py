@@ -185,8 +185,7 @@ class Series(object):
                                self.__keep_playing,
                                self.__start_at,
                                self.__audio_track,
-                               self.__subtitles_track,
-                               ])
+                               self.__subtitles_track])
 
             for video in self.__videos_instances:
                 csv_list.writerow([video.get_id(),
@@ -195,8 +194,7 @@ class Series(object):
                                    video.get_o_played(),
                                    video.get_r_played(),
                                    video.get_position(),
-                                   video.get_display(),
-                                   ])
+                                   video.get_display()])
 
     def __load_image(self):
         """
@@ -532,9 +530,7 @@ class Series(object):
         for video in self.__videos_instances:
             if video_to_find == video:
                 video.set_position(position)
-
                 self._write_data()
-
                 break
 
     def update_ids(self):
@@ -611,6 +607,8 @@ class Series(object):
         for video in self.__videos_instances:
             if not video.get_o_played() and video.get_play() and video.get_path() and video.get_display():
                 return video
+
+        return False
 
     def get_r_episode(self):
         for video in self.__videos_instances:

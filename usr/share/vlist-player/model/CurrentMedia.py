@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 
-#  Copyright (C) 2014-2015 Rafael Senties Martinelli.
+#  Copyright (C) 2014-2015, 2024 Rafael Senties Martinelli.
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -22,3 +22,17 @@ class CurrentMedia:
         self.video = video
         self.random = random
         self.mark = mark
+
+    def next_episode(self, random):
+
+        if random:
+            video = self.series.get_r_episode()
+        else:
+            video = self.series.get_o_episode()
+
+        self.random = random
+        self.video = video
+
+        return video
+
+
