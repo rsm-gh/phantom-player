@@ -107,13 +107,13 @@ class MediaPlayerWidget(Gtk.Overlay):
         super().__init__()
 
         self.__root_window = root_window
+        self.__has_media = False
         self.__widgets_shown = True
         self.__motion_time = time()
         self.__vlc_widget_on_top = False
         self.__volume_increment = 3  # %
         self.__width = 600
         self.__height = 300
-        self.__stopped_position = 0
         self.__update__scale_progress = True
 
         self.__vlc_widget = VLCWidget(self.__root_window)
@@ -268,52 +268,53 @@ class MediaPlayerWidget(Gtk.Overlay):
                    start_at=0.0,
                    thread=False):
 
-        if os.path.exists(file_path):
+        if not os.path.exists(file_path):
+            return
 
-            self.__stopped_position = position
+        media = VLC_INSTANCE.media_new(file_path)
+        media.parse()
 
-            media = VLC_INSTANCE.media_new(file_path)
-            media.parse()
+        self.__has_media = True
 
-            turn_off_screensaver(True)
+        turn_off_screensaver(True)
 
-            if thread:
+        if thread:
+            Gdk.threads_enter()
+            self.__vlc_widget.player.set_media(media)
+            Gdk.threads_leave()
+
+            Gdk.threads_enter()
+            self.__root_window.set_title(media.get_meta(0))
+            Gdk.threads_leave()
+
+            Gdk.threads_enter()
+            self.__vlc_widget.player.play()
+            Gdk.threads_leave()
+
+            if not self.get_property('visible'):
                 Gdk.threads_enter()
-                self.__vlc_widget.player.set_media(media)
+                self.show_all()
                 Gdk.threads_leave()
+        else:
+            self.__vlc_widget.player.set_media(media)
+            self.__root_window.set_title(media.get_meta(0))
+            self.__vlc_widget.player.play()
+            if not self.get_property('visible'):
+                self.show_all()
 
-                Gdk.threads_enter()
-                self.__root_window.set_title(media.get_meta(0))
-                Gdk.threads_leave()
+        Thread(target=self.__start_video_at, args=[position, start_at]).start()
 
-                Gdk.threads_enter()
-                self.__vlc_widget.player.play()
-                Gdk.threads_leave()
+        if subtitles_track == -1 or subtitles_track >= 0:
+            Thread(target=self.__delayed_method, args=[0.05,
+                                                       self.__vlc_widget.player.video_set_spu,
+                                                       subtitles_track]
+                   ).start()
 
-                if not self.get_property('visible'):
-                    Gdk.threads_enter()
-                    self.show_all()
-                    Gdk.threads_leave()
-            else:
-                self.__vlc_widget.player.set_media(media)
-                self.__root_window.set_title(media.get_meta(0))
-                self.__vlc_widget.player.play()
-                if not self.get_property('visible'):
-                    self.show_all()
-
-            Thread(target=self.__start_video_at, args=[position, start_at]).start()
-
-            if subtitles_track == -1 or subtitles_track >= 0:
-                Thread(target=self.__delayed_method, args=[0.05,
-                                                           self.__vlc_widget.player.video_set_spu,
-                                                           subtitles_track]
-                       ).start()
-
-            if audio_track > -2:
-                Thread(target=self.__delayed_method, args=[0.05,
-                                                           self.__vlc_widget.player.audio_set_track,
-                                                           audio_track]
-                       ).start()
+        if audio_track > -2:
+            Thread(target=self.__delayed_method, args=[0.05,
+                                                       self.__vlc_widget.player.audio_set_track,
+                                                       audio_track]
+                   ).start()
 
     def quit(self):
 
@@ -558,14 +559,17 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __on_motion_notify_event(self, *_):
         self.__motion_time = time()
 
-        if not self.__widgets_shown:
+        if not self.__widgets_shown and self.__has_media:
             self.__widgets_shown = True
             self.__buttons_box.show()
             self.__label_volume.show()
 
     def __on_mouse_button_press(self, _, event):
 
-        if event.type == Gdk.EventType._2BUTTON_PRESS:
+        if not self.__has_media:
+            return
+
+        elif event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == 1:  # left click
                 self.fullscreen()
 
@@ -714,7 +718,11 @@ class MediaPlayerWidget(Gtk.Overlay):
             Gdk.threads_leave()
 
     def __on_mouse_scroll(self, _, event):
-        if event.direction == Gdk.ScrollDirection.UP:
+
+        if not self.__has_media:
+            return
+
+        elif event.direction == Gdk.ScrollDirection.UP:
             self.volume_down()
 
         elif event.direction == Gdk.ScrollDirection.DOWN:
