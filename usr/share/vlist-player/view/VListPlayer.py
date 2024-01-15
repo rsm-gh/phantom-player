@@ -139,9 +139,6 @@ class VListPlayer(object):
             configuration
         """
 
-        # list of classes
-        self.__list_episodes_class = []
-
         # font colors
         color = Gdk.RGBA()
         color.parse(gtk_default_font_color())
@@ -185,6 +182,7 @@ class VListPlayer(object):
         """
             Display the window
         """
+        self.window_root.maximize()
         self.window_root.show_all()
         self.__mp_widget.hide_controls()
 
@@ -286,16 +284,16 @@ class VListPlayer(object):
                                                              self.__current_media.random,
                                                              True)
 
-                    self.__episode_update()
+                    next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
 
                     Gdk.threads_enter()
                     self.__episodes_populate_liststore(True)
                     Gdk.threads_leave()
 
                     if self.checkbutton_keep_playing.get_active():
-                        if self.__current_media.video:
-                            self.__mp_widget.play_video(self.__current_media.video.get_path(),
-                                                        self.__current_media.video.get_position(),
+                        if next_video:
+                            self.__mp_widget.play_video(next_video.get_path(),
+                                                        next_video.get_position(),
                                                         series.get_subtitles_track(),
                                                         series.get_audio_track(),
                                                         series.get_start_at(),
@@ -337,9 +335,9 @@ class VListPlayer(object):
             self.spinbutton_start_at.set_value(series.get_start_at())
 
             if self.checkbutton_random.get_active():
-                (played, total, percent) = series.get_r_played_stats()
+                played, total, percent = series.get_r_played_stats()
             else:
-                (played, total, percent) = series.get_o_played_stats()
+                played, total, percent = series.get_o_played_stats()
 
             progress_text = "{}/{}".format(played, total)
 
@@ -428,26 +426,6 @@ class VListPlayer(object):
 
         if os.path.exists(path):
             open_directory(path)
-
-    def __current_media_update_series(self):
-
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series_data = self.__series_dict[selected_series_name]
-
-        self.__current_media.series = series_data
-
-        return series_data
-
-    def __episode_update(self):
-
-        series_data = self.__current_media_update_series()
-
-        if self.checkbutton_random.get_active():
-            self.__current_media.video = series_data.get_r_episode()
-        else:
-            self.__current_media.video = series_data.get_o_episode()
-
-        self.__current_media.random = self.checkbutton_random.get_active()
 
     def __series_load_from_path(self,
                                 path,
@@ -797,7 +775,7 @@ class VListPlayer(object):
             gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
             self.label_current_series.set_label(new_name)
 
-            self.__episode_update()
+            self.__current_media.next_episode(self.checkbutton_random.get_active())
 
         self.window_rename.hide()
 
@@ -914,9 +892,6 @@ class VListPlayer(object):
 
         if event.button == 1 and selection_length == 1 and event.type == Gdk.EventType._2BUTTON_PRESS:
 
-            if self.__current_media.series is None:
-                self.__current_media_update_series()
-
             episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
 
             path = series.get_path_from_video_name(episode_name)
@@ -1011,6 +986,9 @@ class VListPlayer(object):
     def on_treeview_selection_series_changed(self, treeselection):
         if treeselection.count_selected_rows() > 0:
             self.__episodes_populate_liststore(True)
+            selected_series_name = gtk_get_first_selected_cell_from_selection(treeselection, 1)
+            series_data = self.__series_dict[selected_series_name]
+            self.__current_media = CurrentMedia(series_data)
 
     def on_eventbox_selected_series_name_button_press_event(self, _, event):
         self.on_treeview_series_press_event(self.treeview_series, event, False)
@@ -1040,7 +1018,7 @@ class VListPlayer(object):
                         not self.__mp_widget.is_paused() or \
                         self.__current_media.series.get_name() != selected_series_name:
 
-                    self.__episode_update()
+                    next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
 
                     if not self.__current_media.video:
                         gtk_info(self.window_root, TEXT_END_OF_SERIES)
@@ -1050,8 +1028,8 @@ class VListPlayer(object):
                         gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
                         self.__mp_widget.hide()
                     else:
-                        self.__mp_widget.play_video(self.__current_media.video.get_path(),
-                                                    self.__current_media.video.get_position(),
+                        self.__mp_widget.play_video(next_video.get_path(),
+                                                    next_video.get_position(),
                                                     series.get_subtitles_track(),
                                                     series.get_audio_track(),
                                                     series.get_start_at())

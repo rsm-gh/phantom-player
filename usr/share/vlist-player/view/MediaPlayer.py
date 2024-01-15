@@ -260,7 +260,13 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         return True
 
-    def play_video(self, file_path, position=0, subtitles_track=-2, audio_track=-2, start_at=0.0, thread=False):
+    def play_video(self,
+                   file_path,
+                   position=0,
+                   subtitles_track=-2,
+                   audio_track=-2,
+                   start_at=0.0,
+                   thread=False):
 
         if os.path.exists(file_path):
 
