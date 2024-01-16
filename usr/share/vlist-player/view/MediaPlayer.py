@@ -37,6 +37,7 @@ from controller import vlc
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
 
+
 def format_milliseconds_to_time(number):
     time_string = str(timedelta(milliseconds=number)).split('.')[0]
 
@@ -99,6 +100,18 @@ def gtk_file_chooser(parent, start_path=''):
     return file_path
 
 
+class WidgetsMarkup:
+    _label_volume = '<span color="white"> Vol: {}% </span>'
+    _label_progress = '<span color="white">{}</span>'
+    _label_length = '<span color="white">{}</span>'
+
+
+class WidgetsShown:
+    none = 0
+    volume = 1
+    toolbox = 2
+
+
 class MediaPlayerWidget(Gtk.Overlay):
     __gtype_name__ = 'MediaPlayerWidget'
 
@@ -108,12 +121,13 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__root_window = root_window
         self.__has_media = False
-        self.__widgets_shown = True
+        self.__widgets_shown = WidgetsShown.none
         self.__motion_time = time()
         self.__volume_increment = 3  # %
         self.__width = 600
         self.__height = 300
         self.__update__scale_progress = True
+        self.__media_length = 0
 
         self.__vlc_widget = VLCWidget(self.__root_window)
         self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
@@ -155,7 +169,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__buttons_box.pack_start(self.__button_end_video, True, True, 3)
 
         self.__label_progress = Gtk.Label()
-        self.__label_progress.set_markup('<span font="{0}" color="white">00:00:00</span>'.format(self.__height / 29.0))
+        self.__label_progress.set_markup(WidgetsMarkup._label_progress.format("00:00:00"))
         self.__label_progress.set_margin_end(5)
         self.__label_progress.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
         self.__buttons_box.pack_start(self.__label_progress, True, True, 3)
@@ -169,25 +183,25 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scale_progress.add_mark(0.25, Gtk.PositionType.TOP, None)
         self.__scale_progress.add_mark(0.5, Gtk.PositionType.TOP, None)
         self.__scale_progress.add_mark(0.75, Gtk.PositionType.TOP, None)
-        self.__scale_progress.connect('button-press-event', self.__scale_button_press)
-        self.__scale_progress.connect('button-release-event', self.__scale_button_release)
+        self.__scale_progress.connect('button-press-event', self.__on_scale_progress_button_press)
+        self.__scale_progress.connect('button-release-event', self.__on_scale_progress_button_release)
+        self.__scale_progress.connect('value_changed', self.__on_scale_progress_changed)
         self.__buttons_box.pack_start(self.__scale_progress, True, True, 1)
 
         self.__label_length = Gtk.Label()
-        self.__label_length.set_markup('<span font="{0}" color="white">00:00:00</span>'.format(self.__height / 29.0))
+        self.__label_length.set_markup(WidgetsMarkup._label_length.format("00:00:00"))
         self.__label_length.set_margin_end(5)
         self.__label_length.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
         self.__buttons_box.pack_start(self.__label_length, True, True, 3)
 
         self.__scale_volume = Gtk.VolumeButton()
-        self.__scale_volume.connect('value_changed', self.__scale_volume_changed)
+        self.__scale_volume.connect('value_changed', self.__on_scale_volume_changed)
         self.__buttons_box.pack_start(self.__scale_volume, True, True, 3)
 
         #   Extra volume label
         self.__label_volume = Gtk.Label()
         self.__label_volume.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
-        self.__label_volume.set_markup(
-            '<span font="{1}" color="white"> Vol: {0}% </span>'.format(0, self.__height / 30.0))
+        self.__label_volume.set_markup(WidgetsMarkup._label_volume.format(0))
         self.__label_volume.set_valign(Gtk.Align.START)
         self.__label_volume.set_halign(Gtk.Align.END)
         self.add_overlay(self.__label_volume)
@@ -198,13 +212,14 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__thread_player_activity = Thread(target=self.__on_thread_player_activity)
         self.__thread_player_activity.start()
 
-        self.__thread_scan_motion = Thread(target=self.__on_thread_scan_motion)
+        self.__thread_scan_motion = Thread(target=self.__on_thread_motion_activity)
         self.__thread_scan_motion.start()
 
     def hide_controls(self):
         self.__buttons_box.hide()
         self.__buttons_box.hide()
         self.__label_volume.hide()
+        self.__widgets_shown = WidgetsShown.none
 
     def stop(self):
         self.__vlc_widget.player.stop()
@@ -268,6 +283,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         media.parse()
 
         self.__has_media = True
+        media_title = media.get_meta(0)
 
         turn_off_screensaver(True)
 
@@ -277,23 +293,17 @@ class MediaPlayerWidget(Gtk.Overlay):
             Gdk.threads_leave()
 
             Gdk.threads_enter()
-            self.__root_window.set_title(media.get_meta(0))
+            self.__root_window.set_title(media_title)
             Gdk.threads_leave()
 
             Gdk.threads_enter()
             self.__vlc_widget.player.play()
             Gdk.threads_leave()
 
-            if not self.get_property('visible'):
-                Gdk.threads_enter()
-                self.show_all()
-                Gdk.threads_leave()
         else:
             self.__vlc_widget.player.set_media(media)
-            self.__root_window.set_title(media.get_meta(0))
+            self.__root_window.set_title(media_title)
             self.__vlc_widget.player.play()
-            if not self.get_property('visible'):
-                self.show_all()
 
         Thread(target=self.__start_video_at, args=[position, start_at]).start()
 
@@ -322,29 +332,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__thread_player_activity.join()
         self.__thread_scan_motion.join()
 
-    @staticmethod
-    def __thread_hide_label(label):
-        sleep(1.5)
-        Gdk.threads_enter()
-        label.hide()
-        Gdk.threads_leave()
-
-    def __scale_volume_changed(self, _, value):
-        value = int(value * 100)
-
-        self.__label_volume.set_markup(
-            '<span font="{1}" color="white"> Vol: {0}% </span>'.format(value, self.__height / 30.0))
-        if self.__vlc_widget.player.audio_get_volume() != value:
-            self.__vlc_widget.player.audio_set_volume(value)
-
-    def __scale_button_press(self, *_):
-        self.__update__scale_progress = False
-
-    def __scale_button_release(self, *_):
-        self.__vlc_widget.player.set_position(self.__scale_progress.get_value())
-        self.__update__scale_progress = True
-
-    def __on_thread_scan_motion(self, *_):
+    def __on_thread_motion_activity(self, *_):
 
         this_thread = current_thread()
 
@@ -352,44 +340,14 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             time_delta = time() - self.__motion_time
 
-            if time_delta > 3 and self.__widgets_shown:
-                self.__widgets_shown = False
+            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none:
+                self.__widgets_shown = WidgetsShown.none
                 Gdk.threads_enter()
                 self.__label_volume.hide()
                 self.__buttons_box.hide()
                 Gdk.threads_leave()
 
             sleep(.5)
-
-    def __on_menu_video_subs_audio(self, _, player_type, track):
-        """
-            Todo: self.__vlc_widget.player.XXX_set_track returns a status.
-            It would be good to read the status and display a message in case of problem.
-        """
-        if player_type == 0:
-            self.__vlc_widget.player.audio_set_track(track)
-
-        elif player_type == 1:
-            self.__vlc_widget.player.video_set_track(track)
-
-        elif player_type == 2:
-            self.__vlc_widget.player.video_set_spu(track)
-
-    def __on_button_player_stop(self, *_):
-        self.__stopped_position = self.__vlc_widget.player.get_position()
-        self.__vlc_widget.player.stop()
-        turn_off_screensaver(False)
-        self.hide()
-
-    def __on_button_play_pause_clicked(self, *_):
-        if not self.is_playing():
-            self.__button_play_pause.set_stock_id('gtk-media-pause')
-            self.__vlc_widget.player.play()
-            turn_off_screensaver(True)
-        else:
-            self.__button_play_pause.set_stock_id('gtk-media-play')
-            self.__vlc_widget.player.pause()
-            turn_off_screensaver(False)
 
     def __on_thread_player_activity(self):
         """
@@ -404,140 +362,132 @@ class MediaPlayerWidget(Gtk.Overlay):
             vlc_volume = self.__vlc_widget.player.audio_get_volume()
             vlc_position = self.__vlc_widget.player.get_position()
             scale_volume_value = int(self.__scale_volume.get_value() * 100)
-            scale_progres_value = self.__scale_progress.get_value()
 
             # Update the play-pause button
             if vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-play':
                 Gdk.threads_enter()
                 self.__button_play_pause.set_stock_id('gtk-media-pause')
                 Gdk.threads_leave()
+
             elif not vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-pause':
                 Gdk.threads_enter()
                 self.__button_play_pause.set_stock_id('gtk-media-play')
                 Gdk.threads_leave()
 
             """
-                Update the volume scale
+                Update the volume. Is this necessary?
             """
             if vlc_volume <= 100 and vlc_volume != scale_volume_value:
-
                 Gdk.threads_enter()
                 self.__scale_volume.set_value(vlc_volume / 100.000)
                 Gdk.threads_leave()
 
                 Gdk.threads_enter()
-                self.__label_volume.set_markup(
-                    '<span font="{1}" color="white"> Vol: {0}% </span>'.format(vlc_volume, self.__height / 30.0))
+                self.__label_volume.set_markup(WidgetsMarkup._label_volume.format(vlc_volume))
                 Gdk.threads_leave()
 
                 Gdk.threads_enter()
                 self.__label_volume.show()
                 Gdk.threads_leave()
 
+                self.__motion_time = time()
+                self.__widgets_shown = WidgetsShown.volume
 
-            elif not self.__buttons_box.get_property('visible') and self.__label_volume.get_property('visible'):
-                Thread(target=self.__thread_hide_label, args=[self.__label_volume]).start()
-
-            """
-                Update the progress scale
-            """
-            if self.__update__scale_progress and scale_progres_value != vlc_position:
-                Gdk.threads_enter()
-                self.__scale_progress.set_value(vlc_position)
-                Gdk.threads_leave()
 
             """
-                Update the time of the player
+                Update the time of the scale and the time
             """
             if vlc_is_playing:
-                video_length = format_milliseconds_to_time(self.__vlc_widget.player.get_length()) + "   "
-                video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
+                # Why this can not be in play_video()?
+                self.__media_length = self.__vlc_widget.player.get_length()
 
-                Gdk.threads_enter()
-                self.__label_length.set_markup(
-                    '<span font="{1}" color="white">{0}</span>'.format(video_length, self.__height / 29.0))
-                Gdk.threads_leave()
-
-                Gdk.threads_enter()
-                self.__label_progress.set_markup(
-                    '<span font="{1}" color="white">{0}</span>'.format(video_time, self.__height / 29.0))
-                Gdk.threads_leave()
-            else:
-                video_length = self.__label_length.get_text().strip()
-                video_time = self.__label_progress.get_text().strip()
-
-            """
-                Update the size of the widgets
-            """
-            """
-            if self.get_property('visible'):
-
-                width, height = self.__root_window.get_size()
-
-                if width != self.__width or height != self.__height:
-
-                    self.__width = width
-                    self.__height = height
-
+                if self.__update__scale_progress:
+                    video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
                     Gdk.threads_enter()
-                    self.__scale_progress.set_size_request(self.__width / 2, -1)
+                    self.__label_progress.set_markup(WidgetsMarkup._label_progress.format(video_time))
                     Gdk.threads_leave()
 
                     Gdk.threads_enter()
-                    self.__label_volume.set_markup(
-                        '<span font="{1}" color="white"> Vol: {0}% </span>'.format(vlc_volume, self.__height / 30.0))
+                    self.__scale_progress.set_value(vlc_position)
                     Gdk.threads_leave()
 
+                    video_length = format_milliseconds_to_time(self.__media_length) + "   "
                     Gdk.threads_enter()
-                    self.__label_length.set_markup(
-                        '<span font="{1}" color="white">{0}</span>'.format(video_length, self.__height / 29.0))
+                    self.__label_length.set_markup(WidgetsMarkup._label_length.format(video_length))
                     Gdk.threads_leave()
 
-                    Gdk.threads_enter()
-                    self.__label_progress.set_markup(
-                        '<span font="{1}" color="white">{0}</span>'.format(video_time, self.__height / 29.0))
-                    Gdk.threads_leave()
-
-            else:
-                if vlc_is_playing:
-                    self.__vlc_widget.player.stop()
             """
+                Wait
+            """
+            sleep(0.25)
 
-            sleep(0.2)
+    @staticmethod
+    def __delayed_method(delay, method, arg=None):
 
-    def __on_key_pressed(self, _, event):
+        sleep(delay)
 
-        key = event.keyval
+        Gdk.threads_enter()
+        if arg is None:
+            _ = method()
+        else:
+            _ = method(arg)
+        Gdk.threads_leave()
 
-        if key == EventCodes.Keyboard.f11 and self.__has_media:
-            self.__root_window.fullscreen()
+    def __start_video_at(self, position, start_at):
+        """
+            It is necessary to give some time to the player to start playing
+            so the following methods can be applied.
+            I chose 0.05 seconds
+        """
 
-        elif Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
+        video_length = self.__vlc_widget.player.get_length()
+        start_at = str(start_at).split('.')
+        str_seconds = str(start_at[1])
+        minutes = int(start_at[0])
+        if len(str_seconds) == 1:
+            seconds = int(str_seconds) * 10
+        else:
+            seconds = int(str_seconds)
+        start_at = minutes * 60 + seconds
 
-            # display the toolbox if the arrows are shown
-            if key in (EventCodes.Keyboard.arrow_left, EventCodes.Keyboard.arrow_right):
-                self.__motion_time = time()
+        if video_length > 0 and start_at > 0:
+            video_length = video_length / 1000.000
+            start_at_percent = start_at / video_length
+        else:
+            start_at_percent = 0
+        if start_at_percent > position:
+            start_time = start_at_percent
+        elif position > 0:
+            start_time = position
+        else:
+            start_time = 0
 
-            if key == EventCodes.Keyboard.esc:
-                self.__root_window.unfullscreen()
+        if start_time > 0:
+            Gdk.threads_enter()
+            self.__vlc_widget.player.set_position(start_time)
+            Gdk.threads_leave()
 
-            elif key in (EventCodes.Keyboard.space_bar, EventCodes.Keyboard.enter):
-                self.__on_button_play_pause_clicked(None, None)
+    @staticmethod
+    def __redraw_bg(_, cairo_ctx):
+        """To redraw the black background when resized"""
+        cairo_ctx.set_source_rgb(0, 0, 0)
+        cairo_ctx.paint()
 
-            elif key == EventCodes.Keyboard.arrow_up:
-                self.volume_up()
+    def __fullscreen(self, *_):
+        """This is only for the Gtk.Menu"""
+        self.__root_window.fullscreen()
 
-            elif key == EventCodes.Keyboard.arrow_down:
-                self.volume_down()
+    def __unfullscreen(self, *_):
+        """This is only for the Gtk.Menu"""
+        self.__root_window.unfullscreen()
 
-    def __on_button_restart_the_video(self, *_):
-        self.__vlc_widget.player.set_position(0)
+    def __label_volume_hide(self):
+        sleep(1.5)
+        Gdk.threads_enter()
+        self.__label_volume.hide()
+        Gdk.threads_leave()
 
-    def __on_button_end_the_video(self, *_):
-        self.__vlc_widget.player.set_position(1)
-        self.__stopped_position = 0
-
-    def __vlc_rc_menu(self, event):
+    def __menu_rc_vlc_display(self, event):
 
         menu = Gtk.Menu()
 
@@ -623,17 +573,56 @@ class MediaPlayerWidget(Gtk.Overlay):
         menu.popup(None, None, None, None, event.button, event.time)
         return True
 
+    def __on_key_pressed(self, _, event):
+
+        key = event.keyval
+
+        if key == EventCodes.Keyboard.f11 and self.__has_media:
+            self.__root_window.fullscreen()
+
+        elif Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
+
+            # display the toolbox if the arrows are shown
+            if key in (EventCodes.Keyboard.arrow_left, EventCodes.Keyboard.arrow_right):
+                self.__motion_time = time()
+
+            if key == EventCodes.Keyboard.esc:
+                self.__root_window.unfullscreen()
+
+            elif key in (EventCodes.Keyboard.space_bar, EventCodes.Keyboard.enter):
+                self.__on_button_play_pause_clicked(None, None)
+
+            elif key == EventCodes.Keyboard.arrow_up:
+                self.volume_up()
+
+            elif key == EventCodes.Keyboard.arrow_down:
+                self.volume_down()
+
     def __on_motion_notify_event(self, *_):
         self.__motion_time = time()
 
-        if not self.__widgets_shown and self.__has_media:
-            self.__widgets_shown = True
+        if self.__has_media and self.__widgets_shown < WidgetsShown.toolbox:
+            self.__widgets_shown = WidgetsShown.toolbox
             self.__buttons_box.show()
             self.__label_volume.show()
+
+    def __on_mouse_scroll(self, _, event):
+
+        if not self.__has_media:
+            return
+
+        elif event.direction == Gdk.ScrollDirection.UP:
+            self.volume_down()
+
+        elif event.direction == Gdk.ScrollDirection.DOWN:
+            self.volume_up()
 
     def __on_mouse_button_press(self, _, event):
 
         if not self.__has_media:
+            return
+
+        elif not self.__update__scale_progress:
             return
 
         elif event.type == Gdk.EventType._2BUTTON_PRESS:
@@ -655,78 +644,65 @@ class MediaPlayerWidget(Gtk.Overlay):
                     turn_off_screensaver(True)
 
             elif event.button == EventCodes.Cursor.right_click:
-                self.__vlc_rc_menu(event)
+                self.__menu_rc_vlc_display(event)
 
-    @staticmethod
-    def __delayed_method(delay, method, arg=None):
-
-        sleep(delay)
-
-        Gdk.threads_enter()
-        if arg is None:
-            _ = method()
-        else:
-            _ = method(arg)
-        Gdk.threads_leave()
-
-    def __start_video_at(self, position, start_at):
+    def __on_menu_video_subs_audio(self, _, player_type, track):
         """
-            It is necessary to give some time to the player to start playing
-            so the following methods can be applied.
-            I chose 0.05 seconds
+            Todo: self.__vlc_widget.player.XXX_set_track returns a status.
+            It would be good to read the status and display a message in case of problem.
         """
+        if player_type == 0:
+            self.__vlc_widget.player.audio_set_track(track)
 
-        video_length = self.__vlc_widget.player.get_length()
-        start_at = str(start_at).split('.')
-        str_seconds = str(start_at[1])
-        minutes = int(start_at[0])
-        if len(str_seconds) == 1:
-            seconds = int(str_seconds) * 10
+        elif player_type == 1:
+            self.__vlc_widget.player.video_set_track(track)
+
+        elif player_type == 2:
+            self.__vlc_widget.player.video_set_spu(track)
+
+    def __on_button_player_stop(self, *_):
+        self.__stopped_position = self.__vlc_widget.player.get_position()
+        self.__vlc_widget.player.stop()
+        turn_off_screensaver(False)
+        self.hide()
+
+    def __on_button_play_pause_clicked(self, *_):
+        if not self.is_playing():
+            self.__button_play_pause.set_stock_id('gtk-media-pause')
+            self.__vlc_widget.player.play()
+            turn_off_screensaver(True)
         else:
-            seconds = int(str_seconds)
-        start_at = minutes * 60 + seconds
+            self.__button_play_pause.set_stock_id('gtk-media-play')
+            self.__vlc_widget.player.pause()
+            turn_off_screensaver(False)
 
-        if video_length > 0 and start_at > 0:
-            video_length = video_length / 1000.000
-            start_at_percent = start_at / video_length
-        else:
-            start_at_percent = 0
-        if start_at_percent > position:
-            start_time = start_at_percent
-        elif position > 0:
-            start_time = position
-        else:
-            start_time = 0
+    def __on_button_restart_the_video(self, *_):
+        self.__vlc_widget.player.set_position(0)
 
-        if start_time > 0:
-            Gdk.threads_enter()
-            self.__vlc_widget.player.set_position(start_time)
-            Gdk.threads_leave()
+    def __on_button_end_the_video(self, *_):
+        self.__vlc_widget.player.set_position(1)
+        self.__stopped_position = 0
 
-    def __on_mouse_scroll(self, _, event):
+    def __on_scale_volume_changed(self, _, value):
+        value = int(value * 100)
+        self.__label_volume.set_markup(WidgetsMarkup._label_volume.format(value))
+        if self.__vlc_widget.player.audio_get_volume() != value:
+            self.__vlc_widget.player.audio_set_volume(value)
 
-        if not self.__has_media:
-            return
+    def __on_scale_progress_changed(self, widget, *_):
+        if self.__media_length > 0 and not self.__update__scale_progress:
+            video_time = widget.get_value() * self.__media_length
+            video_time = format_milliseconds_to_time(video_time) + "   "
+            self.__label_progress.set_markup(WidgetsMarkup._label_progress.format(video_time))
 
-        elif event.direction == Gdk.ScrollDirection.UP:
-            self.volume_down()
+    def __on_scale_progress_button_press(self, *_):
+        self.__vlc_widget.player.pause()
+        self.__update__scale_progress = False
 
-        elif event.direction == Gdk.ScrollDirection.DOWN:
-            self.volume_up()
-
-    @staticmethod
-    def __redraw_bg(_, cairo_ctx):
-        """To redraw the black background when resized"""
-        cairo_ctx.set_source_rgb(0, 0, 0)
-        cairo_ctx.paint()
-
-    def __fullscreen(self, *_):
-        """This is only for the Gtk.Menu"""
-        self.__root_window.fullscreen()
-
-    def __unfullscreen(self, *_):
-        """This is only for the Gtk.Menu"""
-        self.__root_window.unfullscreen()
+    def __on_scale_progress_button_release(self, widget, *_):
+        self.__vlc_widget.player.set_position(widget.get_value())
+        self.__vlc_widget.player.play()
+        self.__update__scale_progress = True
 
 
 class MediaPlayer(Gtk.Window):
