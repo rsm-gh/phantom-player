@@ -813,28 +813,29 @@ class VListPlayer(object):
             return
 
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series = self.__series_dict[selected_series_name]
+
+        if selected_series_name is None:
+            return
+
+        series_data = self.__series_dict[selected_series_name]
 
         #
         #    Update the series area
         #
 
-        self.checkbutton_keep_playing.set_active(series.get_keep_playing())
-        self.checkbutton_random.set_active(series.get_random())
+        self.checkbutton_keep_playing.set_active(series_data.get_keep_playing())
+        self.checkbutton_random.set_active(series_data.get_random())
 
-        self.spinbutton_audio.set_value(series.get_audio_track())
-        self.spinbutton_subtitles.set_value(series.get_subtitles_track())
-        self.spinbutton_start_at.set_value(series.get_start_at())
+        self.spinbutton_audio.set_value(series_data.get_audio_track())
+        self.spinbutton_subtitles.set_value(series_data.get_subtitles_track())
+        self.spinbutton_start_at.set_value(series_data.get_start_at())
 
         if self.checkbutton_random.get_active():
-            played, total, percent = series.get_r_played_stats()
+            played, total, percent = series_data.get_r_played_stats()
         else:
-            played, total, percent = series.get_o_played_stats()
+            played, total, percent = series_data.get_o_played_stats()
 
-        progress_text = "{}/{}".format(played, total)
         self.progressbar.set_fraction(percent)
-        self.progressbar.set_text(progress_text)
-        self.progressbar.set_show_text(True)
 
         """
             update the episodes area
@@ -845,16 +846,16 @@ class VListPlayer(object):
         self.liststore_episodes.clear()
         self.column_name.set_spacing(0)
 
-        if not os.path.exists(series.get_path()):
+        if not os.path.exists(series_data.get_path()):
             return
 
         # initialize the list
         videos_list = []
-        for _ in series.get_videos():
+        for _ in series_data.get_videos():
             videos_list.append(None)
 
         # sort it by id
-        for video in series.get_videos():
+        for video in series_data.get_videos():
             try:
                 videos_list[video.get_id() - 1] = video
             except Exception as e:
@@ -882,7 +883,7 @@ class VListPlayer(object):
                                                     color])
             else:
                 print("Error loading the liststore_episodes. The series '{}' has an empty video.".format(
-                    series.get_name()))
+                    series_data.get_name()))
 
     def __liststore_series_populate(self):
 
