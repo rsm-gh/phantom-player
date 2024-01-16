@@ -17,7 +17,7 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 TEXT_PROGRAM_NAME = "Video List Player"
-TEXT_FOLDER = "Folder"
+TEXT_FOLDER = "Open Folder"
 TEXT_FIND = "Find"
 TEXT_IGNORE = "Ignore"
 TEXT_DONT_IGNORE = "Don't Ignore"

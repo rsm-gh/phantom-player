@@ -107,6 +107,36 @@ Author: Rafael Senties Martinelli
     <property name="stock">gtk-properties</property>
     <property name="icon_size">1</property>
   </object>
+  <object class="GtkListStore" id="liststore_episodes">
+    <columns>
+      <!-- column-name number -->
+      <column type="gint"/>
+      <!-- column-name name -->
+      <column type="gchararray"/>
+      <!-- column-name extension -->
+      <column type="gchararray"/>
+      <!-- column-name found -->
+      <column type="gchararray"/>
+      <!-- column-name play -->
+      <column type="gboolean"/>
+      <!-- column-name o_play -->
+      <column type="gboolean"/>
+      <!-- column-name rplay -->
+      <column type="gboolean"/>
+      <!-- column-name fill -->
+      <column type="gchararray"/>
+      <!-- column-name color -->
+      <column type="GdkRGBA"/>
+    </columns>
+  </object>
+  <object class="GtkListStore" id="liststore_series">
+    <columns>
+      <!-- column-name image -->
+      <column type="GdkPixbuf"/>
+      <!-- column-name string -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkWindow" id="window_root">
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">Video List Player</property>
@@ -122,14 +152,14 @@ Author: Rafael Senties Martinelli
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <child>
-              <object class="GtkMenuItem" id="menuitem_add">
+              <object class="GtkMenuItem">
                 <property name="use-action-appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">_Add</property>
                 <property name="use-underline">True</property>
                 <child type="submenu">
-                  <object class="GtkMenu" id="menu1">
+                  <object class="GtkMenu">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
@@ -159,96 +189,137 @@ Author: Rafael Senties Martinelli
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="menuitem_config">
+              <object class="GtkMenuItem">
                 <property name="use-action-appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">Configuration</property>
                 <child type="submenu">
-                  <object class="GtkMenu" id="menu2">
+                  <object class="GtkMenu">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_number">
+                      <object class="GtkMenuItem">
                         <property name="use-action-appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Column: Number</property>
-                        <property name="use-underline">True</property>
-                        <signal name="toggled" handler="on_checkbox_hide_number_toggled" swapped="no"/>
+                        <property name="label" translatable="yes">Hide Columns</property>
+                        <child type="submenu">
+                          <object class="GtkMenu" id="menu4">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hide_number">
+                                <property name="use-action-appearance">False</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Episodes Number</property>
+                                <signal name="toggled" handler="on_checkbox_hide_number_toggled" swapped="no"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hide_name">
+                                <property name="use-action-appearance">False</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Episodes Name</property>
+                                <signal name="toggled" handler="on_checkbox_hide_name_toggled" swapped="no"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hide_extension">
+                                <property name="use-action-appearance">False</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Episodes Extension</property>
+                                <signal name="toggled" handler="on_checkbox_hide_extension_toggled" swapped="no"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hide_play">
+                                <property name="use-action-appearance">False</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Episodes Play</property>
+                                <signal name="toggled" handler="on_checkbox_hide_play_toggled" swapped="no"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hide_oplayed">
+                                <property name="use-action-appearance">False</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Episodes O-Played</property>
+                                <signal name="toggled" handler="on_checkbox_hide_oplayed_toggled" swapped="no"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hide_rplayed">
+                                <property name="use-action-appearance">False</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Episodes R-Played</property>
+                                <signal name="toggled" handler="on_checkbox_hide_rplayed_toggled" swapped="no"/>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_extension">
+                      <object class="GtkMenuItem">
                         <property name="use-action-appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Column: Extension</property>
-                        <signal name="toggled" handler="on_checkbox_hide_extension_toggled" swapped="no"/>
+                        <property name="label" translatable="yes">Hide Rows</property>
+                        <child type="submenu">
+                          <object class="GtkMenu" id="menu1">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hide_missing_series">
+                                <property name="use-action-appearance">False</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Missing Series</property>
+                                <signal name="toggled" handler="on_checkbox_hide_missing_series_toggled" swapped="no"/>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hidden_items">
+                                <property name="use-action-appearance">False</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Ignored Episodes</property>
+                                <property name="active">True</property>
+                                <signal name="toggled" handler="on_checkbox_hidden_items_toggled" swapped="no"/>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_name">
+                      <object class="GtkMenuItem">
                         <property name="use-action-appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Column: Name</property>
-                        <signal name="toggled" handler="on_checkbox_hide_name_toggled" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_oplayed">
-                        <property name="use-action-appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Column: O-Played</property>
-                        <signal name="toggled" handler="on_checkbox_hide_oplayed_toggled" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_play">
-                        <property name="use-action-appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Column: Play</property>
-                        <signal name="toggled" handler="on_checkbox_hide_play_toggled" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_rplayed">
-                        <property name="use-action-appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Column: R-Played</property>
-                        <signal name="toggled" handler="on_checkbox_hide_rplayed_toggled" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_missing_series">
-                        <property name="use-action-appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Rows: Missing Series</property>
-                        <signal name="toggled" handler="on_checkbox_hide_missing_series_toggled" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hidden_items">
-                        <property name="use-action-appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Rows: Hidden Items</property>
-                        <property name="use-underline">True</property>
-                        <signal name="toggled" handler="on_checkbox_hidden_items_toggled" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_warning_missing_series">
-                        <property name="use-action-appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Warning: Missing Serie</property>
-                        <signal name="toggled" handler="on_checkbox_hide_warning_missing_series_toggled" swapped="no"/>
+                        <property name="label" translatable="yes">Extra</property>
+                        <child type="submenu">
+                          <object class="GtkMenu" id="menu2">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hide_warning_missing_series">
+                                <property name="use-action-appearance">False</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Series Missing Warning</property>
+                                <signal name="toggled" handler="on_checkbox_hide_warning_missing_series_toggled" swapped="no"/>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>
@@ -256,7 +327,7 @@ Author: Rafael Senties Martinelli
               </object>
             </child>
             <child>
-              <object class="GtkMenuItem" id="menuitem_help">
+              <object class="GtkMenuItem">
                 <property name="use-action-appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
@@ -593,7 +664,6 @@ Author: Rafael Senties Martinelli
                         <property name="width-request">400</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
-                        <property name="margin-right">15</property>
                         <property name="margin-end">15</property>
                         <property name="hexpand">True</property>
                         <property name="vexpand">True</property>
@@ -742,7 +812,6 @@ Author: Rafael Senties Martinelli
                       <object class="GtkProgressBar" id="progressbar">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-right">15</property>
                         <property name="margin-end">15</property>
                         <property name="text" translatable="yes">0/0</property>
                       </object>
@@ -1383,35 +1452,5 @@ If the name had modifications it won't find them.</property>
       <action-widget response="0">button_okey_rename</action-widget>
       <action-widget response="0">button_cancel_rename</action-widget>
     </action-widgets>
-  </object>
-  <object class="GtkListStore" id="liststore_episodes">
-    <columns>
-      <!-- column-name number -->
-      <column type="gint"/>
-      <!-- column-name name -->
-      <column type="gchararray"/>
-      <!-- column-name extension -->
-      <column type="gchararray"/>
-      <!-- column-name found -->
-      <column type="gchararray"/>
-      <!-- column-name play -->
-      <column type="gboolean"/>
-      <!-- column-name o_play -->
-      <column type="gboolean"/>
-      <!-- column-name rplay -->
-      <column type="gboolean"/>
-      <!-- column-name fill -->
-      <column type="gchararray"/>
-      <!-- column-name color -->
-      <column type="GdkRGBA"/>
-    </columns>
-  </object>
-  <object class="GtkListStore" id="liststore_series">
-    <columns>
-      <!-- column-name image -->
-      <column type="GdkPixbuf"/>
-      <!-- column-name string -->
-      <column type="gchararray"/>
-    </columns>
   </object>
 </interface>
