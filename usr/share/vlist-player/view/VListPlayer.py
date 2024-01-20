@@ -25,7 +25,7 @@ from threading import Thread, current_thread
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')
-from gi.repository import Gtk, Gdk, GObject
+from gi.repository import Gtk, Gdk, GObject, GLib
 
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
@@ -474,9 +474,7 @@ class VListPlayer(object):
 
     def on_checkbox_hide_missing_series_toggled(self, *_):
         self.__ccp.write('hide-missing-series', self.checkbox_hide_missing_series.get_active())
-        th = Thread(target=self.__liststore_series_populate)
-        th.start()
-        self.__threads.append(th)
+        self.__liststore_series_populate()
 
     def on_checkbox_hide_number_toggled(self, *_):
         state = self.checkbox_hide_number.get_active()
@@ -647,9 +645,7 @@ class VListPlayer(object):
 
                     next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
 
-                    Gdk.threads_enter()
-                    self.__liststore_episodes_populate(True)
-                    Gdk.threads_leave()
+                    GLib.idle_add(self.__liststore_episodes_populate, True)
 
                     if self.checkbutton_keep_playing.get_active():
                         if next_video:
@@ -661,19 +657,11 @@ class VListPlayer(object):
                                                            True)
 
                         else:
-                            Gdk.threads_enter()
-                            self.window_root.unfullscreen()
-                            Gdk.threads_leave()
-                            Gdk.threads_enter()
-                            gtk_info(self.window_root, TEXT_END_OF_SERIES)
-                            Gdk.threads_leave()
+                            GLib.idle_add(self.window_root.unfullscreen)
+                            GLib.idle_add(gtk_info, self.window_root, TEXT_END_OF_SERIES)
                     else:
-                        Gdk.threads_enter()
-                        self.__media_player.stop()
-                        Gdk.threads_leave()
-                        Gdk.threads_enter()
-                        self.window_root.unfullscreen()
-                        Gdk.threads_leave()
+                        GLib.idle_add(self.__media_player.stop)
+                        GLib.idle_add(self.window_root.unfullscreen)
 
             time.sleep(0.5)
 
@@ -721,14 +709,10 @@ class VListPlayer(object):
 
         for i, row in enumerate(self.liststore_series):
             if row[1] == current_series_name:
-                Gdk.threads_enter()
-                self.treeview_series.set_cursor(i)
-                Gdk.threads_leave()
+                GLib.idle_add(self.treeview_series.set_cursor, i)
                 return
 
-        Gdk.threads_enter()
-        self.treeview_series.set_cursor(0)
-        Gdk.threads_leave()
+        GLib.idle_add(self.treeview_series.set_cursor, 0)
 
     def __series_load_from_path(self,
                                 path,
@@ -753,17 +737,20 @@ class VListPlayer(object):
         self.__series_dict[new_series.get_name()] = new_series
 
         if os.path.exists(new_series.get_path()) or not self.checkbox_hide_missing_series.get_active():
-            Gdk.threads_enter()
-            self.liststore_series.append([new_series.get_image(), new_series.get_name()])
-            Gdk.threads_leave()
+            GLib.idle_add(self.__liststore_series_append, (new_series.get_image(), new_series.get_name()))
 
         if select:  # select the row once the series has been added
             for i, row in enumerate(self.liststore_series):
                 if row[1] == new_series.get_name():
-                    Gdk.threads_enter()
-                    self.treeview_series.set_cursor(i)
-                    Gdk.threads_leave()
+                    GLib.idle_add(self.treeview_series.set_cursor, i)
                     break
+
+    def __liststore_series_append(self, data):
+        """
+            I do not understand why this must be a separate method.
+            It is not possible to call directly: GLib.idle_add(self.liststore_series.append, data)
+        """
+        self.liststore_series.append(data)
 
     def __series_add_from_fchooser(self, recursive):
 
@@ -896,17 +883,13 @@ class VListPlayer(object):
 
         # Populate
         #
-        Gdk.threads_enter()
         self.liststore_series.clear()
-        Gdk.threads_leave()
 
         for name in sorted(self.__series_dict.keys()):
             series = self.__series_dict[name]
 
             if os.path.exists(series.get_path()) or not self.checkbox_hide_missing_series.get_active():
-                Gdk.threads_enter()
-                self.liststore_series.append([series.get_image(), series.get_name()])
-                Gdk.threads_leave()
+                self.__liststore_series.append([series.get_image(), series.get_name()])
 
         # Select the current series
         #
@@ -914,14 +897,10 @@ class VListPlayer(object):
 
         for i, row in enumerate(self.liststore_series):
             if row[1] == current_series_name:
-                Gdk.threads_enter()
                 self.treeview_series.set_cursor(i)
-                Gdk.threads_leave()
                 return
 
-        Gdk.threads_enter()
         self.treeview_series.set_cursor(0)
-        Gdk.threads_leave()
 
     def __menu_series_display(self, series_data, event):
 
@@ -1067,9 +1046,6 @@ class VListPlayer(object):
 
 
 if __name__ == '__main__':
-    GObject.threads_init()
-    Gdk.threads_init()
-
     vlist_player = VListPlayer()
     Gtk.main()
     vlist_player.join()
