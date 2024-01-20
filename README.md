@@ -12,6 +12,7 @@
 + Turn off the screensaver while playing.
 + Set a default time to skip the intro of videos (handy for the series intro).
 + Set the default audio or subtitle track.
++ Fullscreen mode.
 
 
 *Currently I'm working to update the player, and create a version 2. When I finish I'll create some packages for popular distributions & windows.*
