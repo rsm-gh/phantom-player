@@ -26,7 +26,7 @@ from threading import Thread, current_thread
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0')
-from gi.repository import Gtk, GObject, Gdk
+from gi.repository import Gtk, GObject, Gdk, GLib
 
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
@@ -287,23 +287,9 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         turn_off_screensaver(True)
 
-        if thread:
-            Gdk.threads_enter()
-            self.__vlc_widget.player.set_media(media)
-            Gdk.threads_leave()
-
-            Gdk.threads_enter()
-            self.__root_window.set_title(media_title)
-            Gdk.threads_leave()
-
-            Gdk.threads_enter()
-            self.__vlc_widget.player.play()
-            Gdk.threads_leave()
-
-        else:
-            self.__vlc_widget.player.set_media(media)
-            self.__root_window.set_title(media_title)
-            self.__vlc_widget.player.play()
+        GLib.idle_add(self.__vlc_widget.player.set_media, media)
+        GLib.idle_add(self.__root_window.set_title, media_title)
+        GLib.idle_add(self.__vlc_widget.player.play)
 
         Thread(target=self.__start_video_at, args=[position, start_at]).start()
 
@@ -342,10 +328,9 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             if time_delta > 3 and self.__widgets_shown > WidgetsShown.none:
                 self.__widgets_shown = WidgetsShown.none
-                Gdk.threads_enter()
-                self.__label_volume.hide()
-                self.__buttons_box.hide()
-                Gdk.threads_leave()
+
+                GLib.idle_add(self.__label_volume.hide)
+                GLib.idle_add(self.__buttons_box.hide)
 
             sleep(.5)
 
@@ -365,30 +350,18 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             # Update the play-pause button
             if vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-play':
-                Gdk.threads_enter()
-                self.__button_play_pause.set_stock_id('gtk-media-pause')
-                Gdk.threads_leave()
+                GLib.idle_add(self.__button_play_pause.set_stock_id, 'gtk-media-pause')
 
             elif not vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-pause':
-                Gdk.threads_enter()
-                self.__button_play_pause.set_stock_id('gtk-media-play')
-                Gdk.threads_leave()
+                GLib.idle_add(self.__button_play_pause.set_stock_id, 'gtk-media-play')
 
             """
                 Update the volume. Is this necessary?
             """
             if vlc_volume <= 100 and vlc_volume != scale_volume_value:
-                Gdk.threads_enter()
-                self.__scale_volume.set_value(vlc_volume / 100.000)
-                Gdk.threads_leave()
-
-                Gdk.threads_enter()
-                self.__label_volume.set_markup(WidgetsMarkup._label_volume.format(vlc_volume))
-                Gdk.threads_leave()
-
-                Gdk.threads_enter()
-                self.__label_volume.show()
-                Gdk.threads_leave()
+                GLib.idle_add(self.__scale_volume.set_value, vlc_volume / 100.000)
+                GLib.idle_add(self.__label_volume.set_markup, WidgetsMarkup._label_volume.format(vlc_volume))
+                GLib.idle_add(self.__label_volume.show)
 
                 self.__motion_time = time()
                 self.__widgets_shown = WidgetsShown.volume
@@ -403,18 +376,12 @@ class MediaPlayerWidget(Gtk.Overlay):
 
                 if self.__update__scale_progress:
                     video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
-                    Gdk.threads_enter()
-                    self.__label_progress.set_markup(WidgetsMarkup._label_progress.format(video_time))
-                    Gdk.threads_leave()
-
-                    Gdk.threads_enter()
-                    self.__scale_progress.set_value(vlc_position)
-                    Gdk.threads_leave()
-
                     video_length = format_milliseconds_to_time(self.__media_length) + "   "
-                    Gdk.threads_enter()
-                    self.__label_length.set_markup(WidgetsMarkup._label_length.format(video_length))
-                    Gdk.threads_leave()
+
+                    GLib.idle_add(self.__scale_progress.set_value, vlc_position)
+                    GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
+                    GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format(video_time))
+
 
             """
                 Wait
@@ -423,15 +390,11 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     @staticmethod
     def __delayed_method(delay, method, arg=None):
-
         sleep(delay)
-
-        Gdk.threads_enter()
         if arg is None:
-            _ = method()
+            GLib.idle_add(method)
         else:
-            _ = method(arg)
-        Gdk.threads_leave()
+            GLib.idle_add(method, arg)
 
     def __start_video_at(self, position, start_at):
         """
@@ -463,9 +426,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             start_time = 0
 
         if start_time > 0:
-            Gdk.threads_enter()
-            self.__vlc_widget.player.set_position(start_time)
-            Gdk.threads_leave()
+            GLib.idle_add(self.__vlc_widget.player.set_position, start_time)
 
     @staticmethod
     def __redraw_bg(_, cairo_ctx):
@@ -480,12 +441,6 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __unfullscreen(self, *_):
         """This is only for the Gtk.Menu"""
         self.__root_window.unfullscreen()
-
-    def __label_volume_hide(self):
-        sleep(1.5)
-        Gdk.threads_enter()
-        self.__label_volume.hide()
-        Gdk.threads_leave()
 
     def __menu_rc_vlc_display(self, event):
 
@@ -728,9 +683,6 @@ class MediaPlayer(Gtk.Window):
 
 
 if __name__ == '__main__':
-    GObject.threads_init()
-    Gdk.threads_init()
-
     player = MediaPlayer()
     player.play_video('/home/cadweb/Downloads/Seed/InkMaster/Ink.Master.S15E06.1080p.WEB.h264-EDITH[eztv.re].mkv')
     Gtk.main()
