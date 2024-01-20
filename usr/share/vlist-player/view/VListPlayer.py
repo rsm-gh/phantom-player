@@ -95,7 +95,7 @@ class VListPlayer(object):
         builder.connect_signals(self)
 
         glade_ids = (
-            'window_root','box_window',
+            'window_root', 'box_window',
             'menubar',
             'box_window',
             'box_main',
@@ -513,30 +513,30 @@ class VListPlayer(object):
         self.__ccp.write('hide-items', self.checkbox_hidden_items.get_active())
         self.__liststore_episodes_populate(True)
 
-    @staticmethod
-    def on_imagemenuitem_bugs_activate(*_):
-        webbrowser.open('https://github.com/rsm-gh/vlist-player/issues', new=2)
-
-    def on_imagemenuitem_about_activate(self, *_):
+    def on_menuitem_about_activate(self, *_):
         _ = self.window_about.run()
         self.window_about.hide()
 
-    def on_imagemenuitem_controls_activate(self, *_):
+    @staticmethod
+    def on_menuitem_issues_activate(*_):
+        webbrowser.open('https://github.com/rsm-gh/vlist-player/issues', new=2)
+
+    def on_menuitem_controls_activate(self, *_):
         self.window_controls.show()
 
-    def on_imagemenuitem_files_activate(self, *_):
+    def on_menuitem_finding_activate(self, *_):
+        self.window_finding_files.show()
+
+    def on_menuitem_files_activate(self, *_):
         self.window_files.show()
 
     def on_imagemenuitem_preferences_activate(self, *_):
         self.window_preferences.show()
 
-    def on_imagemenuitem_finding_files_activate(self, *_):
-        self.window_finding_files.show()
-
-    def on_menuitem_add_series(self, *_):
+    def on_menuitem_list_activate(self, *_):
         self.__series_add_from_fchooser(False)
 
-    def on_menuitem_add_series_recursive(self, *_):
+    def on_menuitem_list_recursive_activate(self, *_):
         self.__series_add_from_fchooser(True)
 
     def on_menuitem_checkbox_activated(self, _, column, state):
