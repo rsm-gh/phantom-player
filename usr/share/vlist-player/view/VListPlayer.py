@@ -241,7 +241,7 @@ class VListPlayer(object):
 
                     next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
 
-                    if not next_video:
+                    if next_video is None:
                         gtk_info(self.window_root, TEXT_END_OF_SERIES)
 
                     elif not os.path.exists(next_video.get_path()):
@@ -280,7 +280,7 @@ class VListPlayer(object):
         selection_length = len(treepaths)
 
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series = self.__series_dict[selected_series_name]
+        series_data = self.__series_dict[selected_series_name]
 
         """
             Active or deactivate the buttons move up and down
@@ -290,16 +290,18 @@ class VListPlayer(object):
                 selection_length == 1 and \
                 event.type == Gdk.EventType._2BUTTON_PRESS:
 
+            self.__current_media = CurrentMedia(series_data)
+
             episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
 
-            path = series.get_path_from_video_name(episode_name)
+            episode = self.__current_media.get_episode(episode_name)
 
-            if path and os.path.exists(path):
-                self.__media_player.play_video(path,
+            if episode is not None and os.path.exists(episode.get_path()):
+                self.__media_player.play_video(episode.get_path(),
                                                0,
-                                               series.get_subtitles_track(),
-                                               series.get_audio_track(),
-                                               series.get_start_at())
+                                               series_data.get_subtitles_track(),
+                                               series_data.get_audio_track(),
+                                               series_data.get_start_at())
             else:
                 gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
 
@@ -358,7 +360,7 @@ class VListPlayer(object):
             list_of_names = [gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepath, 1, 2) for treepath in
                              treepaths]
 
-            if series.missing_videos(list_of_names):
+            if series_data.missing_videos(list_of_names):
                 menuitem = Gtk.ImageMenuItem(label=TEXT_FIND)
                 menuitem.connect('activate', self.__series_find_videos, list_of_names)
                 menu.append(menuitem)
@@ -628,8 +630,8 @@ class VListPlayer(object):
                 position = self.__media_player.get_position()
                 series = self.__current_media.series
 
-                if self.__current_media.video != cached_video:
-                    cached_video = self.__current_media.video
+                if self.__current_media.current_episode() != cached_video:
+                    cached_video = self.__current_media.current_episode()
                     cached_position = 0
 
                 if self.__media_player.is_paused() and position != cached_position:
@@ -638,9 +640,8 @@ class VListPlayer(object):
 
                 # If the current video got to the end...
                 if round(position, 3) >= 0.999:
-
-                    self.__current_media.series.mark_episode(self.__current_media.video,
-                                                             self.__current_media.random,
+                    self.__current_media.series.mark_episode(self.__current_media.current_episode(),
+                                                             self.__current_media.get_random_state(),
                                                              True)
 
                     next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())

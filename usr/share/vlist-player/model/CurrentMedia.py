@@ -17,22 +17,29 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 class CurrentMedia:
-    def __init__(self, series=None, video=None, random=None, mark=None):
+    def __init__(self, series=None):
         self.series = series
-        self.video = video
-        self.random = random
-        self.mark = mark
+        self.__episode = None
+        self.__random = False
+
+    def get_episode(self, episode_name):
+        self.__episode = self.series.get_video(episode_name)
+        return self.__episode
 
     def next_episode(self, random):
 
         if random:
-            video = self.series.get_r_episode()
+            episode = self.series.get_r_episode()
         else:
-            video = self.series.get_o_episode()
+            episode = self.series.get_o_episode(self.__episode)
 
-        self.random = random
-        self.video = video
+        self.__random = random
+        self.__episode = episode
 
-        return video
+        return episode
 
+    def current_episode(self):
+        return self.__episode
 
+    def get_random_state(self):
+        return self.__random
