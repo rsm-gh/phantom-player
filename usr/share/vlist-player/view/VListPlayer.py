@@ -889,7 +889,7 @@ class VListPlayer(object):
             series = self.__series_dict[name]
 
             if os.path.exists(series.get_path()) or not self.checkbox_hide_missing_series.get_active():
-                self.__liststore_series.append([series.get_image(), series.get_name()])
+                self.liststore_series.append([series.get_image(), series.get_name()])
 
         # Select the current series
         #
