@@ -97,14 +97,14 @@ class VListPlayer(object):
         glade_ids = (
             'window_root','box_window',
             'menubar',
+            'box_window',
             'box_main',
-            'box_data',
             'treeview_selection_episodes', 'progressbar', 'checkbox_hidden_items',
             'button_root_play_and_stop', 'treeview_episodes', 'treeview_series',
             'treeview_selection_series', 'liststore_series', 'liststore_episodes', 'spinbutton_audio',
             'spinbutton_subtitles',
             'spinbutton_start_at', 'box_episodes', 'box_series', 'box_series_data',
-            'box_series_menu', 'box_main', 'column_number', 'column_name', 'column_extension', 'column_play',
+            'box_series_menu', 'column_number', 'column_name', 'column_extension', 'column_play',
             'column_oplayed',
             'column_rplayed', 'checkbutton_random', 'checkbutton_keep_playing', 'checkbox_hide_extensions',
             'checkbox_hide_number',
@@ -132,16 +132,12 @@ class VListPlayer(object):
         self.__media_player = MediaPlayerWidget(self.window_root)
 
         vpaned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
-        vpaned.set_position(600)
+        vpaned.set_wide_handle(True)
+        vpaned.set_position(200)
         vpaned.add1(self.__media_player)
-
-        self.box_main.remove(self.box_data)
-        vpaned.add2(self.box_data)
-
+        self.box_window.remove(self.box_main)
+        vpaned.add2(self.box_main)
         self.box_window.pack_start(vpaned, True, True, 0)
-
-        #self.box_main.pack_start(self.__media_player, True, True, 0)
-        #self.box_main.reorder_child(self.__media_player, 0)
 
         self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
         self.__thread_scan_media_player.start()
@@ -615,10 +611,10 @@ class VListPlayer(object):
 
             if fullscreen:
                 self.menubar.hide()
-                self.box_data.hide()
+                self.box_main.hide()
             else:
                 self.menubar.show()
-                self.box_data.show()
+                self.box_main.show()
 
     def __on_thread_scan_media_player(self):
 
