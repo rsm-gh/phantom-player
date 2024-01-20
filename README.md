@@ -1,7 +1,5 @@
 
-![Player Window](https://github.com/rsm-gh/vlist-player/blob/master/preview/player.png)
-
-*Screenshot to be updated with the 2024 interface* 
+![Player Window](https://github.com/rsm-gh/vlist-player/blob/master/usr/share/doc/vlist-player/preview.png)
 
 `vlist-player` is a software to play lists of videos with comfort, some of its major features are:
 + Play lists of videos in order (for example a series).
@@ -15,6 +13,8 @@
 + Set a default time to skip the intro of videos (handy for the series intro).
 + Set the default audio or subtitle track.
 
+
+*Currently I'm working to update the player, and create a version 2. When I finish I'll create some packages for popular distributions & windows.*
 
 # How to Install
 
