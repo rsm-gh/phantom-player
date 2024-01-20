@@ -143,7 +143,7 @@ Author: Rafael Senties Martinelli
     <property name="window-position">center</property>
     <property name="icon">img/movie-icon-small.png</property>
     <child>
-      <object class="GtkBox" id="box1">
+      <object class="GtkBox" id="box_window">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
