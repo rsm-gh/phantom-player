@@ -16,16 +16,14 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import os
+import os  # why is os not being detected on pycharm?
+import gi
 import csv
 import magic
 import shutil
 import random
 
-import gi
-
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
 from gi.repository.GdkPixbuf import Pixbuf, InterpType
 
 from Paths import *
@@ -51,6 +49,7 @@ class Series(object):
         self.__name = os.path.basename(path)
         self.__recursive = False
         self.__random = False
+        self.__keep_playing = False
         self.__start_at = 0.0
         self.__audio_track = -2
         self.__subtitles_track = -2
@@ -65,9 +64,10 @@ class Series(object):
         # Variables
         self.__videos_instances = []
         self.__nb_videos = 0
-        self.__series_image_small_size = 30
-        self.__series_image_big_size = 160
+        self.__series_img_size = 30
+        self.__series_pixbuf = None
         self.__load_image()
+
 
         # change the name of the series in case it has been renamed.
         if data_path and os.path.exists(data_path):
@@ -101,9 +101,7 @@ class Series(object):
                     """
                         check for duplicates
                     """
-                    if path and not any(
-                            path == video.get_path() for video in self.__videos_instances) and path_is_video(
-                            path, True):
+                    if path and not any(path == video.get_path() for video in self.__videos_instances) and path_is_video(path, True):
                         try:
                             video_id = int(row[0])
                         except Exception:
@@ -200,25 +198,20 @@ class Series(object):
         """
             Set the default image
         """
-        possible_image = self.__path + '/.folder'.replace('//', '/')
-        if os.path.exists(possible_image):
-            image_path = possible_image
-        elif os.path.exists(possible_image + '.png'):
-            image_path = possible_image + '.png'
-        elif os.path.exists(possible_image + '.jpg'):
-            image_path = possible_image + '.jpg'
-        elif os.path.exists(possible_image + '.jpeg'):
-            image_path = possible_image + '.jpeg'
+        if not os.path.exists(self.__path):
+            image_path = ICON_ERROR_BIG
         else:
-            if os.path.exists(self.__path):
-                image_path = ICON_LOGO_MEDIUM
-            else:
-                image_path = ICON_ERROR_BIG
+            image_path = ICON_LOGO_MEDIUM
 
-        self.pixbuf_small_video = Pixbuf.new_from_file_at_size(image_path, self.__series_image_small_size,
-                                                               self.__series_image_small_size)
-        self.image_big = Gtk.Image.new_from_pixbuf(
-            Pixbuf.new_from_file_at_size(image_path, self.__series_image_big_size + 60, self.__series_image_big_size))
+            for extension in ('', '.png', '.jpg', '.jpeg'):
+                possible_image = os.path.join(self.__path, '.folder' + extension)
+                if os.path.exists(possible_image):
+                    image_path = possible_image
+                    break
+
+        self.__series_pixbuf = Pixbuf.new_from_file_at_size(image_path,
+                                                            self.__series_img_size,
+                                                            self.__series_img_size)
 
     def set_start_at(self, value, write=True):
         try:
@@ -455,6 +448,13 @@ class Series(object):
 
         return None
 
+    def get_video(self, name):
+        for video in self.__videos_instances:
+            if video and video.get_name() == name:
+                return video
+
+        return None
+
     def get_keep_playing(self):
         return self.__keep_playing
 
@@ -553,17 +553,13 @@ class Series(object):
 
     def set_image(self, path):
         if os.path.exists(path):
-            self.pixbuf_small_video = Pixbuf.new_from_file_at_size(path, self.__series_image_small_size,
-                                                                   self.__series_image_small_size)
-            self.image_big = Gtk.Image.new_from_pixbuf(
-                Pixbuf.new_from_file_at_size(path, self.__series_image_big_size + 60, self.__series_image_big_size))
-            shutil.copy2(path, self.__path + "/.folder")
+            self.__series_pixbuf = Pixbuf.new_from_file_at_size(path,
+                                                                self.__series_img_size,
+                                                                self.__series_img_size)
+            shutil.copy2(path, os.path.join(self.__path, ".folder"))
 
     def get_image(self):
-        return self.pixbuf_small_video
-
-    def get_big_image(self):
-        return self.image_big
+        return self.__series_pixbuf
 
     def get_name(self):
         return self.__name
@@ -603,12 +599,36 @@ class Series(object):
         else:
             return 0, self.__nb_videos, 0
 
-    def get_o_episode(self):
+    def get_o_episode(self, after=None):
+        """
+            Get the next episode.
+
+            If an episode is provided, get the episode next to this one, and
+            if there is no next video to the one provided, go to the beginning.
+        """
+
+        after_found = False
+
         for video in self.__videos_instances:
+
+            if after is not None:
+                if video == after:
+                    after_found = True
+                    continue
+
+                elif not after_found:
+                    continue
+
             if not video.get_o_played() and video.get_play() and video.get_path() and video.get_display():
                 return video
 
-        return False
+        # Try to return a video from the beginning
+        if after is not None:
+            episode = self.get_o_episode()
+            if episode:
+                return episode
+
+        return None
 
     def get_r_episode(self):
         for video in self.__videos_instances:
@@ -620,7 +640,7 @@ class Series(object):
                     if not random_video.get_r_played() and random_video.get_play() and random_video.get_path():
                         return random_video
 
-        return False
+        return None
 
     def get_nb_videos(self):
         return self.__nb_videos
