@@ -95,7 +95,7 @@ class VListPlayer(object):
         builder.connect_signals(self)
 
         glade_ids = (
-            'window_root',
+            'window_root','box_window',
             'menubar',
             'box_main',
             'box_data',
@@ -130,8 +130,19 @@ class VListPlayer(object):
         """
         self.__current_media = CurrentMedia()
         self.__media_player = MediaPlayerWidget(self.window_root)
-        self.box_main.pack_start(self.__media_player, True, True, 0)
-        self.box_main.reorder_child(self.__media_player, 0)
+
+        vpaned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
+        vpaned.set_position(600)
+        vpaned.add1(self.__media_player)
+
+        self.box_main.remove(self.box_data)
+        vpaned.add2(self.box_data)
+
+        self.box_window.pack_start(vpaned, True, True, 0)
+
+        #self.box_main.pack_start(self.__media_player, True, True, 0)
+        #self.box_main.reorder_child(self.__media_player, 0)
+
         self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
         self.__thread_scan_media_player.start()
 
