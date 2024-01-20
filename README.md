@@ -18,7 +18,7 @@
 
 # How to Install
 
-1. Download the [stable branch](https://github.com/rsm-gh/vlist-player/archive/stable.zip).
+1. Download the [stable branch](https://github.com/rsm-gh/vlist-player/archive/master.zip).
 2. Install the dependencies:
     * Debian based distributions: `apt-get install python3 vlc libgtk-3-0 gir1.2-webkit2-4.0`.
     * ArchLinux: `pacman -Suy systemd python vlc gtk3`.
