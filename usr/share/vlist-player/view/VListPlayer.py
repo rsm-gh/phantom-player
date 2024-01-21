@@ -131,13 +131,13 @@ class VListPlayer(object):
         self.__current_media = CurrentMedia()
         self.__media_player = MediaPlayerWidget(self.window_root)
 
-        vpaned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
-        vpaned.set_wide_handle(True)
-        vpaned.set_position(200)
-        vpaned.add1(self.__media_player)
+        paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
+        paned.set_wide_handle(True)
+        paned.set_position(200)
+        paned.add1(self.__media_player)
         self.box_window.remove(self.box_main)
-        vpaned.add2(self.box_main)
-        self.box_window.pack_start(vpaned, True, True, 0)
+        paned.add2(self.box_main)
+        self.box_window.pack_start(paned, True, True, 0)
 
         self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
         self.__thread_scan_media_player.start()
@@ -244,18 +244,20 @@ class VListPlayer(object):
                 """
                     Play a video of the series
                 """
-
-                self.__ccp.write('current_series', selected_series_name)
-
                 if self.__current_media.series is not None:
+
+                    if self.__current_media.series.get_name() == selected_series_name:
+                        return
+
                     self.__save_current_video_position()
 
+                self.__ccp.write('current_series', selected_series_name)
                 self.__current_media = CurrentMedia(series_data)
                 self.__set_video()
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
 
-            if self.treeview_selection_series.count_selected_rows() >= 0 and event.button == EventCodes.Cursor.right_click:
+            if event.button == EventCodes.Cursor.right_click and self.treeview_selection_series.count_selected_rows() == 1:
 
                 # Get the iter where the user is pointing
                 pointing_treepath = self.treeview_series.get_path_at_pos(event.x, event.y)[0]
@@ -278,8 +280,6 @@ class VListPlayer(object):
             video = self.__current_media.next_episode(self.checkbutton_random.get_active())
         else:
             video = self.__current_media.get_episode(video_name)
-
-        print(video, video.get_position(), play)
 
         if video is None:
             gtk_info(self.window_root, TEXT_END_OF_SERIES)
@@ -645,41 +645,47 @@ class VListPlayer(object):
 
         while getattr(this_thread, "do_run", True):
 
-            if self.__current_media.series is not None:
+            if self.__current_media.series is None:
+                continue
 
-                position = self.__media_player.get_position()
-                series = self.__current_media.series
+            position = self.__media_player.get_position()
+            current_episode = self.__current_media.current_episode()
 
-                if self.__current_media.current_episode() != cached_video:
-                    cached_video = self.__current_media.current_episode()
-                    cached_position = 0
+            if current_episode != cached_video:
+                cached_video = current_episode
+                cached_position = 0
 
-                if self.__media_player.is_paused() and position != cached_position:
-                    cached_position = position
-                    series.set_video_position(cached_video, cached_position)
+            if cached_video is None:
+                continue
 
-                # If the current video got to the end...
-                if round(position, 3) >= 0.999:
-                    self.__current_media.mark_seen_episode()
+            if self.__media_player.is_paused() and position != cached_position:
+                cached_position = position
+                self.__current_media.series.set_video_position(cached_video, cached_position)
+
+            # If the current video got to the end...
+            if round(position, 3) >= 0.999:
+                self.__current_media.mark_seen_episode()
+                GLib.idle_add(self.__liststore_episodes_populate, True)
+
+                # Play the next episode
+                if not self.checkbutton_keep_playing.get_active():
+                    GLib.idle_add(self.__media_player.pause)
+                    GLib.idle_add(self.window_root.unfullscreen)
+
+                else:
                     next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
 
-                    GLib.idle_add(self.__liststore_episodes_populate, True)
-
-                    if self.checkbutton_keep_playing.get_active():
-                        if next_video:
-                            self.__media_player.set_video(next_video.get_path(),
-                                                          next_video.get_position(),
-                                                          series.get_subtitles_track(),
-                                                          series.get_audio_track(),
-                                                          series.get_start_at(),
-                                                          True)
-
-                        else:
-                            GLib.idle_add(self.window_root.unfullscreen)
-                            GLib.idle_add(gtk_info, self.window_root, TEXT_END_OF_SERIES)
-                    else:
-                        GLib.idle_add(self.__media_player.stop)
+                    if next_video is None:
                         GLib.idle_add(self.window_root.unfullscreen)
+                        GLib.idle_add(gtk_info, self.window_root, TEXT_END_OF_SERIES)
+
+                    else:
+                        self.__media_player.set_video(next_video.get_path(),
+                                                      next_video.get_position(),
+                                                      self.__current_media.series.get_subtitles_track(),
+                                                      self.__current_media.series.get_audio_track(),
+                                                      self.__current_media.series.get_start_at(),
+                                                      True)
 
             time.sleep(0.5)
 
