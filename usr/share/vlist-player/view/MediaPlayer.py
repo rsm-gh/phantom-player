@@ -239,6 +239,12 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         return False
 
+    def is_nothing(self):
+        if self.get_state() == vlc.State.NothingSpecial:
+            return True
+
+        return False
+
     def volume_up(self):
         actual_volume = self.__vlc_widget.player.audio_get_volume()
         if actual_volume + 1 < 100:
@@ -261,12 +267,13 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         return True
 
-    def play_video(self,
-                   file_path,
-                   position=0,
-                   subtitles_track=-2,
-                   audio_track=-2,
-                   start_at=0.0):
+    def set_video(self,
+                  file_path,
+                  position=0,
+                  subtitles_track=-2,
+                  audio_track=-2,
+                  start_at=0.0,
+                  play=True):
 
         if not os.path.exists(file_path):
             return
@@ -281,7 +288,8 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
-        GLib.idle_add(self.__vlc_widget.player.play)
+        if play:
+            GLib.idle_add(self.__vlc_widget.player.play)
 
         Thread(target=self.__start_video_at, args=[position, start_at]).start()
 
@@ -358,7 +366,6 @@ class MediaPlayerWidget(Gtk.Overlay):
                 self.__motion_time = time()
                 self.__widgets_shown = WidgetsShown.volume
 
-
             """
                 Update the time of the scale and the time
             """
@@ -373,7 +380,6 @@ class MediaPlayerWidget(Gtk.Overlay):
                     GLib.idle_add(self.__scale_progress.set_value, vlc_position)
                     GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
                     GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format(video_time))
-
 
             """
                 Wait
@@ -671,7 +677,7 @@ class MediaPlayer(Gtk.Window):
         Gtk.main_quit()
 
     def play_video(self, path):
-        self.__media_player_widget.play_video(path)
+        self.__media_player_widget.set_video(path)
 
 
 if __name__ == '__main__':
