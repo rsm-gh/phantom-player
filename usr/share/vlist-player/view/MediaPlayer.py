@@ -123,8 +123,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__has_media = False
         self.__widgets_shown = WidgetsShown.none
         self.__motion_time = time()
-        self.__width = 600
-        self.__height = 300
         self.__update__scale_progress = True
         self.__media_length = 0
 
@@ -175,7 +173,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__scale_progress = Gtk.Scale()
         self.__scale_progress.set_range(0, 1)
-        self.__scale_progress.set_size_request(self.__width / 2, self.__height / 29.0)
+        self.__scale_progress.set_size_request(600, -1)
         self.__scale_progress.set_draw_value(False)
         self.__scale_progress.set_hexpand(True)
         self.__scale_progress.set_can_focus(False)
