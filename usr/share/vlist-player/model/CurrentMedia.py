@@ -26,6 +26,10 @@ class CurrentMedia:
         self.__episode = self.series.get_video(episode_name)
         return self.__episode
 
+    def mark_seen_episode(self):
+        self.__episode.set_position(0)
+        self.series.mark_episode(self.__episode, self.__random, True)
+
     def next_episode(self, random):
 
         if random:

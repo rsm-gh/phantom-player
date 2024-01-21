@@ -167,9 +167,9 @@ class Series(object):
 
         self.clean_episodes()
         self.update_ids()  # this is in case there were videos with duplicated ids
-        self._write_data()
+        self.write_data()
 
-    def _write_data(self):
+    def write_data(self):
 
         if not os.path.exists(FOLDER_LIST_PATH):
             os.mkdir(FOLDER_LIST_PATH)
@@ -228,7 +228,7 @@ class Series(object):
             self.__start_at = 0.0
 
         if write:
-            self._write_data()
+            self.write_data()
 
     def get_start_at(self):
         return self.__start_at
@@ -238,14 +238,14 @@ class Series(object):
         self.__load_image()
         self.find_videos(path)
         self.update_not_hidden_videos()
-        self._write_data()
+        self.write_data()
 
     def set_recursive(self, recursive, write=True):
 
         self.__recursive = recursive in ('true', 'True', True)
 
         if write:
-            self._write_data()
+            self.write_data()
 
     def set_audio_track(self, value, write=True):
         try:
@@ -262,7 +262,7 @@ class Series(object):
             self.__audio_track = -2
 
         if write:
-            self._write_data()
+            self.write_data()
 
     def set_subtitles_track(self, value, write=True):
         try:
@@ -279,7 +279,7 @@ class Series(object):
             self.__subtitles_track = -2
 
         if write:
-            self._write_data()
+            self.write_data()
 
     def get_audio_track(self):
         return self.__audio_track
@@ -360,7 +360,7 @@ class Series(object):
                             video.set_path(possible_path)
                             found_videos += 1
 
-            self._write_data()
+            self.write_data()
 
             if found_videos > 0:
                 return found_videos
@@ -383,7 +383,7 @@ class Series(object):
                     video.set_path(path + video.get_name())
 
         if video_counter > 0:
-            self._write_data()
+            self.write_data()
 
         return video_counter
 
@@ -401,7 +401,7 @@ class Series(object):
 
                 self.__nb_videos -= 1
                 self.update_ids()
-                self._write_data()
+                self.write_data()
 
                 self.update_not_hidden_videos()
 
@@ -414,7 +414,7 @@ class Series(object):
 
                 self.__nb_videos -= 1
                 self.update_ids()
-                self._write_data()
+                self.write_data()
 
                 self.update_not_hidden_videos()
 
@@ -463,7 +463,7 @@ class Series(object):
         self.__keep_playing = value in ('true', 'True', True)
 
         if write:
-            self._write_data()
+            self.write_data()
 
     def get_random(self):
         return self.__random
@@ -473,7 +473,7 @@ class Series(object):
         self.__random = is_random in ('true', 'True', True)
 
         if write:
-            self._write_data()
+            self.write_data()
 
     def reorder(self, new_order_indexes):
         """ Choices are "up" or "down" """
@@ -483,7 +483,7 @@ class Series(object):
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_id(i)
 
-        self._write_data()
+        self.write_data()
 
     def change_checkbox_state(self, episode_names, column, state):
 
@@ -504,7 +504,7 @@ class Series(object):
 
                     break
 
-        self._write_data()
+        self.write_data()
 
     def mark_episode(self, episode, is_random, new_state):
         for video in self.__videos_instances:
@@ -514,7 +514,7 @@ class Series(object):
                 else:
                     video.set_o_played(new_state)
 
-                self._write_data()
+                self.write_data()
                 break
 
     def reset_data(self):
@@ -524,14 +524,14 @@ class Series(object):
             video.set_r_played(False)
             video.set_position(0)
 
-        self._write_data()
+        self.write_data()
 
     def set_video_position(self, video_to_find, position):
         for video in self.__videos_instances:
             if video_to_find == video:
                 video.set_position(position)
-                self._write_data()
-                break
+                self.write_data()
+                return
 
     def update_ids(self):
         for i, video in enumerate(self.__videos_instances, 1):
