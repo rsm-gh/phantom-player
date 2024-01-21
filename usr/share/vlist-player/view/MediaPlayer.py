@@ -221,6 +221,9 @@ class MediaPlayerWidget(Gtk.Overlay):
     def stop(self):
         self.__vlc_widget.player.stop()
 
+    def play(self):
+        self.__vlc_widget.player.play()
+
     def get_position(self):
         return self.__vlc_widget.player.get_position()
 
@@ -275,6 +278,8 @@ class MediaPlayerWidget(Gtk.Overlay):
                   start_at=0.0,
                   play=True):
 
+        print(position, start_at)
+
         if not os.path.exists(file_path):
             return
 
@@ -288,10 +293,8 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
-        if play:
-            GLib.idle_add(self.__vlc_widget.player.play)
-
-        Thread(target=self.__start_video_at, args=[position, start_at]).start()
+        GLib.idle_add(self.__vlc_widget.player.play)
+        self.__start_video_at(position, start_at, play)
 
         if subtitles_track == -1 or subtitles_track >= 0:
             Thread(target=self.__delayed_method, args=[0.05,
@@ -394,7 +397,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         else:
             GLib.idle_add(method, arg)
 
-    def __start_video_at(self, position, start_at):
+    def __start_video_at(self, position, start_at, play):
         """
             It is necessary to give some time to the player to start playing
             so the following methods can be applied.
@@ -416,8 +419,10 @@ class MediaPlayerWidget(Gtk.Overlay):
             start_at_percent = start_at / video_length
         else:
             start_at_percent = 0
+
         if start_at_percent > position:
             start_time = start_at_percent
+
         elif position > 0:
             start_time = position
         else:
@@ -425,6 +430,9 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         if start_time > 0:
             GLib.idle_add(self.__vlc_widget.player.set_position, start_time)
+
+        if play:
+            GLib.idle_add(self.__vlc_widget.player.play)
 
     @staticmethod
     def __redraw_bg(_, cairo_ctx):
