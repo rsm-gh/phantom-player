@@ -123,7 +123,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__has_media = False
         self.__widgets_shown = WidgetsShown.none
         self.__motion_time = time()
-        self.__volume_increment = 3  # %
         self.__width = 600
         self.__height = 300
         self.__update__scale_progress = True
@@ -244,17 +243,13 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def volume_up(self):
         actual_volume = self.__vlc_widget.player.audio_get_volume()
-        if actual_volume + self.__volume_increment <= 100:
-            self.__vlc_widget.player.audio_set_volume(actual_volume + self.__volume_increment)
-        else:
-            self.__vlc_widget.player.audio_set_volume(100)
+        if actual_volume + 1 < 100:
+            self.__vlc_widget.player.audio_set_volume(actual_volume + 1)
 
     def volume_down(self):
         actual_volume = self.__vlc_widget.player.audio_get_volume()
-        if actual_volume >= self.__volume_increment:
-            self.__vlc_widget.player.audio_set_volume(actual_volume - self.__volume_increment)
-        else:
-            self.__vlc_widget.player.audio_set_volume(0)
+        if actual_volume >= 1:
+            self.__vlc_widget.player.audio_set_volume(actual_volume - 1)
 
     def set_subtitles_from_file(self, *_):
         """
@@ -273,8 +268,7 @@ class MediaPlayerWidget(Gtk.Overlay):
                    position=0,
                    subtitles_track=-2,
                    audio_track=-2,
-                   start_at=0.0,
-                   thread=False):
+                   start_at=0.0):
 
         if not os.path.exists(file_path):
             return
@@ -567,10 +561,10 @@ class MediaPlayerWidget(Gtk.Overlay):
             return
 
         elif event.direction == Gdk.ScrollDirection.UP:
-            self.volume_down()
+            self.volume_up()
 
         elif event.direction == Gdk.ScrollDirection.DOWN:
-            self.volume_up()
+            self.volume_down()
 
     def __on_mouse_button_press(self, _, event):
 
