@@ -183,7 +183,7 @@ class VListPlayer(object):
         """
             Load the existent series
         """
-        th = Thread(target=self.__series_init)
+        th = Thread(target=self.__on_thread_load_series)
         th.start()
         self.__threads.append(th)
 
@@ -194,7 +194,18 @@ class VListPlayer(object):
         self.__thread_scan_media_player.join()
         self.__media_player.join()
 
+    def __save_current_video_position(self):
+        if self.__current_media.series is not None:
+            episode = self.__current_media.current_episode()
+            if episode is not None:
+                position = self.__media_player.get_position()
+                if position > 0:
+                    episode.set_position(position)
+
+            self.__current_media.series.write_data()
+
     def quit(self, *_):
+        self.__save_current_video_position()
         self.__media_player.quit()
         self.__thread_scan_media_player.do_run = False
         Gtk.main_quit()
@@ -233,27 +244,14 @@ class VListPlayer(object):
                 """
                     Play a video of the series
                 """
+
                 self.__ccp.write('current_series', selected_series_name)
 
-                if not self.__media_player.is_playing() or \
-                        not self.__media_player.is_paused() or \
-                        self.__current_media.series.get_name() != selected_series_name:
+                if self.__current_media.series is not None:
+                    self.__save_current_video_position()
 
-                    next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
-
-                    if next_video is None:
-                        gtk_info(self.window_root, TEXT_END_OF_SERIES)
-
-                    elif not os.path.exists(next_video.get_path()):
-                        gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
-
-                    else:
-                        self.__media_player.play_video(next_video.get_path(),
-                                                       next_video.get_position(),
-                                                       series_data.get_subtitles_track(),
-                                                       series_data.get_audio_track(),
-                                                       series_data.get_start_at())
-
+                self.__current_media = CurrentMedia(series_data)
+                self.__set_video()
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
 
@@ -270,6 +268,32 @@ class VListPlayer(object):
                     self.treeview_selection_series.select_path(pointing_treepath)
 
                 self.__menu_series_display(series_data, event)
+
+    def __set_video(self, video_name=None, play=True):
+
+        if self.__current_media.series is None:
+            return
+
+        if video_name is None:
+            video = self.__current_media.next_episode(self.checkbutton_random.get_active())
+        else:
+            video = self.__current_media.get_episode(video_name)
+
+        print(video, video.get_position(), play)
+
+        if video is None:
+            gtk_info(self.window_root, TEXT_END_OF_SERIES)
+
+        elif not os.path.exists(video.get_path()):
+            gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
+
+        else:
+            self.__media_player.set_video(video.get_path(),
+                                          video.get_position(),
+                                          self.__current_media.series.get_subtitles_track(),
+                                          self.__current_media.series.get_audio_track(),
+                                          self.__current_media.series.get_start_at(),
+                                          play)
 
     def on_treeview_episodes_press_event(self, _, event):
         model, treepaths = self.treeview_selection_episodes.get_selected_rows()
@@ -290,20 +314,19 @@ class VListPlayer(object):
                 selection_length == 1 and \
                 event.type == Gdk.EventType._2BUTTON_PRESS:
 
-            self.__current_media = CurrentMedia(series_data)
+            """
+                Play the video of the series
+            """
+
+            self.__ccp.write('current_series', selected_series_name)
+
+            if self.__current_media.series is not None:
+                self.__save_current_video_position()
 
             episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
 
-            episode = self.__current_media.get_episode(episode_name)
-
-            if episode is not None and os.path.exists(episode.get_path()):
-                self.__media_player.play_video(episode.get_path(),
-                                               0,
-                                               series_data.get_subtitles_track(),
-                                               series_data.get_audio_track(),
-                                               series_data.get_start_at())
-            else:
-                gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
+            self.__current_media = CurrentMedia(series_data)
+            self.__set_video(episode_name)
 
 
         elif event.button == EventCodes.Cursor.right_click:
@@ -388,9 +411,6 @@ class VListPlayer(object):
 
     def on_treeview_selection_series_changed(self, treeselection):
         if treeselection.count_selected_rows() > 0:
-            selected_series_name = gtk_get_first_selected_cell_from_selection(treeselection, 1)
-            series_data = self.__series_dict[selected_series_name]
-            self.__current_media = CurrentMedia(series_data)
             self.__liststore_episodes_populate(True)
 
     def on_cellrenderertoggle_play_toggled(self, _, row):
@@ -640,22 +660,19 @@ class VListPlayer(object):
 
                 # If the current video got to the end...
                 if round(position, 3) >= 0.999:
-                    self.__current_media.series.mark_episode(self.__current_media.current_episode(),
-                                                             self.__current_media.get_random_state(),
-                                                             True)
-
+                    self.__current_media.mark_seen_episode()
                     next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
 
                     GLib.idle_add(self.__liststore_episodes_populate, True)
 
                     if self.checkbutton_keep_playing.get_active():
                         if next_video:
-                            self.__media_player.play_video(next_video.get_path(),
-                                                           next_video.get_position(),
-                                                           series.get_subtitles_track(),
-                                                           series.get_audio_track(),
-                                                           series.get_start_at(),
-                                                           True)
+                            self.__media_player.set_video(next_video.get_path(),
+                                                          next_video.get_position(),
+                                                          series.get_subtitles_track(),
+                                                          series.get_audio_track(),
+                                                          series.get_start_at(),
+                                                          True)
 
                         else:
                             GLib.idle_add(self.window_root.unfullscreen)
@@ -666,7 +683,7 @@ class VListPlayer(object):
 
             time.sleep(0.5)
 
-    def __series_init(self):
+    def __on_thread_load_series(self):
         """
             Load the saved lists
         """
@@ -707,6 +724,13 @@ class VListPlayer(object):
             Select the last series that was played
         """
         current_series_name = self.__ccp.get_str('current_series')
+
+        try:
+            series_data = self.__series_dict[current_series_name]
+        except KeyError:
+            pass
+        else:
+            self.__current_media = CurrentMedia(series_data)
 
         for i, row in enumerate(self.liststore_series):
             if row[1] == current_series_name:
