@@ -272,13 +272,12 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def set_video(self,
                   file_path,
-                  position=0,
+                  position=0.0,
                   subtitles_track=-2,
                   audio_track=-2,
                   start_at=0.0,
                   play=True):
 
-        print(position, start_at)
 
         if not os.path.exists(file_path):
             return
@@ -295,18 +294,8 @@ class MediaPlayerWidget(Gtk.Overlay):
         GLib.idle_add(self.__root_window.set_title, media_title)
         GLib.idle_add(self.__vlc_widget.player.play)
         self.__start_video_at(position, start_at, play)
-
-        if subtitles_track == -1 or subtitles_track >= 0:
-            Thread(target=self.__delayed_method, args=[0.05,
-                                                       self.__vlc_widget.player.video_set_spu,
-                                                       subtitles_track]
-                   ).start()
-
-        if audio_track > -2:
-            Thread(target=self.__delayed_method, args=[0.05,
-                                                       self.__vlc_widget.player.audio_set_track,
-                                                       audio_track]
-                   ).start()
+        GLib.idle_add(self.__vlc_widget.player.audio_set_track, audio_track)
+        GLib.idle_add(self.__vlc_widget.player.video_set_spu, subtitles_track)
 
     def quit(self):
 
@@ -389,50 +378,40 @@ class MediaPlayerWidget(Gtk.Overlay):
             """
             sleep(0.25)
 
-    @staticmethod
-    def __delayed_method(delay, method, arg=None):
-        sleep(delay)
-        if arg is None:
-            GLib.idle_add(method)
-        else:
-            GLib.idle_add(method, arg)
-
     def __start_video_at(self, position, start_at, play):
-        """
-            It is necessary to give some time to the player to start playing
-            so the following methods can be applied.
-            I chose 0.05 seconds
-        """
 
-        video_length = self.__vlc_widget.player.get_length()
-        start_at = str(start_at).split('.')
-        str_seconds = str(start_at[1])
-        minutes = int(start_at[0])
-        if len(str_seconds) == 1:
-            seconds = int(str_seconds) * 10
-        else:
-            seconds = int(str_seconds)
-        start_at = minutes * 60 + seconds
-
-        if video_length > 0 and start_at > 0:
-            video_length = video_length / 1000.000
-            start_at_percent = start_at / video_length
-        else:
+        if start_at <= 0:
             start_at_percent = 0
+        else:
+            # convert the start time to percent
+            video_length = self.__vlc_widget.player.get_length()
+            start_at = str(start_at).split('.')
+            str_seconds = str(start_at[1])
+            minutes = int(start_at[0])
+            if len(str_seconds) == 1:
+                seconds = int(str_seconds) * 10
+            else:
+                seconds = int(str_seconds)
+            start_at = minutes * 60 + seconds
 
+            if video_length > 0 and start_at > 0:
+                video_length = video_length / 1000.000
+                start_at_percent = start_at / video_length
+            else:
+                start_at_percent = 0
+
+        # Set the start position if necessary
         if start_at_percent > position:
-            start_time = start_at_percent
+            start_position = start_at_percent
 
         elif position > 0:
-            start_time = position
+            start_position = position
         else:
-            start_time = 0
+            start_position = 0
 
-        if start_time > 0:
-            GLib.idle_add(self.__vlc_widget.player.set_position, start_time)
 
-        if play:
-            GLib.idle_add(self.__vlc_widget.player.play)
+        GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
+
 
     @staticmethod
     def __redraw_bg(_, cairo_ctx):

@@ -236,6 +236,8 @@ class VListPlayer(object):
         if event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == EventCodes.Cursor.left_click:
 
+                print("CALLING PLAY")
+
                 # check if the liststore is empty
                 if len(self.liststore_episodes) <= 0:
                     if not self.checkbox_hide_warning_missing_series.get_active():
@@ -269,19 +271,28 @@ class VListPlayer(object):
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
 
-            if event.button == EventCodes.Cursor.right_click and self.treeview_selection_series.count_selected_rows() == 1:
+            if event.button == EventCodes.Cursor.left_click:
 
-                # Get the iter where the user is pointing
-                pointing_treepath = self.treeview_series.get_path_at_pos(event.x, event.y)[0]
+                if self.__media_player.is_nothing():
+                    print("SET PREVIEW")
+                    self.__set_video(play=False)
 
-                # If the iter is not in the selected iters, remove the previous selection
-                model, treepaths = self.treeview_selection_series.get_selected_rows()
 
-                if pointing_treepath not in treepaths and inside_treeview:
-                    self.treeview_selection_series.unselect_all()
-                    self.treeview_selection_series.select_path(pointing_treepath)
+            elif event.button == EventCodes.Cursor.right_click:
 
-                self.__menu_series_display(series_data, event)
+                if self.treeview_selection_series.count_selected_rows() == 1:
+
+                    # Get the iter where the user is pointing
+                    pointing_treepath = self.treeview_series.get_path_at_pos(event.x, event.y)[0]
+
+                    # If the iter is not in the selected iters, remove the previous selection
+                    model, treepaths = self.treeview_selection_series.get_selected_rows()
+
+                    if pointing_treepath not in treepaths and inside_treeview:
+                        self.treeview_selection_series.unselect_all()
+                        self.treeview_selection_series.select_path(pointing_treepath)
+
+                    self.__menu_series_display(series_data, event)
 
     def __set_video(self, video_name=None, play=True):
 
