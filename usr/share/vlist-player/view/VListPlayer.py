@@ -237,20 +237,32 @@ class VListPlayer(object):
             if event.button == EventCodes.Cursor.left_click:
 
                 # check if the liststore is empty
-                if len(self.liststore_episodes) <= 0 and not self.checkbox_hide_warning_missing_series.get_active():
-                    gtk_info(self.window_root, TEXT_CANT_PLAY_SERIES_MISSING, None)
+                if len(self.liststore_episodes) <= 0:
+                    if not self.checkbox_hide_warning_missing_series.get_active():
+                        gtk_info(self.window_root, TEXT_CANT_PLAY_SERIES_MISSING, None)
+
                     return
 
+
                 """
-                    Play a video of the series
+                    Check if the series is already selected and if a video is playing
                 """
                 if self.__current_media.series is not None:
 
                     if self.__current_media.series.get_name() == selected_series_name:
-                        return
 
-                    self.__save_current_video_position()
+                        if not self.__media_player.is_nothing():
+                            if self.__media_player.is_paused():
+                                self.__media_player.play()
 
+                            return
+
+                    else:
+                        self.__save_current_video_position()
+
+                """
+                    Play a video of the series
+                """
                 self.__ccp.write('current_series', selected_series_name)
                 self.__current_media = CurrentMedia(series_data)
                 self.__set_video()
