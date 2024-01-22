@@ -178,15 +178,15 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scale_progress.set_range(0, 1)
         self.__scale_progress.set_size_request(600, -1)
         self.__scale_progress.set_draw_value(False)
-        self.__scale_progress.set_hexpand(True)
-        self.__scale_progress.set_can_focus(False)
+        self.__scale_progress.set_hexpand(False)
+        self.__scale_progress.set_can_focus(True)
         self.__scale_progress.add_mark(0.25, Gtk.PositionType.TOP, None)
         self.__scale_progress.add_mark(0.5, Gtk.PositionType.TOP, None)
         self.__scale_progress.add_mark(0.75, Gtk.PositionType.TOP, None)
         self.__scale_progress.connect('button-press-event', self.__on_scale_progress_button_press)
         self.__scale_progress.connect('button-release-event', self.__on_scale_progress_button_release)
         self.__scale_progress.connect('value_changed', self.__on_scale_progress_changed)
-        self.__buttons_box.pack_start(self.__scale_progress, True, True, 1)
+        self.__buttons_box.pack_start(child=self.__scale_progress, expand=False, fill=False, padding=1)
 
         self.__label_length = Gtk.Label()
         self.__label_length.set_markup(WidgetsMarkup._label_length.format("00:00:00"))
@@ -209,7 +209,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         """
             Init the threads
         """
-        self.__thread_player_activity = Thread(target=self.__on_thread_player_activity)
+        self.__thread_player_activity = Thread(target=self.__on_thread_scan)
         self.__thread_player_activity.start()
 
         self.__thread_scan_motion = Thread(target=self.__on_thread_motion_activity)
@@ -335,15 +335,27 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __cursor_show(self):
         self.get_window().set_cursor(self.__default_cursor)
 
-    def __on_thread_player_activity(self):
+    def __on_thread_scan(self):
         """
             This method scans the state of the player to update the tool buttons, volume, play-stop etc
         """
 
         this_thread = current_thread()
+        cached_scale_width = -1
 
         while getattr(this_thread, "do_run", True):
 
+            # Resize the scale progress
+            scale_width = int(self.__vlc_widget.get_allocation().width * .5)
+
+            if scale_width != cached_scale_width:
+                # It was more robust to add the resize here, than trying to use the signals
+                # allocate and configure-event
+                # those signals did not work in all the cases.
+                cached_scale_width = scale_width
+                GLib.idle_add(self.__scale_progress.set_size_request, scale_width, -1)
+
+            # VLC
             vlc_is_playing = self.is_playing()
             vlc_volume = self.__vlc_widget.player.audio_get_volume()
             vlc_position = self.__vlc_widget.player.get_position()
