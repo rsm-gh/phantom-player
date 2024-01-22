@@ -296,12 +296,16 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         turn_off_screensaver(True)
 
+        GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format("00:00"))
+        GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format("00:00"))
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
         GLib.idle_add(self.__vlc_widget.player.play)
         self.__start_video_at(position, start_at, play)
-        GLib.idle_add(self.__vlc_widget.player.audio_set_track, audio_track)
-        GLib.idle_add(self.__vlc_widget.player.video_set_spu, subtitles_track)
+        GLib.timeout_add_seconds(.5, self.__set_label_length)
+        GLib.timeout_add_seconds(.5, self.__vlc_widget.player.audio_set_track, audio_track)
+        GLib.timeout_add_seconds(.5, self.__vlc_widget.player.video_set_spu, subtitles_track)
+
 
     def quit(self):
 
@@ -347,18 +351,12 @@ class MediaPlayerWidget(Gtk.Overlay):
         else:
             start_position = 0
 
-        GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format("00:00"))
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
-        Thread(target=self.__on_thread_set_length).start()
 
-    def __on_thread_set_length(self):
-        while True:
-            self.__media_length = self.__vlc_widget.player.get_length()
-            if self.__media_length > 0:
-                video_length = format_milliseconds_to_time(self.__media_length)
-                GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
-                break
-            sleep(.2)
+    def __set_label_length(self):
+        self.__media_length = self.__vlc_widget.player.get_length()
+        video_length = format_milliseconds_to_time(self.__media_length)
+        GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
 
     def __set_cursor_empty(self):
         self.get_window().set_cursor(self.__empty_cursor)
