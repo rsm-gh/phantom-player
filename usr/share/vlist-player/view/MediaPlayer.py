@@ -509,7 +509,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
                 if self.__update__scale_progress:
                     video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
-                    video_length = format_milliseconds_to_time(self.__media_length) + "   "
+                    video_length = format_milliseconds_to_time(self.__media_length)
 
                     GLib.idle_add(self.__scale_progress.set_value, vlc_position)
                     GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
@@ -657,7 +657,7 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __on_scale_progress_changed(self, widget, *_):
         if self.__media_length > 0 and not self.__update__scale_progress:
             video_time = widget.get_value() * self.__media_length
-            video_time = format_milliseconds_to_time(video_time) + "   "
+            video_time = format_milliseconds_to_time(video_time)
             self.__label_progress.set_markup(WidgetsMarkup._label_progress.format(video_time))
 
     def __on_scale_progress_button_press(self, *_):
