@@ -193,7 +193,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__buttons_box.pack_start(child=self.__scale_progress, expand=False, fill=False, padding=1)
 
         self.__label_length = Gtk.Label()
-        self.__label_length.set_markup(WidgetsMarkup._label_length.format("00:00:00"))
+        self.__label_length.set_markup(WidgetsMarkup._label_length.format("00:00"))
         self.__label_length.set_margin_end(5)
         self.__label_length.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
         self.__buttons_box.pack_start(self.__label_length, True, True, 3)
@@ -347,7 +347,18 @@ class MediaPlayerWidget(Gtk.Overlay):
         else:
             start_position = 0
 
+        GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format("00:00"))
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
+        Thread(target=self.__on_thread_set_length).start()
+
+    def __on_thread_set_length(self):
+        while True:
+            self.__media_length = self.__vlc_widget.player.get_length()
+            if self.__media_length > 0:
+                video_length = format_milliseconds_to_time(self.__media_length)
+                GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
+                break
+            sleep(.2)
 
     def __set_cursor_empty(self):
         self.get_window().set_cursor(self.__empty_cursor)
@@ -503,17 +514,10 @@ class MediaPlayerWidget(Gtk.Overlay):
             """
                 Update the time of the scale and the time
             """
-            if vlc_is_playing:
-                # Why this can not be in play_video()?
-                self.__media_length = self.__vlc_widget.player.get_length()
-
-                if self.__update__scale_progress:
-                    video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
-                    video_length = format_milliseconds_to_time(self.__media_length)
-
-                    GLib.idle_add(self.__scale_progress.set_value, vlc_position)
-                    GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
-                    GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format(video_time))
+            if vlc_is_playing and self.__update__scale_progress:
+                video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
+                GLib.idle_add(self.__scale_progress.set_value, vlc_position)
+                GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format(video_time))
 
             """
                 Wait
