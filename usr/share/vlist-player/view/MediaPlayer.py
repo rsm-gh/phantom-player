@@ -253,7 +253,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def volume_up(self):
         actual_volume = self.__vlc_widget.player.audio_get_volume()
-        if actual_volume + 1 < 100:
+        if actual_volume + 1 <= 100:
             self.__vlc_widget.player.audio_set_volume(actual_volume + 1)
 
     def volume_down(self):
