@@ -312,12 +312,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__thread_player_activity.join()
         self.__thread_scan_motion.join()
 
-    def __cursor_hide(self):
-        self.get_window().set_cursor(self.__empty_cursor)
-
-    def __cursor_show(self):
-        self.get_window().set_cursor(self.__default_cursor)
-
     def __start_video_at(self, position, start_at, play):
 
         if start_at <= 0:
@@ -351,11 +345,17 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
 
-    def __fullscreen(self, *_):
+    def __set_cursor_empty(self):
+        self.get_window().set_cursor(self.__empty_cursor)
+
+    def __set_cursor_default(self):
+        self.get_window().set_cursor(self.__default_cursor)
+
+    def __set_window_fullscreen(self, *_):
         """This is only for the Gtk.Menu"""
         self.__root_window.fullscreen()
 
-    def __unfullscreen(self, *_):
+    def __set_window_unfullscreen(self, *_):
         """This is only for the Gtk.Menu"""
         self.__root_window.unfullscreen()
 
@@ -370,10 +370,10 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         if Gdk.WindowState.FULLSCREEN & state:
             menuitem = Gtk.ImageMenuItem(label="Un-Fullscreen")
-            menuitem.connect('activate', self.__unfullscreen)
+            menuitem.connect('activate', self.__set_window_unfullscreen)
         else:
             menuitem = Gtk.ImageMenuItem(label="Fullscreen")
-            menuitem.connect('activate', self.__fullscreen)
+            menuitem.connect('activate', self.__set_window_fullscreen)
 
         menu.append(menuitem)
 
@@ -529,7 +529,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
                 GLib.idle_add(self.__label_volume.hide)
                 GLib.idle_add(self.__buttons_box.hide)
-                GLib.idle_add(self.__cursor_hide)
+                GLib.idle_add(self.__set_cursor_empty)
 
             sleep(.5)
 
@@ -565,7 +565,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         if self.__has_media and self.__widgets_shown < WidgetsShown.toolbox:
             self.__widgets_shown = WidgetsShown.toolbox
             self.__buttons_box.show()
-            self.__cursor_show()
+            self.__set_cursor_default()
 
     def __on_mouse_scroll(self, _, event):
 
