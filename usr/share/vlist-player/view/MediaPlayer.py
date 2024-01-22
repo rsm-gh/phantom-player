@@ -17,9 +17,9 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+import gi
 import os
 import sys
-import gi
 from time import time, sleep
 from datetime import timedelta
 from threading import Thread, current_thread
@@ -544,7 +544,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         if self.__has_media and self.__widgets_shown < WidgetsShown.toolbox:
             self.__widgets_shown = WidgetsShown.toolbox
             self.__buttons_box.show()
-            self.__label_volume.show()
 
     def __on_mouse_scroll(self, _, event):
 
