@@ -132,7 +132,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__vlc_widget = VLCWidget(self.__root_window)
         self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
-        self.__vlc_widget.connect("draw", self.__redraw_bg)
+        self.__vlc_widget.connect("draw", self.__on_draw)
         self.add(self.__vlc_widget)
 
         self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
@@ -312,92 +312,11 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__thread_player_activity.join()
         self.__thread_scan_motion.join()
 
-    def __on_thread_motion_activity(self, *_):
-
-        this_thread = current_thread()
-
-        while getattr(this_thread, "do_run", True):
-
-            time_delta = time() - self.__motion_time
-
-            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none:
-                self.__widgets_shown = WidgetsShown.none
-
-                GLib.idle_add(self.__label_volume.hide)
-                GLib.idle_add(self.__buttons_box.hide)
-                GLib.idle_add(self.__cursor_hide)
-
-            sleep(.5)
-
     def __cursor_hide(self):
         self.get_window().set_cursor(self.__empty_cursor)
 
     def __cursor_show(self):
         self.get_window().set_cursor(self.__default_cursor)
-
-    def __on_thread_scan(self):
-        """
-            This method scans the state of the player to update the tool buttons, volume, play-stop etc
-        """
-
-        this_thread = current_thread()
-        cached_scale_width = -1
-
-        while getattr(this_thread, "do_run", True):
-
-            # Resize the scale progress
-            scale_width = int(self.__vlc_widget.get_allocation().width * .5)
-
-            if scale_width != cached_scale_width:
-                # It was more robust to add the resize here, than trying to use the signals
-                # allocate and configure-event
-                # those signals did not work in all the cases.
-                cached_scale_width = scale_width
-                GLib.idle_add(self.__scale_progress.set_size_request, scale_width, -1)
-
-            # VLC
-            vlc_is_playing = self.is_playing()
-            vlc_volume = self.__vlc_widget.player.audio_get_volume()
-            vlc_position = self.__vlc_widget.player.get_position()
-            scale_volume_value = int(self.__scale_volume.get_value() * 100)
-
-            # Update the play-pause button
-            if vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-play':
-                GLib.idle_add(self.__button_play_pause.set_stock_id, 'gtk-media-pause')
-
-            elif not vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-pause':
-                GLib.idle_add(self.__button_play_pause.set_stock_id, 'gtk-media-play')
-
-            """
-                Update the volume. Is this necessary?
-            """
-            if vlc_volume <= 100 and vlc_volume != scale_volume_value:
-                GLib.idle_add(self.__scale_volume.set_value, vlc_volume / 100.000)
-                GLib.idle_add(self.__label_volume.set_markup, WidgetsMarkup._label_volume.format(vlc_volume))
-                GLib.idle_add(self.__label_volume.show)
-
-                self.__motion_time = time()
-                self.__widgets_shown = WidgetsShown.volume
-
-            """
-                Update the time of the scale and the time
-            """
-            if vlc_is_playing:
-                # Why this can not be in play_video()?
-                self.__media_length = self.__vlc_widget.player.get_length()
-
-                if self.__update__scale_progress:
-                    video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
-                    video_length = format_milliseconds_to_time(self.__media_length) + "   "
-
-                    GLib.idle_add(self.__scale_progress.set_value, vlc_position)
-                    GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
-                    GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format(video_time))
-
-            """
-                Wait
-            """
-            sleep(0.25)
 
     def __start_video_at(self, position, start_at, play):
 
@@ -431,12 +350,6 @@ class MediaPlayerWidget(Gtk.Overlay):
             start_position = 0
 
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
-
-    @staticmethod
-    def __redraw_bg(_, cairo_ctx):
-        """To redraw the black background when resized"""
-        cairo_ctx.set_source_rgb(0, 0, 0)
-        cairo_ctx.paint()
 
     def __fullscreen(self, *_):
         """This is only for the Gtk.Menu"""
@@ -531,6 +444,95 @@ class MediaPlayerWidget(Gtk.Overlay):
         menu.show_all()
         menu.popup(None, None, None, None, event.button, event.time)
         return True
+
+    @staticmethod
+    def __on_draw(_, cairo_ctx):
+        """To redraw the black background when resized"""
+        cairo_ctx.set_source_rgb(0, 0, 0)
+        cairo_ctx.paint()
+
+
+    def __on_thread_scan(self):
+        """
+            This method scans the state of the player to update the tool buttons, volume, play-stop etc
+        """
+
+        this_thread = current_thread()
+        cached_scale_width = -1
+
+        while getattr(this_thread, "do_run", True):
+
+            # Resize the scale progress
+            scale_width = int(self.__vlc_widget.get_allocation().width * .5)
+
+            if scale_width != cached_scale_width:
+                # It was more robust to add the resize here, than trying to use the signals
+                # allocate and configure-event
+                # those signals did not work in all the cases.
+                cached_scale_width = scale_width
+                GLib.idle_add(self.__scale_progress.set_size_request, scale_width, -1)
+
+            # VLC
+            vlc_is_playing = self.is_playing()
+            vlc_volume = self.__vlc_widget.player.audio_get_volume()
+            vlc_position = self.__vlc_widget.player.get_position()
+            scale_volume_value = int(self.__scale_volume.get_value() * 100)
+
+            # Update the play-pause button
+            if vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-play':
+                GLib.idle_add(self.__button_play_pause.set_stock_id, 'gtk-media-pause')
+
+            elif not vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-pause':
+                GLib.idle_add(self.__button_play_pause.set_stock_id, 'gtk-media-play')
+
+            """
+                Update the volume. Is this necessary?
+            """
+            if vlc_volume <= 100 and vlc_volume != scale_volume_value:
+                GLib.idle_add(self.__scale_volume.set_value, vlc_volume / 100.000)
+                GLib.idle_add(self.__label_volume.set_markup, WidgetsMarkup._label_volume.format(vlc_volume))
+                GLib.idle_add(self.__label_volume.show)
+
+                self.__motion_time = time()
+                self.__widgets_shown = WidgetsShown.volume
+
+            """
+                Update the time of the scale and the time
+            """
+            if vlc_is_playing:
+                # Why this can not be in play_video()?
+                self.__media_length = self.__vlc_widget.player.get_length()
+
+                if self.__update__scale_progress:
+                    video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
+                    video_length = format_milliseconds_to_time(self.__media_length) + "   "
+
+                    GLib.idle_add(self.__scale_progress.set_value, vlc_position)
+                    GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
+                    GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format(video_time))
+
+            """
+                Wait
+            """
+            sleep(0.25)
+
+    def __on_thread_motion_activity(self, *_):
+
+        this_thread = current_thread()
+
+        while getattr(this_thread, "do_run", True):
+
+            time_delta = time() - self.__motion_time
+
+            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none:
+                self.__widgets_shown = WidgetsShown.none
+
+                GLib.idle_add(self.__label_volume.hide)
+                GLib.idle_add(self.__buttons_box.hide)
+                GLib.idle_add(self.__cursor_hide)
+
+            sleep(.5)
+
 
     def __on_key_pressed(self, _, event):
 
