@@ -39,6 +39,10 @@ from system_utils import EventCodes, turn_off_screensaver
 
 
 def format_milliseconds_to_time(number):
+
+    if number <= 0:
+        return "00:00"
+
     time_string = str(timedelta(milliseconds=number)).split('.')[0]
 
     # remove the hours if they are not necessary
@@ -169,7 +173,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__buttons_box.pack_start(self.__button_end_video, True, True, 3)
 
         self.__label_progress = Gtk.Label()
-        self.__label_progress.set_markup(WidgetsMarkup._label_progress.format("00:00:00"))
+        self.__label_progress.set_markup(WidgetsMarkup._label_progress.format("00:00"))
         self.__label_progress.set_margin_end(5)
         self.__label_progress.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
         self.__buttons_box.pack_start(self.__label_progress, True, True, 3)
