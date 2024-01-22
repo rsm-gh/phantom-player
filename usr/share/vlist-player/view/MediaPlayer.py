@@ -126,12 +126,15 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__update__scale_progress = True
         self.__media_length = 0
 
+        display = self.get_display()
+        self.__empty_cursor = Gdk.Cursor.new_for_display(display, Gdk.CursorType.BLANK_CURSOR)
+        self.__default_cursor = Gdk.Cursor.new_from_name(display, 'default')
+
         self.__vlc_widget = VLCWidget(self.__root_window)
         self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
         self.__vlc_widget.connect("draw", self.__redraw_bg)
         self.add(self.__vlc_widget)
 
-        # Signals
         self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         self.__vlc_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
@@ -278,7 +281,6 @@ class MediaPlayerWidget(Gtk.Overlay):
                   start_at=0.0,
                   play=True):
 
-
         if not os.path.exists(file_path):
             return
 
@@ -323,8 +325,15 @@ class MediaPlayerWidget(Gtk.Overlay):
 
                 GLib.idle_add(self.__label_volume.hide)
                 GLib.idle_add(self.__buttons_box.hide)
+                GLib.idle_add(self.__cursor_hide)
 
             sleep(.5)
+
+    def __cursor_hide(self):
+        self.get_window().set_cursor(self.__empty_cursor)
+
+    def __cursor_show(self):
+        self.get_window().set_cursor(self.__default_cursor)
 
     def __on_thread_player_activity(self):
         """
@@ -409,9 +418,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         else:
             start_position = 0
 
-
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
-
 
     @staticmethod
     def __redraw_bg(_, cairo_ctx):
@@ -544,6 +551,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         if self.__has_media and self.__widgets_shown < WidgetsShown.toolbox:
             self.__widgets_shown = WidgetsShown.toolbox
             self.__buttons_box.show()
+            self.__cursor_show()
 
     def __on_mouse_scroll(self, _, event):
 
