@@ -688,7 +688,16 @@ class VListPlayer(object):
             # If the current video got to the end...
             if round(position, 3) >= 0.999:
                 self.__current_media.mark_seen_episode()
-                GLib.idle_add(self.__liststore_episodes_populate, True)
+
+                # Update the treeview if the series is selected
+                selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+                if selected_series_name == self.__current_media.series.get_name():
+                    print("UPDATING")
+                    GLib.idle_add(self.__liststore_episodes_mark,
+                                  cached_video.get_empty_name(),
+                                  self.__current_media.get_random_state())
+
+                #GLib.idle_add(self.__liststore_episodes_populate, True)
 
                 # Play the next episode
                 if not self.checkbutton_keep_playing.get_active():
@@ -854,6 +863,19 @@ class VListPlayer(object):
                 gtk_info(self.window_root, TEXT_X_VIDEOS_HAVE_BEEN_FOUND.format(found_videos), None)
 
         self.__liststore_episodes_populate(True)
+
+    def __liststore_episodes_mark(self, episode_name, random):
+
+        if random:
+            column = 6
+        else:
+            column = 5
+
+        for i, (_, e_name, *_) in enumerate(self.liststore_episodes):
+            if episode_name == e_name:
+                self.liststore_episodes[i][column] = True
+                return
+
 
     def __liststore_episodes_populate(self, update_liststore):
 
