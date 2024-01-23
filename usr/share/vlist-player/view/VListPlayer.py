@@ -163,15 +163,20 @@ class VListPlayer(object):
         self.window_root.connect("configure-event", self.__on_configure_event)
 
         # checkboxes
-        self.checkbox_hide_number.set_active(self.__ccp.get_bool('number'))
-        self.checkbox_hide_name.set_active(self.__ccp.get_bool('name'))
-        self.checkbox_hide_extension.set_active(self.__ccp.get_bool('extensions'))
-        self.checkbox_hide_play.set_active(self.__ccp.get_bool('play'))
-        self.checkbox_hide_oplayed.set_active(self.__ccp.get_bool('oplayed'))
-        self.checkbox_hide_rplayed.set_active(self.__ccp.get_bool('rplayed'))
         self.checkbox_hide_warning_missing_series.set_active(self.__ccp.get_bool('warningMissingSeries'))
         self.checkbox_hidden_items.set_active(self.__ccp.get_bool_defval('hidden', False))
         self.checkbox_hide_missing_series.set_active(self.__ccp.get_bool_defval('hide-missing-series', False))
+
+        for item_name in ("hide_ep_number",
+                          "hide_ep_name",
+                          "hide_ep_extension",
+                          "hide_ep_play",
+                          "hide_ep_oplayed",
+                          "hide_ep_rplayed"):
+
+            if self.__ccp.get_bool(item_name):
+                checkbox = getattr(self, item_name.replace("hide_ep_", "checkbox_hide_"))
+                checkbox.set_active(True)
 
         """
             Display the window
@@ -524,32 +529,32 @@ class VListPlayer(object):
     def on_checkbox_hide_number_toggled(self, *_):
         state = self.checkbox_hide_number.get_active()
         self.column_number.set_visible(not state)
-        self.__ccp.write('number', state)
+        self.__ccp.write('hide_ep_number', state)
 
     def on_checkbox_hide_name_toggled(self, *_):
         state = self.checkbox_hide_name.get_active()
         self.column_name.set_visible(not state)
-        self.__ccp.write('name', state)
+        self.__ccp.write('hide_ep_name', state)
 
     def on_checkbox_hide_extension_toggled(self, *_):
         state = self.checkbox_hide_extension.get_active()
         self.column_extension.set_visible(not state)
-        self.__ccp.write('extensions', state)
+        self.__ccp.write('hide_ep_extension', state)
 
     def on_checkbox_hide_play_toggled(self, *_):
         state = self.checkbox_hide_play.get_active()
         self.column_play.set_visible(not state)
-        self.__ccp.write('play', state)
+        self.__ccp.write('hide_ep_play', state)
 
     def on_checkbox_hide_oplayed_toggled(self, *_):
         state = self.checkbox_hide_oplayed.get_active()
         self.column_oplayed.set_visible(not state)
-        self.__ccp.write('oplayed', state)
+        self.__ccp.write('hide_ep_oplayed', state)
 
     def on_checkbox_hide_rplayed_toggled(self, *_):
         state = self.checkbox_hide_rplayed.get_active()
         self.column_rplayed.set_visible(not state)
-        self.__ccp.write('rplayed', state)
+        self.__ccp.write('hide_ep_rplayed', state)
 
     def on_checkbox_hide_warning_missing_series_toggled(self, *_):
         self.__ccp.write('warningMissingSeries', self.checkbox_hide_warning_missing_series.get_active())
