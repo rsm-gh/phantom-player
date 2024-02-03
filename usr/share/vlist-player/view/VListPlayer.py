@@ -199,16 +199,6 @@ class VListPlayer(object):
         self.__thread_scan_media_player.join()
         self.__media_player.join()
 
-    def __save_current_video_position(self):
-        if self.__current_media.series is not None:
-            episode = self.__current_media.current_episode()
-            if episode is not None:
-                position = self.__media_player.get_position()
-                if position > 0:
-                    episode.set_position(position)
-
-            self.__current_media.series.write_data()
-
     def quit(self, *_):
         self.__save_current_video_position()
         self.__media_player.quit()
@@ -299,29 +289,6 @@ class VListPlayer(object):
 
                     self.__menu_series_display(series_data, event)
 
-    def __set_video(self, video_name=None, play=True):
-
-        if self.__current_media.series is None:
-            return
-
-        if video_name is None:
-            video = self.__current_media.next_episode(self.checkbutton_random.get_active())
-        else:
-            video = self.__current_media.get_episode(video_name)
-
-        if video is None:
-            gtk_info(self.window_root, TEXT_END_OF_SERIES)
-
-        elif not os.path.exists(video.get_path()):
-            gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
-
-        else:
-            self.__media_player.set_video(video.get_path(),
-                                          video.get_position(),
-                                          self.__current_media.series.get_subtitles_track(),
-                                          self.__current_media.series.get_audio_track(),
-                                          self.__current_media.series.get_start_at(),
-                                          play)
 
     def on_treeview_episodes_press_event(self, _, event):
         model, treepaths = self.treeview_selection_episodes.get_selected_rows()
@@ -383,7 +350,7 @@ class VListPlayer(object):
 
                 menuitem = Gtk.ImageMenuItem(label=TEXT_FOLDER)
                 menu.append(menuitem)
-                menuitem.connect('activate', self.__menuitem_episode_open_dir, selected_episode_name)
+                menuitem.connect('activate', self.__on_menuitem_episode_open_dir, selected_episode_name)
                 img = Gtk.Image(stock=Gtk.STOCK_OPEN)
                 menuitem.set_image(img)
 
@@ -647,140 +614,21 @@ class VListPlayer(object):
 
         self.window_rename.hide()
 
-    def __on_configure_event(self, *_):
 
-        if Gdk.WindowState.FULLSCREEN & self.window_root.get_window().get_state():
-            fullscreen = True
-        else:
-            fullscreen = False
+    def __save_current_video_position(self):
+        if self.__current_media.series is not None:
+            episode = self.__current_media.current_episode()
+            if episode is not None:
+                position = self.__media_player.get_position()
+                if position > 0:
+                    episode.set_position(position)
 
-        if self.__is_full_screen != fullscreen:
-            self.__is_full_screen = fullscreen
+            self.__current_media.series.write_data()
 
-            if fullscreen:
-                self.menubar.hide()
-                self.box_main.hide()
-            else:
-                self.menubar.show()
-                self.box_main.show()
-
-    def __on_thread_scan_media_player(self):
-
-        this_thread = current_thread()
-
-        cached_video = None
-        cached_position = 0
-
-        while getattr(this_thread, "do_run", True):
-
-            if self.__current_media.series is None:
-                continue
-
-            position = self.__media_player.get_position()
-            current_episode = self.__current_media.current_episode()
-
-            if current_episode != cached_video:
-                cached_video = current_episode
-                cached_position = 0
-
-            if cached_video is None:
-                continue
-
-            if self.__media_player.is_paused() and position != cached_position:
-                cached_position = position
-                self.__current_media.series.set_video_position(cached_video, cached_position)
-
-            # If the current video got to the end...
-            if round(position, 3) >= 0.999:
-                self.__current_media.mark_seen_episode()
-
-                # Update the treeview if the series is selected
-                selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-                if selected_series_name == self.__current_media.series.get_name():
-                    print("UPDATING")
-                    GLib.idle_add(self.__liststore_episodes_mark,
-                                  cached_video.get_empty_name(),
-                                  self.__current_media.get_random_state())
-
-                #GLib.idle_add(self.__liststore_episodes_populate, True)
-
-                # Play the next episode
-                if not self.checkbutton_keep_playing.get_active():
-                    GLib.idle_add(self.__media_player.pause)
-                    GLib.idle_add(self.window_root.unfullscreen)
-
-                else:
-                    next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
-
-                    if next_video is None:
-                        GLib.idle_add(self.window_root.unfullscreen)
-                        GLib.idle_add(gtk_info, self.window_root, TEXT_END_OF_SERIES)
-
-                    else:
-                        self.__media_player.set_video(next_video.get_path(),
-                                                      next_video.get_position(),
-                                                      self.__current_media.series.get_subtitles_track(),
-                                                      self.__current_media.series.get_audio_track(),
-                                                      self.__current_media.series.get_start_at(),
-                                                      True)
-
-            time.sleep(0.5)
-
-    def __on_thread_load_series(self):
-        """
-            Load the saved lists
-        """
-        for file_name in sorted(os.listdir(FOLDER_LIST_PATH)):
-
-            if not file_name.lower().endswith('.csv'):
-                continue
-
-            file_path = os.path.join(FOLDER_LIST_PATH, file_name)
-
-            with open(file_path, mode='rt', encoding='utf-8') as f:
-                series_info = f.readline().split('|')
-
-            if len(series_info) < 7:
-                print("Error, Wrong format for series file = ", file_path)  # todo: show user message
-                continue
-
-            path = series_info[0]
-            recursive = series_info[1]
-            random = series_info[2]
-            keep_playing = series_info[3]
-            start_at = float(series_info[4])
-            audio_track = int(series_info[5])
-            subtitles_track = int(series_info[6])
-
-            if '/' in path:
-                self.__series_load_from_path(path,
-                                             file_path,
-                                             recursive,
-                                             random,
-                                             keep_playing,
-                                             start_at,
-                                             audio_track,
-                                             subtitles_track,
-                                             select=False)
-
-        """
-            Select the last series that was played
-        """
-        current_series_name = self.__ccp.get_str('current_series')
-
-        try:
-            series_data = self.__series_dict[current_series_name]
-        except KeyError:
-            pass
-        else:
-            self.__current_media = CurrentMedia(series_data)
-
-        for i, row in enumerate(self.liststore_series):
-            if row[1] == current_series_name:
-                GLib.idle_add(self.treeview_series.set_cursor, i)
-                return
-
-        GLib.idle_add(self.treeview_series.set_cursor, 0)
+    def __series_open(self, _):
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_data = self.__series_dict[selected_series_name]
+        open_directory(series_data.get_path())
 
     def __series_load_from_path(self,
                                 path,
@@ -813,13 +661,6 @@ class VListPlayer(object):
                     GLib.idle_add(self.treeview_series.set_cursor, i)
                     break
 
-    def __liststore_series_append(self, data):
-        """
-            I do not understand why this must be a separate method.
-            It is not possible to call directly: GLib.idle_add(self.liststore_series.append, data)
-        """
-        self.liststore_series.append(data)
-
     def __series_add_from_fchooser(self, recursive):
 
         path = gtk_folder_chooser(self.window_root)
@@ -840,11 +681,6 @@ class VListPlayer(object):
         th = Thread(target=self.__series_load_from_path, args=[path, None, recursive, False, True])
         th.start()
         self.__threads.append(th)
-
-    def __series_open(self, _):
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series_data = self.__series_dict[selected_series_name]
-        open_directory(series_data.get_path())
 
     def __series_find_videos(self, _, video_names):
 
@@ -868,6 +704,37 @@ class VListPlayer(object):
                 gtk_info(self.window_root, TEXT_X_VIDEOS_HAVE_BEEN_FOUND.format(found_videos), None)
 
         self.__liststore_episodes_populate(True)
+
+
+    def __liststore_series_append(self, data):
+        """
+            I do not understand why this must be a separate method.
+            It is not possible to call directly: GLib.idle_add(self.liststore_series.append, data)
+        """
+        self.liststore_series.append(data)
+
+    def __liststore_series_populate(self):
+
+        # Populate
+        #
+        self.liststore_series.clear()
+
+        for name in sorted(self.__series_dict.keys()):
+            series = self.__series_dict[name]
+
+            if os.path.exists(series.get_path()) or not self.checkbox_hide_missing_series.get_active():
+                self.liststore_series.append([series.get_image(), series.get_name()])
+
+        # Select the current series
+        #
+        current_series_name = self.__ccp.get_str('current_series')
+
+        for i, row in enumerate(self.liststore_series):
+            if row[1] == current_series_name:
+                self.treeview_series.set_cursor(i)
+                return
+
+        self.treeview_series.set_cursor(0)
 
     def __liststore_episodes_mark(self, episode_name, random):
 
@@ -960,29 +827,6 @@ class VListPlayer(object):
                 print("Error loading the liststore_episodes. The series '{}' has an empty video.".format(
                     series_data.get_name()))
 
-    def __liststore_series_populate(self):
-
-        # Populate
-        #
-        self.liststore_series.clear()
-
-        for name in sorted(self.__series_dict.keys()):
-            series = self.__series_dict[name]
-
-            if os.path.exists(series.get_path()) or not self.checkbox_hide_missing_series.get_active():
-                self.liststore_series.append([series.get_image(), series.get_name()])
-
-        # Select the current series
-        #
-        current_series_name = self.__ccp.get_str('current_series')
-
-        for i, row in enumerate(self.liststore_series):
-            if row[1] == current_series_name:
-                self.treeview_series.set_cursor(i)
-                return
-
-        self.treeview_series.set_cursor(0)
-
     def __menu_series_display(self, series_data, event):
 
         menu = Gtk.Menu()
@@ -1030,14 +874,142 @@ class VListPlayer(object):
 
         return True
 
-    def __menuitem_episode_open_dir(self, _, video_name):
+    def __on_configure_event(self, *_):
 
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series_data = self.__series_dict[selected_series_name]
-        path = series_data.get_path_from_video_name(video_name)
+        if Gdk.WindowState.FULLSCREEN & self.window_root.get_window().get_state():
+            fullscreen = True
+        else:
+            fullscreen = False
 
-        if os.path.exists(path):
-            open_directory(path)
+        if self.__is_full_screen != fullscreen:
+            self.__is_full_screen = fullscreen
+
+            if fullscreen:
+                self.menubar.hide()
+                self.box_main.hide()
+            else:
+                self.menubar.show()
+                self.box_main.show()
+
+
+    def __on_thread_load_series(self):
+        """
+            Load the saved lists
+        """
+        for file_name in sorted(os.listdir(FOLDER_LIST_PATH)):
+
+            if not file_name.lower().endswith('.csv'):
+                continue
+
+            file_path = os.path.join(FOLDER_LIST_PATH, file_name)
+
+            with open(file_path, mode='rt', encoding='utf-8') as f:
+                series_info = f.readline().split('|')
+
+            if len(series_info) < 7:
+                print("Error, Wrong format for series file = ", file_path)  # todo: show user message
+                continue
+
+            path = series_info[0]
+            recursive = series_info[1]
+            random = series_info[2]
+            keep_playing = series_info[3]
+            start_at = float(series_info[4])
+            audio_track = int(series_info[5])
+            subtitles_track = int(series_info[6])
+
+            if '/' in path:
+                self.__series_load_from_path(path,
+                                             file_path,
+                                             recursive,
+                                             random,
+                                             keep_playing,
+                                             start_at,
+                                             audio_track,
+                                             subtitles_track,
+                                             select=False)
+
+        """
+            Select the last series that was played
+        """
+        current_series_name = self.__ccp.get_str('current_series')
+
+        try:
+            series_data = self.__series_dict[current_series_name]
+        except KeyError:
+            pass
+        else:
+            self.__current_media = CurrentMedia(series_data)
+
+        for i, row in enumerate(self.liststore_series):
+            if row[1] == current_series_name:
+                GLib.idle_add(self.treeview_series.set_cursor, i)
+                return
+
+        GLib.idle_add(self.treeview_series.set_cursor, 0)
+
+    def __on_thread_scan_media_player(self):
+
+        this_thread = current_thread()
+
+        cached_video = None
+        cached_position = 0
+
+        while getattr(this_thread, "do_run", True):
+
+            if self.__current_media.series is None:
+                continue
+
+            position = self.__media_player.get_position()
+            current_episode = self.__current_media.current_episode()
+
+            if current_episode != cached_video:
+                cached_video = current_episode
+                cached_position = 0
+
+            if cached_video is None:
+                continue
+
+            if self.__media_player.is_paused() and position != cached_position:
+                cached_position = position
+                self.__current_media.series.set_video_position(cached_video, cached_position)
+
+            # If the current video got to the end...
+            if round(position, 3) >= 0.999:
+                self.__current_media.mark_seen_episode()
+
+                # Update the treeview if the series is selected
+                selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+                if selected_series_name == self.__current_media.series.get_name():
+                    print("UPDATING")
+                    GLib.idle_add(self.__liststore_episodes_mark,
+                                  cached_video.get_empty_name(),
+                                  self.__current_media.get_random_state())
+
+                #GLib.idle_add(self.__liststore_episodes_populate, True)
+
+                # Play the next episode
+                if not self.checkbutton_keep_playing.get_active():
+                    GLib.idle_add(self.__media_player.pause)
+                    GLib.idle_add(self.window_root.unfullscreen)
+
+                else:
+                    next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
+
+                    if next_video is None:
+                        GLib.idle_add(self.window_root.unfullscreen)
+                        GLib.idle_add(gtk_info, self.window_root, TEXT_END_OF_SERIES)
+
+                    else:
+                        self.__media_player.set_video(next_video.get_path(),
+                                                      next_video.get_position(),
+                                                      self.__current_media.series.get_subtitles_track(),
+                                                      self.__current_media.series.get_audio_track(),
+                                                      self.__current_media.series.get_start_at(),
+                                                      True)
+
+            time.sleep(0.5)
+
 
     def __on_menuitem_series_add_picture(self, _):
         """
@@ -1124,6 +1096,16 @@ class VListPlayer(object):
                 series.dont_ignore_video(episode_name)
 
             self.__liststore_episodes_populate(True)
+
+    def __on_menuitem_episode_open_dir(self, _, video_name):
+
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series_data = self.__series_dict[selected_series_name]
+        path = series_data.get_path_from_video_name(video_name)
+
+        if os.path.exists(path):
+            open_directory(path)
+
 
 
 if __name__ == '__main__':
