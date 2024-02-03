@@ -1107,9 +1107,11 @@ class VListPlayer:
             open_directory(path)
 
 
-
-if __name__ == '__main__':
+def run():
     vlist_player = VListPlayer()
     Gtk.main()
     vlist_player.join()
     VLC_INSTANCE.release()
+
+if __name__ == '__main__':
+    run()
