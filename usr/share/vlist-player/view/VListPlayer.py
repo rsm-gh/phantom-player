@@ -20,7 +20,6 @@ import os
 import gi
 import sys
 import time
-import webbrowser
 from threading import Thread, current_thread
 
 gi.require_version('Gtk', '3.0')
@@ -281,7 +280,7 @@ class VListPlayer(object):
         for i, row in enumerate(self.liststore_episodes, 1):
             row[0] = i
 
-            # Update the CSV file
+        # Update the CSV file
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
         series = self.__series_dict[selected_series_name]
         series.reorder(new_order)
@@ -344,8 +343,6 @@ class VListPlayer(object):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.open_dir)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_episode_open_dir, selected_episode_name)
-                img = Gtk.Image(stock=Gtk.STOCK_OPEN)
-                menuitem.set_image(img)
 
 
             elif selection_length > 1:
@@ -354,18 +351,14 @@ class VListPlayer(object):
                                            Texts.MenuItemEpisodes.o_played,
                                            Texts.MenuItemEpisodes.r_played), 4):
                     # mark to check
-                    menuitem = Gtk.ImageMenuItem(label=label)
+                    menuitem = Gtk.ImageMenuItem(label="Mark "+label)
                     menu.append(menuitem)
                     menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, True)
-                    img = Gtk.Image(stock=Gtk.STOCK_APPLY)
-                    menuitem.set_image(img)
 
                     # mark to uncheck
-                    menuitem = Gtk.ImageMenuItem(label=label)
+                    menuitem = Gtk.ImageMenuItem(label="Un-mark "+label)
                     menu.append(menuitem)
                     menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, False)
-                    img = Gtk.Image(stock=Gtk.STOCK_MISSING_IMAGE)
-                    menuitem.set_image(img)
 
             """
                 Menu "Fin videos"
@@ -377,22 +370,16 @@ class VListPlayer(object):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.search)
                 menuitem.connect('activate', self.__series_find_videos, list_of_names)
                 menu.append(menuitem)
-                img = Gtk.Image(stock=Gtk.STOCK_DIALOG_WARNING)
-                menuitem.set_image(img)
 
             # ignore videos
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.ignore)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_ignore_episode)
-            img = Gtk.Image(stock=Gtk.STOCK_FIND_AND_REPLACE)
-            menuitem.set_image(img)
 
             # don't ignore videos
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.dont_ignore)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_dont_ignore_episode)
-            img = Gtk.Image(stock=Gtk.STOCK_FIND)
-            menuitem.set_image(img)
 
             menu.show_all()
             menu.popup(None, None, None, None, event.button, event.time)
@@ -528,10 +515,6 @@ class VListPlayer(object):
     def on_menuitem_about_activate(self, *_):
         _ = self.window_about.run()
         self.window_about.hide()
-
-    @staticmethod
-    def on_menuitem_issues_activate(*_):
-        webbrowser.open('https://github.com/rsm-gh/vlist-player/issues', new=2)
 
     def on_menuitem_controls_activate(self, *_):
         self.window_controls.show()
@@ -860,39 +843,27 @@ class VListPlayer(object):
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.search)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_find)
-            img = Gtk.Image(stock=Gtk.STOCK_DIALOG_WARNING)
-            menuitem.set_image(img)
 
         else:
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.open_dir)
             menu.append(menuitem)
             menuitem.connect('activate', self.__series_open)
-            img = Gtk.Image(stock=Gtk.STOCK_OPEN)
-            menuitem.set_image(img)
 
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.rename)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_rename)
-            img = Gtk.Image(stock=Gtk.STOCK_BOLD)
-            menuitem.set_image(img)
 
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.reset)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_reset)
-            img = Gtk.Image(stock=Gtk.STOCK_REFRESH)
-            menuitem.set_image(img)
 
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.add_pic)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_add_picture)
-            img = Gtk.Image(stock=Gtk.STOCK_SELECT_COLOR)
-            menuitem.set_image(img)
 
         menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.delete)
         menu.append(menuitem)
         menuitem.connect('activate', self.__on_menuitem_series_delete)
-        img = Gtk.Image(stock=Gtk.STOCK_CANCEL)
-        menuitem.set_image(img)
 
         menu.show_all()
         menu.popup(None, None, None, None, event.button, event.time)
