@@ -611,7 +611,7 @@ class VListPlayer(object):
 
         self.window_rename.hide()
 
-    def __set_video(self, video_name=None, play=True):
+    def __set_video(self, video_name=None, play=True, force_postion=False):
 
         if self.__current_media.series is None:
             return
@@ -628,8 +628,13 @@ class VListPlayer(object):
             gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
 
         else:
+
+            position = video.get_position()
+            if position >= .999 and force_postion:
+                position = 0
+
             self.__media_player.set_video(video.get_path(),
-                                          video.get_position(),
+                                          position,
                                           self.__current_media.series.get_subtitles_track(),
                                           self.__current_media.series.get_audio_track(),
                                           self.__current_media.series.get_start_at(),
