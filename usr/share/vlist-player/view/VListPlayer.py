@@ -253,7 +253,7 @@ class VListPlayer(object):
             if event.button == EventCodes.Cursor.left_click:
 
                 if self.__media_player.is_nothing():
-                    self.__set_video(play=False)
+                    self.__set_video(play=False, ignore_none=True)
 
             elif event.button == EventCodes.Cursor.right_click:
 
@@ -609,10 +609,11 @@ class VListPlayer(object):
 
         self.window_rename.hide()
 
-    def __set_video(self, video_name=None, play=True, force_postion=False):
+    def __set_video(self, video_name=None, play=True, replay=False, ignore_none=False):
 
         if self.__current_media.series is None:
             return
+
 
         if video_name is None:
             video = self.__current_media.next_episode(self.checkbutton_random.get_active())
@@ -620,7 +621,8 @@ class VListPlayer(object):
             video = self.__current_media.get_episode(video_name)
 
         if video is None:
-            gtk_info(self.window_root, Texts.DialogSeries.all_episodes_played)
+            if not ignore_none:
+                gtk_info(self.window_root, Texts.DialogSeries.all_episodes_played)
 
         elif not os.path.exists(video.get_path()):
             gtk_info(self.window_root, Texts.DialogEpisodes.missing)
@@ -628,7 +630,7 @@ class VListPlayer(object):
         else:
 
             position = video.get_position()
-            if position >= .999 and force_postion:
+            if position >= .999 and replay:
                 position = 0
 
             self.__media_player.set_video(video.get_path(),
