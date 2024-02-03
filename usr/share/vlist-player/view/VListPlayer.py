@@ -32,7 +32,7 @@ _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
 sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
-from Texts import *
+from Texts import Texts
 from view.gtk_utils import *
 from model.Series import Series
 from controller.CCParser import CCParser
@@ -42,7 +42,7 @@ from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 
 
 def gtk_file_chooser(parent, mode='', start_path=''):
-    window_choose_file = Gtk.FileChooserDialog(TEXT_PROGRAM_NAME,
+    window_choose_file = Gtk.FileChooserDialog(Texts.GUI.title,
                                                parent,
                                                Gtk.FileChooserAction.OPEN,
                                                (Gtk.STOCK_CANCEL,
@@ -217,12 +217,10 @@ class VListPlayer(object):
         if event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == EventCodes.Cursor.left_click:
 
-                print("CALLING PLAY")
-
                 # check if the liststore is empty
                 if len(self.liststore_episodes) <= 0:
                     if not self.checkbox_hide_warning_missing_series.get_active():
-                        gtk_info(self.window_root, TEXT_CANT_PLAY_SERIES_MISSING, None)
+                        gtk_info(self.window_root, Texts.DialogSeries.is_missing, None)
 
                     return
 
@@ -255,9 +253,7 @@ class VListPlayer(object):
             if event.button == EventCodes.Cursor.left_click:
 
                 if self.__media_player.is_nothing():
-                    print("SET PREVIEW")
                     self.__set_video(play=False)
-
 
             elif event.button == EventCodes.Cursor.right_click:
 
@@ -345,7 +341,7 @@ class VListPlayer(object):
 
                 selected_episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
 
-                menuitem = Gtk.ImageMenuItem(label=TEXT_FOLDER)
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.open_dir)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_episode_open_dir, selected_episode_name)
                 img = Gtk.Image(stock=Gtk.STOCK_OPEN)
@@ -354,7 +350,9 @@ class VListPlayer(object):
 
             elif selection_length > 1:
 
-                for i, label in enumerate((TEXT_PLAY, TEXT_O_PLAYED, TEXT_R_PLAYED), 4):
+                for i, label in enumerate((Texts.MenuItemEpisodes.reproduce,
+                                           Texts.MenuItemEpisodes.o_played,
+                                           Texts.MenuItemEpisodes.r_played), 4):
                     # mark to check
                     menuitem = Gtk.ImageMenuItem(label=label)
                     menu.append(menuitem)
@@ -376,21 +374,21 @@ class VListPlayer(object):
                              treepaths]
 
             if series_data.missing_videos(list_of_names):
-                menuitem = Gtk.ImageMenuItem(label=TEXT_FIND)
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.search)
                 menuitem.connect('activate', self.__series_find_videos, list_of_names)
                 menu.append(menuitem)
                 img = Gtk.Image(stock=Gtk.STOCK_DIALOG_WARNING)
                 menuitem.set_image(img)
 
             # ignore videos
-            menuitem = Gtk.ImageMenuItem(label=TEXT_IGNORE)
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.ignore)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_ignore_episode)
             img = Gtk.Image(stock=Gtk.STOCK_FIND_AND_REPLACE)
             menuitem.set_image(img)
 
             # don't ignore videos
-            menuitem = Gtk.ImageMenuItem(label=TEXT_DONT_IGNORE)
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.dont_ignore)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_dont_ignore_episode)
             img = Gtk.Image(stock=Gtk.STOCK_FIND)
@@ -597,7 +595,7 @@ class VListPlayer(object):
         new_name = self.entry_rename.get_text()
 
         if new_name in self.__series_dict.keys():
-            gtk_info(self.window_rename, TEXT_SERIES_NEWNAME_ALREADY_EXISTS.format(new_name), None)
+            gtk_info(self.window_rename, Texts.DialogSeries.name_exist.format(new_name), None)
 
         elif not current_name == new_name:
 
@@ -622,10 +620,10 @@ class VListPlayer(object):
             video = self.__current_media.get_episode(video_name)
 
         if video is None:
-            gtk_info(self.window_root, TEXT_END_OF_SERIES)
+            gtk_info(self.window_root, Texts.DialogSeries.all_episodes_played)
 
         elif not os.path.exists(video.get_path()):
-            gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
+            gtk_info(self.window_root, Texts.DialogEpisodes.missing)
 
         else:
 
@@ -696,11 +694,11 @@ class VListPlayer(object):
 
         for series in self.__series_dict.values():
             if series.get_path() == path:
-                gtk_info(self.window_root, TEXT_SERIES_ALREADY_EXISTS, None)
+                gtk_info(self.window_root, Texts.DialogSeries.already_exist, None)
                 return
 
             elif series.get_name() == series_name:
-                gtk_info(self.window_root, TEXT_SERIES_NAME_ALREADY_EXISTS.format(series_name), None)
+                gtk_info(self.window_root, Texts.DialogSeries.name_exist.format(series_name), None)
                 return
 
         th = Thread(target=self.__series_load_from_path, args=[path, None, recursive, False, True])
@@ -720,13 +718,13 @@ class VListPlayer(object):
         if len(video_names) == 1:  # if the user only selected one video to find...
             found_videos = series_data.find_video(video_names[0], path)
             if found_videos:
-                gtk_info(self.window_root, TEXT_X_OTHER_VIDEOS_HAVE_BEEN_FOUND.format(found_videos), None)
+                gtk_info(self.window_root, Texts.DialogEpisodes.other_found.format(found_videos), None)
 
         elif len(video_names) > 1:
             found_videos = series_data.find_videos(path)
 
             if found_videos:
-                gtk_info(self.window_root, TEXT_X_VIDEOS_HAVE_BEEN_FOUND.format(found_videos), None)
+                gtk_info(self.window_root, Texts.DialogEpisodes.found_x.format(found_videos), None)
 
         self.__liststore_episodes_populate(True)
 
@@ -857,38 +855,38 @@ class VListPlayer(object):
         menu = Gtk.Menu()
 
         if not os.path.exists(series_data.get_path()):
-            menuitem = Gtk.ImageMenuItem(label=TEXT_FIND)
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.search)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_find)
             img = Gtk.Image(stock=Gtk.STOCK_DIALOG_WARNING)
             menuitem.set_image(img)
 
         else:
-            menuitem = Gtk.ImageMenuItem(label=TEXT_OPEN_FOLDER)
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.open_dir)
             menu.append(menuitem)
             menuitem.connect('activate', self.__series_open)
             img = Gtk.Image(stock=Gtk.STOCK_OPEN)
             menuitem.set_image(img)
 
-            menuitem = Gtk.ImageMenuItem(label=TEXT_RENAME)
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.rename)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_rename)
             img = Gtk.Image(stock=Gtk.STOCK_BOLD)
             menuitem.set_image(img)
 
-            menuitem = Gtk.ImageMenuItem(label=TEXT_RESET)
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.reset)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_reset)
             img = Gtk.Image(stock=Gtk.STOCK_REFRESH)
             menuitem.set_image(img)
 
-            menuitem = Gtk.ImageMenuItem(label=TEXT_ADD_PICTURE)
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.add_pic)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_series_add_picture)
             img = Gtk.Image(stock=Gtk.STOCK_SELECT_COLOR)
             menuitem.set_image(img)
 
-        menuitem = Gtk.ImageMenuItem(label=TEXT_DELETE)
+        menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.delete)
         menu.append(menuitem)
         menuitem.connect('activate', self.__on_menuitem_series_delete)
         img = Gtk.Image(stock=Gtk.STOCK_CANCEL)
@@ -1023,7 +1021,7 @@ class VListPlayer(object):
 
                     if next_video is None:
                         GLib.idle_add(self.window_root.unfullscreen)
-                        GLib.idle_add(gtk_info, self.window_root, TEXT_END_OF_SERIES)
+                        GLib.idle_add(gtk_info, self.window_root, Texts.DialogSeries.all_episodes_played)
 
                     else:
                         self.__media_player.set_video(next_video.get_path(),
@@ -1066,7 +1064,7 @@ class VListPlayer(object):
 
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
 
-        if gtk_dialog_question(self.window_root, TEXT_RESET_SERIES.format(selected_series_name), None):
+        if gtk_dialog_question(self.window_root, Texts.DialogSeries.confirm_reset.format(selected_series_name), None):
             series = self.__series_dict[selected_series_name]
             series.reset_data()
             self.__liststore_episodes_populate(True)
@@ -1085,7 +1083,7 @@ class VListPlayer(object):
     def __on_menuitem_series_delete(self, _):
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
 
-        if gtk_dialog_question(self.window_root, TEXT_DELETE_SERIES.format(selected_series_name), None):
+        if gtk_dialog_question(self.window_root, Texts.DialogSeries.confirm_delete.format(selected_series_name), None):
 
             self.__series_dict.pop(selected_series_name)
 
