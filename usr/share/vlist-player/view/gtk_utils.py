@@ -24,7 +24,7 @@ gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0')
 from gi.repository import Gtk, GObject, Gdk
 
-from Texts import TEXT_PROGRAM_NAME
+from Texts import Texts
 from Paths import ICON_LOGO_SMALL, HOME_PATH
 
 
@@ -92,7 +92,7 @@ def gtk_info(parent, text1, text2=None):
 
 
 def gtk_folder_chooser(parent):
-    window_choose_folder = Gtk.FileChooserDialog(TEXT_PROGRAM_NAME,
+    window_choose_folder = Gtk.FileChooserDialog(Texts.GUI.title,
                                                  parent,
                                                  Gtk.FileChooserAction.SELECT_FOLDER,
                                                  (Gtk.STOCK_CANCEL,
