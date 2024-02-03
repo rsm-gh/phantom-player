@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 
-#  Copyright (C) 2014-2016 Rafael Senties Martinelli 
+#  Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -16,58 +16,40 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-TEXT_PROGRAM_NAME = "Video List Player"
-TEXT_FOLDER = "Open Folder"
-TEXT_FIND = "Find"
-TEXT_IGNORE = "Ignore"
-TEXT_DONT_IGNORE = "Don't Ignore"
-TEXT_OPEN_FOLDER = "Open Folder"
-TEXT_RENAME = "Rename"
-TEXT_RESET = "Reset"
-TEXT_ADD_PICTURE = "Set Image"
-TEXT_DELETE = "Delete"
-TEXT_PLAY = "Play"
-TEXT_O_PLAYED = "O-Played"
-TEXT_R_PLAYED = "R-Played"
-TEXT_CHOOSE_FILE = "Select a file"
-TEXT_SERIES_ALREADY_EXISTS = "The folder that you choose is already in a series."
 
-TEXT_DELETE_SERIES = '''Are you sure that you want to delete "{0}"?
- 
-(the files will not be deleted from the hard drive)'''
+class Texts:
 
-TEXT_RESET_SERIES = '''Are you sure that you want to reset
+    class GUI:
+        title = "Video List Player"
 
- {0}?'''
+    class MenuItemSeries:
+        delete = "Delete"
+        rename = "Rename"
+        reset = "Reset"
+        search = "Search"
+        open_dir = "Open Directory"
+        add_pic = "Add Image"
 
-TEXT_DELETE_EPISODE = '''Are you sure that you want to delete
-the selected episodes from the series?
+    class DialogSeries:
+        confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
+        confirm_reset = 'Are you sure that you want to reset "{0}"?.'
+        is_missing='The series can not be reproduced because the episodes are missing!\n\nUse the search button to find them.'
+        already_exist='The series "{}" already exists.\n\nPlease rename the other series before adding this one.'
+        name_exist='The series "{}" already exists.\n\nPlease choose a different name.'
+        all_episodes_played = 'All the episodes of the series have been reproduced.'
 
-(they wont be deleted from the hard drive)'''
+    class MenuItemEpisodes:
 
-TEXT_SERIES_NAME_ALREADY_EXISTS = '''The series "{}" already exists, it is not possible
-to have two series with the same name. 
+        open_dir = "Open Directory"
+        ignore = "Ignore"
+        dont_ignore = "Don't Ignore"
+        search = "Search"
+        reproduce = "Play"
+        o_played = "O-Played"
+        r_played = "R-Played"
 
-Please rename the other series before adding this one.'''
-
-TEXT_SERIES_NEWNAME_ALREADY_EXISTS = '''The series "{}" already exists, it is not possible
-to have two series with the same name. 
-
-Please choose a different name.'''
-
-TEXT_END_OF_SERIES = '''All the videos of the series have been played'''
-
-TEXT_X_OTHER_VIDEOS_HAVE_BEEN_FOUND = '''{0} other videos have been found.'''
-
-TEXT_X_VIDEOS_HAVE_BEEN_FOUND = '''{0} videos have been found. '''
-
-TEXT_CANT_PLAY_MEDIA_MISSING = '''The media can not be reproduced because the file
-is missing!
-
-You can find it by using the episodes right-click menu,
-for more information take a look to the help menu.'''
-
-TEXT_CANT_PLAY_SERIES_MISSING = '''The media can not be reproduced because the series
-is missing!
-
-You can find it by using the series right-click menu.'''
+    class DialogEpisodes:
+        delete = '''Are you sure that you want to delete the selected episodes?\n\nThey wont be removed from your hard drive.'''
+        missing = 'The episode can not be reproduced because the file is missing. Use the search button to find it.'
+        found_x = '{0} videos have been found.'
+        other_found = '{0} other videos have been found.'
