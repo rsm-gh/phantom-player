@@ -205,20 +205,6 @@ class VListPlayer(object):
         self.__thread_scan_media_player.do_run = False
         Gtk.main_quit()
 
-    def on_treeview_episodes_drag_end(self, *_):
-
-        # Get the new order
-        new_order = [row[0] for row in self.liststore_episodes]
-
-        # Update the treeview
-        for i, row in enumerate(self.liststore_episodes, 1):
-            row[0] = i
-
-            # Update the CSV file
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series = self.__series_dict[selected_series_name]
-        series.reorder(new_order)
-
     def on_treeview_series_press_event(self, _, event, inside_treeview=True):
 
         # check if some row is selected
@@ -290,6 +276,20 @@ class VListPlayer(object):
                     self.__menu_series_display(series_data, event)
 
 
+    def on_treeview_episodes_drag_end(self, *_):
+
+        # Get the new order
+        new_order = [row[0] for row in self.liststore_episodes]
+
+        # Update the treeview
+        for i, row in enumerate(self.liststore_episodes, 1):
+            row[0] = i
+
+            # Update the CSV file
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        series = self.__series_dict[selected_series_name]
+        series.reorder(new_order)
+
     def on_treeview_episodes_press_event(self, _, event):
         model, treepaths = self.treeview_selection_episodes.get_selected_rows()
 
@@ -301,9 +301,6 @@ class VListPlayer(object):
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
         series_data = self.__series_dict[selected_series_name]
 
-        """
-            Active or deactivate the buttons move up and down
-        """
 
         if event.button == EventCodes.Cursor.left_click and \
                 selection_length == 1 and \
@@ -614,6 +611,29 @@ class VListPlayer(object):
 
         self.window_rename.hide()
 
+    def __set_video(self, video_name=None, play=True):
+
+        if self.__current_media.series is None:
+            return
+
+        if video_name is None:
+            video = self.__current_media.next_episode(self.checkbutton_random.get_active())
+        else:
+            video = self.__current_media.get_episode(video_name)
+
+        if video is None:
+            gtk_info(self.window_root, TEXT_END_OF_SERIES)
+
+        elif not os.path.exists(video.get_path()):
+            gtk_info(self.window_root, TEXT_CANT_PLAY_MEDIA_MISSING)
+
+        else:
+            self.__media_player.set_video(video.get_path(),
+                                          video.get_position(),
+                                          self.__current_media.series.get_subtitles_track(),
+                                          self.__current_media.series.get_audio_track(),
+                                          self.__current_media.series.get_start_at(),
+                                          play)
 
     def __save_current_video_position(self):
         if self.__current_media.series is not None:
