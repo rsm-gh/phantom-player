@@ -135,7 +135,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__default_cursor = Gdk.Cursor.new_from_name(display, 'default')
 
         self.__vlc_widget = VLCWidget(self.__root_window)
-        self.__vlc_widget.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#000000'))
         self.__vlc_widget.connect("draw", self.__on_draw)
         self.add(self.__vlc_widget)
 
@@ -152,7 +151,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         # Buttons Box
         self.__buttons_box = Gtk.Box()
-        self.__buttons_box.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
+        self.__set_css(self.__buttons_box)
         self.__buttons_box.set_valign(Gtk.Align.END)
         self.__buttons_box.set_halign(Gtk.Align.CENTER)
         self.add_overlay(self.__buttons_box)
@@ -175,7 +174,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__label_progress = Gtk.Label()
         self.__label_progress.set_markup(WidgetsMarkup._label_progress.format("00:00"))
         self.__label_progress.set_margin_end(5)
-        self.__label_progress.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
+        self.__set_css(self.__label_progress)
         self.__buttons_box.pack_start(self.__label_progress, True, True, 3)
 
         self.__scale_progress = Gtk.Scale()
@@ -187,24 +186,27 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scale_progress.add_mark(0.25, Gtk.PositionType.TOP, None)
         self.__scale_progress.add_mark(0.5, Gtk.PositionType.TOP, None)
         self.__scale_progress.add_mark(0.75, Gtk.PositionType.TOP, None)
+        self.__set_css(self.__scale_progress)
         self.__scale_progress.connect('button-press-event', self.__on_scale_progress_button_press)
         self.__scale_progress.connect('button-release-event', self.__on_scale_progress_button_release)
         self.__scale_progress.connect('value_changed', self.__on_scale_progress_changed)
         self.__buttons_box.pack_start(child=self.__scale_progress, expand=False, fill=False, padding=1)
 
+
         self.__label_length = Gtk.Label()
         self.__label_length.set_markup(WidgetsMarkup._label_length.format("00:00"))
         self.__label_length.set_margin_end(5)
-        self.__label_length.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
+        self.__set_css(self.__label_length)
         self.__buttons_box.pack_start(self.__label_length, True, True, 3)
 
         self.__scale_volume = Gtk.VolumeButton()
         self.__scale_volume.connect('value_changed', self.__on_scale_volume_changed)
         self.__buttons_box.pack_start(self.__scale_volume, True, True, 3)
 
+
         #   Extra volume label
         self.__label_volume = Gtk.Label()
-        self.__label_volume.modify_bg(Gtk.StateFlags.NORMAL, Gdk.color_parse('#4D4D4D'))
+        self.__set_css(self.__label_volume)
         self.__label_volume.set_markup(WidgetsMarkup._label_volume.format(0))
         self.__label_volume.set_valign(Gtk.Align.START)
         self.__label_volume.set_halign(Gtk.Align.END)
@@ -218,6 +220,16 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__thread_scan_motion = Thread(target=self.__on_thread_motion_activity)
         self.__thread_scan_motion.start()
+
+    @staticmethod
+    def __set_css(widget):
+        provider = Gtk.CssProvider()
+        provider.load_from_data(b"""
+        scale, label, box {
+            background-color: #4D4D4D;
+        }""")
+        context = widget.get_style_context()
+        context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
     def hide_controls(self):
         self.__buttons_box.hide()
