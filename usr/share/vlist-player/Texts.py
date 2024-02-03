@@ -24,7 +24,7 @@ class Texts:
     class MenuItemSeries:
         delete = "Delete"
         rename = "Rename"
-        reset = "Reset"
+        reset = "Restart"
         search = "Search"
         open_dir = "Open Directory"
         add_pic = "Add Image"
