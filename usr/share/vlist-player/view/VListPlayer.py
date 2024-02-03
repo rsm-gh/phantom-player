@@ -22,6 +22,8 @@ import sys
 import time
 from threading import Thread, current_thread
 
+os.environ["GDK_BACKEND"] = "x11"
+
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')
 from gi.repository import Gtk, Gdk, GObject, GLib
@@ -38,7 +40,6 @@ from controller.CCParser import CCParser
 from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
-
 
 def gtk_file_chooser(parent, mode='', start_path=''):
     window_choose_file = Gtk.FileChooserDialog(Texts.GUI.title,

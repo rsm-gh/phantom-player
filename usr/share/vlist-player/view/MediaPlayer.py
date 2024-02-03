@@ -17,12 +17,14 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-import gi
 import os
+import gi
 import sys
 from time import time, sleep
 from datetime import timedelta
 from threading import Thread, current_thread
+
+os.environ["GDK_BACKEND"] = "x11"
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0')
@@ -36,7 +38,6 @@ from Paths import *
 from controller import vlc
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
-
 
 def format_milliseconds_to_time(number):
 
