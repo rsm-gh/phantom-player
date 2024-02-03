@@ -18,7 +18,6 @@
 
 
 class Texts:
-
     class GUI:
         title = "Video List Player"
 
@@ -33,13 +32,12 @@ class Texts:
     class DialogSeries:
         confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
         confirm_reset = 'Are you sure that you want to reset "{0}"?.'
-        is_missing='The series can not be reproduced because the episodes are missing!\n\nUse the search button to find them.'
-        already_exist='The series "{}" already exists.\n\nPlease rename the other series before adding this one.'
-        name_exist='The series "{}" already exists.\n\nPlease choose a different name.'
-        all_episodes_played = 'All the episodes of the series have been reproduced.'
+        is_missing = 'The series can not be reproduced because the episodes are missing!\n\nUse the search button to find them.'
+        already_exist = 'The series "{}" already exists.\n\nPlease rename the other series before adding this one.'
+        name_exist = 'The series "{}" already exists.\n\nPlease choose a different name.'
+        all_episodes_played = 'All the episodes have been reproduced.\nIf you want to restart the series from the beginning, you can use the "reset" option.'
 
     class MenuItemEpisodes:
-
         open_dir = "Open Directory"
         ignore = "Ignore"
         dont_ignore = "Don't Ignore"
