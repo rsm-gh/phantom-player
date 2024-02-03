@@ -76,7 +76,7 @@ def gtk_file_chooser(parent, mode='', start_path=''):
     return file_path
 
 
-class VListPlayer(object):
+class VListPlayer:
 
     def __init__(self):
 
@@ -130,13 +130,11 @@ class VListPlayer(object):
         self.__current_media = CurrentMedia()
         self.__media_player = MediaPlayerWidget(self.window_root)
 
-        paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
-        paned.set_wide_handle(True)
-        paned.set_position(200)
-        paned.add1(self.__media_player)
+        self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
+        self.__paned.add1(self.__media_player)
         self.box_window.remove(self.box_main)
-        paned.add2(self.box_main)
-        self.box_window.pack_start(paned, True, True, 0)
+        self.__paned.add2(self.box_main)
+        self.box_window.pack_start(self.__paned, True, True, 0)
 
         self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
         self.__thread_scan_media_player.start()
@@ -182,6 +180,7 @@ class VListPlayer(object):
         """
         self.window_root.maximize()
         self.window_root.show_all()
+        GLib.timeout_add_seconds(.3, self.__resize_vlc_widget)
         self.__media_player.hide_controls()
 
         """
@@ -834,6 +833,10 @@ class VListPlayer(object):
             else:
                 print("Error loading the liststore_episodes. The series '{}' has an empty video.".format(
                     series_data.get_name()))
+
+    def __resize_vlc_widget(self):
+        _, window_height = self.window_root.get_size()
+        self.__paned.set_position(window_height/2)
 
     def __menu_series_display(self, series_data, event):
 
