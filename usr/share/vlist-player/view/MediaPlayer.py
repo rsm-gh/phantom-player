@@ -127,7 +127,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__has_media = False
         self.__widgets_shown = WidgetsShown.none
         self.__motion_time = time()
-        self.__update__scale_progress = True
+        self.__scale_button_pressed = False
         self.__media_length = 0
 
         display = self.get_display()
@@ -512,7 +512,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             """
                 Update the time of the scale and the time
             """
-            if vlc_is_playing and self.__update__scale_progress:
+            if vlc_is_playing and not self.__scale_button_pressed:
                 video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
                 GLib.idle_add(self.__scale_progress.set_value, vlc_position)
                 GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format(video_time))
@@ -530,7 +530,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             time_delta = time() - self.__motion_time
 
-            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none:
+            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none and not self.__scale_button_pressed:
                 self.__widgets_shown = WidgetsShown.none
 
                 GLib.idle_add(self.__label_volume.hide)
@@ -589,7 +589,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         if not self.__has_media:
             return
 
-        elif not self.__update__scale_progress:
+        elif self.__scale_button_pressed:
             return
 
         elif event.type == Gdk.EventType._2BUTTON_PRESS:
@@ -657,19 +657,19 @@ class MediaPlayerWidget(Gtk.Overlay):
             self.__vlc_widget.player.audio_set_volume(value)
 
     def __on_scale_progress_changed(self, widget, *_):
-        if self.__media_length > 0 and not self.__update__scale_progress:
+        if self.__media_length > 0 and self.__scale_button_pressed:
             video_time = widget.get_value() * self.__media_length
             video_time = format_milliseconds_to_time(video_time)
             self.__label_progress.set_markup(WidgetsMarkup._label_progress.format(video_time))
 
     def __on_scale_progress_button_press(self, *_):
         self.__vlc_widget.player.pause()
-        self.__update__scale_progress = False
+        self.__scale_button_pressed = True
 
     def __on_scale_progress_button_release(self, widget, *_):
         self.__vlc_widget.player.set_position(widget.get_value())
         self.__vlc_widget.player.play()
-        self.__update__scale_progress = True
+        self.__scale_button_pressed = False
 
 
 class MediaPlayer(Gtk.Window):
