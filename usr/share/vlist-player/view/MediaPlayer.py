@@ -128,7 +128,7 @@ class ThemeButtons:
 class MediaPlayerWidget(Gtk.Overlay):
     __gtype_name__ = 'MediaPlayerWidget'
 
-    def __init__(self, root_window=None):
+    def __init__(self, root_window):
 
         super().__init__()
 
@@ -248,12 +248,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         context = widget.get_style_context()
         context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
-    def hide_controls(self):
-        self.__buttons_box.hide()
-        self.__buttons_box.hide()
-        self.__label_volume.hide()
-        self.__widgets_shown = WidgetsShown.none
-
     def play(self):
         self.__vlc_widget.player.play()
 
@@ -262,12 +256,6 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def stop(self):
         self.__vlc_widget.player.stop()
-
-    def get_position(self):
-        return self.__vlc_widget.player.get_position()
-
-    def get_state(self):
-        return self.__vlc_widget.player.get_state()
 
     def is_playing(self):
         if self.get_state() == vlc.State.Playing:
@@ -296,6 +284,12 @@ class MediaPlayerWidget(Gtk.Overlay):
         actual_volume = self.__vlc_widget.player.audio_get_volume()
         if actual_volume >= 1:
             self.__vlc_widget.player.audio_set_volume(actual_volume - 1)
+
+    def hide_controls(self):
+        self.__buttons_box.hide()
+        self.__buttons_box.hide()
+        self.__label_volume.hide()
+        self.__widgets_shown = WidgetsShown.none
 
     def set_subtitles_from_file(self, *_):
         """
@@ -371,19 +365,22 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
 
+    def get_position(self):
+        return self.__vlc_widget.player.get_position()
 
-    def quit(self):
-
-        self.__vlc_widget.player.stop()
-
-        self.__thread_scan_motion.do_run = False
-        self.__thread_player_activity.do_run = False
-
-        turn_off_screensaver(False)
+    def get_state(self):
+        return self.__vlc_widget.player.get_state()
 
     def join(self):
         self.__thread_player_activity.join()
         self.__thread_scan_motion.join()
+
+    def quit(self):
+        self.__vlc_widget.player.stop()
+        self.__thread_scan_motion.do_run = False
+        self.__thread_player_activity.do_run = False
+
+        turn_off_screensaver(False)
 
     def __set_label_length(self):
         self.__media_length = self.__vlc_widget.player.get_length()
