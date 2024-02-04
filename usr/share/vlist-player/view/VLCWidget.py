@@ -3,10 +3,8 @@
 
 #
 #  Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli.
-#
-#   And this code was also inspired from:
-#       + gtkvlc.py Copyright (C) 2017 Olivier Aubert <contact@olivieraubert.net>
-#       + gtk2vlc.py Copyright (C) 2009-2010 the VideoLAN team.
+#                2017 Olivier Aubert <contact@olivieraubert.net> (gtkvlc.py)
+#                2009-2010 the VideoLAN team (gtk2vlc.py)
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -22,15 +20,12 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-"""
-    Note: it seems to be a problem with the id of GTK windows, so to work, the script must be called as:
-          GDK_BACKEND=x11 python3 VLCWidget.py
-"""
-
 import gi
 import os
 import sys
 import ctypes
+
+os.environ["GDK_BACKEND"] = "x11"
 
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
