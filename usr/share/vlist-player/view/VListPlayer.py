@@ -159,7 +159,6 @@ class VListPlayer:
         self.window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.window_root.connect('delete-event', self.quit)
         self.window_root.connect("configure-event", self.__on_configure_event)
-
         # checkboxes
         self.checkbox_hide_warning_missing_series.set_active(self.__ccp.get_bool('warningMissingSeries'))
         self.checkbox_hidden_items.set_active(self.__ccp.get_bool_defval('hidden', False))
