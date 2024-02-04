@@ -122,6 +122,7 @@ class ThemeButtons:
     pause = "media-playback-pause"
     next = "media-skip-forward"
     previous = "media-skip-backward"
+    volume = ["audio-volume-muted","audio-volume-high","audio-volume-medium"]
 
 
 class MediaPlayerWidget(Gtk.Overlay):
@@ -212,6 +213,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__buttons_box.pack_start(self.__label_length, True, True, 3)
 
         self.__scale_volume = Gtk.VolumeButton()
+        self.__scale_volume.set_icons(ThemeButtons.volume)
         self.__scale_volume.connect('value_changed', self.__on_scale_volume_changed)
         self.__buttons_box.pack_start(self.__scale_volume, True, True, 3)
 
