@@ -43,23 +43,14 @@ else:
     VLC_INSTANCE = vlc.Instance()
 
 class VLCWidget(Gtk.DrawingArea):
-    """Simple VLC widget.
-
-    Its player can be controlled through the 'player' attribute, which
-    is a vlc.MediaPlayer() instance.
-    """
     __gtype_name__ = 'VLCWidget'
 
-    def __init__(self, root_window=None):
-
+    def __init__(self):
         super().__init__()
-        self.__root_window = root_window
-
         self.player = VLC_INSTANCE.media_player_new()
+        self.connect('realize', self.__on_realize)
 
-        self.connect('realize', self.__handle_embed)
-
-    def __handle_embed(self, *_):
+    def __on_realize(self, *_):
 
         if sys.platform == 'win32':
             # get the win32 handle
