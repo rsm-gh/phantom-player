@@ -23,6 +23,7 @@
 import gi
 import os
 import sys
+import vlc
 import ctypes
 
 os.environ["GDK_BACKEND"] = "x11"
@@ -33,8 +34,6 @@ from gi.repository import Gtk
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
 sys.path.insert(0, _PROJECT_DIR)
-
-from controller import vlc
 
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
 if 'linux' in sys.platform:

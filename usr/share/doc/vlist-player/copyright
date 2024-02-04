@@ -10,10 +10,6 @@ Files: error icon
 Copyright: http://www.iconarchive.com/show/oxygen-icons-by-oxygen-icons.org/Actions-edit-delete-icon.html
 License: LGPL
 
-Files: vlc.py
-Copyright: Copyright (C) 2009-2017 the VideoLAN team
-License: GPL C2.1+
-
 Files: *
 Copyright: Copyright (c) 2014-2016, 2024 Rafael Senties Martinelli.
 License: GPL3
