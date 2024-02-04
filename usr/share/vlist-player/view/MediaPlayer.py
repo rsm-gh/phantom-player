@@ -117,10 +117,17 @@ class WidgetsShown:
     toolbox = 2
 
 
+class ThemeButtons:
+    play = "media-playback-start"
+    pause = "media-playback-pause"
+    next = "media-skip-forward"
+    previous = "media-skip-backward"
+
+
 class MediaPlayerWidget(Gtk.Overlay):
     __gtype_name__ = 'MediaPlayerWidget'
 
-    def __init__(self, root_window):
+    def __init__(self, root_window=None):
 
         super().__init__()
 
@@ -157,20 +164,24 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__buttons_box.set_halign(Gtk.Align.CENTER)
         self.add_overlay(self.__buttons_box)
 
-        self.__button_restart = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_PREVIOUS)
-        self.__button_restart.connect('clicked', self.__on_button_restart_the_video)
-        self.__button_restart.set_can_focus(False)
-        self.__buttons_box.pack_start(self.__button_restart, True, True, 3)
+        self.__toolbutton_previous = Gtk.ToolButton()
+        self.__toolbutton_previous.set_icon_name(ThemeButtons.previous)
+        self.__toolbutton_previous.connect('clicked', self.__on_button_restart_the_video)
+        self.__toolbutton_previous.set_can_focus(False)
+        self.__buttons_box.pack_start(self.__toolbutton_previous, True, True, 3)
 
-        self.__button_play_pause = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_PLAY)
-        self.__button_play_pause.connect('clicked', self.__on_button_play_pause_clicked)
-        self.__button_play_pause.set_can_focus(False)
-        self.__buttons_box.pack_start(self.__button_play_pause, True, True, 3)
+        self.__toolbutton_play = Gtk.ToolButton()
+        self.__toolbutton_play.set_icon_name(ThemeButtons.play)
 
-        self.__button_end_video = Gtk.ToolButton(stock_id=Gtk.STOCK_MEDIA_NEXT)
-        self.__button_end_video.connect('clicked', self.__on_button_end_the_video)
-        self.__button_end_video.set_can_focus(False)
-        self.__buttons_box.pack_start(self.__button_end_video, True, True, 3)
+        self.__toolbutton_play.connect('clicked', self.__on_button_play_pause_clicked)
+        self.__toolbutton_play.set_can_focus(False)
+        self.__buttons_box.pack_start(self.__toolbutton_play, True, True, 3)
+
+        self.__toolbutton_next = Gtk.ToolButton()
+        self.__toolbutton_next.set_icon_name(ThemeButtons.next)
+        self.__toolbutton_next.connect('clicked', self.__on_button_end_the_video)
+        self.__toolbutton_next.set_can_focus(False)
+        self.__buttons_box.pack_start(self.__toolbutton_next, True, True, 3)
 
         self.__label_progress = Gtk.Label()
         self.__label_progress.set_markup(WidgetsMarkup._label_progress.format("00:00"))
@@ -505,11 +516,11 @@ class MediaPlayerWidget(Gtk.Overlay):
             scale_volume_value = int(self.__scale_volume.get_value() * 100)
 
             # Update the play-pause button
-            if vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-play':
-                GLib.idle_add(self.__button_play_pause.set_stock_id, 'gtk-media-pause')
+            if vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.pause:
+                GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.pause)
 
-            elif not vlc_is_playing and self.__button_play_pause.get_stock_id() == 'gtk-media-pause':
-                GLib.idle_add(self.__button_play_pause.set_stock_id, 'gtk-media-play')
+            elif not vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.play:
+                GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.play)
 
             """
                 Update the volume. Is this necessary?
@@ -647,14 +658,14 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.hide()
 
     def __on_button_play_pause_clicked(self, *_):
-        if not self.is_playing():
-            self.__button_play_pause.set_stock_id('gtk-media-pause')
-            self.__vlc_widget.player.play()
-            turn_off_screensaver(True)
-        else:
-            self.__button_play_pause.set_stock_id('gtk-media-play')
+        if self.is_playing():
+            self.__toolbutton_play.set_icon_name(ThemeButtons.play)
             self.__vlc_widget.player.pause()
             turn_off_screensaver(False)
+        else:
+            self.__toolbutton_play.set_icon_name(ThemeButtons.pause)
+            self.__vlc_widget.player.play()
+            turn_off_screensaver(True)
 
     def __on_button_restart_the_video(self, *_):
         self.__vlc_widget.player.set_position(0)
