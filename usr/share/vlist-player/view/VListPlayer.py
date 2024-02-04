@@ -158,7 +158,9 @@ class VListPlayer:
         # extra
         self.window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.window_root.connect('delete-event', self.quit)
-        self.window_root.connect("configure-event", self.__on_configure_event)
+        self.window_root.connect("configure-event", self.__on_window_root_configure_event)
+        self.window_root.connect("visibility_notify_event", self.__on_window_root_notify_event)
+
         # checkboxes
         self.checkbox_hide_warning_missing_series.set_active(self.__ccp.get_bool('warningMissingSeries'))
         self.checkbox_hidden_items.set_active(self.__ccp.get_bool_defval('hidden', False))
@@ -180,7 +182,7 @@ class VListPlayer:
         """
         self.window_root.maximize()
         self.window_root.show_all()
-        GLib.timeout_add_seconds(.3, self.__resize_vlc_widget)
+        #GLib.timeout_add_seconds(.3, self.__resize_vlc_widget)
         self.__media_player.hide_controls()
 
         """
@@ -834,10 +836,6 @@ class VListPlayer:
                 print("Error loading the liststore_episodes. The series '{}' has an empty video.".format(
                     series_data.get_name()))
 
-    def __resize_vlc_widget(self):
-        _, window_height = self.window_root.get_size()
-        self.__paned.set_position(window_height/2)
-
     def __menu_series_display(self, series_data, event):
 
         menu = Gtk.Menu()
@@ -872,23 +870,6 @@ class VListPlayer:
         menu.popup(None, None, None, None, event.button, event.time)
 
         return True
-
-    def __on_configure_event(self, *_):
-
-        if Gdk.WindowState.FULLSCREEN & self.window_root.get_window().get_state():
-            fullscreen = True
-        else:
-            fullscreen = False
-
-        if self.__is_full_screen != fullscreen:
-            self.__is_full_screen = fullscreen
-
-            if fullscreen:
-                self.menubar.hide()
-                self.box_main.hide()
-            else:
-                self.menubar.show()
-                self.box_main.show()
 
 
     def __on_thread_load_series(self):
@@ -1009,6 +990,28 @@ class VListPlayer:
 
             time.sleep(0.5)
 
+
+    def __on_window_root_notify_event(self, *_):
+        # Resize the VLC widget
+        _, window_height = self.window_root.get_size()
+        self.__paned.set_position(window_height/2)
+
+    def __on_window_root_configure_event(self, *_):
+
+        if Gdk.WindowState.FULLSCREEN & self.window_root.get_window().get_state():
+            fullscreen = True
+        else:
+            fullscreen = False
+
+        if self.__is_full_screen != fullscreen:
+            self.__is_full_screen = fullscreen
+
+            if fullscreen:
+                self.menubar.hide()
+                self.box_main.hide()
+            else:
+                self.menubar.show()
+                self.box_main.show()
 
     def __on_menuitem_series_add_picture(self, _):
         """
