@@ -19,6 +19,7 @@
 
 import os
 import gi
+import vlc
 import sys
 from time import time, sleep
 from datetime import timedelta
@@ -35,7 +36,6 @@ _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
 sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
-from controller import vlc
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
 
@@ -136,7 +136,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__has_media = False
         self.__widgets_shown = WidgetsShown.none
         self.__motion_time = time()
-        self.__scale_button_pressed = False
+        self.__scale_pressed = False
         self.__media_length = 0
 
         display = self.get_display()
@@ -200,8 +200,8 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scale_progress.add_mark(0.5, Gtk.PositionType.TOP, None)
         self.__scale_progress.add_mark(0.75, Gtk.PositionType.TOP, None)
         self.__set_css(self.__scale_progress)
-        self.__scale_progress.connect('button-press-event', self.__on_scale_progress_button_press)
-        self.__scale_progress.connect('button-release-event', self.__on_scale_progress_button_release)
+        self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
+        self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
         self.__scale_progress.connect('value_changed', self.__on_scale_progress_changed)
         self.__buttons_box.pack_start(child=self.__scale_progress, expand=False, fill=False, padding=1)
 
@@ -215,6 +215,9 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scale_volume = Gtk.VolumeButton()
         self.__scale_volume.set_icons(ThemeButtons.volume)
         self.__scale_volume.connect('value_changed', self.__on_scale_volume_changed)
+        # this is being called when the button is pressed, not the scale...
+        #self.__scale_volume.connect('button-press-event', self.__on_scale_volume_press)
+        #self.__scale_volume.connect('button-release-event', self.__on_scale_volume_release)
         self.__buttons_box.pack_start(self.__scale_volume, True, True, 3)
 
 
@@ -251,11 +254,14 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__label_volume.hide()
         self.__widgets_shown = WidgetsShown.none
 
-    def stop(self):
-        self.__vlc_widget.player.stop()
-
     def play(self):
         self.__vlc_widget.player.play()
+
+    def pause(self):
+        self.__vlc_widget.player.pause()
+
+    def stop(self):
+        self.__vlc_widget.player.stop()
 
     def get_position(self):
         return self.__vlc_widget.player.get_position()
@@ -327,27 +333,13 @@ class MediaPlayerWidget(Gtk.Overlay):
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
         GLib.idle_add(self.__vlc_widget.player.play)
-        self.__start_video_at(position, start_at, play)
         GLib.timeout_add_seconds(.5, self.__set_label_length)
         GLib.timeout_add_seconds(.5, self.__vlc_widget.player.audio_set_track, audio_track)
         GLib.timeout_add_seconds(.5, self.__vlc_widget.player.video_set_spu, subtitles_track)
 
-
-    def quit(self):
-
-        self.__vlc_widget.player.stop()
-
-        self.__thread_scan_motion.do_run = False
-        self.__thread_player_activity.do_run = False
-
-        turn_off_screensaver(False)
-
-    def join(self):
-        self.__thread_player_activity.join()
-        self.__thread_scan_motion.join()
-
-    def __start_video_at(self, position, start_at, play):
-
+        #
+        # Calculate the player position
+        #
         if start_at <= 0:
             start_at_percent = 0
         else:
@@ -378,6 +370,20 @@ class MediaPlayerWidget(Gtk.Overlay):
             start_position = 0
 
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
+
+
+    def quit(self):
+
+        self.__vlc_widget.player.stop()
+
+        self.__thread_scan_motion.do_run = False
+        self.__thread_player_activity.do_run = False
+
+        turn_off_screensaver(False)
+
+    def join(self):
+        self.__thread_player_activity.join()
+        self.__thread_scan_motion.join()
 
     def __set_label_length(self):
         self.__media_length = self.__vlc_widget.player.get_length()
@@ -538,7 +544,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             """
                 Update the time of the scale and the time
             """
-            if vlc_is_playing and not self.__scale_button_pressed:
+            if vlc_is_playing and not self.__scale_pressed:
                 video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
                 GLib.idle_add(self.__scale_progress.set_value, vlc_position)
                 GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format(video_time))
@@ -556,7 +562,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             time_delta = time() - self.__motion_time
 
-            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none and not self.__scale_button_pressed:
+            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none and not self.__scale_pressed:
                 self.__widgets_shown = WidgetsShown.none
 
                 GLib.idle_add(self.__label_volume.hide)
@@ -615,7 +621,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         if not self.__has_media:
             return
 
-        elif self.__scale_button_pressed:
+        elif self.__scale_pressed:
             return
 
         elif event.type == Gdk.EventType._2BUTTON_PRESS:
@@ -653,12 +659,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         elif player_type == 2:
             self.__vlc_widget.player.video_set_spu(track)
 
-    def __on_button_player_stop(self, *_):
-        self.__stopped_position = self.__vlc_widget.player.get_position()
-        self.__vlc_widget.player.stop()
-        turn_off_screensaver(False)
-        self.hide()
-
     def __on_button_play_pause_clicked(self, *_):
         if self.is_playing():
             self.__toolbutton_play.set_icon_name(ThemeButtons.play)
@@ -678,24 +678,35 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def __on_scale_volume_changed(self, _, value):
         value = int(value * 100)
-        self.__label_volume.set_markup(WidgetsMarkup._label_volume.format(value))
         if self.__vlc_widget.player.audio_get_volume() != value:
+            self.__motion_time = time()
+            self.__label_volume.set_markup(WidgetsMarkup._label_volume.format(value))
+            self.__label_volume.show()
             self.__vlc_widget.player.audio_set_volume(value)
 
     def __on_scale_progress_changed(self, widget, *_):
-        if self.__media_length > 0 and self.__scale_button_pressed:
+        if self.__media_length > 0 and self.__scale_pressed:
             video_time = widget.get_value() * self.__media_length
             video_time = format_milliseconds_to_time(video_time)
             self.__label_progress.set_markup(WidgetsMarkup._label_progress.format(video_time))
 
-    def __on_scale_progress_button_press(self, *_):
-        self.__vlc_widget.player.pause()
-        self.__scale_button_pressed = True
+    def __on_scale_volume_press(self, *_):
+        print("TRUE")
+        self.__scale_pressed = True
 
-    def __on_scale_progress_button_release(self, widget, *_):
+    def __on_scale_volume_release(self, *_):
+        print("FALSE")
+        self.__scale_pressed = False
+
+    def __on_scale_progress_press(self, *_):
+        self.__vlc_widget.player.pause()
+        self.__scale_pressed = True
+
+    def __on_scale_progress_release(self, widget, *_):
+        self.__motion_time = time()
         self.__vlc_widget.player.set_position(widget.get_value())
         self.__vlc_widget.player.play()
-        self.__scale_button_pressed = False
+        self.__scale_pressed = False
 
 
 class MediaPlayer(Gtk.Window):
@@ -717,7 +728,9 @@ class MediaPlayer(Gtk.Window):
         Gtk.main_quit()
 
     def play_video(self, path):
-        self.__media_player_widget.set_video(path)
+        self.__media_player_widget.set_video(path,
+                                             position=.5,
+                                             play=False)
 
 
 if __name__ == '__main__':
