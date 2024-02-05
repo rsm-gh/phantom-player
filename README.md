@@ -17,12 +17,12 @@
 
 1. Download the [stable branch](https://github.com/rsm-gh/vlist-player/archive/master.zip).
 2. Install the dependencies:
-    * Debian based distributions: `apt-get install python3 python3-vlc libgtk-3-0 gir1.2-webkit2-4.0`.
-    * ArchLinux: `pacman -Suy systemd python vlc gtk3`.
+    * Debian based distributions: `apt-get install python3 python3-vlc libgtk-3-0 gir1.2-webkit2-3.0`.
+    * ArchLinux: `pacman -Suy python python-vlc gtk3`.
 
 3. Execute the setup file.
 
-**Currently I'm working to update the player, and create the version 2.0. When I finish, I'll create some packages for popular distributions & windows.*  
+**Currently I'm working to create the version 2.0. When I finish, I'll create some packages for popular distributions & windows.*  
 ***If the dependencies are satisfied, the software can be directly launched, the installation is not mandatory.*
 
 ## Controls
