@@ -311,6 +311,9 @@ class MediaPlayerWidget(Gtk.Overlay):
                   start_at=0.0,
                   play=True):
 
+        if play is False:
+            return # todo: fix this
+
         if not os.path.exists(file_path):
             return
 

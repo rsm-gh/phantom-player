@@ -22,8 +22,8 @@
 
 3. Execute the setup file.
 
-**Currently I'm working to create the version 2.0. When I finish, I'll create some packages for popular distributions & windows.*  
-***If the dependencies are satisfied, the software can be directly launched, the installation is not mandatory.*
+**If the dependencies are satisfied, the software can be directly launched, the installation is not mandatory.* 
+***Currently I'm working to create the version 2.0. When I finish, I'll create some packages for popular distributions & windows.*  
 
 ## Controls
 
@@ -56,7 +56,7 @@ There are two different find functions that you can use:
 
 A) When you select a single file:
 	
-You will be asked to find a file, and once you have selected it, the vlist-player will try to find the rest of the missing episodes in the same folder.
+You will be asked to select a file, and once you have selected it, the vlist-player will try to find the rest of the missing episodes in the same folder.
 This will work even if you have renamed the files with some easy patterns at the begging or the end of the file names. Examples:
 
 ```
@@ -72,7 +72,7 @@ foo-700 -> 701
 				
 B) When you select multiple files:
 	
-You will be asked to select a directory, and once you select it will try to find the missing episodes by mathing their name. If the names have modifications, it won't find them.
+You will be asked to select a directory, and once you select it will try to find the missing episodes by matching their name. If the names have modifications, it won't find them.
 
 ### Location of the program files
 + Configuration File: `~/.config/vlist-player.ini`
