@@ -130,10 +130,11 @@ def gtk_dialog_question(parent, text1, text2):
         dialog.format_secondary_text(text2)
 
     response = dialog.run()
+
+    dialog.hide()
+
     if response == Gtk.ResponseType.YES:
-        dialog.hide()
         return True
 
     elif response == Gtk.ResponseType.NO:
-        dialog.hide()
         return False

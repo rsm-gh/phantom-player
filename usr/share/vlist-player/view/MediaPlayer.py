@@ -167,7 +167,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__toolbutton_previous = Gtk.ToolButton()
         self.__toolbutton_previous.set_icon_name(ThemeButtons.previous)
-        self.__toolbutton_previous.connect('clicked', self.__on_button_restart_the_video)
+        self.__toolbutton_previous.connect('clicked', self.__on_button_restart)
         self.__toolbutton_previous.set_can_focus(False)
         self.__buttons_box.pack_start(self.__toolbutton_previous, True, True, 3)
 
@@ -180,7 +180,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         self.__toolbutton_next = Gtk.ToolButton()
         self.__toolbutton_next.set_icon_name(ThemeButtons.next)
-        self.__toolbutton_next.connect('clicked', self.__on_button_end_the_video)
+        self.__toolbutton_next.connect('clicked', self.__on_button_end)
         self.__toolbutton_next.set_can_focus(False)
         self.__buttons_box.pack_start(self.__toolbutton_next, True, True, 3)
 
@@ -669,12 +669,11 @@ class MediaPlayerWidget(Gtk.Overlay):
             self.__vlc_widget.player.play()
             turn_off_screensaver(True)
 
-    def __on_button_restart_the_video(self, *_):
+    def __on_button_restart(self, *_):
         self.__vlc_widget.player.set_position(0)
 
-    def __on_button_end_the_video(self, *_):
+    def __on_button_end(self, *_):
         self.__vlc_widget.player.set_position(1)
-        self.__stopped_position = 0
 
     def __on_scale_volume_changed(self, _, value):
         value = int(value * 100)

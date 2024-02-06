@@ -68,7 +68,6 @@ class Series(object):
         self.__series_pixbuf = None
         self.__load_image()
 
-
         # change the name of the series in case it has been renamed.
         if data_path and os.path.exists(data_path):
             file_name = os.path.basename(data_path)
@@ -101,7 +100,9 @@ class Series(object):
                     """
                         check for duplicates
                     """
-                    if path and not any(path == video.get_path() for video in self.__videos_instances) and path_is_video(path, True):
+                    if path and not any(
+                            path == video.get_path() for video in self.__videos_instances) and path_is_video(path,
+                                                                                                             True):
                         try:
                             video_id = int(row[0])
                         except Exception:
@@ -363,7 +364,6 @@ class Series(object):
 
         self.__videos_instances = videos
 
-
     def reorder(self, new_order_indexes):
         """ Choices are "up" or "down" """
 
@@ -406,7 +406,7 @@ class Series(object):
                 self.write_data()
                 break
 
-    def reset_data(self):
+    def restart(self):
         for video in self.__videos_instances:
             video.set_play(True)
             video.set_o_played(False)
@@ -414,7 +414,6 @@ class Series(object):
             video.set_position(0)
 
         self.write_data()
-
 
     def update_ids(self):
         for i, video in enumerate(self.__videos_instances, 1):
@@ -431,6 +430,12 @@ class Series(object):
 
     def get_videos(self):
         return self.__videos_instances
+
+    def get_first_episode(self):
+        if len(self.__videos_instances) <= 0:
+            return None
+
+        return self.__videos_instances[0]
 
     def get_o_played_stats(self):
         """
@@ -546,7 +551,6 @@ class Series(object):
         if write:
             self.write_data()
 
-
     def set_start_at(self, value, write=True):
         try:
             value = float(value)
@@ -604,7 +608,6 @@ class Series(object):
 
         if write:
             self.write_data()
-
 
     def set_random(self, is_random, write=True):
 
