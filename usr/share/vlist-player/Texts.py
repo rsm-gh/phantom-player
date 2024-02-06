@@ -31,7 +31,7 @@ class Texts:
 
     class DialogSeries:
         confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
-        confirm_reset = 'Are you sure that you want to reset "{0}"?.'
+        confirm_reset = 'Are you sure that you want to restart "{0}"?.'
         is_missing = 'The series can not be reproduced because the episodes are missing!\n\nUse the search button to find them.'
         already_exist = 'The series "{}" already exists.\n\nPlease rename the other series before adding this one.'
         name_exist = 'The series "{}" already exists.\n\nPlease choose a different name.'

@@ -251,16 +251,12 @@ class VListPlayer:
                 """
                     Check if the series is already selected and if a video is playing
                 """
-                if self.__current_media.series is not None:
+                if self.__current_media.is_series_name(selected_series_name):
+                    if not self.__media_player.is_nothing():
+                        if self.__media_player.is_paused():
+                            self.__media_player.play()
 
-                    if self.__current_media.series.get_name() == selected_series_name:
-
-                        if not self.__media_player.is_nothing():
-                            if self.__media_player.is_paused():
-                                self.__media_player.play()
-
-                            return
-
+                        return
                     else:
                         self.__save_current_video_position()
 
@@ -308,8 +304,7 @@ class VListPlayer:
 
             self.__ccp.write('current_series', selected_series_name)
 
-            if self.__current_media.series is not None:
-                self.__save_current_video_position()
+            self.__save_current_video_position()
 
             episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
 
@@ -589,7 +584,7 @@ class VListPlayer:
             self.__series_dict[new_name] = series
             gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
 
-            self.__current_media.next_episode(self.checkbutton_random.get_active())
+            self.__current_media.get_next_episode(self.checkbutton_random.get_active())
 
         self.window_rename.hide()
 
@@ -598,9 +593,8 @@ class VListPlayer:
         if self.__current_media.series is None:
             return
 
-
         if video_name is None:
-            video = self.__current_media.next_episode(self.checkbutton_random.get_active())
+            video = self.__current_media.get_next_episode(self.checkbutton_random.get_active())
         else:
             video = self.__current_media.get_episode(video_name)
 
@@ -856,7 +850,7 @@ class VListPlayer:
 
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.reset)
             menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_series_reset)
+            menuitem.connect('activate', self.__on_menuitem_series_restart)
 
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.add_pic)
             menu.append(menuitem)
@@ -961,7 +955,6 @@ class VListPlayer:
                 # Update the treeview if the series is selected
                 selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
                 if selected_series_name == self.__current_media.series.get_name():
-                    print("UPDATING")
                     GLib.idle_add(self.__liststore_episodes_mark,
                                   cached_video.get_empty_name(),
                                   self.__current_media.get_random_state())
@@ -974,7 +967,7 @@ class VListPlayer:
                     GLib.idle_add(self.window_root.unfullscreen)
 
                 else:
-                    next_video = self.__current_media.next_episode(self.checkbutton_random.get_active())
+                    next_video = self.__current_media.get_next_episode(self.checkbutton_random.get_active())
 
                     if next_video is None:
                         GLib.idle_add(self.window_root.unfullscreen)
@@ -1039,16 +1032,26 @@ class VListPlayer:
         gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0, series_data.get_image())
         self.__liststore_episodes_populate(True)
 
-    def __on_menuitem_series_reset(self, _):
+    def __on_menuitem_series_restart(self, _):
 
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
 
         if not gtk_dialog_question(self.window_root, Texts.DialogSeries.confirm_reset.format(selected_series_name), None):
             return
 
+        # This is done before to avoid updating the series data
+        was_playing = False
+        if self.__current_media.is_series_name(selected_series_name):
+            if self.__media_player.is_playing():
+                was_playing = True
+                self.__media_player.pause()
+
         series = self.__series_dict[selected_series_name]
-        series.reset_data()
+        series.restart()
         self.__liststore_episodes_populate(True)
+
+        if was_playing:
+            self.__set_video()
 
     def __on_menuitem_series_rename(self, _):
         """
