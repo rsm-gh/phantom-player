@@ -214,7 +214,30 @@ class VListPlayer:
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
         series_data = self.__series_dict[selected_series_name]
 
-        if event.type == Gdk.EventType._2BUTTON_PRESS:
+        if event.type == Gdk.EventType.BUTTON_PRESS:
+
+            if event.button == EventCodes.Cursor.left_click:
+
+                if self.__media_player.is_nothing():
+                    self.__set_video(play=False, ignore_none=True)
+
+            elif event.button == EventCodes.Cursor.right_click:
+
+                if self.treeview_selection_series.count_selected_rows() == 1:
+
+                    # Get the iter where the user is pointing
+                    pointing_treepath = self.treeview_series.get_path_at_pos(event.x, event.y)[0]
+
+                    # If the iter is not in the selected iters, remove the previous selection
+                    model, treepaths = self.treeview_selection_series.get_selected_rows()
+
+                    if pointing_treepath not in treepaths and inside_treeview:
+                        self.treeview_selection_series.unselect_all()
+                        self.treeview_selection_series.select_path(pointing_treepath)
+
+                    self.__menu_series_display(series_data, event)
+
+        elif event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == EventCodes.Cursor.left_click:
 
                 # check if the liststore is empty
@@ -247,29 +270,6 @@ class VListPlayer:
                 self.__ccp.write('current_series', selected_series_name)
                 self.__current_media = CurrentMedia(series_data)
                 self.__set_video()
-
-        elif event.type == Gdk.EventType.BUTTON_PRESS:
-
-            if event.button == EventCodes.Cursor.left_click:
-
-                if self.__media_player.is_nothing():
-                    self.__set_video(play=False, ignore_none=True)
-
-            elif event.button == EventCodes.Cursor.right_click:
-
-                if self.treeview_selection_series.count_selected_rows() == 1:
-
-                    # Get the iter where the user is pointing
-                    pointing_treepath = self.treeview_series.get_path_at_pos(event.x, event.y)[0]
-
-                    # If the iter is not in the selected iters, remove the previous selection
-                    model, treepaths = self.treeview_selection_series.get_selected_rows()
-
-                    if pointing_treepath not in treepaths and inside_treeview:
-                        self.treeview_selection_series.unselect_all()
-                        self.treeview_selection_series.select_path(pointing_treepath)
-
-                    self.__menu_series_display(series_data, event)
 
 
     def on_treeview_episodes_drag_end(self, *_):
