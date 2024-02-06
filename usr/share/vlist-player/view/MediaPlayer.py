@@ -291,6 +291,17 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__label_volume.hide()
         self.__widgets_shown = WidgetsShown.none
 
+    def join(self):
+        self.__thread_player_activity.join()
+        self.__thread_scan_motion.join()
+
+    def quit(self):
+        self.__vlc_widget.player.stop()
+        self.__thread_scan_motion.do_run = False
+        self.__thread_player_activity.do_run = False
+
+        turn_off_screensaver(False)
+
     def set_subtitles_from_file(self, *_):
         """
             Todo: read the result of player.video_set_subtitle_file(path) and display a message
@@ -373,17 +384,6 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def get_state(self):
         return self.__vlc_widget.player.get_state()
-
-    def join(self):
-        self.__thread_player_activity.join()
-        self.__thread_scan_motion.join()
-
-    def quit(self):
-        self.__vlc_widget.player.stop()
-        self.__thread_scan_motion.do_run = False
-        self.__thread_player_activity.do_run = False
-
-        turn_off_screensaver(False)
 
     def __set_label_length(self):
         self.__media_length = self.__vlc_widget.player.get_length()

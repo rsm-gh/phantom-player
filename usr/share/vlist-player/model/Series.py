@@ -24,7 +24,7 @@ import shutil
 import random
 
 gi.require_version('Gtk', '3.0')
-from gi.repository.GdkPixbuf import Pixbuf, InterpType
+from gi.repository.GdkPixbuf import Pixbuf
 
 from Paths import *
 from model.Video import Video, path_is_video, generate_list_from_videos_folder
@@ -194,44 +194,13 @@ class Series(object):
                                    video.get_position(),
                                    video.get_display()])
 
-    def __load_image(self):
-        """
-            Set the default image
-        """
-        if not os.path.exists(self.__path):
-            image_path = ICON_ERROR_BIG
-        else:
-            image_path = ICON_LOGO_MEDIUM
+    def rename(self, new_name):
+        # update the data file
+        if os.path.exists(SERIES_PATH.format(self.__name)):
+            os.rename(SERIES_PATH.format(self.__name), SERIES_PATH.format(new_name))
 
-            for extension in ('', '.png', '.jpg', '.jpeg'):
-                possible_image = os.path.join(self.__path, '.folder' + extension)
-                if os.path.exists(possible_image):
-                    image_path = possible_image
-                    break
-
-        self.__series_pixbuf = Pixbuf.new_from_file_at_size(image_path,
-                                                            self.__series_img_size,
-                                                            self.__series_img_size)
-
-    def set_start_at(self, value, write=True):
-        try:
-            value = float(value)
-        except Exception as e:
-            print(self.__name)
-            print("set_start_at error:")
-            print(str(e))
-            value = 0.0
-
-        if value > 0:
-            self.__start_at = value
-        else:
-            self.__start_at = 0.0
-
-        if write:
-            self.write_data()
-
-    def get_start_at(self):
-        return self.__start_at
+        # update the class
+        self.__name = new_name
 
     def find_series(self, path):
         self.__path = path
@@ -239,53 +208,6 @@ class Series(object):
         self.find_videos(path)
         self.update_not_hidden_videos()
         self.write_data()
-
-    def set_recursive(self, recursive, write=True):
-
-        self.__recursive = recursive in ('true', 'True', True)
-
-        if write:
-            self.write_data()
-
-    def set_audio_track(self, value, write=True):
-        try:
-            value = int(value)
-        except Exception as e:
-            print(self.__name)
-            print("set_audio_track error:")
-            print(str(e))
-            value = -2
-
-        if value == -1 or value >= 0:
-            self.__audio_track = value
-        else:
-            self.__audio_track = -2
-
-        if write:
-            self.write_data()
-
-    def set_subtitles_track(self, value, write=True):
-        try:
-            value = int(value)
-        except Exception as e:
-            print(self.__name)
-            print("set_subtitles_track error:")
-            print(str(e))
-            value = -2
-
-        if value == -1 or value >= 0:
-            self.__subtitles_track = value
-        else:
-            self.__subtitles_track = -2
-
-        if write:
-            self.write_data()
-
-    def get_audio_track(self):
-        return self.__audio_track
-
-    def get_subtitles_track(self):
-        return self.__subtitles_track
 
     def find_video(self, episode_name, new_path):
         """     
@@ -441,39 +363,6 @@ class Series(object):
 
         self.__videos_instances = videos
 
-    def get_path_from_video_name(self, name):
-        for video in self.__videos_instances:
-            if video and video.get_name() == name:
-                return video.get_path()
-
-        return None
-
-    def get_video(self, name):
-        for video in self.__videos_instances:
-            if video and video.get_name() == name:
-                return video
-
-        return None
-
-    def get_keep_playing(self):
-        return self.__keep_playing
-
-    def set_keep_playing(self, value, write=True):
-
-        self.__keep_playing = value in ('true', 'True', True)
-
-        if write:
-            self.write_data()
-
-    def get_random(self):
-        return self.__random
-
-    def set_random(self, is_random, write=True):
-
-        self.__random = is_random in ('true', 'True', True)
-
-        if write:
-            self.write_data()
 
     def reorder(self, new_order_indexes):
         """ Choices are "up" or "down" """
@@ -526,37 +415,13 @@ class Series(object):
 
         self.write_data()
 
-    def set_video_position(self, video_to_find, position):
-        for video in self.__videos_instances:
-            if video_to_find == video:
-                video.set_position(position)
-                self.write_data()
-                return
 
     def update_ids(self):
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_id(i)
 
-    def set_videos(self, list_value):
-        self.__videos_instances = list_value
-
-    def set_name(self, new_name):
-        self.__name = new_name
-
-    def rename(self, new_name):
-        # update the data file
-        if os.path.exists(SERIES_PATH.format(self.__name)):
-            os.rename(SERIES_PATH.format(self.__name), SERIES_PATH.format(new_name))
-
-        # update the class
-        self.__name = new_name
-
-    def set_image(self, path):
-        if os.path.exists(path):
-            self.__series_pixbuf = Pixbuf.new_from_file_at_size(path,
-                                                                self.__series_img_size,
-                                                                self.__series_img_size)
-            shutil.copy2(path, os.path.join(self.__path, ".folder"))
+    def get_start_at(self):
+        return self.__start_at
 
     def get_image(self):
         return self.__series_pixbuf
@@ -647,3 +512,139 @@ class Series(object):
 
     def get_path(self):
         return self.__path
+
+    def get_audio_track(self):
+        return self.__audio_track
+
+    def get_subtitles_track(self):
+        return self.__subtitles_track
+
+    def get_random(self):
+        return self.__random
+
+    def get_path_from_video_name(self, name):
+        for video in self.__videos_instances:
+            if video and video.get_name() == name:
+                return video.get_path()
+
+        return None
+
+    def get_video(self, name):
+        for video in self.__videos_instances:
+            if video and video.get_name() == name:
+                return video
+
+        return None
+
+    def get_keep_playing(self):
+        return self.__keep_playing
+
+    def set_keep_playing(self, value, write=True):
+
+        self.__keep_playing = value in ('true', 'True', True)
+
+        if write:
+            self.write_data()
+
+
+    def set_start_at(self, value, write=True):
+        try:
+            value = float(value)
+        except Exception as e:
+            print(self.__name)
+            print("set_start_at error:")
+            print(str(e))
+            value = 0.0
+
+        if value > 0:
+            self.__start_at = value
+        else:
+            self.__start_at = 0.0
+
+        if write:
+            self.write_data()
+
+    def set_recursive(self, recursive, write=True):
+
+        self.__recursive = recursive in ('true', 'True', True)
+
+        if write:
+            self.write_data()
+
+    def set_audio_track(self, value, write=True):
+        try:
+            value = int(value)
+        except Exception as e:
+            print(self.__name)
+            print("set_audio_track error:")
+            print(str(e))
+            value = -2
+
+        if value == -1 or value >= 0:
+            self.__audio_track = value
+        else:
+            self.__audio_track = -2
+
+        if write:
+            self.write_data()
+
+    def set_subtitles_track(self, value, write=True):
+        try:
+            value = int(value)
+        except Exception as e:
+            print(self.__name)
+            print("set_subtitles_track error:")
+            print(str(e))
+            value = -2
+
+        if value == -1 or value >= 0:
+            self.__subtitles_track = value
+        else:
+            self.__subtitles_track = -2
+
+        if write:
+            self.write_data()
+
+
+    def set_random(self, is_random, write=True):
+
+        self.__random = is_random in ('true', 'True', True)
+
+        if write:
+            self.write_data()
+
+    def set_video_position(self, video_to_find, position):
+        for video in self.__videos_instances:
+            if video_to_find == video:
+                video.set_position(position)
+                self.write_data()
+                return
+
+    def set_name(self, new_name):
+        self.__name = new_name
+
+    def set_image(self, path):
+        if os.path.exists(path):
+            self.__series_pixbuf = Pixbuf.new_from_file_at_size(path,
+                                                                self.__series_img_size,
+                                                                self.__series_img_size)
+            shutil.copy2(path, os.path.join(self.__path, ".folder"))
+
+    def __load_image(self):
+        """
+            Set the default image
+        """
+        if not os.path.exists(self.__path):
+            image_path = ICON_ERROR_BIG
+        else:
+            image_path = ICON_LOGO_MEDIUM
+
+            for extension in ('', '.png', '.jpg', '.jpeg'):
+                possible_image = os.path.join(self.__path, '.folder' + extension)
+                if os.path.exists(possible_image):
+                    image_path = possible_image
+                    break
+
+        self.__series_pixbuf = Pixbuf.new_from_file_at_size(image_path,
+                                                            self.__series_img_size,
+                                                            self.__series_img_size)
