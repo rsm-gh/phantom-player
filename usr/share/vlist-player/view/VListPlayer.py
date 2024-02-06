@@ -1043,10 +1043,12 @@ class VListPlayer:
 
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
 
-        if gtk_dialog_question(self.window_root, Texts.DialogSeries.confirm_reset.format(selected_series_name), None):
-            series = self.__series_dict[selected_series_name]
-            series.reset_data()
-            self.__liststore_episodes_populate(True)
+        if not gtk_dialog_question(self.window_root, Texts.DialogSeries.confirm_reset.format(selected_series_name), None):
+            return
+
+        series = self.__series_dict[selected_series_name]
+        series.reset_data()
+        self.__liststore_episodes_populate(True)
 
     def __on_menuitem_series_rename(self, _):
         """

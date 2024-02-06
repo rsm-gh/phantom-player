@@ -93,12 +93,6 @@ class Video(object):
 
         self.update_state()
 
-    def update_state(self):
-        if os.path.exists(self.__path):
-            self.__state = Gtk.STOCK_APPLY
-        else:
-            self.__state = Gtk.STOCK_DIALOG_WARNING
-
     def load_info(self, play, o_played, r_played, position, display):
 
         if play.strip().lower() == 'false':
@@ -116,37 +110,24 @@ class Video(object):
         if display.strip().lower() != 'true':
             self.set_display(False)
 
+    def update_state(self):
+        if os.path.exists(self.__path):
+            self.__state = Gtk.STOCK_APPLY
+        else:
+            self.__state = Gtk.STOCK_DIALOG_WARNING
+
     def get_extension(self):
         return self.__extension
 
     def get_empty_name(self):
         return self.__empty_name
 
-    def set_path(self, path):
-        self.__path = path
-        self.__name = os.path.basename(path)
-        self.update_state()
+    def get_id(self):
+        return self.__id
 
-    def set_state_new(self):
-        self.__state = Gtk.STOCK_ADD
-
-    def set_state(self, pixbuffer):
-        self.__state = pixbuffer
-
-    def get_position(self):
-        return self.__position
-
-    def set_position(self, pos):
-        if 1 > pos >= 0:
-            self.__position = pos
-        else:
-            print(self.__name, "wrong set_position")
 
     def get_display(self):
         return self.__display
-
-    def set_display(self, bool_value):
-        self.__display = bool_value
 
     def get_path(self):
         return self.__path
@@ -166,6 +147,29 @@ class Video(object):
     def get_r_played(self):
         return self.__r_played
 
+    def get_position(self):
+        return self.__position
+
+    def set_path(self, path):
+        self.__path = path
+        self.__name = os.path.basename(path)
+        self.update_state()
+
+    def set_state_new(self):
+        self.__state = Gtk.STOCK_ADD
+
+    def set_state(self, pixbuffer):
+        self.__state = pixbuffer
+
+    def set_position(self, pos):
+        if 1 > pos >= 0:
+            self.__position = pos
+        else:
+            print(self.__name, "wrong set_position")
+
+    def set_display(self, bool_value):
+        self.__display = bool_value
+
     def set_r_played(self, bool_value):
         self.__r_played = bool_value
 
@@ -180,6 +184,3 @@ class Video(object):
             print("video id error " + self.__name)
         else:
             self.__id = int(integer)
-
-    def get_id(self):
-        return self.__id
