@@ -22,12 +22,9 @@ class Texts:
         title = "Video List Player"
 
     class MenuItemSeries:
-        delete = "Delete"
-        rename = "Rename"
-        reset = "Restart"
         search = "Search"
         open_dir = "Open Directory"
-        add_pic = "Add Image"
+        settings = "Settings"
 
     class DialogSeries:
         confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
@@ -36,6 +33,11 @@ class Texts:
         already_exist = 'The series "{}" already exists.\n\nPlease rename the other series before adding this one.'
         name_exist = 'The series "{}" already exists.\n\nPlease choose a different name.'
         all_episodes_played = 'All the episodes have been played, restart the series to watch it again.'
+
+    class WindowSettings:
+
+        new_title = "New Series"
+        edit_title = "Settings"
 
     class MenuItemEpisodes:
         open_dir = "Open Directory"
