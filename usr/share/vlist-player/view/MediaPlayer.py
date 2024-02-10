@@ -105,12 +105,6 @@ def gtk_file_chooser(parent, start_path=''):
     return file_path
 
 
-class WidgetsMarkup:
-    _label_volume = '<span color="white"> Vol: {}% </span>'
-    _label_progress = '<span color="white">{}</span>'
-    _label_length = '<span color="white">{}</span>'
-
-
 class WidgetsShown:
     none = 0
     volume = 1
@@ -120,15 +114,19 @@ class WidgetsShown:
 class ThemeButtons:
     play = "media-playback-start"
     pause = "media-playback-pause"
-    next = "media-skip-forward"
-    previous = "media-skip-backward"
+    next = "go-next"
+    previous = "go-previous"
     volume = ["audio-volume-muted","audio-volume-high","audio-volume-medium"]
+    fullscreen = "view-fullscreen"
+    un_fullscreen = "view-restore"
+    random = "media-playlist-shuffle"
+    keep_playing = "media-playlist-repeat"
 
 
 class MediaPlayerWidget(Gtk.Overlay):
     __gtype_name__ = 'MediaPlayerWidget'
 
-    def __init__(self, root_window):
+    def __init__(self, root_window, random_button=False, keep_playing_button=True):
 
         super().__init__()
 
@@ -144,7 +142,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__default_cursor = Gdk.Cursor.new_from_name(display, 'default')
 
         self.__vlc_widget = VLCWidget()
-        self.__vlc_widget.connect("draw", self.__on_draw)
         self.add(self.__vlc_widget)
 
         self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
@@ -162,40 +159,48 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__buttons_box = Gtk.Box()
         self.__set_css(self.__buttons_box)
         self.__buttons_box.set_valign(Gtk.Align.END)
-        self.__buttons_box.set_halign(Gtk.Align.CENTER)
+        self.__buttons_box.set_halign(Gtk.Align.FILL)
         self.add_overlay(self.__buttons_box)
 
         self.__toolbutton_previous = Gtk.ToolButton()
         self.__toolbutton_previous.set_icon_name(ThemeButtons.previous)
-        self.__toolbutton_previous.connect('clicked', self.__on_button_restart)
-        self.__toolbutton_previous.set_can_focus(False)
-        self.__buttons_box.pack_start(self.__toolbutton_previous, True, True, 3)
+        self.__toolbutton_previous.connect('clicked', self.__on_toolbutton_restart_clicked)
+        self.__buttons_box.pack_start(self.__toolbutton_previous, expand=False, fill=False, padding=3)
 
         self.__toolbutton_play = Gtk.ToolButton()
         self.__toolbutton_play.set_icon_name(ThemeButtons.play)
-
-        self.__toolbutton_play.connect('clicked', self.__on_button_play_pause_clicked)
-        self.__toolbutton_play.set_can_focus(False)
-        self.__buttons_box.pack_start(self.__toolbutton_play, True, True, 3)
+        self.__toolbutton_play.connect('clicked', self.__on_toolbutton_play_clicked)
+        self.__buttons_box.pack_start(self.__toolbutton_play, expand=False, fill=False, padding=3)
 
         self.__toolbutton_next = Gtk.ToolButton()
         self.__toolbutton_next.set_icon_name(ThemeButtons.next)
-        self.__toolbutton_next.connect('clicked', self.__on_button_end)
-        self.__toolbutton_next.set_can_focus(False)
-        self.__buttons_box.pack_start(self.__toolbutton_next, True, True, 3)
+        self.__toolbutton_next.connect('clicked', self.__on_toolbutton_end_clicked)
+        self.__buttons_box.pack_start(self.__toolbutton_next, expand=False, fill=False, padding=3)
+
+        if random_button:
+            self.__toggletoolbutton_random = Gtk.ToggleToolButton()
+            self.__toggletoolbutton_random.set_icon_name(ThemeButtons.random)
+            self.__buttons_box.pack_start(self.__toggletoolbutton_random, expand=False, fill=False, padding=3)
+        else:
+            self.__toggletoolbutton_random = None
+
+        if keep_playing_button:
+            self.__toggletoolbutton_keep_playing = Gtk.ToggleToolButton()
+            self.__toggletoolbutton_keep_playing.set_icon_name(ThemeButtons.keep_playing)
+            self.__buttons_box.pack_start(self.__toggletoolbutton_keep_playing, expand=False, fill=False, padding=3)
+        else:
+            self.__toggletoolbutton_keep_playing = None
 
         self.__label_progress = Gtk.Label()
-        self.__label_progress.set_markup(WidgetsMarkup._label_progress.format("00:00"))
+        self.__label_progress.set_text("00:00")
         self.__label_progress.set_margin_end(5)
         self.__set_css(self.__label_progress)
-        self.__buttons_box.pack_start(self.__label_progress, True, True, 3)
+        self.__buttons_box.pack_start(self.__label_progress, expand=False, fill=False, padding=3)
 
         self.__scale_progress = Gtk.Scale()
         self.__scale_progress.set_range(0, 1)
-        self.__scale_progress.set_size_request(600, -1)
         self.__scale_progress.set_draw_value(False)
-        self.__scale_progress.set_hexpand(False)
-        self.__scale_progress.set_can_focus(True)
+        self.__scale_progress.set_hexpand(True)
         self.__scale_progress.add_mark(0.25, Gtk.PositionType.TOP, None)
         self.__scale_progress.add_mark(0.5, Gtk.PositionType.TOP, None)
         self.__scale_progress.add_mark(0.75, Gtk.PositionType.TOP, None)
@@ -203,14 +208,13 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
         self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
         self.__scale_progress.connect('value_changed', self.__on_scale_progress_changed)
-        self.__buttons_box.pack_start(child=self.__scale_progress, expand=False, fill=False, padding=1)
-
+        self.__buttons_box.pack_start(child=self.__scale_progress, expand=True, fill=True, padding=3)
 
         self.__label_length = Gtk.Label()
-        self.__label_length.set_markup(WidgetsMarkup._label_length.format("00:00"))
+        self.__label_length.set_text("00:00")
         self.__label_length.set_margin_end(5)
         self.__set_css(self.__label_length)
-        self.__buttons_box.pack_start(self.__label_length, True, True, 3)
+        self.__buttons_box.pack_start(self.__label_length, expand=False, fill=False, padding=3)
 
         self.__scale_volume = Gtk.VolumeButton()
         self.__scale_volume.set_icons(ThemeButtons.volume)
@@ -218,15 +222,22 @@ class MediaPlayerWidget(Gtk.Overlay):
         # this is being called when the button is pressed, not the scale...
         #self.__scale_volume.connect('button-press-event', self.__on_scale_volume_press)
         #self.__scale_volume.connect('button-release-event', self.__on_scale_volume_release)
-        self.__buttons_box.pack_start(self.__scale_volume, True, True, 3)
+        self.__buttons_box.pack_start(self.__scale_volume, expand=False, fill=False, padding=3)
+
+        self.__toolbutton_fullscreen = Gtk.ToolButton()
+        self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
+        self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
+        self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
 
 
         #   Extra volume label
         self.__label_volume = Gtk.Label()
         self.__set_css(self.__label_volume)
-        self.__label_volume.set_markup(WidgetsMarkup._label_volume.format(0))
+        self.__label_volume.set_text("Vol: 0%")
         self.__label_volume.set_valign(Gtk.Align.START)
         self.__label_volume.set_halign(Gtk.Align.END)
+        self.__label_volume.set_margin_start(5)
+        self.__label_volume.set_margin_end(5)
         self.add_overlay(self.__label_volume)
 
         """
@@ -243,7 +254,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         provider = Gtk.CssProvider()
         provider.load_from_data(b"""
         scale, label, box {
-            background-color: #4D4D4D;
+            background-color: @theme_bg_color;
         }""")
         context = widget.get_style_context()
         context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
@@ -336,8 +347,8 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         turn_off_screensaver(True)
 
-        GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format("00:00"))
-        GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format("00:00"))
+        GLib.idle_add(self.__label_progress.set_text, "00:00")
+        GLib.idle_add(self.__label_length.set_text, "00:00")
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
         GLib.idle_add(self.__vlc_widget.player.play)
@@ -379,16 +390,36 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
 
+    def set_random(self, state):
+        self.__toggletoolbutton_random.set_active(state)
+
+    def set_keep_playing(self, state):
+        self.__toggletoolbutton_keep_playing.set_active(state)
+
     def get_position(self):
         return self.__vlc_widget.player.get_position()
 
     def get_state(self):
         return self.__vlc_widget.player.get_state()
 
+    def get_random(self):
+        if self.__toggletoolbutton_random is None:
+            return False
+
+        return self.__toggletoolbutton_random.get_active()
+
+
+    def get_keep_playing(self):
+        if self.__toggletoolbutton_keep_playing is None:
+            return False
+
+        return self.__toggletoolbutton_keep_playing.get_active()
+
+
     def __set_label_length(self):
         self.__media_length = self.__vlc_widget.player.get_length()
         video_length = format_milliseconds_to_time(self.__media_length)
-        GLib.idle_add(self.__label_length.set_markup, WidgetsMarkup._label_length.format(video_length))
+        GLib.idle_add(self.__label_length.set_text, video_length)
 
     def __set_cursor_empty(self):
         self.get_window().set_cursor(self.__empty_cursor)
@@ -396,31 +427,9 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __set_cursor_default(self):
         self.get_window().set_cursor(self.__default_cursor)
 
-    def __set_window_fullscreen(self, *_):
-        """This is only for the Gtk.Menu"""
-        self.__root_window.fullscreen()
-
-    def __set_window_unfullscreen(self, *_):
-        """This is only for the Gtk.Menu"""
-        self.__root_window.unfullscreen()
-
     def __menu_rc_vlc_display(self, event):
 
         menu = Gtk.Menu()
-
-        """
-            Audio Menu
-        """
-        state = self.__root_window.get_window().get_state()
-
-        if Gdk.WindowState.FULLSCREEN & state:
-            menuitem = Gtk.ImageMenuItem(label="Un-Fullscreen")
-            menuitem.connect('activate', self.__set_window_unfullscreen)
-        else:
-            menuitem = Gtk.ImageMenuItem(label="Fullscreen")
-            menuitem.connect('activate', self.__set_window_fullscreen)
-
-        menu.append(menuitem)
 
         """
             Audio Menu
@@ -490,38 +499,22 @@ class MediaPlayerWidget(Gtk.Overlay):
         menu.popup(None, None, None, None, event.button, event.time)
         return True
 
-    @staticmethod
-    def __on_draw(_, cairo_ctx):
-        """To redraw the black background when resized"""
-        cairo_ctx.set_source_rgb(0, 0, 0)
-        cairo_ctx.paint()
-
-
     def __on_thread_scan(self):
         """
             This method scans the state of the player to update the tool buttons, volume, play-stop etc
         """
 
         this_thread = current_thread()
-        cached_scale_width = -1
 
         while getattr(this_thread, "do_run", True):
-
-            # Resize the scale progress
-            scale_width = int(self.__vlc_widget.get_allocation().width * .5)
-
-            if scale_width != cached_scale_width:
-                # It was more robust to add the resize here, than trying to use the signals
-                # allocate and configure-event
-                # those signals did not work in all the cases.
-                cached_scale_width = scale_width
-                GLib.idle_add(self.__scale_progress.set_size_request, scale_width, -1)
 
             if not self.__scale_progress_pressed:
 
                 vlc_is_playing = self.is_playing()
 
-                # Update the play-pause button
+                """
+                    Update the play-pause button
+                """
                 if vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.pause:
                     GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.pause)
 
@@ -535,7 +528,7 @@ class MediaPlayerWidget(Gtk.Overlay):
                 scale_volume_value = int(self.__scale_volume.get_value() * 100)
                 if vlc_volume <= 100 and vlc_volume != scale_volume_value:
                     GLib.idle_add(self.__scale_volume.set_value, vlc_volume / 100.000)
-                    GLib.idle_add(self.__label_volume.set_markup, WidgetsMarkup._label_volume.format(vlc_volume))
+                    GLib.idle_add(self.__label_volume.set_text, "Vol: {}%".format(vlc_volume))
                     GLib.idle_add(self.__label_volume.show)
 
                     self.__motion_time = time()
@@ -590,7 +583,7 @@ class MediaPlayerWidget(Gtk.Overlay):
                 self.__root_window.unfullscreen()
 
             elif key in (EventCodes.Keyboard.space_bar, EventCodes.Keyboard.enter):
-                self.__on_button_play_pause_clicked(None, None)
+                self.__on_toolbutton_play_clicked(None, None)
 
             elif key == EventCodes.Keyboard.arrow_up:
                 self.volume_up()
@@ -625,13 +618,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         elif self.__scale_progress_pressed:
             return
 
-        elif event.type == Gdk.EventType._2BUTTON_PRESS:
-            if event.button == EventCodes.Cursor.left_click:
-                if Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
-                    self.__root_window.unfullscreen()
-                else:
-                    self.__root_window.fullscreen()
-
         elif event.type == Gdk.EventType.BUTTON_PRESS:
 
             if event.button == EventCodes.Cursor.left_click:
@@ -660,7 +646,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         elif player_type == 2:
             self.__vlc_widget.player.video_set_spu(track)
 
-    def __on_button_play_pause_clicked(self, *_):
+    def __on_toolbutton_play_clicked(self, *_):
         if self.is_playing():
             self.__toolbutton_play.set_icon_name(ThemeButtons.play)
             self.__vlc_widget.player.pause()
@@ -670,17 +656,26 @@ class MediaPlayerWidget(Gtk.Overlay):
             self.__vlc_widget.player.play()
             turn_off_screensaver(True)
 
-    def __on_button_restart(self, *_):
+    def __on_toolbutton_restart_clicked(self, *_):
         self.__vlc_widget.player.set_position(0)
 
-    def __on_button_end(self, *_):
+    def __on_toolbutton_end_clicked(self, *_):
         self.__vlc_widget.player.set_position(1)
+
+    def __on_toolbutton_fullscreen_clicked(self, *_):
+
+        if Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
+            self.__root_window.unfullscreen()
+            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
+        else:
+            self.__root_window.fullscreen()
+            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.un_fullscreen)
 
     def __on_scale_volume_changed(self, _, value):
         value = int(value * 100)
         if self.__vlc_widget.player.audio_get_volume() != value:
             self.__motion_time = time()
-            self.__label_volume.set_markup(WidgetsMarkup._label_volume.format(value))
+            self.__label_volume.set_text("Vol: {}%")
             self.__label_volume.show()
             self.__vlc_widget.player.audio_set_volume(value)
 
@@ -706,7 +701,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         if self.__media_length > 0:
             video_time = widget.get_value() * self.__media_length
             video_time = format_milliseconds_to_time(video_time)
-            self.__label_progress.set_markup(WidgetsMarkup._label_progress.format(video_time))
+            self.__label_progress.set_text(video_time)
 
 class MediaPlayer(Gtk.Window):
     """ This class creates a media player built in a Gtk.Window """
