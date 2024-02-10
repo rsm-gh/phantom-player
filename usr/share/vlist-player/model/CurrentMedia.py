@@ -20,7 +20,6 @@ class CurrentMedia:
     def __init__(self, series=None):
         self.series = series
         self.__episode = None
-        self.__random = False
 
     def is_series_name(self, series_name):
         if self.series is not None:
@@ -30,16 +29,15 @@ class CurrentMedia:
 
     def mark_seen_episode(self):
         self.__episode.set_position(0)
-        self.series.mark_episode(self.__episode, self.__random, True)
+        self.series.mark_episode(self.__episode, self.series.get_random(), True)
 
-    def get_next_episode(self, random):
+    def get_next_episode(self):
 
-        if random:
+        if self.series.get_random():
             episode = self.series.get_r_episode()
         else:
             episode = self.series.get_o_episode(self.__episode)
 
-        self.__random = random
         self.__episode = episode
 
         return episode
@@ -57,6 +55,3 @@ class CurrentMedia:
             return None
 
         return self.__episode.get_name()
-
-    def get_random_state(self):
-        return self.__random
