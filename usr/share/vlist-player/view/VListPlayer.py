@@ -98,11 +98,8 @@ class VListPlayer:
             'window_root',
             'menubar',
             'menuitem_series_settings',
-            'progressbar',
             'box_window',
-            'box_main',
-            'box_episodes',
-            'box_series',
+            'main_paned',
             'treeview_episodes',
             'treeview_series',
             'treeview_selection_series',
@@ -115,8 +112,6 @@ class VListPlayer:
             'column_play',
             'column_oplayed',
             'column_rplayed',
-            'checkbutton_random',
-            'checkbutton_keep_playing',
             'checkbox_hidden_items',
             'checkbox_hide_extensions',
             'checkbox_hide_number',
@@ -149,12 +144,14 @@ class VListPlayer:
             Media Player
         """
         self.__current_media = CurrentMedia()
-        self.__media_player = MediaPlayerWidget(self.window_root)
+        self.__media_player = MediaPlayerWidget(self.window_root,
+                                                random_button=True,
+                                                keep_playing_button=True)
 
         self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
         self.__paned.add1(self.__media_player)
-        self.box_window.remove(self.box_main)
-        self.__paned.add2(self.box_main)
+        self.box_window.remove(self.main_paned)
+        self.__paned.add2(self.main_paned)
         self.box_window.pack_start(self.__paned, True, True, 0)
 
         self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
@@ -456,25 +453,6 @@ class VListPlayer:
 
         self.__series_dict[series_name].set_start_at(value)
 
-    def on_checkbutton_random_toggled(self, radiobutton, *_):
-        series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-
-        if series_name is None:
-            return
-
-        radiobutton_state = radiobutton.get_active()
-        self.__series_dict[series_name].set_random(radiobutton_state)
-        self.__liststore_episodes_populate(False)
-
-    def on_checkbutton_keep_playing_toggled(self, radiobutton, *_):
-        series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-
-        if series_name is None:
-            return
-
-        radiobutton_state = radiobutton.get_active()
-        self.__series_dict[series_name].set_keep_playing(radiobutton_state)
-
     def on_checkbox_episodes_toggled(self, row, column):
 
         state = not self.liststore_episodes[row][column]
@@ -599,12 +577,12 @@ class VListPlayer:
             current_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
             if current_name != new_name:
 
-                series = self.__series_dict[current_name]
-                series.rename(new_name)
+                series_data = self.__series_dict[current_name]
+                series_data.rename(new_name)
                 self.__series_dict.pop(current_name)
-                self.__series_dict[new_name] = series
+                self.__series_dict[new_name] = series_data
                 gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
-                self.__current_media.get_next_episode(self.checkbutton_random.get_active())
+                self.__current_media.get_next_episode(self.series_data.get_random())
 
         self.window_series_settings.hide()
 
@@ -650,7 +628,7 @@ class VListPlayer:
             return
 
         if video_name is None:
-            video = self.__current_media.get_next_episode(self.checkbutton_random.get_active())
+            video = self.__current_media.get_next_episode()
         else:
             video = self.__current_media.get_episode(video_name)
 
@@ -673,6 +651,10 @@ class VListPlayer:
                                           self.__current_media.series.get_audio_track(),
                                           self.__current_media.series.get_start_at(),
                                           play)
+
+
+            self.__media_player.set_random(self.__current_media.series.get_random())
+            self.__media_player.set_keep_playing(self.__current_media.series.get_keep_playing())
 
     def __save_current_video_position(self):
         if self.__current_media.series is not None:
@@ -837,20 +819,18 @@ class VListPlayer:
         #
         #    Update the series area
         #
-
-        self.checkbutton_keep_playing.set_active(series_data.get_keep_playing())
-        self.checkbutton_random.set_active(series_data.get_random())
-
         self.spinbutton_audio.set_value(series_data.get_audio_track())
         self.spinbutton_subtitles.set_value(series_data.get_subtitles_track())
         self.spinbutton_start_at.set_value(series_data.get_start_at())
 
-        if self.checkbutton_random.get_active():
+        """
+        if series_data.get_random():
             played, total, percent = series_data.get_r_played_stats()
         else:
             played, total, percent = series_data.get_o_played_stats()
 
         self.progressbar.set_fraction(percent)
+        """
 
         """
             update the episodes area
@@ -996,6 +976,17 @@ class VListPlayer:
                 cached_position = position
                 self.__current_media.series.set_video_position(cached_video, cached_position)
 
+
+            if self.__media_player.get_random() != self.__current_media.series.get_random():
+                self.__current_media.series.set_random(self.__media_player.get_random())
+                self.__current_media.series.write_data()
+
+
+            if self.__media_player.get_keep_playing() != self.__current_media.series.get_keep_playing():
+                self.__current_media.series.set_keep_playing(self.__media_player.get_keep_playing())
+                self.__current_media.series.write_data()
+
+
             # If the current video got to the end...
             if round(position, 3) >= 0.999:
                 self.__current_media.mark_seen_episode()
@@ -1005,17 +996,17 @@ class VListPlayer:
                 if selected_series_name == self.__current_media.series.get_name():
                     GLib.idle_add(self.__liststore_episodes_mark,
                                   cached_video.get_empty_name(),
-                                  self.__current_media.get_random_state())
+                                  self.__current_media.series.get_random())
 
                 #GLib.idle_add(self.__liststore_episodes_populate, True)
 
                 # Play the next episode
-                if not self.checkbutton_keep_playing.get_active():
+                if not self.__current_media.series.get_keep_playing():
                     GLib.idle_add(self.__media_player.pause)
                     GLib.idle_add(self.window_root.unfullscreen)
 
                 else:
-                    next_video = self.__current_media.get_next_episode(self.checkbutton_random.get_active())
+                    next_video = self.__current_media.get_next_episode()
 
                     if next_video is None:
                         GLib.idle_add(self.window_root.unfullscreen)
@@ -1049,10 +1040,10 @@ class VListPlayer:
 
             if fullscreen:
                 self.menubar.hide()
-                self.box_main.hide()
+                self.main_paned.hide()
             else:
                 self.menubar.show()
-                self.box_main.show()
+                self.main_paned.show()
 
     def __on_menuitem_series_settings(self, *_):
         self.__display_settings_window()
