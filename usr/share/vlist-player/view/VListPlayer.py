@@ -669,8 +669,7 @@ class VListPlayer:
     def __display_settings_window(self, new_series=False):
         if new_series:
             self.window_series_settings.set_title(Texts.WindowSettings.new_title)
-            #self.image_series.set_from_pixbuf(series_data.get_image())
-
+            self.button_series_close.show()
 
         else:
             selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
@@ -679,6 +678,7 @@ class VListPlayer:
             series_data = self.__series_dict[selected_series_name]
             self.image_series.set_from_pixbuf(series_data.get_image())
             self.window_series_settings.set_title(selected_series_name+" "+Texts.WindowSettings.edit_title)
+            self.button_series_close.hide()
 
         self.button_series_delete.set_sensitive(not new_series)
         self.button_series_restart.set_sensitive(not new_series)
