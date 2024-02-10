@@ -136,7 +136,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__has_media = False
         self.__widgets_shown = WidgetsShown.none
         self.__motion_time = time()
-        self.__scale_pressed = False
+        self.__scale_progress_pressed = False
         self.__media_length = 0
 
         display = self.get_display()
@@ -517,37 +517,38 @@ class MediaPlayerWidget(Gtk.Overlay):
                 cached_scale_width = scale_width
                 GLib.idle_add(self.__scale_progress.set_size_request, scale_width, -1)
 
-            # VLC
-            vlc_is_playing = self.is_playing()
-            vlc_volume = self.__vlc_widget.player.audio_get_volume()
-            vlc_position = self.__vlc_widget.player.get_position()
-            scale_volume_value = int(self.__scale_volume.get_value() * 100)
+            if not self.__scale_progress_pressed:
 
-            # Update the play-pause button
-            if vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.pause:
-                GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.pause)
+                vlc_is_playing = self.is_playing()
 
-            elif not vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.play:
-                GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.play)
+                # Update the play-pause button
+                if vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.pause:
+                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.pause)
 
-            """
-                Update the volume. Is this necessary?
-            """
-            if vlc_volume <= 100 and vlc_volume != scale_volume_value:
-                GLib.idle_add(self.__scale_volume.set_value, vlc_volume / 100.000)
-                GLib.idle_add(self.__label_volume.set_markup, WidgetsMarkup._label_volume.format(vlc_volume))
-                GLib.idle_add(self.__label_volume.show)
+                elif not vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.play:
+                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.play)
 
-                self.__motion_time = time()
-                self.__widgets_shown = WidgetsShown.volume
+                """
+                    Update the volume. Is this necessary?
+                """
+                vlc_volume = self.__vlc_widget.player.audio_get_volume()
+                scale_volume_value = int(self.__scale_volume.get_value() * 100)
+                if vlc_volume <= 100 and vlc_volume != scale_volume_value:
+                    GLib.idle_add(self.__scale_volume.set_value, vlc_volume / 100.000)
+                    GLib.idle_add(self.__label_volume.set_markup, WidgetsMarkup._label_volume.format(vlc_volume))
+                    GLib.idle_add(self.__label_volume.show)
 
-            """
-                Update the time of the scale and the time
-            """
-            if vlc_is_playing and not self.__scale_pressed:
-                video_time = format_milliseconds_to_time(self.__vlc_widget.player.get_time())
-                GLib.idle_add(self.__scale_progress.set_value, vlc_position)
-                GLib.idle_add(self.__label_progress.set_markup, WidgetsMarkup._label_progress.format(video_time))
+                    self.__motion_time = time()
+                    self.__widgets_shown = WidgetsShown.volume
+
+                """
+                    Update the time of the scale and the time
+                """
+                if vlc_is_playing and not self.__scale_progress_pressed:
+                    # 'not self.__scale_progress_pressed' in case that
+                    # the scale be pressed when the method is being executed.
+                    vlc_position = self.__vlc_widget.player.get_position()
+                    GLib.idle_add(self.__scale_progress.set_value, vlc_position)
 
             """
                 Wait
@@ -562,7 +563,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             time_delta = time() - self.__motion_time
 
-            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none and not self.__scale_pressed:
+            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none and not self.__scale_progress_pressed:
                 self.__widgets_shown = WidgetsShown.none
 
                 GLib.idle_add(self.__label_volume.hide)
@@ -621,7 +622,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         if not self.__has_media:
             return
 
-        elif self.__scale_pressed:
+        elif self.__scale_progress_pressed:
             return
 
         elif event.type == Gdk.EventType._2BUTTON_PRESS:
@@ -683,30 +684,29 @@ class MediaPlayerWidget(Gtk.Overlay):
             self.__label_volume.show()
             self.__vlc_widget.player.audio_set_volume(value)
 
+    def __on_scale_volume_press(self, *_):
+        pass
+        #self.__scale_progress_pressed = True
+
+    def __on_scale_volume_release(self, *_):
+        pass
+        self.__scale_progress_pressed = False
+
+    def __on_scale_progress_press(self, *_):
+        self.__scale_progress_pressed = True
+        self.__vlc_widget.player.pause() # In case of long press
+
+    def __on_scale_progress_release(self, widget, *_):
+        self.__vlc_widget.player.set_position(widget.get_value())
+        self.__vlc_widget.player.play() # In case of long press
+        self.__motion_time = time()
+        self.__scale_progress_pressed = False
+
     def __on_scale_progress_changed(self, widget, *_):
-        if self.__media_length > 0 and self.__scale_pressed:
+        if self.__media_length > 0:
             video_time = widget.get_value() * self.__media_length
             video_time = format_milliseconds_to_time(video_time)
             self.__label_progress.set_markup(WidgetsMarkup._label_progress.format(video_time))
-
-    def __on_scale_volume_press(self, *_):
-        print("TRUE")
-        self.__scale_pressed = True
-
-    def __on_scale_volume_release(self, *_):
-        print("FALSE")
-        self.__scale_pressed = False
-
-    def __on_scale_progress_press(self, *_):
-        self.__vlc_widget.player.pause()
-        self.__scale_pressed = True
-
-    def __on_scale_progress_release(self, widget, *_):
-        self.__motion_time = time()
-        self.__vlc_widget.player.set_position(widget.get_value())
-        self.__vlc_widget.player.play()
-        self.__scale_pressed = False
-
 
 class MediaPlayer(Gtk.Window):
     """ This class creates a media player built in a Gtk.Window """
@@ -729,7 +729,7 @@ class MediaPlayer(Gtk.Window):
     def play_video(self, path):
         self.__media_player_widget.set_video(path,
                                              position=.5,
-                                             play=False)
+                                             play=True)
 
 
 if __name__ == '__main__':
