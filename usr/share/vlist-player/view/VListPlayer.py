@@ -95,31 +95,51 @@ class VListPlayer:
         builder.connect_signals(self)
 
         glade_ids = (
-            'window_root', 'box_window',
+            'window_root',
             'menubar',
+            'menuitem_series_settings',
+            'progressbar',
             'box_window',
             'box_main',
-            'treeview_selection_episodes', 'progressbar', 'checkbox_hidden_items',
-            'button_root_play_and_stop', 'treeview_episodes', 'treeview_series',
-            'treeview_selection_series', 'liststore_series', 'liststore_episodes', 'spinbutton_audio',
-            'spinbutton_subtitles',
-            'spinbutton_start_at', 'box_episodes', 'box_series', 'box_series_data',
-            'box_series_menu', 'column_number', 'column_name', 'column_extension', 'column_play',
+            'box_episodes',
+            'box_series',
+            'treeview_episodes',
+            'treeview_series',
+            'treeview_selection_series',
+            'treeview_selection_episodes',
+            'liststore_series',
+            'liststore_episodes',
+            'column_number',
+            'column_name',
+            'column_extension',
+            'column_play',
             'column_oplayed',
-            'column_rplayed', 'checkbutton_random', 'checkbutton_keep_playing', 'checkbox_hide_extensions',
+            'column_rplayed',
+            'checkbutton_random',
+            'checkbutton_keep_playing',
+            'checkbox_hidden_items',
+            'checkbox_hide_extensions',
             'checkbox_hide_number',
-            'checkbox_hide_name', 'checkbox_hide_extension', 'checkbox_hide_play', 'checkbox_hide_oplayed',
+            'checkbox_hide_name',
+            'checkbox_hide_extension',
+            'checkbox_hide_play',
+            'checkbox_hide_oplayed',
             'checkbox_hide_rplayed',
-            'checkbox_hide_warning_missing_series', 'checkbox_hide_missing_series',
+            'checkbox_hide_warning_missing_series',
+            'checkbox_hide_missing_series',
 
-            'window_rename',
-            'entry_rename', 'label_old_name',
+            'window_series_settings',
+            'entry_series_name',
+            'image_series',
+            'spinbutton_subtitles',
+            'spinbutton_start_at',
+            'spinbutton_audio',
+            'button_series_delete',
+            'button_series_restart',
+            'button_series_close',
+            'button_series_apply',
 
             'window_about',
-            'window_controls',
-            'window_files',
-            'window_preferences',
-            'window_finding_files',
         )
 
         for glade_id in glade_ids:
@@ -180,6 +200,8 @@ class VListPlayer:
         """
             Display the window
         """
+        self.menuitem_series_settings.set_sensitive(False)
+
         self.window_root.maximize()
         self.window_root.show_all()
         #GLib.timeout_add_seconds(.3, self.__resize_vlc_widget)
@@ -235,7 +257,7 @@ class VListPlayer:
                         self.treeview_selection_series.unselect_all()
                         self.treeview_selection_series.select_path(pointing_treepath)
 
-                    self.__menu_series_display(series_data, event)
+                    self.__menu_series_display(event)
 
         elif event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == EventCodes.Cursor.left_click:
@@ -512,23 +534,15 @@ class VListPlayer:
         _ = self.window_about.run()
         self.window_about.hide()
 
-    def on_menuitem_controls_activate(self, *_):
-        self.window_controls.show()
+    def on_menuitem_series_activate(self, *_):
+        model, treepaths = self.treeview_selection_series.get_selected_rows()
+        self.menuitem_series_settings.set_sensitive(len(treepaths) > 0)
 
-    def on_menuitem_finding_activate(self, *_):
-        self.window_finding_files.show()
+    def on_menuitem_series_new_activate(self, *_):
+        self.__display_settings_window(new_series=True)
 
-    def on_menuitem_files_activate(self, *_):
-        self.window_files.show()
-
-    def on_imagemenuitem_preferences_activate(self, *_):
-        self.window_preferences.show()
-
-    def on_menuitem_list_activate(self, *_):
-        self.__series_add_from_fchooser(False)
-
-    def on_menuitem_list_recursive_activate(self, *_):
-        self.__series_add_from_fchooser(True)
+    def on_menuitem_series_settings_activate(self, *_):
+        self.__display_settings_window()
 
     def on_menuitem_checkbox_activated(self, _, column, state):
 
@@ -550,43 +564,85 @@ class VListPlayer:
 
         self.__liststore_episodes_populate(True)
 
-    def on_button_cancel_rename_clicked(self, *_):
-        self.window_rename.hide()
+    def on_button_series_delete_clicked(self, *_):
 
-    def on_button_close_preferences_clicked(self, *_):
-        self.window_preferences.hide()
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
 
-    def on_button_close_controls_clicked(self, *_):
-        self.window_controls.hide()
+        if gtk_dialog_question(self.window_series_settings, Texts.DialogSeries.confirm_delete.format(selected_series_name), None):
 
-    def on_button_close_files_clicked(self, *_):
-        self.window_files.hide()
+            self.window_series_settings.hide()
 
-    def on_button_close_window_list_clicked(self, *_):
-        self.window_list.hide()
+            self.__series_dict.pop(selected_series_name)
 
-    def on_button_close_find_files_clicked(self, *_):
-        self.window_finding_files.hide()
+            gtk_remove_first_selected_row_from_liststore(self.treeview_selection_series)
 
-    def on_button_okay_rename_clicked(self, *_):
+            if os.path.exists(SERIES_PATH.format(selected_series_name)):
+                os.remove(SERIES_PATH.format(selected_series_name))
 
-        current_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        new_name = self.entry_rename.get_text()
+    def on_button_series_close_clicked(self, *_):
+        self.window_series_settings.hide()
+
+    def on_button_series_apply_clicked(self, *_):
+
+        new_name = self.entry_series_name.get_text().strip()
+
+        if new_name == "":
+            gtk_info(self.window_series_settings, "The name can not be empty", None)
+            return
 
         if new_name in self.__series_dict.keys():
             gtk_info(self.window_rename, Texts.DialogSeries.name_exist.format(new_name), None)
+            return
 
-        elif not current_name == new_name:
+        model, treepaths = self.treeview_selection_episodes.get_selected_rows()
+        if len(treepaths) > 0:
+            current_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+            if current_name != new_name:
 
-            series = self.__series_dict[current_name]
-            series.rename(new_name)
-            self.__series_dict.pop(current_name)
-            self.__series_dict[new_name] = series
-            gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
+                series = self.__series_dict[current_name]
+                series.rename(new_name)
+                self.__series_dict.pop(current_name)
+                self.__series_dict[new_name] = series
+                gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
+                self.__current_media.get_next_episode(self.checkbutton_random.get_active())
 
-            self.__current_media.get_next_episode(self.checkbutton_random.get_active())
+        self.window_series_settings.hide()
 
-        self.window_rename.hide()
+    def on_button_series_restart_clicked(self, *_):
+
+        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+
+        if not gtk_dialog_question(self.window_series_settings, Texts.DialogSeries.confirm_reset.format(selected_series_name), None):
+            return
+
+        self.window_series_settings.hide()
+
+        # This is done before to avoid updating the series data
+        was_playing = False
+        if self.__current_media.is_series_name(selected_series_name):
+            if self.__media_player.is_playing():
+                was_playing = True
+                self.__media_player.pause()
+
+        series = self.__series_dict[selected_series_name]
+        series.restart()
+        self.__liststore_episodes_populate(True)
+
+        if was_playing:
+            self.__set_video()
+
+    def on_button_series_set_image_clicked(self, *_):
+        """
+            Add a picture to a series
+        """
+        file = gtk_file_chooser(self.window_series_settings, 'picture')
+        if file is not None:
+            series = self.__series_dict[
+                gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
+
+            series.set_image(file)
+            gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0, series.get_image())
+            self.__liststore_episodes_populate(False)
 
     def __set_video(self, video_name=None, play=True, replay=False, ignore_none=False):
 
@@ -628,10 +684,24 @@ class VListPlayer:
 
             self.__current_media.series.write_data()
 
-    def __series_open(self, _):
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-        series_data = self.__series_dict[selected_series_name]
-        open_directory(series_data.get_path())
+    def __display_settings_window(self, new_series=False):
+        if new_series:
+            self.window_series_settings.set_title(Texts.WindowSettings.new_title)
+            #self.image_series.set_from_pixbuf(series_data.get_image())
+
+
+        else:
+            selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+            self.entry_series_name.set_text(selected_series_name)
+
+            series_data = self.__series_dict[selected_series_name]
+            self.image_series.set_from_pixbuf(series_data.get_image())
+            self.window_series_settings.set_title(selected_series_name+" "+Texts.WindowSettings.edit_title)
+
+        self.button_series_delete.set_sensitive(not new_series)
+        self.button_series_restart.set_sensitive(not new_series)
+
+        self.window_series_settings.show()
 
     def __series_load_from_path(self,
                                 path,
@@ -830,35 +900,13 @@ class VListPlayer:
                 print("Error loading the liststore_episodes. The series '{}' has an empty video.".format(
                     series_data.get_name()))
 
-    def __menu_series_display(self, series_data, event):
+    def __menu_series_display(self, event):
 
         menu = Gtk.Menu()
 
-        if not os.path.exists(series_data.get_path()):
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.search)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_series_find)
-
-        else:
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.open_dir)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__series_open)
-
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.rename)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_series_rename)
-
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.reset)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_series_restart)
-
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.add_pic)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_series_add_picture)
-
-        menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.delete)
+        menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemSeries.settings)
         menu.append(menuitem)
-        menuitem.connect('activate', self.__on_menuitem_series_delete)
+        menuitem.connect('activate', self.__on_menuitem_series_settings)
 
         menu.show_all()
         menu.popup(None, None, None, None, event.button, event.time)
@@ -1006,18 +1054,8 @@ class VListPlayer:
                 self.menubar.show()
                 self.box_main.show()
 
-    def __on_menuitem_series_add_picture(self, _):
-        """
-            Add a picture to a series
-        """
-        file = gtk_file_chooser(self.window_root, 'picture')
-        if file is not None:
-            series = self.__series_dict[
-                gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)]
-
-            series.set_image(file)
-            gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0, series.get_image())
-            self.__liststore_episodes_populate(False)
+    def __on_menuitem_series_settings(self, *_):
+        self.__display_settings_window()
 
     def __on_menuitem_series_find(self, _):
 
@@ -1031,50 +1069,6 @@ class VListPlayer:
         series_data.find_series(path)
         gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0, series_data.get_image())
         self.__liststore_episodes_populate(True)
-
-    def __on_menuitem_series_restart(self, _):
-
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-
-        if not gtk_dialog_question(self.window_root, Texts.DialogSeries.confirm_reset.format(selected_series_name), None):
-            return
-
-        # This is done before to avoid updating the series data
-        was_playing = False
-        if self.__current_media.is_series_name(selected_series_name):
-            if self.__media_player.is_playing():
-                was_playing = True
-                self.__media_player.pause()
-
-        series = self.__series_dict[selected_series_name]
-        series.restart()
-        self.__liststore_episodes_populate(True)
-
-        if was_playing:
-            self.__set_video()
-
-    def __on_menuitem_series_rename(self, _):
-        """
-            change the name of a series
-        """
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-
-        self.label_old_name.set_text(selected_series_name)
-        self.entry_rename.set_text(selected_series_name)
-
-        self.window_rename.show()
-
-    def __on_menuitem_series_delete(self, _):
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
-
-        if gtk_dialog_question(self.window_root, Texts.DialogSeries.confirm_delete.format(selected_series_name), None):
-
-            self.__series_dict.pop(selected_series_name)
-
-            gtk_remove_first_selected_row_from_liststore(self.treeview_selection_series)
-
-            if os.path.exists(SERIES_PATH.format(selected_series_name)):
-                os.remove(SERIES_PATH.format(selected_series_name))
 
     def __on_menuitem_series_ignore_episode(self, _):
 
