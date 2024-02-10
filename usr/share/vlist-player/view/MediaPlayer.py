@@ -121,12 +121,13 @@ class ThemeButtons:
     un_fullscreen = "view-restore"
     random = "media-playlist-shuffle"
     keep_playing = "media-playlist-repeat"
+    settings = "preferences-desktop"
 
 
 class MediaPlayerWidget(Gtk.Overlay):
     __gtype_name__ = 'MediaPlayerWidget'
 
-    def __init__(self, root_window, random_button=False, keep_playing_button=True):
+    def __init__(self, root_window, random_button=False, keep_playing_button=False):
 
         super().__init__()
 
@@ -216,6 +217,11 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__set_css(self.__label_length)
         self.__buttons_box.pack_start(self.__label_length, expand=False, fill=False, padding=3)
 
+        self.__menubutton_settings = Gtk.MenuButton()
+        self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons.settings, -1))
+        self.__menubutton_settings.set_direction(Gtk.ArrowType.UP)
+        self.__buttons_box.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
+
         self.__scale_volume = Gtk.VolumeButton()
         self.__scale_volume.set_icons(ThemeButtons.volume)
         self.__scale_volume.connect('value_changed', self.__on_scale_volume_changed)
@@ -233,7 +239,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         #   Extra volume label
         self.__label_volume = Gtk.Label()
         self.__set_css(self.__label_volume)
-        self.__label_volume.set_text("Vol: 0%")
+        self.__label_volume.set_text(" Vol: 0% ")
         self.__label_volume.set_valign(Gtk.Align.START)
         self.__label_volume.set_halign(Gtk.Align.END)
         self.__label_volume.set_margin_start(5)
@@ -313,18 +319,6 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         turn_off_screensaver(False)
 
-    def set_subtitles_from_file(self, *_):
-        """
-            Todo: read the result of player.video_set_subtitle_file(path) and display a message
-            in case of problem.
-        """
-        path = gtk_file_chooser(self.__root_window)
-
-        if path is not None:
-            self.__vlc_widget.player.video_set_subtitle_file(path)
-
-        return True
-
     def set_video(self,
                   file_path,
                   position=0.0,
@@ -352,7 +346,9 @@ class MediaPlayerWidget(Gtk.Overlay):
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
         GLib.idle_add(self.__vlc_widget.player.play)
+
         GLib.timeout_add_seconds(.5, self.__set_label_length)
+        GLib.timeout_add_seconds(.5, self.__populate_settings_menubutton)
         GLib.timeout_add_seconds(.5, self.__vlc_widget.player.audio_set_track, audio_track)
         GLib.timeout_add_seconds(.5, self.__vlc_widget.player.video_set_spu, subtitles_track)
 
@@ -389,6 +385,18 @@ class MediaPlayerWidget(Gtk.Overlay):
             start_position = 0
 
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
+
+    def set_subtitles_from_file(self, *_):
+        """
+            Todo: read the result of player.video_set_subtitle_file(path) and display a message
+            in case of problem.
+        """
+        path = gtk_file_chooser(self.__root_window)
+
+        if path is not None:
+            self.__vlc_widget.player.video_set_subtitle_file(path)
+
+        return True
 
     def set_random(self, state):
         self.__toggletoolbutton_random.set_active(state)
@@ -427,26 +435,26 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __set_cursor_default(self):
         self.get_window().set_cursor(self.__default_cursor)
 
-    def __menu_rc_vlc_display(self, event):
+    def __populate_settings_menubutton(self):
 
         menu = Gtk.Menu()
+        self.__menubutton_settings.set_popup(menu)
 
         """
             Audio Menu
         """
-        menuitem = Gtk.ImageMenuItem(label="Audio")
+        menuitem = Gtk.MenuItem(label="Audio")
         menu.append(menuitem)
         submenu = Gtk.Menu()
         menuitem.set_submenu(submenu)
 
         selected_track = self.__vlc_widget.player.audio_get_track()
 
-        item = Gtk.CheckMenuItem(label="-1  Disable")
-        item.connect('activate', self.__on_menu_video_subs_audio, 0, -1)
+        default_item = Gtk.RadioMenuItem(label="-1  Disable")
         if selected_track == -1:
-            item.set_active(True)
-
-        submenu.append(item)
+            default_item.set_active(True)
+        default_item.connect('activate', self.__on_menu_video_subs_audio, 0, -1)
+        submenu.append(default_item)
 
         try:
             tracks = [(audio[0], audio[1].decode('utf-8')) for audio in
@@ -457,8 +465,9 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         for track in tracks:
             if 'Disable' not in track:
-                item = Gtk.CheckMenuItem(label=format_track(track))
+                item = Gtk.RadioMenuItem(label=format_track(track))
                 item.connect('activate', self.__on_menu_video_subs_audio, 0, track[0])
+                item.join_group(default_item)
                 if selected_track == track[0]:
                     item.set_active(True)
                 submenu.append(item)
@@ -466,19 +475,20 @@ class MediaPlayerWidget(Gtk.Overlay):
         """
             Subtitles
         """
-        menuitem = Gtk.ImageMenuItem(label="Subtitles")
+        menuitem = Gtk.MenuItem(label="Subtitles")
         menu.append(menuitem)
         submenu = Gtk.Menu()
         menuitem.set_submenu(submenu)
 
         selected_track = self.__vlc_widget.player.video_get_spu()
 
-        item = Gtk.CheckMenuItem(label="-1  Disable")
-        item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
+        default_item = Gtk.RadioMenuItem(label="-1  Disable")
         if selected_track == -1:
-            item.set_active(True)
+            default_item.set_active(True)
+        default_item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
 
-        submenu.append(item)
+
+        submenu.append(default_item)
 
         try:
             tracks = [(video_spu[0], video_spu[1].decode('utf-8')) for video_spu in
@@ -489,15 +499,14 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         for track in tracks:
             if 'Disable' not in track:
-                item = Gtk.CheckMenuItem(label=format_track(track))
-                item.connect('activate', self.__on_menu_video_subs_audio, 2, track[0])
+                item = Gtk.RadioMenuItem(label=format_track(track))
+                item.join_group(default_item)
                 if selected_track == track[0]:
                     item.set_active(True)
+                item.connect('activate', self.__on_menu_video_subs_audio, 2, track[0])
                 submenu.append(item)
 
         menu.show_all()
-        menu.popup(None, None, None, None, event.button, event.time)
-        return True
 
     def __on_thread_scan(self):
         """
@@ -528,7 +537,7 @@ class MediaPlayerWidget(Gtk.Overlay):
                 scale_volume_value = int(self.__scale_volume.get_value() * 100)
                 if vlc_volume <= 100 and vlc_volume != scale_volume_value:
                     GLib.idle_add(self.__scale_volume.set_value, vlc_volume / 100.000)
-                    GLib.idle_add(self.__label_volume.set_text, "Vol: {}%".format(vlc_volume))
+                    GLib.idle_add(self.__label_volume.set_text, " Vol: {}% ".format(vlc_volume))
                     GLib.idle_add(self.__label_volume.show)
 
                     self.__motion_time = time()
@@ -629,9 +638,6 @@ class MediaPlayerWidget(Gtk.Overlay):
                     self.__vlc_widget.player.play()
                     turn_off_screensaver(True)
 
-            elif event.button == EventCodes.Cursor.right_click:
-                self.__menu_rc_vlc_display(event)
-
     def __on_menu_video_subs_audio(self, _, player_type, track):
         """
             Todo: self.__vlc_widget.player.XXX_set_track returns a status.
@@ -675,7 +681,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         value = int(value * 100)
         if self.__vlc_widget.player.audio_get_volume() != value:
             self.__motion_time = time()
-            self.__label_volume.set_text("Vol: {}%")
+            self.__label_volume.set_text(" Vol: {}% ".format(value))
             self.__label_volume.show()
             self.__vlc_widget.player.audio_set_volume(value)
 
