@@ -137,6 +137,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__motion_time = time()
         self.__scale_progress_pressed = False
         self.__media_length = 0
+        self.__video_length = "00:00"
 
         display = self.get_display()
         self.__empty_cursor = Gdk.Cursor.new_for_display(display, Gdk.CursorType.BLANK_CURSOR)
@@ -178,26 +179,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__toolbutton_next.connect('clicked', self.__on_toolbutton_end_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_next, expand=False, fill=False, padding=3)
 
-        if random_button:
-            self.__toggletoolbutton_random = Gtk.ToggleToolButton()
-            self.__toggletoolbutton_random.set_icon_name(ThemeButtons.random)
-            self.__buttons_box.pack_start(self.__toggletoolbutton_random, expand=False, fill=False, padding=3)
-        else:
-            self.__toggletoolbutton_random = None
-
-        if keep_playing_button:
-            self.__toggletoolbutton_keep_playing = Gtk.ToggleToolButton()
-            self.__toggletoolbutton_keep_playing.set_icon_name(ThemeButtons.keep_playing)
-            self.__buttons_box.pack_start(self.__toggletoolbutton_keep_playing, expand=False, fill=False, padding=3)
-        else:
-            self.__toggletoolbutton_keep_playing = None
-
-        self.__label_progress = Gtk.Label()
-        self.__label_progress.set_text("00:00")
-        self.__label_progress.set_margin_end(5)
-        self.__set_css(self.__label_progress)
-        self.__buttons_box.pack_start(self.__label_progress, expand=False, fill=False, padding=3)
-
         self.__scale_progress = Gtk.Scale()
         self.__scale_progress.set_range(0, 1)
         self.__scale_progress.set_draw_value(False)
@@ -211,11 +192,25 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scale_progress.connect('value_changed', self.__on_scale_progress_changed)
         self.__buttons_box.pack_start(child=self.__scale_progress, expand=True, fill=True, padding=3)
 
-        self.__label_length = Gtk.Label()
-        self.__label_length.set_text("00:00")
-        self.__label_length.set_margin_end(5)
-        self.__set_css(self.__label_length)
-        self.__buttons_box.pack_start(self.__label_length, expand=False, fill=False, padding=3)
+        self.__label_progress = Gtk.Label()
+        self.__label_progress.set_text("00:00 / 00:00")
+        self.__label_progress.set_margin_end(5)
+        self.__set_css(self.__label_progress)
+        self.__buttons_box.pack_start(self.__label_progress, expand=False, fill=False, padding=3)
+
+        if keep_playing_button:
+            self.__toggletoolbutton_keep_playing = Gtk.ToggleToolButton()
+            self.__toggletoolbutton_keep_playing.set_icon_name(ThemeButtons.keep_playing)
+            self.__buttons_box.pack_start(self.__toggletoolbutton_keep_playing, expand=False, fill=False, padding=3)
+        else:
+            self.__toggletoolbutton_keep_playing = None
+
+        if random_button:
+            self.__toggletoolbutton_random = Gtk.ToggleToolButton()
+            self.__toggletoolbutton_random.set_icon_name(ThemeButtons.random)
+            self.__buttons_box.pack_start(self.__toggletoolbutton_random, expand=False, fill=False, padding=3)
+        else:
+            self.__toggletoolbutton_random = None
 
         self.__menubutton_settings = Gtk.MenuButton()
         self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons.settings, -1))
@@ -341,8 +336,8 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         turn_off_screensaver(True)
 
-        GLib.idle_add(self.__label_progress.set_text, "00:00")
-        GLib.idle_add(self.__label_length.set_text, "00:00")
+        self.__video_length = "00:00"
+        GLib.idle_add(self.__label_progress.set_text, "00:00 / 00:00")
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
         GLib.idle_add(self.__vlc_widget.player.play)
@@ -426,8 +421,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def __set_label_length(self):
         self.__media_length = self.__vlc_widget.player.get_length()
-        video_length = format_milliseconds_to_time(self.__media_length)
-        GLib.idle_add(self.__label_length.set_text, video_length)
+        self.__video_length = format_milliseconds_to_time(self.__media_length)
 
     def __set_cursor_empty(self):
         self.get_window().set_cursor(self.__empty_cursor)
@@ -707,7 +701,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         if self.__media_length > 0:
             video_time = widget.get_value() * self.__media_length
             video_time = format_milliseconds_to_time(video_time)
-            self.__label_progress.set_text(video_time)
+            self.__label_progress.set_text(video_time+" / "+self.__video_length)
 
 class MediaPlayer(Gtk.Window):
     """ This class creates a media player built in a Gtk.Window """
