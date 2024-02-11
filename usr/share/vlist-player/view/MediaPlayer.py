@@ -213,7 +213,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             self.__toggletoolbutton_random = None
 
         self.__menubutton_settings = Gtk.MenuButton()
-        self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons.settings, -1))
+        self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons.settings, Gtk.IconSize.BUTTON))
         self.__menubutton_settings.set_direction(Gtk.ArrowType.UP)
         self.__buttons_box.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
 
