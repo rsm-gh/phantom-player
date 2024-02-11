@@ -113,13 +113,23 @@ Author: Rafael Senties Martinelli
   </object>
   <object class="GtkListStore" id="liststore_paths">
     <columns>
-      <!-- column-name gchararray1 -->
+      <!-- column-name path -->
       <column type="gchararray"/>
       <!-- column-name Recursive -->
       <column type="gboolean"/>
-      <!-- column-name GdkPixbuf1 -->
-      <column type="GdkPixbuf"/>
+      <!-- column-name dir_icon -->
+      <column type="gchararray"/>
+      <!-- column-name delete_icon -->
+      <column type="gchararray"/>
     </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">/TOTO/</col>
+        <col id="1">False</col>
+        <col id="2" translatable="yes">folder</col>
+        <col id="3" translatable="yes">edit-delete</col>
+      </row>
+    </data>
   </object>
   <object class="GtkListStore" id="liststore_series">
     <columns>
@@ -387,6 +397,7 @@ Author: Rafael Senties Martinelli
                       <object class="GtkTreeViewColumn" id="treeviewcolumn3">
                         <property name="sizing">autosize</property>
                         <property name="title" translatable="yes">Series</property>
+                        <property name="expand">True</property>
                         <property name="clickable">True</property>
                         <property name="sort-indicator">True</property>
                         <property name="sort-column-id">1</property>
@@ -986,6 +997,7 @@ Author: Rafael Senties Martinelli
                   <object class="GtkTreeViewColumn">
                     <property name="resizable">True</property>
                     <property name="title" translatable="yes">Path</property>
+                    <property name="expand">True</property>
                     <child>
                       <object class="GtkCellRendererText"/>
                       <attributes>
@@ -1002,7 +1014,6 @@ Author: Rafael Senties Martinelli
                     <child>
                       <object class="GtkCellRendererToggle"/>
                       <attributes>
-                        <attribute name="activatable">1</attribute>
                         <attribute name="active">1</attribute>
                       </attributes>
                     </child>
@@ -1010,10 +1021,22 @@ Author: Rafael Senties Martinelli
                 </child>
                 <child>
                   <object class="GtkTreeViewColumn">
+                    <property name="sizing">fixed</property>
                     <child>
                       <object class="GtkCellRendererPixbuf"/>
                       <attributes>
-                        <attribute name="pixbuf">1</attribute>
+                        <attribute name="icon-name">2</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn">
+                    <property name="sizing">fixed</property>
+                    <child>
+                      <object class="GtkCellRendererPixbuf"/>
+                      <attributes>
+                        <attribute name="icon-name">3</attribute>
                       </attributes>
                     </child>
                   </object>
