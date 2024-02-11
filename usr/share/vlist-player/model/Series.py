@@ -36,11 +36,11 @@ MAGIC_MIMETYPE.load()
 class Series(object):
 
     def __init__(self,
-                 path,
-                 data_path,
-                 recursive,
-                 is_random,
-                 keep_playing,
+                 path="",
+                 data_path="",
+                 recursive=False,
+                 is_random=False,
+                 keep_playing=True,
                  start_at=0.0,
                  audio_track=-2,
                  subtitles_track=-2):

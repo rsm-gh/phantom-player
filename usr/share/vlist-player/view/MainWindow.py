@@ -41,18 +41,20 @@ from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 
+
 def gtk_file_chooser(parent, mode='', start_path=''):
-    window_choose_file = Gtk.FileChooserDialog(Texts.GUI.title,
-                                               parent,
-                                               Gtk.FileChooserAction.OPEN,
-                                               (Gtk.STOCK_CANCEL,
-                                                Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN,
-                                                Gtk.ResponseType.OK))
+    dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
+                                   parent=parent,
+                                   action=Gtk.FileChooserAction.OPEN)
 
-    window_choose_file.set_default_response(Gtk.ResponseType.NONE)
-    window_choose_file.set_icon_from_file(ICON_LOGO_SMALL)
+    dialog.add_buttons(Gtk.STOCK_CANCEL,
+                       Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN,
+                       Gtk.ResponseType.OK)
 
-    window_choose_file.set_transient_for(parent)
+    dialog.set_default_response(Gtk.ResponseType.NONE)
+    dialog.set_icon_from_file(ICON_LOGO_SMALL)
+
+    dialog.set_transient_for(parent)
 
     if mode == 'picture':
         file_filter = Gtk.FileFilter()
@@ -60,19 +62,19 @@ def gtk_file_chooser(parent, mode='', start_path=''):
         file_filter.add_pattern('*.jpeg')
         file_filter.add_pattern('*.jpg')
         file_filter.add_pattern('*.png')
-        window_choose_file.add_filter(file_filter)
+        dialog.add_filter(file_filter)
 
     if start_path == '':
-        window_choose_file.set_current_folder(HOME_PATH)
+        dialog.set_current_folder(HOME_PATH)
     else:
-        window_choose_file.set_current_folder(start_path)
+        dialog.set_current_folder(start_path)
 
-    response = window_choose_file.run()
+    response = dialog.run()
     if response == Gtk.ResponseType.OK:
-        file_path = window_choose_file.get_filename()
+        file_path = dialog.get_filename()
     else:
         file_path = None
-    window_choose_file.destroy()
+    dialog.destroy()
 
     return file_path
 
@@ -81,6 +83,9 @@ class MainWindow:
 
     def __init__(self):
 
+        self.__selected_series = None
+        self.__new_series = None
+        self.__current_media = CurrentMedia()
         self.__is_full_screen = None
         self.__series_dict = {}
         self.__threads = []
@@ -131,8 +136,7 @@ class MainWindow:
             'spinbutton_audio',
             'button_series_delete',
             'button_series_restart',
-            'button_series_close',
-            'button_series_apply',
+            'button_series_add',
 
             'window_about',
         )
@@ -146,8 +150,6 @@ class MainWindow:
         """
             Media Player
         """
-        self.__current_media = CurrentMedia()
-        self.__selected_series = None
         self.__media_player = MediaPlayerWidget(self.window_root,
                                                 random_button=True,
                                                 keep_playing_button=True)
@@ -242,7 +244,6 @@ class MainWindow:
         selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
         self.__selected_series = self.__series_dict[selected_series_name]
 
-
         #
         # Process the events
         #
@@ -277,7 +278,6 @@ class MainWindow:
 
                     return
 
-
                 """
                     Check if the series is already selected and if a video is playing
                 """
@@ -296,7 +296,6 @@ class MainWindow:
                 self.__ccp.write('current_series', selected_series_name)
                 self.__current_media = CurrentMedia(self.__selected_series)
                 self.__set_video()
-
 
     def on_treeview_episodes_drag_end(self, *_):
 
@@ -371,12 +370,12 @@ class MainWindow:
                                            Texts.MenuItemEpisodes.o_played,
                                            Texts.MenuItemEpisodes.r_played), 4):
                     # mark to check
-                    menuitem = Gtk.ImageMenuItem(label="Mark "+label)
+                    menuitem = Gtk.ImageMenuItem(label="Mark " + label)
                     menu.append(menuitem)
                     menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, True)
 
                     # mark to uncheck
-                    menuitem = Gtk.ImageMenuItem(label="Un-mark "+label)
+                    menuitem = Gtk.ImageMenuItem(label="Un-mark " + label)
                     menu.append(menuitem)
                     menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, False)
 
@@ -419,7 +418,6 @@ class MainWindow:
             self.__selected_series = self.__series_dict[selected_series_name]
 
         self.__liststore_episodes_populate()
-
 
     def on_cellrenderertoggle_play_toggled(self, _, row):
         self.on_checkbox_episodes_toggled(int(row), 4)
@@ -533,7 +531,8 @@ class MainWindow:
 
         selected_series_name = self.__selected_series.get_name()
 
-        if gtk_dialog_question(self.window_series_settings, Texts.DialogSeries.confirm_delete.format(selected_series_name), None):
+        if gtk_dialog_question(self.window_series_settings,
+                               Texts.DialogSeries.confirm_delete.format(selected_series_name), None):
 
             self.window_series_settings.hide()
 
@@ -544,26 +543,53 @@ class MainWindow:
             if os.path.exists(SERIES_PATH.format(selected_series_name)):
                 os.remove(SERIES_PATH.format(selected_series_name))
 
-    def on_button_series_close_clicked(self, *_):
-        self.window_series_settings.hide()
+    def on_button_series_add_clicked(self, *_):
 
-    def on_button_series_apply_clicked(self, *_):
+        series_name = self.entry_series_name.get_text().strip()
 
-        new_name = self.entry_series_name.get_text().strip()
-
-        if new_name == "":
+        if series_name == "":
             gtk_info(self.window_series_settings, "The name can not be empty", None)
             return
 
-        if new_name in self.__series_dict.keys():
-            gtk_info(self.window_rename, Texts.DialogSeries.name_exist.format(new_name), None)
+        elif series_name in self.__series_dict.keys():
+            gtk_info(self.window_series_settings, Texts.DialogSeries.name_exist.format(series_name), None)
             return
 
-        if self.__selected_series.get_name() != new_name:
-            self.__series_dict.pop(self.__selected_series.get_name())
-            self.__selected_series.rename(new_name)
-            self.__series_dict[new_name] = self.__selected_series
-            gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
+        self.__new_series.rename(series_name)
+        self.__new_series.write_data()
+        self.__series_dict[series_name] = self.__new_series
+
+
+        if os.path.exists(self.__new_series.get_path()) or not self.checkbox_hide_missing_series.get_active():
+            GLib.idle_add(self.__liststore_series_append, (self.__new_series.get_image(), self.__new_series.get_name()))
+
+        self.__new_series = None
+        self.window_series_settings.hide()
+
+    def on_button_series_close(self, *_):
+
+        if self.__new_series is not None:
+            self.__new_series = None
+
+        else:
+            new_name = self.entry_series_name.get_text().strip()
+
+            if self.__selected_series.get_name() == new_name:
+                pass
+
+            elif new_name == "":
+                gtk_info(self.window_series_settings, "The name can not be empty", None)
+                return
+
+            elif new_name in self.__series_dict.keys():
+                gtk_info(self.window_series_settings, Texts.DialogSeries.name_exist.format(new_name), None)
+                return
+
+            else:
+                self.__series_dict.pop(self.__selected_series.get_name())
+                self.__selected_series.rename(new_name)
+                self.__series_dict[new_name] = self.__selected_series
+                gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
 
         self.window_series_settings.hide()
 
@@ -571,7 +597,8 @@ class MainWindow:
 
         selected_series_name = self.__selected_series.get_name()
 
-        if not gtk_dialog_question(self.window_series_settings, Texts.DialogSeries.confirm_reset.format(selected_series_name), None):
+        if not gtk_dialog_question(self.window_series_settings,
+                                   Texts.DialogSeries.confirm_reset.format(selected_series_name), None):
             return
 
         self.window_series_settings.hide()
@@ -597,7 +624,8 @@ class MainWindow:
         file = gtk_file_chooser(self.window_series_settings, 'picture')
         if file is not None:
             self.__selected_series.set_image(file)
-            gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0, self.__selected_series.get_image())
+            gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0,
+                                                       self.__selected_series.get_image())
 
     def __set_video(self, video_name=None, play=True, replay=False, ignore_none=False):
 
@@ -629,7 +657,6 @@ class MainWindow:
                                           self.__current_media.series.get_start_at(),
                                           play)
 
-
             self.__media_player.set_random(self.__current_media.series.get_random())
             self.__media_player.set_keep_playing(self.__current_media.series.get_keep_playing())
 
@@ -645,25 +672,21 @@ class MainWindow:
 
     def __display_settings_window(self, new_series=False):
         if new_series:
+            series = Series()
+            self.__new_series = series
             self.window_series_settings.set_title(Texts.WindowSettings.new_title)
-            self.button_series_close.show()
-            image_apply = Gtk.Image.new_from_icon_name("list-add", Gtk.IconSize.BUTTON)
-            self.button_series_apply.set_label("Add")
+            self.button_series_add.show()
 
         else:
-            selected_series_name = self.__selected_series.get_name()
-            self.entry_series_name.set_text(selected_series_name)
-            self.image_series.set_from_pixbuf(self.__selected_series.get_image())
-            self.window_series_settings.set_title(selected_series_name+" "+Texts.WindowSettings.edit_title)
-            self.button_series_close.hide()
-            self.button_series_apply.set_label("Close")
-            image_apply = Gtk.Image.new_from_icon_name("window-close", Gtk.IconSize.BUTTON)
+            series = self.__selected_series
+            self.__new_series = None
+            self.window_series_settings.set_title(series.get_name() + " " + Texts.WindowSettings.edit_title)
+            self.button_series_add.hide()
 
-        self.button_series_apply.set_image(image_apply)
-
+        self.entry_series_name.set_text(series.get_name())
+        self.image_series.set_from_pixbuf(series.get_image())
         self.button_series_delete.set_sensitive(not new_series)
         self.button_series_restart.set_sensitive(not new_series)
-
         self.window_series_settings.show()
 
     def __series_load_from_path(self,
@@ -782,7 +805,6 @@ class MainWindow:
                 self.liststore_episodes[i][column] = True
                 return
 
-
     def __liststore_episodes_populate(self):
 
         if self.__selected_series is None:
@@ -843,7 +865,6 @@ class MainWindow:
 
         return True
 
-
     def __on_thread_load_series(self):
         """
             Load the saved lists
@@ -869,17 +890,16 @@ class MainWindow:
             start_at = float(series_info[4])
             audio_track = int(series_info[5])
             subtitles_track = int(series_info[6])
-
-            if '/' in path:
-                self.__series_load_from_path(path,
-                                             file_path,
-                                             recursive,
-                                             random,
-                                             keep_playing,
-                                             start_at,
-                                             audio_track,
-                                             subtitles_track,
-                                             select=False)
+            
+            self.__series_load_from_path(path,
+                                         file_path,
+                                         recursive,
+                                         random,
+                                         keep_playing,
+                                         start_at,
+                                         audio_track,
+                                         subtitles_track,
+                                         select=False)
 
         """
             Select the last series that was played
@@ -892,7 +912,6 @@ class MainWindow:
             pass
         else:
             self.__current_media = CurrentMedia(series_data)
-
 
         series_found = False
         for i, row in enumerate(self.liststore_series):
@@ -937,16 +956,13 @@ class MainWindow:
                 cached_position = position
                 self.__current_media.series.set_video_position(cached_video, cached_position)
 
-
             if self.__media_player.get_random() != self.__current_media.series.get_random():
                 self.__current_media.series.set_random(self.__media_player.get_random())
                 self.__current_media.series.write_data()
 
-
             if self.__media_player.get_keep_playing() != self.__current_media.series.get_keep_playing():
                 self.__current_media.series.set_keep_playing(self.__media_player.get_keep_playing())
                 self.__current_media.series.write_data()
-
 
             # If the current video got to the end...
             if round(position, 3) >= 0.999:
@@ -980,11 +996,10 @@ class MainWindow:
 
             time.sleep(0.5)
 
-
     def __on_window_root_notify_event(self, *_):
         # Resize the VLC widget
         _, window_height = self.window_root.get_size()
-        self.__paned.set_position(window_height/2)
+        self.__paned.set_position(window_height / 2)
 
     def __on_window_root_configure_event(self, *_):
 
@@ -1052,6 +1067,7 @@ def run():
     Gtk.main()
     vlist_player.join()
     VLC_INSTANCE.release()
+
 
 if __name__ == '__main__':
     run()
