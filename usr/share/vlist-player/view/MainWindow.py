@@ -140,6 +140,9 @@ class MainWindow:
         for glade_id in glade_ids:
             setattr(self, glade_id, builder.get_object(glade_id))
 
+        self.window_root.set_sensitive(False)
+        self.window_root.get_root_window().set_cursor(Gdk.Cursor.new_from_name(self.window_root.get_display(), 'wait'))
+
         """
             Media Player
         """
@@ -644,17 +647,13 @@ class MainWindow:
         if new_series:
             self.window_series_settings.set_title(Texts.WindowSettings.new_title)
             self.button_series_close.show()
-
             image_apply = Gtk.Image.new_from_icon_name("list-add", Gtk.IconSize.BUTTON)
-
             self.button_series_apply.set_label("Add")
 
         else:
             selected_series_name = self.__selected_series.get_name()
             self.entry_series_name.set_text(selected_series_name)
-
-            series_data = self.__series_dict[selected_series_name]
-            self.image_series.set_from_pixbuf(series_data.get_image())
+            self.image_series.set_from_pixbuf(self.__selected_series.get_image())
             self.window_series_settings.set_title(selected_series_name+" "+Texts.WindowSettings.edit_title)
             self.button_series_close.hide()
             self.button_series_apply.set_label("Close")
@@ -894,12 +893,23 @@ class MainWindow:
         else:
             self.__current_media = CurrentMedia(series_data)
 
+
+        series_found = False
         for i, row in enumerate(self.liststore_series):
             if row[1] == current_series_name:
                 GLib.idle_add(self.treeview_series.set_cursor, i)
-                return
+                series_found = True
 
-        GLib.idle_add(self.treeview_series.set_cursor, 0)
+        if not series_found:
+            GLib.idle_add(self.treeview_series.set_cursor, 0)
+            GLib.idle_add(self.window_root.set_sensitive, True)
+
+        #
+        # Enable the GUI
+        #
+        default_cursor = Gdk.Cursor.new_from_name(self.window_root.get_display(), 'default')
+        GLib.idle_add(self.window_root.get_root_window().set_cursor, default_cursor)
+        GLib.idle_add(self.window_root.set_sensitive, True)
 
     def __on_thread_scan_media_player(self):
 
