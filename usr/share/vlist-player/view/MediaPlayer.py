@@ -140,7 +140,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__video_length = "00:00"
 
         display = self.get_display()
-        self.__empty_cursor = Gdk.Cursor.new_for_display(display, Gdk.CursorType.BLANK_CURSOR)
+        self.__empty_cursor = Gdk.Cursor.new_from_name(display, 'none')
         self.__default_cursor = Gdk.Cursor.new_from_name(display, 'default')
 
         self.__vlc_widget = VLCWidget()
