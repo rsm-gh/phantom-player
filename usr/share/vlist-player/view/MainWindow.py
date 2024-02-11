@@ -83,6 +83,7 @@ class MainWindow:
 
     def __init__(self):
 
+        self.__populating_settings = False
         self.__selected_series = None
         self.__new_series = None
         self.__current_media = CurrentMedia()
@@ -137,6 +138,7 @@ class MainWindow:
             'button_series_delete',
             'button_series_restart',
             'button_series_add',
+            'liststore_paths',
 
             'window_about',
         )
@@ -144,7 +146,8 @@ class MainWindow:
         for glade_id in glade_ids:
             setattr(self, glade_id, builder.get_object(glade_id))
 
-        self.window_root.set_sensitive(False)
+        self.menubar.set_sensitive(False)
+        self.treeview_series.set_sensitive(False)
         self.window_root.get_root_window().set_cursor(Gdk.Cursor.new_from_name(self.window_root.get_display(), 'wait'))
 
         """
@@ -429,14 +432,25 @@ class MainWindow:
         self.on_checkbox_episodes_toggled(int(row), 6)
 
     def on_spinbutton_audio_value_changed(self, spinbutton):
+
+        if self.__populating_settings:
+            return
+
         value = spinbutton.get_value_as_int()
         self.__selected_series.set_audio_track(value)
 
     def on_spinbutton_subtitles_value_changed(self, spinbutton):
+
+        if self.__populating_settings:
+            return
+
         value = spinbutton.get_value_as_int()
         self.__selected_series.set_subtitles_track(value)
 
     def on_spinbutton_start_at_value_changed(self, spinbutton):
+
+        if self.__populating_settings:
+            return
 
         value = float(spinbutton.get_value())
 
@@ -671,6 +685,9 @@ class MainWindow:
             self.__current_media.series.write_data()
 
     def __display_settings_window(self, new_series=False):
+
+        self.liststore_paths.clear()
+
         if new_series:
             series = Series()
             self.__new_series = series
@@ -682,15 +699,25 @@ class MainWindow:
             self.__new_series = None
             self.window_series_settings.set_title(series.get_name() + " " + Texts.WindowSettings.edit_title)
             self.button_series_add.hide()
+            self.liststore_paths.append([series.get_path(), series.get_recursive(), 'folder', 'edit-delete'])
+
+        self.liststore_paths.append(["", False, 'folder', 'edit-delete'])
 
         self.entry_series_name.set_text(series.get_name())
         self.image_series.set_from_pixbuf(series.get_image())
         self.button_series_delete.set_sensitive(not new_series)
         self.button_series_restart.set_sensitive(not new_series)
+
+        self.__populating_settings = True
+        self.spinbutton_audio.set_value(series.get_audio_track())
+        self.spinbutton_subtitles.set_value(series.get_subtitles_track())
+        self.spinbutton_start_at.set_value(series.get_start_at())
+        self.__populating_settings = False
+
         self.window_series_settings.show()
 
     def __series_load_from_path(self,
-                                path,
+                                name,
                                 data_path,
                                 recursive,
                                 random,
@@ -700,7 +727,7 @@ class MainWindow:
                                 subtitles_track=-2,
                                 select=True):
 
-        new_series = Series(path,
+        new_series = Series(name,
                             data_path,
                             recursive,
                             random,
@@ -715,6 +742,9 @@ class MainWindow:
             GLib.idle_add(self.__liststore_series_append, (new_series.get_image(), new_series.get_name()))
 
         if select:  # select the row once the series has been added
+
+            new_series.load_videos()
+
             for i, row in enumerate(self.liststore_series):
                 if row[1] == new_series.get_name():
                     GLib.idle_add(self.treeview_series.set_cursor, i)
@@ -866,9 +896,10 @@ class MainWindow:
         return True
 
     def __on_thread_load_series(self):
-        """
-            Load the saved lists
-        """
+
+        #
+        # Load the files header
+        #
         for file_name in sorted(os.listdir(FOLDER_LIST_PATH)):
 
             if not file_name.lower().endswith('.csv'):
@@ -877,22 +908,24 @@ class MainWindow:
             file_path = os.path.join(FOLDER_LIST_PATH, file_name)
 
             with open(file_path, mode='rt', encoding='utf-8') as f:
-                series_info = f.readline().split('|')
+                series_header = f.readline().split('|')
+                series_path = f.readline().split('|')
 
-            if len(series_info) < 7:
+            if len(series_header) != 5 or len(series_path) != 2:
                 print("Error, Wrong format for series file = ", file_path)  # todo: show user message
                 continue
 
-            path = series_info[0]
-            recursive = series_info[1]
-            random = series_info[2]
-            keep_playing = series_info[3]
-            start_at = float(series_info[4])
-            audio_track = int(series_info[5])
-            subtitles_track = int(series_info[6])
-            
-            self.__series_load_from_path(path,
-                                         file_path,
+            data_path = series_path[0]
+            recursive = series_path[1]
+
+            random = series_header[0]
+            keep_playing = series_header[1]
+            start_at = float(series_header[2])
+            audio_track = int(series_header[3])
+            subtitles_track = int(series_header[4])
+
+            self.__series_load_from_path(file_name,
+                                         data_path,
                                          recursive,
                                          random,
                                          keep_playing,
@@ -901,16 +934,20 @@ class MainWindow:
                                          subtitles_track,
                                          select=False)
 
-        """
-            Select the last series that was played
-        """
+
+
+
+        #
+        #   Select & Load the last series that was played
+        #
         current_series_name = self.__ccp.get_str('current_series')
 
         try:
             series_data = self.__series_dict[current_series_name]
         except KeyError:
-            pass
+            series_data = None
         else:
+            series_data.load_videos()
             self.__current_media = CurrentMedia(series_data)
 
         series_found = False
@@ -919,16 +956,28 @@ class MainWindow:
                 GLib.idle_add(self.treeview_series.set_cursor, i)
                 series_found = True
 
+        #
+        #   Load the rest of the videos
+        #
+        for series in self.__series_dict.values():
+            if series != series_data:
+                series.load_videos()
+
+
+        #
+        #   Select a default series if none
+        #
         if not series_found:
             GLib.idle_add(self.treeview_series.set_cursor, 0)
             GLib.idle_add(self.window_root.set_sensitive, True)
 
         #
-        # Enable the GUI
+        #   Enable the GUI
         #
         default_cursor = Gdk.Cursor.new_from_name(self.window_root.get_display(), 'default')
         GLib.idle_add(self.window_root.get_root_window().set_cursor, default_cursor)
-        GLib.idle_add(self.window_root.set_sensitive, True)
+        GLib.idle_add(self.treeview_series.set_sensitive, True)
+        GLib.idle_add(self.menubar.set_sensitive, True)
 
     def __on_thread_scan_media_player(self):
 

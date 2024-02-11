@@ -36,7 +36,7 @@ MAGIC_MIMETYPE.load()
 class Series(object):
 
     def __init__(self,
-                 path="",
+                 name="",
                  data_path="",
                  recursive=False,
                  is_random=False,
@@ -45,8 +45,10 @@ class Series(object):
                  audio_track=-2,
                  subtitles_track=-2):
 
-        self.__path = path
-        self.__name = os.path.basename(path)
+        self.__name = ""
+        self.set_name(name)
+
+        self.__path = data_path
         self.__recursive = False
         self.__random = False
         self.__keep_playing = False
@@ -68,11 +70,8 @@ class Series(object):
         self.__series_pixbuf = None
         self.__load_image()
 
-        # change the name of the series in case it has been renamed.
-        if data_path and os.path.exists(data_path):
-            file_name = os.path.basename(data_path)
-            if file_name[:-4] != self.__name:
-                self.__name = file_name[:-4]
+
+    def load_videos(self):
 
         if os.path.exists(SERIES_PATH.format(self.__name)):
 
@@ -168,23 +167,29 @@ class Series(object):
 
         self.clean_episodes()
         self.update_ids()  # this is in case there were videos with duplicated ids
-        self.write_data()
+
 
     def write_data(self):
 
         if not os.path.exists(FOLDER_LIST_PATH):
             os.mkdir(FOLDER_LIST_PATH)
 
-        with open(SERIES_PATH.format(self.__name), mode='wt', encoding='utf-8') as f:
+
+        file_path = SERIES_PATH.format(self.__name)
+        if not file_path.lower().endswith(".csv"):
+            file_path += ".csv"
+
+
+        with open(file_path, mode='wt', encoding='utf-8') as f:
             csv_list = csv.writer(f, delimiter='|')
 
-            csv_list.writerow([self.__path,
-                               self.__recursive,
-                               self.__random,
+            csv_list.writerow([self.__random,
                                self.__keep_playing,
                                self.__start_at,
                                self.__audio_track,
                                self.__subtitles_track])
+
+            csv_list.writerow([self.__path, self.__recursive])
 
             for video in self.__videos_instances:
                 csv_list.writerow([video.get_id(),
@@ -527,6 +532,9 @@ class Series(object):
     def get_random(self):
         return self.__random
 
+    def get_recursive(self):
+        return self.__recursive
+
     def get_path_from_video_name(self, name):
         for video in self.__videos_instances:
             if video and video.get_name() == name:
@@ -624,6 +632,9 @@ class Series(object):
                 return
 
     def set_name(self, new_name):
+        if new_name.lower().endswith(".csv"):
+            new_name = new_name.rsplit(".",1)[0]
+
         self.__name = new_name
 
     def set_image(self, path):
