@@ -77,7 +77,7 @@ def gtk_file_chooser(parent, mode='', start_path=''):
     return file_path
 
 
-class VListPlayer:
+class MainWindow:
 
     def __init__(self):
 
@@ -91,7 +91,7 @@ class VListPlayer:
             load items from glade
         """
         builder = Gtk.Builder()
-        builder.add_from_file(os.path.join(_SCRIPT_DIR, "vlist-player.glade"))
+        builder.add_from_file(os.path.join(_SCRIPT_DIR, "main-window.glade"))
         builder.connect_signals(self)
 
         glade_ids = (
@@ -1100,7 +1100,7 @@ class VListPlayer:
 
 
 def run():
-    vlist_player = VListPlayer()
+    vlist_player = MainWindow()
     Gtk.main()
     vlist_player.join()
     VLC_INSTANCE.release()
