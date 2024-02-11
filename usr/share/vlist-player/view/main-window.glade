@@ -120,18 +120,6 @@ Author: Rafael Senties Martinelli
       <!-- column-name GdkPixbuf1 -->
       <column type="GdkPixbuf"/>
     </columns>
-    <data>
-      <row>
-        <col id="0" translatable="yes">/path/1</col>
-        <col id="1">True</col>
-        <col id="2"/>
-      </row>
-      <row>
-        <col id="0" translatable="yes">/path/2</col>
-        <col id="1">False</col>
-        <col id="2"/>
-      </row>
-    </data>
   </object>
   <object class="GtkListStore" id="liststore_series">
     <columns>
