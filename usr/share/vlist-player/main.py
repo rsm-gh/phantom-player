@@ -22,5 +22,5 @@ import sys
 _PROJECT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, _PROJECT_DIR)
 
-from view.VListPlayer import run
+from view.MainWindow import run
 run()
