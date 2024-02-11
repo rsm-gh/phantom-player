@@ -202,7 +202,6 @@ class MainWindow:
 
         self.window_root.maximize()
         self.window_root.show_all()
-        #GLib.timeout_add_seconds(.3, self.__resize_vlc_widget)
         self.__media_player.hide_controls()
 
         """
@@ -646,6 +645,10 @@ class MainWindow:
             self.window_series_settings.set_title(Texts.WindowSettings.new_title)
             self.button_series_close.show()
 
+            image_apply = Gtk.Image.new_from_icon_name("list-add", Gtk.IconSize.BUTTON)
+
+            self.button_series_apply.set_label("Add")
+
         else:
             selected_series_name = self.__selected_series.get_name()
             self.entry_series_name.set_text(selected_series_name)
@@ -654,6 +657,10 @@ class MainWindow:
             self.image_series.set_from_pixbuf(series_data.get_image())
             self.window_series_settings.set_title(selected_series_name+" "+Texts.WindowSettings.edit_title)
             self.button_series_close.hide()
+            self.button_series_apply.set_label("Close")
+            image_apply = Gtk.Image.new_from_icon_name("window-close", Gtk.IconSize.BUTTON)
+
+        self.button_series_apply.set_image(image_apply)
 
         self.button_series_delete.set_sensitive(not new_series)
         self.button_series_restart.set_sensitive(not new_series)
