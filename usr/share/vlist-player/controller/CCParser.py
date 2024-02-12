@@ -88,6 +88,43 @@ CCParser instance:
 
         return False
 
+    def write(self, value_name, value):
+        """
+            Write the value name and its value.
+
+            If the config file does not exist,
+            or the directories to the path, they
+            will be created.
+        """
+
+        if self.__ini_path != '' and isinstance(self.__ini_path, str):
+
+            if not os.path.exists(os.path.dirname(self.__ini_path)):
+                os.makedirs(os.path.dirname(self.__ini_path))
+
+            if not os.path.exists(self.__ini_path):
+                open(self.__ini_path, 'w').close()
+
+            try:
+                self.__config.read(self.__ini_path)
+            except Exception:
+                print("CCParser Warning: reading damaged file or file without section")
+                print(traceback.format_exc())
+                print()
+                return False
+
+            if not self.__config.has_section(self.__section):
+                self.__config.add_section(self.__section)
+
+            self.__config.set(self.__section, value_name, str(value))
+
+            with open(self.__ini_path, 'w') as f:
+                self.__config.write(f)
+        else:
+            print("CCParser Error: Trying to write the configuration without an ini path.")
+            print("Configuration Path: " + str(self.get_configuration_path()))
+            print()
+
     def get_bool(self, value):
         """
             If the value exists, return the boolean
@@ -226,6 +263,25 @@ CCParser instance:
 
         return default
 
+
+    def get_default_bool(self):
+        return self.__default_bool
+
+    def get_default_float(self):
+        return self.__default_float
+
+    def get_default_str(self):
+        return self.__default_string
+
+    def get_default_int(self):
+        return self.__default_int
+
+    def get_section(self):
+        return self.__section
+
+    def get_configuration_path(self):
+        return self.__ini_path
+
     def set_configuration_path(self, ini_path):
         """
             Set the path to the configuration file.
@@ -273,58 +329,3 @@ CCParser instance:
             By default, it returns 0
         """
         self.__default_int = int_value
-
-    def write(self, value_name, value):
-        """
-            Write the value name and its value.
-            
-            If the config file does not exist,
-            or the directories to the path, they
-            will be created.
-        """
-
-        if self.__ini_path != '' and isinstance(self.__ini_path, str):
-
-            if not os.path.exists(os.path.dirname(self.__ini_path)):
-                os.makedirs(os.path.dirname(self.__ini_path))
-
-            if not os.path.exists(self.__ini_path):
-                open(self.__ini_path, 'w').close()
-
-            try:
-                self.__config.read(self.__ini_path)
-            except Exception:
-                print("CCParser Warning: reading damaged file or file without section")
-                print(traceback.format_exc())
-                print()
-                return False
-
-            if not self.__config.has_section(self.__section):
-                self.__config.add_section(self.__section)
-
-            self.__config.set(self.__section, value_name, str(value))
-
-            with open(self.__ini_path, 'w') as f:
-                self.__config.write(f)
-        else:
-            print("CCParser Error: Trying to write the configuration without an ini path.")
-            print("Configuration Path: " + str(self.get_configuration_path()))
-            print()
-
-    def get_default_bool(self):
-        return self.__default_bool
-
-    def get_default_float(self):
-        return self.__default_float
-
-    def get_default_str(self):
-        return self.__default_string
-
-    def get_default_int(self):
-        return self.__default_int
-
-    def get_section(self):
-        return self.__section
-
-    def get_configuration_path(self):
-        return self.__ini_path
