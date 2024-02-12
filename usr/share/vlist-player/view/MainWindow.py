@@ -139,6 +139,10 @@ class MainWindow:
             'button_series_restart',
             'button_series_add',
             'liststore_paths',
+            'button_series_path_add',
+            'button_series_path_remove',
+            'button_series_path_edit',
+            'button_series_path_reload_all',
 
             'window_about',
         )
@@ -641,6 +645,52 @@ class MainWindow:
             gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0,
                                                        self.__selected_series.get_image())
 
+    def on_button_series_path_add_clicked(self, *_):
+
+        path = gtk_folder_chooser(self.window_root)
+        if not path:
+            return
+
+        series = self.__get_setting_series()
+        series.set_path(path)
+        series.write_data()
+
+        self.liststore_paths.clear()
+        self.liststore_paths.append([path, False])
+
+        series.load_videos()
+
+        self.button_series_path_add.set_sensitive(False)
+        self.button_series_path_edit.set_sensitive(True)
+        self.button_series_path_reload_all.set_sensitive(True)
+
+    def on_button_series_path_remove_clicked(self, *_):
+        pass
+
+    def on_button_series_path_edit_clicked(self, *_):
+
+        path = gtk_folder_chooser(self.window_root)
+        if not path:
+            return
+
+        self.liststore_paths.clear()
+        self.liststore_paths.append([path, False])
+
+        series = self.__get_setting_series()
+        series.set_path(path)
+        series.write_data()
+        series.load_videos()
+
+        if self.__new_series is None:
+            self.__liststore_episodes_populate()
+
+    def on_button_series_path_reload_all_clicked(self, *_):
+        series = self.__get_setting_series()
+        series.load_videos()
+
+        if self.__new_series is None:
+            self.__liststore_episodes_populate()
+
     def __set_video(self, video_name=None, play=True, replay=False, ignore_none=False):
 
         if self.__current_media.series is None:
@@ -674,6 +724,12 @@ class MainWindow:
             self.__media_player.set_random(self.__current_media.series.get_random())
             self.__media_player.set_keep_playing(self.__current_media.series.get_keep_playing())
 
+    def __get_setting_series(self):
+        if self.__new_series is not None:
+            return self.__new_series
+
+        return self.__selected_series
+
     def __save_current_video_position(self):
         if self.__current_media.series is not None:
             episode = self.__current_media.current_episode()
@@ -699,9 +755,13 @@ class MainWindow:
             self.__new_series = None
             self.window_series_settings.set_title(series.get_name() + " " + Texts.WindowSettings.edit_title)
             self.button_series_add.hide()
-            self.liststore_paths.append([series.get_path(), series.get_recursive(), 'folder', 'edit-delete'])
+            self.liststore_paths.append([series.get_path(), series.get_recursive()])
 
-        self.liststore_paths.append(["", False, 'folder', 'edit-delete'])
+
+        self.button_series_path_add.set_sensitive(new_series)
+        self.button_series_path_remove.set_sensitive(False)
+        self.button_series_path_edit.set_sensitive(not new_series)
+        self.button_series_path_reload_all.set_sensitive(not new_series)
 
         self.entry_series_name.set_text(series.get_name())
         self.image_series.set_from_pixbuf(series.get_image())
@@ -749,27 +809,6 @@ class MainWindow:
                 if row[1] == new_series.get_name():
                     GLib.idle_add(self.treeview_series.set_cursor, i)
                     break
-
-    def __series_add_from_fchooser(self, recursive):
-
-        path = gtk_folder_chooser(self.window_root)
-        if not path:
-            return
-
-        series_name = os.path.basename(path)
-
-        for series in self.__series_dict.values():
-            if series.get_path() == path:
-                gtk_info(self.window_root, Texts.DialogSeries.already_exist, None)
-                return
-
-            elif series.get_name() == series_name:
-                gtk_info(self.window_root, Texts.DialogSeries.name_exist.format(series_name), None)
-                return
-
-        th = Thread(target=self.__series_load_from_path, args=[path, None, recursive, False, True])
-        th.start()
-        self.__threads.append(th)
 
     """
     def __series_find_videos(self, _, video_names):

@@ -644,6 +644,10 @@ class Series(object):
                                                                 self.__series_img_size)
             shutil.copy2(path, os.path.join(self.__path, ".folder"))
 
+
+    def set_path(self, path):
+        self.__path = path
+
     def __load_image(self):
         """
             Set the default image

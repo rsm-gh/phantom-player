@@ -72,7 +72,7 @@ Author: Rafael Senties Martinelli
   <object class="GtkImage" id="image1">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
-    <property name="icon-name">list-add</property>
+    <property name="icon-name">document-save</property>
   </object>
   <object class="GtkImage" id="image2">
     <property name="visible">True</property>
@@ -83,6 +83,26 @@ Author: Rafael Senties Martinelli
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <property name="icon-name">user-trash</property>
+  </object>
+  <object class="GtkImage" id="image_path_add">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">list-add</property>
+  </object>
+  <object class="GtkImage" id="image_path_edit">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">edit-find-replace</property>
+  </object>
+  <object class="GtkImage" id="image_path_reload">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">edit-find</property>
+  </object>
+  <object class="GtkImage" id="image_path_remove">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">list-remove</property>
   </object>
   <object class="GtkImage" id="image_restart">
     <property name="visible">True</property>
@@ -117,17 +137,11 @@ Author: Rafael Senties Martinelli
       <column type="gchararray"/>
       <!-- column-name Recursive -->
       <column type="gboolean"/>
-      <!-- column-name dir_icon -->
-      <column type="gchararray"/>
-      <!-- column-name delete_icon -->
-      <column type="gchararray"/>
     </columns>
     <data>
       <row>
         <col id="0" translatable="yes">/TOTO/</col>
         <col id="1">False</col>
-        <col id="2" translatable="yes">folder</col>
-        <col id="3" translatable="yes">edit-delete</col>
       </row>
     </data>
   </object>
@@ -979,75 +993,143 @@ Author: Rafael Senties Martinelli
           </packing>
         </child>
         <child>
-          <object class="GtkScrolledWindow">
+          <object class="GtkBox">
             <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="shadow-type">in</property>
-            <property name="min-content-height">200</property>
+            <property name="can-focus">False</property>
             <child>
-              <object class="GtkTreeView">
+              <object class="GtkScrolledWindow">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
-                <property name="model">liststore_paths</property>
-                <property name="search-column">1</property>
-                <child internal-child="selection">
-                  <object class="GtkTreeSelection"/>
-                </child>
+                <property name="shadow-type">in</property>
+                <property name="min-content-height">200</property>
                 <child>
-                  <object class="GtkTreeViewColumn">
-                    <property name="resizable">True</property>
-                    <property name="title" translatable="yes">Path</property>
-                    <property name="expand">True</property>
+                  <object class="GtkTreeView">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="model">liststore_paths</property>
+                    <property name="search-column">1</property>
                     <child>
-                      <object class="GtkCellRendererText"/>
-                      <attributes>
-                        <attribute name="text">0</attribute>
-                      </attributes>
+                      <object class="GtkTreeViewColumn">
+                        <property name="resizable">True</property>
+                        <property name="title" translatable="yes">Path</property>
+                        <property name="expand">True</property>
+                        <child>
+                          <object class="GtkCellRendererText"/>
+                          <attributes>
+                            <attribute name="text">0</attribute>
+                          </attributes>
+                        </child>
+                      </object>
                     </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkTreeViewColumn">
-                    <property name="sizing">fixed</property>
-                    <property name="title" translatable="yes">Recursive</property>
-                    <property name="clickable">True</property>
                     <child>
-                      <object class="GtkCellRendererToggle"/>
-                      <attributes>
-                        <attribute name="active">1</attribute>
-                      </attributes>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkTreeViewColumn">
-                    <property name="sizing">fixed</property>
-                    <child>
-                      <object class="GtkCellRendererPixbuf"/>
-                      <attributes>
-                        <attribute name="icon-name">2</attribute>
-                      </attributes>
-                    </child>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkTreeViewColumn">
-                    <property name="sizing">fixed</property>
-                    <child>
-                      <object class="GtkCellRendererPixbuf"/>
-                      <attributes>
-                        <attribute name="icon-name">3</attribute>
-                      </attributes>
+                      <object class="GtkTreeViewColumn">
+                        <property name="sizing">fixed</property>
+                        <property name="title" translatable="yes">Recursive</property>
+                        <property name="clickable">True</property>
+                        <child>
+                          <object class="GtkCellRendererToggle"/>
+                          <attributes>
+                            <attribute name="active">1</attribute>
+                          </attributes>
+                        </child>
+                      </object>
                     </child>
                   </object>
                 </child>
               </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-start">10</property>
+                <property name="margin-end">10</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <placeholder/>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button_series_path_add">
+                    <property name="label" translatable="yes">Add</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="margin-top">30</property>
+                    <property name="image">image_path_add</property>
+                    <property name="always-show-image">True</property>
+                    <signal name="clicked" handler="on_button_series_path_add_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button_series_path_remove">
+                    <property name="label" translatable="yes">Remove</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="image">image_path_remove</property>
+                    <property name="always-show-image">True</property>
+                    <signal name="clicked" handler="on_button_series_path_remove_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button_series_path_edit">
+                    <property name="label" translatable="yes">Edit</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="image">image_path_edit</property>
+                    <property name="always-show-image">True</property>
+                    <signal name="clicked" handler="on_button_series_path_edit_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button_series_path_reload_all">
+                    <property name="label" translatable="yes">Reload All</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="image">image_path_reload</property>
+                    <property name="always-show-image">True</property>
+                    <signal name="clicked" handler="on_button_series_path_reload_all_clicked" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">4</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
             </child>
           </object>
           <packing>
-            <property name="expand">False</property>
+            <property name="expand">True</property>
             <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="position">3</property>
           </packing>
         </child>
       </object>
