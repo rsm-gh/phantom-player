@@ -34,50 +34,12 @@ sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
 from Texts import Texts
-from view.gtk_utils import *
+from view import gtk_utils
 from model.Series import Series
 from controller.CCParser import CCParser
 from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
-
-
-def gtk_file_chooser(parent, mode='', start_path=''):
-    dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
-                                   parent=parent,
-                                   action=Gtk.FileChooserAction.OPEN)
-
-    dialog.add_buttons(Gtk.STOCK_CANCEL,
-                       Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN,
-                       Gtk.ResponseType.OK)
-
-    dialog.set_default_response(Gtk.ResponseType.NONE)
-    dialog.set_icon_from_file(ICON_LOGO_SMALL)
-
-    dialog.set_transient_for(parent)
-
-    if mode == 'picture':
-        file_filter = Gtk.FileFilter()
-        file_filter.set_name('Picture')
-        file_filter.add_pattern('*.jpeg')
-        file_filter.add_pattern('*.jpg')
-        file_filter.add_pattern('*.png')
-        dialog.add_filter(file_filter)
-
-    if start_path == '':
-        dialog.set_current_folder(HOME_PATH)
-    else:
-        dialog.set_current_folder(start_path)
-
-    response = dialog.run()
-    if response == Gtk.ResponseType.OK:
-        file_path = dialog.get_filename()
-    else:
-        file_path = None
-    dialog.destroy()
-
-    return file_path
-
 
 class MainWindow:
 
@@ -176,7 +138,7 @@ class MainWindow:
 
         # font colors
         color = Gdk.RGBA()
-        color.parse(gtk_default_font_color())
+        color.parse(gtk_utils.gtk_default_font_color())
         color.to_string()
         self.__default_font_color = color
 
@@ -248,7 +210,7 @@ class MainWindow:
             self.__selected_series = None
             return
 
-        selected_series_name = gtk_get_first_selected_cell_from_selection(self.treeview_selection_series, 1)
+        selected_series_name = gtk_utils.gtk_selection_get_first_selected_cell(self.treeview_selection_series, 1)
         self.__selected_series = self.__series_dict[selected_series_name]
 
         #
@@ -281,7 +243,7 @@ class MainWindow:
                 # check if the liststore is empty
                 if len(self.liststore_episodes) <= 0:
                     if not self.checkbox_hide_warning_missing_series.get_active():
-                        gtk_info(self.window_root, Texts.DialogSeries.is_missing, None)
+                        gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogSeries.is_missing)
 
                     return
 
@@ -336,7 +298,7 @@ class MainWindow:
 
             self.__save_current_video_position()
 
-            episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
+            episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes, treepaths[0], 1, 2)
 
             self.__current_media = CurrentMedia(self.__selected_series)
             self.__set_video(episode_name)
@@ -364,7 +326,10 @@ class MainWindow:
             """
             if selection_length == 1:
 
-                selected_episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepaths[0], 1, 2)
+                selected_episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
+                                                                                     treepaths[0],
+                                                                                     1,
+                                                                                     2)
 
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.open_dir)
                 menu.append(menuitem)
@@ -389,7 +354,7 @@ class MainWindow:
             """
                 Menu "Fin videos"
             """
-            list_of_names = [gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepath, 1, 2) for treepath in
+            list_of_names = [gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes, treepath, 1, 2) for treepath in
                              treepaths]
 
             if self.__selected_series.missing_videos(list_of_names):
@@ -418,7 +383,7 @@ class MainWindow:
             self.__selected_series = None
             return
 
-        selected_series_name = gtk_get_first_selected_cell_from_selection(treeselection, 1)
+        selected_series_name = gtk_utils.gtk_selection_get_first_selected_cell(treeselection, 1)
 
         # This is because "press event" is executed before, so it is not necessary to re-define this
         if self.__selected_series is None or selected_series_name != self.__selected_series.get_name():
@@ -537,7 +502,7 @@ class MainWindow:
 
         episode_names = []
         for treepath in treepaths:
-            episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepath, 1, 2)
+            episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes, treepath, 1, 2)
             self.liststore_episodes[treepath][column] = state
             episode_names.append(episode_name)
 
@@ -549,14 +514,14 @@ class MainWindow:
 
         selected_series_name = self.__selected_series.get_name()
 
-        if gtk_dialog_question(self.window_series_settings,
-                               Texts.DialogSeries.confirm_delete.format(selected_series_name), None):
+        if gtk_utils.gtk_dialog_question(self.window_series_settings,
+                               Texts.DialogSeries.confirm_delete.format(selected_series_name)):
 
             self.window_series_settings.hide()
 
             self.__series_dict.pop(self.__selected_series.get_name())
 
-            gtk_remove_first_selected_row_from_liststore(self.treeview_selection_series)
+            gtk_utils.gtk_liststore_remove_first_selected_row(self.treeview_selection_series)
 
             if os.path.exists(SERIES_PATH.format(selected_series_name)):
                 os.remove(SERIES_PATH.format(selected_series_name))
@@ -566,11 +531,12 @@ class MainWindow:
         series_name = self.entry_series_name.get_text().strip()
 
         if series_name == "":
-            gtk_info(self.window_series_settings, "The name can not be empty", None)
+            gtk_utils.gtk_dialog_info(self.window_series_settings, Texts.WindowSettings.series_name_empty)
             return
 
         elif series_name in self.__series_dict.keys():
-            gtk_info(self.window_series_settings, Texts.DialogSeries.name_exist.format(series_name), None)
+            gtk_utils.gtk_dialog_info(self.window_series_settings,
+                     Texts.DialogSeries.name_exist.format(series_name))
             return
 
         self.__new_series.rename(series_name)
@@ -596,18 +562,18 @@ class MainWindow:
                 pass
 
             elif new_name == "":
-                gtk_info(self.window_series_settings, "The name can not be empty", None)
+                gtk_utils.gtk_dialog_info(self.window_series_settings, Texts.WindowSettings.series_name_empty)
                 return
 
             elif new_name in self.__series_dict.keys():
-                gtk_info(self.window_series_settings, Texts.DialogSeries.name_exist.format(new_name), None)
+                gtk_utils.gtk_dialog_info(self.window_series_settings, Texts.DialogSeries.name_exist.format(new_name))
                 return
 
             else:
                 self.__series_dict.pop(self.__selected_series.get_name())
                 self.__selected_series.rename(new_name)
                 self.__series_dict[new_name] = self.__selected_series
-                gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 1, new_name)
+                gtk_utils.gtk_selection_set_first_selected_cell(self.treeview_selection_series, 1, new_name)
 
         self.window_series_settings.hide()
 
@@ -615,8 +581,8 @@ class MainWindow:
 
         selected_series_name = self.__selected_series.get_name()
 
-        if not gtk_dialog_question(self.window_series_settings,
-                                   Texts.DialogSeries.confirm_reset.format(selected_series_name), None):
+        if not gtk_utils.gtk_dialog_question(self.window_series_settings,
+                                   Texts.DialogSeries.confirm_reset.format(selected_series_name)):
             return
 
         self.window_series_settings.hide()
@@ -639,16 +605,23 @@ class MainWindow:
         """
             Add a picture to a series
         """
-        file = gtk_file_chooser(self.window_series_settings, 'picture')
+        file_filter = Gtk.FileFilter()
+        file_filter.set_name('Picture')
+        file_filter.add_pattern('*.jpeg')
+        file_filter.add_pattern('*.jpg')
+        file_filter.add_pattern('*.png')
+
+        file = gtk_utils.gtk_dialog_folder(self.window_series_settings, file_filter)
         if file is not None:
             self.__selected_series.set_image(file)
-            gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0,
+            gtk_utils.gtk_selection_set_first_selected_cell(self.treeview_selection_series,
+                                                       0,
                                                        self.__selected_series.get_image())
 
     def on_button_series_path_add_clicked(self, *_):
 
-        path = gtk_folder_chooser(self.window_root)
-        if not path:
+        path = gtk_utils.gtk_dialog_file(self.window_root)
+        if path is None:
             return
 
         series = self.__get_setting_series()
@@ -669,8 +642,8 @@ class MainWindow:
 
     def on_button_series_path_edit_clicked(self, *_):
 
-        path = gtk_folder_chooser(self.window_root)
-        if not path:
+        path = gtk_utils.gtk_dialog_file(self.window_root)
+        if path is None:
             return
 
         self.liststore_paths.clear()
@@ -703,10 +676,10 @@ class MainWindow:
 
         if video is None:
             if not ignore_none:
-                gtk_info(self.window_root, Texts.DialogSeries.all_episodes_played)
+                gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogSeries.all_episodes_played)
 
         elif not os.path.exists(video.get_path()):
-            gtk_info(self.window_root, Texts.DialogEpisodes.missing)
+            gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogEpisodes.missing)
 
         else:
 
@@ -813,7 +786,7 @@ class MainWindow:
     """
     def __series_find_videos(self, _, video_names):
 
-        path = gtk_file_chooser(self.window_root)
+        path = gtk_dialog_folder(self.window_root)
 
         if path is None:
             return
@@ -821,13 +794,13 @@ class MainWindow:
         if len(video_names) == 1:  # if the user only selected one video to find...
             found_videos = series_data.find_video(video_names[0], path)
             if found_videos:
-                gtk_info(self.window_root, Texts.DialogEpisodes.other_found.format(found_videos), None)
+                gtk_dialog_info(self.window_root, Texts.DialogEpisodes.other_found.format(found_videos), None)
 
         elif len(video_names) > 1:
             found_videos = self.__selected_series.find_videos(path)
 
             if found_videos:
-                gtk_info(self.window_root, Texts.DialogEpisodes.found_x.format(found_videos), None)
+                gtk_dialog_info(self.window_root, Texts.DialogEpisodes.found_x.format(found_videos), None)
 
         self.__liststore_episodes_populate()
     """
@@ -1072,7 +1045,7 @@ class MainWindow:
 
                     if next_video is None:
                         GLib.idle_add(self.window_root.unfullscreen)
-                        GLib.idle_add(gtk_info, self.window_root, Texts.DialogSeries.all_episodes_played)
+                        GLib.idle_add(gtk_utils.gtk_dialog_info, self.window_root, Texts.DialogSeries.all_episodes_played)
 
                     else:
                         self.__media_player.set_video(next_video.get_path(),
@@ -1112,12 +1085,12 @@ class MainWindow:
     """
     def __on_menuitem_series_find(self, _):
 
-        path = gtk_folder_chooser(self.window_root)
-        if not path:
+        path = gtk_dialog_file(self.window_root)
+        if path is None:
             return
 
         self.__selected_series.find_series(path)
-        gtk_set_first_selected_cell_from_selection(self.treeview_selection_series, 0, self.__selected_series.get_image())
+        gtk_selection_set_first_selected_cell(self.treeview_selection_series, 0, self.__selected_series.get_image())
         self.__liststore_episodes_populate()
         
     """
@@ -1128,7 +1101,10 @@ class MainWindow:
 
         if not treepaths == []:
             for treepath in treepaths:
-                episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepath, 1, 2)
+                episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
+                                                                            treepath,
+                                                                            1,
+                                                                            2)
                 self.__selected_series.ignore_video(episode_name)
 
             self.__liststore_episodes_populate()
@@ -1139,7 +1115,10 @@ class MainWindow:
 
         if not treepaths == []:
             for treepath in treepaths:
-                episode_name = gtk_get_merged_cells_from_treepath(self.liststore_episodes, treepath, 1, 2)
+                episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
+                                                                            treepath,
+                                                                            1,
+                                                                            2)
                 self.__selected_series.dont_ignore_video(episode_name)
 
             self.__liststore_episodes_populate()
