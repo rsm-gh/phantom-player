@@ -35,9 +35,9 @@ class Texts:
         all_episodes_played = 'All the episodes have been played, restart the series to watch it again.'
 
     class WindowSettings:
-
         new_title = "New Series"
         edit_title = "Settings"
+        series_name_empty = "The series name can not be empty."
 
     class MenuItemEpisodes:
         open_dir = "Open Directory"

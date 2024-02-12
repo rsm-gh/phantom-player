@@ -17,42 +17,15 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-import os
 import gi
+import os
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('GdkX11', '3.0')
 from gi.repository import Gtk, GObject, Gdk
 
 from Texts import Texts
-from Paths import ICON_LOGO_SMALL, HOME_PATH
-
-
-def gtk_get_first_selected_cell_from_selection(gtk_selection, column=0):
-    model, treepaths = gtk_selection.get_selected_rows()
-
-    if treepaths == []:
-        return None
-
-    return model[treepaths[0]][column]
-
-
-def gtk_set_first_selected_cell_from_selection(gtk_selection, column, value):
-    model, treepaths = gtk_selection.get_selected_rows()
-
-    if len(treepaths) > 0:
-        model[treepaths[0]][column] = value
-
-
-def gtk_remove_first_selected_row_from_liststore(gtk_selection):
-    model, treepaths = gtk_selection.get_selected_rows()
-
-    if len(treepaths) > 0:
-        model.remove(model.get_iter(treepaths[0]))
-
-
-def gtk_get_merged_cells_from_treepath(gtk_liststore, gtk_treepath, cell1, cell2):
-    return '{}{}'.format(gtk_liststore[gtk_treepath][cell1], gtk_liststore[gtk_treepath][cell2])
+from Paths import ICON_LOGO_SMALL
 
 
 def gtk_default_font_color():
@@ -72,52 +45,89 @@ def gtk_default_font_color():
 
     return '#000000'
 
+def gtk_selection_get_first_selected_cell(gtk_selection, column=0):
+    model, treepaths = gtk_selection.get_selected_rows()
 
-def gtk_info(parent, text1, text2=None):
-    dialog = Gtk.MessageDialog(parent,
-                               Gtk.DialogFlags.MODAL,
-                               Gtk.MessageType.INFO,
-                               Gtk.ButtonsType.CLOSE,
-                               text1)
+    if treepaths == []:
+        return None
 
-    dialog.set_default_response(Gtk.ResponseType.NONE)
+    return model[treepaths[0]][column]
+
+
+def gtk_selection_set_first_selected_cell(gtk_selection, column, value):
+    model, treepaths = gtk_selection.get_selected_rows()
+
+    if len(treepaths) > 0:
+        model[treepaths[0]][column] = value
+
+
+def gtk_liststore_remove_first_selected_row(gtk_selection):
+    model, treepaths = gtk_selection.get_selected_rows()
+
+    if len(treepaths) > 0:
+        model.remove(model.get_iter(treepaths[0]))
+
+
+def gtk_treepath_get_merged_cells(gtk_liststore, gtk_treepath, cell1, cell2):
+    return '{}{}'.format(gtk_liststore[gtk_treepath][cell1], gtk_liststore[gtk_treepath][cell2])
+
+def gtk_dialog_file(parent, start_path=None):
+    dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
+                                   parent=parent,
+                                   action=Gtk.FileChooserAction.SELECT_FOLDER)
+
+    dialog.add_buttons(Gtk.STOCK_CANCEL,
+                       Gtk.ResponseType.CANCEL,
+                       Gtk.STOCK_OPEN,
+                       Gtk.ResponseType.OK)
 
     dialog.set_icon_from_file(ICON_LOGO_SMALL)
 
-    if text2 is not None:
-        dialog.format_secondary_text(text2)
+    if start_path is not None and os.path.exists(start_path):
+        dialog.set_current_folder(start_path)
+
+    dir_path = None
 
     response = dialog.run()
+    if response == Gtk.ResponseType.OK:
+        dir_path = dialog.get_filename()
+
     dialog.destroy()
 
+    return dir_path
 
-def gtk_folder_chooser(parent):
-    window_choose_folder = Gtk.FileChooserDialog(Texts.GUI.title,
-                                                 parent,
-                                                 Gtk.FileChooserAction.SELECT_FOLDER,
-                                                 (Gtk.STOCK_CANCEL,
-                                                  Gtk.ResponseType.CANCEL,
-                                                  Gtk.STOCK_OPEN,
-                                                  Gtk.ResponseType.OK))
+def gtk_dialog_folder(parent, file_filter=None, start_path=None):
+    dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
+                                   parent=parent,
+                                   action=Gtk.FileChooserAction.OPEN)
 
-    window_choose_folder.set_icon_from_file(ICON_LOGO_SMALL)
+    dialog.add_buttons(Gtk.STOCK_CANCEL,
+                       Gtk.ResponseType.CANCEL,
+                       Gtk.STOCK_OPEN,
+                       Gtk.ResponseType.OK)
 
-    window_choose_folder.set_current_folder(HOME_PATH)
+    dialog.set_default_response(Gtk.ResponseType.NONE)
+    dialog.set_icon_from_file(ICON_LOGO_SMALL)
 
-    response = window_choose_folder.run()
+    dialog.set_transient_for(parent)
+
+    if filter is not None:
+        dialog.add_filter(file_filter)
+
+    if start_path is not None and os.path.exists(start_path):
+        dialog.set_current_folder(start_path)
+
+    response = dialog.run()
     if response == Gtk.ResponseType.OK:
-        folder_path = window_choose_folder.get_filename()
-        window_choose_folder.destroy()
-
-        if folder_path and os.path.exists(folder_path):
-            default_folder_chooser_path = os.path.dirname(folder_path)
-
-        return folder_path
+        file_path = dialog.get_filename()
     else:
-        window_choose_folder.destroy()
-        return False
+        file_path = None
+    dialog.destroy()
 
-def gtk_dialog_question(parent, text1, text2):
+    return file_path
+
+
+def gtk_dialog_question(parent, text1, text2=None):
     dialog = Gtk.MessageDialog(parent,
                                Gtk.DialogFlags.MODAL,
                                Gtk.MessageType.QUESTION,
@@ -138,3 +148,20 @@ def gtk_dialog_question(parent, text1, text2):
 
     elif response == Gtk.ResponseType.NO:
         return False
+
+def gtk_dialog_info(parent, text1, text2=None):
+    dialog = Gtk.MessageDialog(parent,
+                               Gtk.DialogFlags.MODAL,
+                               Gtk.MessageType.INFO,
+                               Gtk.ButtonsType.CLOSE,
+                               text1)
+
+    dialog.set_default_response(Gtk.ResponseType.NONE)
+
+    dialog.set_icon_from_file(ICON_LOGO_SMALL)
+
+    if text2 is not None:
+        dialog.format_secondary_text(text2)
+
+    _ = dialog.run()
+    dialog.destroy()
