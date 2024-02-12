@@ -543,7 +543,7 @@ class MainWindow:
             return
 
         self.__new_series.rename(series_name)
-        self.__new_series.write_data()
+        self.__new_series.save()
         self.__series_dict[series_name] = self.__new_series
 
         if os.path.exists(self.__new_series.get_path()) or not self.checkbox_hide_missing_series.get_active():
@@ -635,7 +635,7 @@ class MainWindow:
 
         series = self.__get_setting_series()
         series.set_path(path)
-        series.write_data()
+        series.save()
 
         self.liststore_paths.clear()
         self.liststore_paths.append([path, False])
@@ -660,7 +660,7 @@ class MainWindow:
 
         series = self.__get_setting_series()
         series.set_path(path)
-        series.write_data()
+        series.save()
         series.load_videos()
 
         if self.__new_series is None:
@@ -720,7 +720,7 @@ class MainWindow:
                 if position > 0:
                     episode.set_position(position)
 
-            self.__current_media.series.write_data()
+            self.__current_media.series.save()
 
     def __display_settings_window(self, new_series=False):
 
@@ -1026,11 +1026,11 @@ class MainWindow:
 
             if self.__media_player.get_random() != self.__current_media.series.get_random():
                 self.__current_media.series.set_random(self.__media_player.get_random())
-                self.__current_media.series.write_data()
+                self.__current_media.series.save()
 
             if self.__media_player.get_keep_playing() != self.__current_media.series.get_keep_playing():
                 self.__current_media.series.set_keep_playing(self.__media_player.get_keep_playing())
-                self.__current_media.series.write_data()
+                self.__current_media.series.save()
 
             # If the current video got to the end...
             if round(position, 3) >= 0.999:
