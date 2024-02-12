@@ -112,6 +112,10 @@ class WidgetsShown:
 
 
 class ThemeButtons:
+    """
+        This class is not into settings.py because I want MediaPlayer.py
+        to be a standalone (beside VLCWidget.py).
+    """
     play = "media-playback-start"
     pause = "media-playback-pause"
     next = "go-next"

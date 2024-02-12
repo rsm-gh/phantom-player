@@ -17,14 +17,10 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os  # why is os not being detected on pycharm?
-import gi
 import csv
 import magic
 import shutil
 import random
-
-gi.require_version('Gtk', '3.0')
-from gi.repository.GdkPixbuf import Pixbuf
 
 from Paths import *
 from model.Video import Video, path_is_video, generate_list_from_videos_folder
@@ -66,9 +62,7 @@ class Series(object):
         # Variables
         self.__videos_instances = []
         self.__nb_videos = 0
-        self.__series_img_size = 30
-        self.__series_pixbuf = None
-        self.__load_image()
+        self.__icon_path = os.path.join(self.__path, "icon")
 
 
     def load_videos(self):
@@ -210,7 +204,6 @@ class Series(object):
 
     def find_series(self, path):
         self.__path = path
-        self.__load_image()
         self.find_videos(path)
         self.update_not_hidden_videos()
         self.write_data()
@@ -427,8 +420,15 @@ class Series(object):
     def get_start_at(self):
         return self.__start_at
 
-    def get_image(self):
-        return self.__series_pixbuf
+    def get_image_path(self):
+
+        if not os.path.exists(self.__path):
+            return ICON_ERROR_BIG
+
+        elif self.__icon_path is None or not os.path.exists(self.__icon_path):
+            return ICON_LOGO_MEDIUM
+
+        return self.__icon_path
 
     def get_name(self):
         return self.__name
@@ -637,32 +637,11 @@ class Series(object):
 
         self.__name = new_name
 
-    def set_image(self, path):
+    def set_image_path(self, path):
+        self.__icon_path = path
         if os.path.exists(path):
-            self.__series_pixbuf = Pixbuf.new_from_file_at_size(path,
-                                                                self.__series_img_size,
-                                                                self.__series_img_size)
-            shutil.copy2(path, os.path.join(self.__path, ".folder"))
+            shutil.copy2(path, os.path.join(self.__path, "icon"))
 
 
     def set_path(self, path):
         self.__path = path
-
-    def __load_image(self):
-        """
-            Set the default image
-        """
-        if not os.path.exists(self.__path):
-            image_path = ICON_ERROR_BIG
-        else:
-            image_path = ICON_LOGO_MEDIUM
-
-            for extension in ('', '.png', '.jpg', '.jpeg'):
-                possible_image = os.path.join(self.__path, '.folder' + extension)
-                if os.path.exists(possible_image):
-                    image_path = possible_image
-                    break
-
-        self.__series_pixbuf = Pixbuf.new_from_file_at_size(image_path,
-                                                            self.__series_img_size,
-                                                            self.__series_img_size)
