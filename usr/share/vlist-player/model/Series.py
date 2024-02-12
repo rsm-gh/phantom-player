@@ -163,7 +163,7 @@ class Series(object):
         self.update_ids()  # this is in case there were videos with duplicated ids
 
 
-    def write_data(self):
+    def save(self):
 
         if not os.path.exists(FOLDER_LIST_PATH):
             os.mkdir(FOLDER_LIST_PATH)
@@ -194,6 +194,26 @@ class Series(object):
                                    video.get_position(),
                                    video.get_display()])
 
+
+    def restart(self):
+        for video in self.__videos_instances:
+            video.set_play(True)
+            video.set_o_played(False)
+            video.set_r_played(False)
+            video.set_position(0)
+
+        self.save()
+
+    def reorder(self, new_order_indexes):
+        """ Choices are "up" or "down" """
+
+        self.__videos_instances = [self.__videos_instances[i - 1] for i in new_order_indexes]
+
+        for i, video in enumerate(self.__videos_instances, 1):
+            video.set_id(i)
+
+        self.save()
+
     def rename(self, new_name):
         # update the data file
         if os.path.exists(SERIES_PATH.format(self.__name)):
@@ -202,18 +222,112 @@ class Series(object):
         # update the class
         self.__name = new_name
 
+    def update_ids(self):
+        for i, video in enumerate(self.__videos_instances, 1):
+            video.set_id(i)
+
+    def clean_episodes(self):
+
+        videos = []
+        for video in self.__videos_instances:
+            if video and not os.path.exists(video.get_path()) and not video.get_display():
+                '''Delete the hidden and un-existing videos'''
+            else:
+                videos.append(video)
+
+        self.__videos_instances = videos
+
+    def update_not_hidden_videos(self):
+        self.__nb_videos = len([0 for video in self.__videos_instances if video.get_display()])
+
+    def missing_videos(self, episodes_names):
+        """Return if from the selected videos there is someone missing"""
+        for episode_name in episodes_names:
+            for episode in self.__videos_instances:
+                if episode.get_name() == episode_name:
+                    if not os.path.exists(episode.get_path()):
+                        return True
+
+        return False
+
+    def mark_episode(self, episode, is_random, new_state):
+        for video in self.__videos_instances:
+            if video == episode:
+                if is_random:
+                    video.set_r_played(new_state)
+                else:
+                    video.set_o_played(new_state)
+
+                self.save()
+                break
+
+    def change_checkbox_state(self, episode_names, column, state):
+
+        if isinstance(episode_names, str):
+            episode_names = [episode_names]
+
+        for episode_name in episode_names:
+            for video in self.__videos_instances:
+
+                if video.get_name() == episode_name:
+
+                    if column == 4:
+                        video.set_play(state)
+                    elif column == 5:
+                        video.set_o_played(state)
+                    elif column == 6:
+                        video.set_r_played(state)
+
+                    break
+
+        self.save()
+
+    def ignore_video(self, del_video):
+        """ Ignore a video from the series by giving its name.
+        """
+
+        for video in self.__videos_instances:
+            if video.get_name() == del_video:
+
+                if os.path.exists(video.get_path()):
+                    video.set_display(False)
+                else:
+                    self.__videos_instances.remove(video)
+
+                self.__nb_videos -= 1
+                self.update_ids()
+                self.save()
+
+                self.update_not_hidden_videos()
+
+                break
+
+    def dont_ignore_video(self, video_name):
+        for video in self.__videos_instances:
+            if video.get_name() == video_name:
+                video.set_display(True)
+
+                self.__nb_videos -= 1
+                self.update_ids()
+                self.save()
+
+                self.update_not_hidden_videos()
+
+                break
+
+
     def find_series(self, path):
         self.__path = path
         self.find_videos(path)
         self.update_not_hidden_videos()
-        self.write_data()
+        self.save()
 
     def find_video(self, episode_name, new_path):
-        """     
+        """
             Try to find videos other videos in case
             the name of an extension changed, or the start part
             of the episode.
-            
+
             Ex 1:
                 foo.ogg -> foo
                 faa.ogg -> faa
@@ -222,11 +336,11 @@ class Series(object):
                 videos-video800 -> video800
 
     Could this be more powerful and search other kinds of string sequences?
-            
+
             ex:
                 video-VIDEO700 -> video-video700
                 video-VIDEO800 -> video-video800
-            
+
         """
 
         """
@@ -281,15 +395,12 @@ class Series(object):
                             video.set_path(possible_path)
                             found_videos += 1
 
-            self.write_data()
+            self.save()
 
             if found_videos > 0:
                 return found_videos
             else:
                 return False
-
-    def update_not_hidden_videos(self):
-        self.__nb_videos = len([0 for video in self.__videos_instances if video.get_display()])
 
     def find_videos(self, path):
 
@@ -304,118 +415,9 @@ class Series(object):
                     video.set_path(path + video.get_name())
 
         if video_counter > 0:
-            self.write_data()
+            self.save()
 
         return video_counter
-
-    def ignore_video(self, del_video):
-        """ Ignore a video from the series by giving its name.
-        """
-
-        for video in self.__videos_instances:
-            if video.get_name() == del_video:
-
-                if os.path.exists(video.get_path()):
-                    video.set_display(False)
-                else:
-                    self.__videos_instances.remove(video)
-
-                self.__nb_videos -= 1
-                self.update_ids()
-                self.write_data()
-
-                self.update_not_hidden_videos()
-
-                break
-
-    def dont_ignore_video(self, video_name):
-        for video in self.__videos_instances:
-            if video.get_name() == video_name:
-                video.set_display(True)
-
-                self.__nb_videos -= 1
-                self.update_ids()
-                self.write_data()
-
-                self.update_not_hidden_videos()
-
-                break
-
-    def missing_videos(self, episodes_names):
-        """Return if from the selected videos there is someone missing"""
-        for episode_name in episodes_names:
-            for episode in self.__videos_instances:
-                if episode.get_name() == episode_name:
-                    if not os.path.exists(episode.get_path()):
-                        return True
-
-        return False
-
-    def clean_episodes(self):
-
-        videos = []
-        for video in self.__videos_instances:
-            if video and not os.path.exists(video.get_path()) and not video.get_display():
-                '''Delete the hidden and un-existing videos'''
-            else:
-                videos.append(video)
-
-        self.__videos_instances = videos
-
-    def reorder(self, new_order_indexes):
-        """ Choices are "up" or "down" """
-
-        self.__videos_instances = [self.__videos_instances[i - 1] for i in new_order_indexes]
-
-        for i, video in enumerate(self.__videos_instances, 1):
-            video.set_id(i)
-
-        self.write_data()
-
-    def change_checkbox_state(self, episode_names, column, state):
-
-        if isinstance(episode_names, str):
-            episode_names = [episode_names]
-
-        for episode_name in episode_names:
-            for video in self.__videos_instances:
-
-                if video.get_name() == episode_name:
-
-                    if column == 4:
-                        video.set_play(state)
-                    elif column == 5:
-                        video.set_o_played(state)
-                    elif column == 6:
-                        video.set_r_played(state)
-
-                    break
-
-        self.write_data()
-
-    def mark_episode(self, episode, is_random, new_state):
-        for video in self.__videos_instances:
-            if video == episode:
-                if is_random:
-                    video.set_r_played(new_state)
-                else:
-                    video.set_o_played(new_state)
-
-                self.write_data()
-                break
-
-    def restart(self):
-        for video in self.__videos_instances:
-            video.set_play(True)
-            video.set_o_played(False)
-            video.set_r_played(False)
-            video.set_position(0)
-
-        self.write_data()
-
-    def update_ids(self):
-        for i, video in enumerate(self.__videos_instances, 1):
-            video.set_id(i)
 
     def get_start_at(self):
         return self.__start_at
@@ -557,7 +559,7 @@ class Series(object):
         self.__keep_playing = value in ('true', 'True', True)
 
         if write:
-            self.write_data()
+            self.save()
 
     def set_start_at(self, value, write=True):
         try:
@@ -574,14 +576,14 @@ class Series(object):
             self.__start_at = 0.0
 
         if write:
-            self.write_data()
+            self.save()
 
     def set_recursive(self, recursive, write=True):
 
         self.__recursive = recursive in ('true', 'True', True)
 
         if write:
-            self.write_data()
+            self.save()
 
     def set_audio_track(self, value, write=True):
         try:
@@ -598,7 +600,7 @@ class Series(object):
             self.__audio_track = -2
 
         if write:
-            self.write_data()
+            self.save()
 
     def set_subtitles_track(self, value, write=True):
         try:
@@ -615,20 +617,20 @@ class Series(object):
             self.__subtitles_track = -2
 
         if write:
-            self.write_data()
+            self.save()
 
     def set_random(self, is_random, write=True):
 
         self.__random = is_random in ('true', 'True', True)
 
         if write:
-            self.write_data()
+            self.save()
 
     def set_video_position(self, video_to_find, position):
         for video in self.__videos_instances:
             if video_to_find == video:
                 video.set_position(position)
-                self.write_data()
+                self.save()
                 return
 
     def set_name(self, new_name):
