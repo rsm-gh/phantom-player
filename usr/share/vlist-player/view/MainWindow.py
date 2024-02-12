@@ -27,6 +27,7 @@ os.environ["GDK_BACKEND"] = "x11"
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')
 from gi.repository import Gtk, Gdk, GObject, GLib
+from gi.repository.GdkPixbuf import Pixbuf
 
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
@@ -40,6 +41,7 @@ from controller.CCParser import CCParser
 from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
+
 
 class MainWindow:
 
@@ -327,9 +329,9 @@ class MainWindow:
             if selection_length == 1:
 
                 selected_episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
-                                                                                     treepaths[0],
-                                                                                     1,
-                                                                                     2)
+                                                                                treepaths[0],
+                                                                                1,
+                                                                                2)
 
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.open_dir)
                 menu.append(menuitem)
@@ -354,7 +356,8 @@ class MainWindow:
             """
                 Menu "Fin videos"
             """
-            list_of_names = [gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes, treepath, 1, 2) for treepath in
+            list_of_names = [gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes, treepath, 1, 2) for
+                             treepath in
                              treepaths]
 
             if self.__selected_series.missing_videos(list_of_names):
@@ -515,7 +518,7 @@ class MainWindow:
         selected_series_name = self.__selected_series.get_name()
 
         if gtk_utils.gtk_dialog_question(self.window_series_settings,
-                               Texts.DialogSeries.confirm_delete.format(selected_series_name)):
+                                         Texts.DialogSeries.confirm_delete.format(selected_series_name)):
 
             self.window_series_settings.hide()
 
@@ -536,13 +539,12 @@ class MainWindow:
 
         elif series_name in self.__series_dict.keys():
             gtk_utils.gtk_dialog_info(self.window_series_settings,
-                     Texts.DialogSeries.name_exist.format(series_name))
+                                      Texts.DialogSeries.name_exist.format(series_name))
             return
 
         self.__new_series.rename(series_name)
         self.__new_series.write_data()
         self.__series_dict[series_name] = self.__new_series
-
 
         if os.path.exists(self.__new_series.get_path()) or not self.checkbox_hide_missing_series.get_active():
             GLib.idle_add(self.__liststore_series_append, (self.__new_series.get_image(), self.__new_series.get_name()))
@@ -582,7 +584,7 @@ class MainWindow:
         selected_series_name = self.__selected_series.get_name()
 
         if not gtk_utils.gtk_dialog_question(self.window_series_settings,
-                                   Texts.DialogSeries.confirm_reset.format(selected_series_name)):
+                                             Texts.DialogSeries.confirm_reset.format(selected_series_name)):
             return
 
         self.window_series_settings.hide()
@@ -606,17 +608,24 @@ class MainWindow:
             Add a picture to a series
         """
         file_filter = Gtk.FileFilter()
-        file_filter.set_name('Picture')
+        file_filter.set_name('Image')
         file_filter.add_pattern('*.jpeg')
         file_filter.add_pattern('*.jpg')
         file_filter.add_pattern('*.png')
 
         file = gtk_utils.gtk_dialog_folder(self.window_series_settings, file_filter)
         if file is not None:
-            self.__selected_series.set_image(file)
-            gtk_utils.gtk_selection_set_first_selected_cell(self.treeview_selection_series,
-                                                       0,
-                                                       self.__selected_series.get_image())
+
+            setting_series = self.__get_setting_series()
+            setting_series.set_image_path(file)
+
+            pixbuf = Pixbuf.new_from_file_at_size(file, -1, 30)
+            self.image_series.set_from_pixbuf(pixbuf)
+
+            if self.__new_series is None:
+                gtk_utils.gtk_selection_set_first_selected_cell(self.treeview_selection_series,
+                                                                0,
+                                                                pixbuf)
 
     def on_button_series_path_add_clicked(self, *_):
 
@@ -730,14 +739,15 @@ class MainWindow:
             self.button_series_add.hide()
             self.liststore_paths.append([series.get_path(), series.get_recursive()])
 
-
         self.button_series_path_add.set_sensitive(new_series)
         self.button_series_path_remove.set_sensitive(False)
         self.button_series_path_edit.set_sensitive(not new_series)
         self.button_series_path_reload_all.set_sensitive(not new_series)
 
         self.entry_series_name.set_text(series.get_name())
-        self.image_series.set_from_pixbuf(series.get_image())
+
+        pixbuf = Pixbuf.new_from_file_at_size(series.get_image_path(), -1, 30)
+        self.image_series.set_from_pixbuf(pixbuf)
         self.button_series_delete.set_sensitive(not new_series)
         self.button_series_restart.set_sensitive(not new_series)
 
@@ -772,7 +782,8 @@ class MainWindow:
         self.__series_dict[new_series.get_name()] = new_series
 
         if os.path.exists(new_series.get_path()) or not self.checkbox_hide_missing_series.get_active():
-            GLib.idle_add(self.__liststore_series_append, (new_series.get_image(), new_series.get_name()))
+            pixbuf = Pixbuf.new_from_file_at_size(new_series.get_image_path(), -1, 30)
+            GLib.idle_add(self.__liststore_series_append, (pixbuf, new_series.get_name()))
 
         if select:  # select the row once the series has been added
 
@@ -946,9 +957,6 @@ class MainWindow:
                                          subtitles_track,
                                          select=False)
 
-
-
-
         #
         #   Select & Load the last series that was played
         #
@@ -974,7 +982,6 @@ class MainWindow:
         for series in self.__series_dict.values():
             if series != series_data:
                 series.load_videos()
-
 
         #
         #   Select a default series if none
@@ -1045,7 +1052,8 @@ class MainWindow:
 
                     if next_video is None:
                         GLib.idle_add(self.window_root.unfullscreen)
-                        GLib.idle_add(gtk_utils.gtk_dialog_info, self.window_root, Texts.DialogSeries.all_episodes_played)
+                        GLib.idle_add(gtk_utils.gtk_dialog_info, self.window_root,
+                                      Texts.DialogSeries.all_episodes_played)
 
                     else:
                         self.__media_player.set_video(next_video.get_path(),
@@ -1102,9 +1110,9 @@ class MainWindow:
         if not treepaths == []:
             for treepath in treepaths:
                 episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
-                                                                            treepath,
-                                                                            1,
-                                                                            2)
+                                                                       treepath,
+                                                                       1,
+                                                                       2)
                 self.__selected_series.ignore_video(episode_name)
 
             self.__liststore_episodes_populate()
@@ -1116,9 +1124,9 @@ class MainWindow:
         if not treepaths == []:
             for treepath in treepaths:
                 episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
-                                                                            treepath,
-                                                                            1,
-                                                                            2)
+                                                                       treepath,
+                                                                       1,
+                                                                       2)
                 self.__selected_series.dont_ignore_video(episode_name)
 
             self.__liststore_episodes_populate()
