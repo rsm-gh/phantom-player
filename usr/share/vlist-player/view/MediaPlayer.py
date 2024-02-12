@@ -77,7 +77,7 @@ def format_track(track):
     return ' {}   {}'.format(numb, content)
 
 
-def gtk_file_chooser(parent, start_path=''):
+def gtk_dialog_folder(parent, start_path=''):
     window_choose_file = Gtk.FileChooserDialog('Video List Player',
                                                parent,
                                                Gtk.FileChooserAction.OPEN,
@@ -386,7 +386,7 @@ class MediaPlayerWidget(Gtk.Overlay):
             Todo: read the result of player.video_set_subtitle_file(path) and display a message
             in case of problem.
         """
-        path = gtk_file_chooser(self.__root_window)
+        path = gtk_dialog_folder(self.__root_window)
 
         if path is not None:
             self.__vlc_widget.player.video_set_subtitle_file(path)
