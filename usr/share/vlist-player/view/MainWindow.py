@@ -229,16 +229,19 @@ class MainWindow:
             elif event.button == EventCodes.Cursor.right_click:
 
                 # Get the iter where the user is pointing
-                pointing_treepath = self.treeview_series.get_path_at_pos(event.x, event.y)[0]
+                path = self.treeview_series.get_path_at_pos(event.x, event.y)
 
-                # If the iter is not in the selected iters, remove the previous selection
-                model, treepaths = self.treeview_selection_series.get_selected_rows()
+                if path is not None:
+                    pointing_treepath = path[0]
 
-                if pointing_treepath not in treepaths and inside_treeview:
-                    self.treeview_selection_series.unselect_all()
-                    self.treeview_selection_series.select_path(pointing_treepath)
+                    # If the iter is not in the selected iters, remove the previous selection
+                    model, treepaths = self.treeview_selection_series.get_selected_rows()
 
-                self.__menu_series_display(event)
+                    if pointing_treepath not in treepaths and inside_treeview:
+                        self.treeview_selection_series.unselect_all()
+                        self.treeview_selection_series.select_path(pointing_treepath)
+
+                    self.__menu_series_display(event)
 
         elif event.type == Gdk.EventType._2BUTTON_PRESS:
             if event.button == EventCodes.Cursor.left_click:
