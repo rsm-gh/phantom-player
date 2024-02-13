@@ -28,8 +28,7 @@ import vlc
 import sys
 import time
 
-from console_printer import print_info, print_debug
-print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
+from console_printer import print_debug
 
 import faulthandler
 faulthandler.enable()

@@ -57,70 +57,36 @@ import threading
 
 import vlc
 from time import time, sleep
-from datetime import timedelta
 from threading import Thread, current_thread
 from gi.repository import Gtk, GObject, Gdk, GLib
 
 import vlc_utils
+from Texts import Texts
+from datetime import timedelta
+from settings import ThemeButtons
+from console_printer import print_info, print_error
+from system_utils import EventCodes, turn_off_screensaver
 from model.Playlist import Track, TimeValue
 from view import gtk_utils
 from view.VLCWidget import VLCWidget
-from system_utils import EventCodes, turn_off_screensaver
-from settings import ThemeButtons
-from Texts import Texts
 
+print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
+if int(vlc.__version__.replace(".","")[:3]) < 302:
+    print_error("python-vlc must be >= 3.0.2")
+
+
+_EMPTY__VIDEO_LENGTH = "00:00"
 _VOLUME_LABEL_NONE = " Muted "
 _VOLUME_LABEL = " Vol: {}% "
-_EMPTY__VIDEO_LENGTH = "00:00"
 _DEFAULT_CSS = """
 scale, label, box {
     background-color: @theme_bg_color;
 }
 """
 
-def format_milliseconds_to_time(number):
-    if number <= 0:
-        return _EMPTY__VIDEO_LENGTH
-
-    time_string = str(timedelta(milliseconds=number)).split('.')[0]
-
-    # remove the hours if they are not necessary
-    try:
-        if int(time_string.split(':', 1)[0]) == 0:
-            time_string = time_string.split(':', 1)[1]
-    except Exception:
-        pass
-
-    return time_string
-
-
-def format_track(track):
-    """ Format the tracks provided by pyVLC. Track must be a tuple (int, string)"""
-
-    number = str(track[0])
-
-    try:
-        content = " ".join(track[1].replace('_', ' ').split()).replace('[', '').replace(']', '').title().strip()
-
-        if 'Track' in content and "-" in content:
-            content = content.split('-', 1)[1].strip()
-
-        if content.startswith("Track "):
-            content = "Track {}".format(number)
-
-    except Exception as e:
-        content = track[1]
-        print(track)
-        print(str(e))
-
-    if len(number) == 0:
-        numb = '  '
-    elif len(number) == 1:
-        numb = '  {}'.format(number)
-    else:
-        numb = str(number)
-
-    return '{}:   {}'.format(numb, content)
+class VideoScanStatus:
+    _none = 0
+    _scan = 2
 
 
 class WidgetsShown:
@@ -161,10 +127,53 @@ class DelayedMediaData:
         self._audio_track = value
 
 
-class VideoScanStatus:
-    _none = 0
-    _scan = 2
+def milliseconds_to_str(number: int):
+    if number <= 0:
+        return _EMPTY__VIDEO_LENGTH
 
+    time_string = str(timedelta(milliseconds=number)).split('.')[0]
+
+    try:
+        # Remove the hours if they are not necessary.
+        # This may fail if the string is for example '1 day, 0:00:00'
+        # but using try is faster than if, if the exception is not executed.
+        # most of the cases, this code will be valid.
+        time_split = time_string.split(':', 1)
+        if int(time_split[0]) == 0:
+            time_string = time_split[1]
+    except ValueError:
+        pass
+
+    return time_string
+
+
+def format_track(track: tuple[int, str]):
+    """ Format the tracks provided by pyVLC. Track must be a tuple (int, string)"""
+
+    number = str(track[0])
+
+    try:
+        content = " ".join(track[1].replace('_', ' ').split()).replace('[', '').replace(']', '').title().strip()
+
+        if 'Track' in content and "-" in content:
+            content = content.split('-', 1)[1].strip()
+
+        if content.startswith("Track "):
+            content = "Track {}".format(number)
+
+    except Exception as e:
+        content = track[1]
+        print(track)
+        print(str(e))
+
+    if len(number) == 0:
+        numb = '  '
+    elif len(number) == 1:
+        numb = '  {}'.format(number)
+    else:
+        numb = str(number)
+
+    return '{}:   {}'.format(numb, content)
 
 class MediaPlayerWidget(Gtk.Box):
     __gtype_name__ = 'MediaPlayerWidget'
@@ -782,7 +791,7 @@ class MediaPlayerWidget(Gtk.Box):
         if video_length < 0:
             return
 
-        GLib.idle_add(self.__label_video_length.set_text, " / " + format_milliseconds_to_time(video_length))
+        GLib.idle_add(self.__label_video_length.set_text, " / " + milliseconds_to_str(video_length))
         GLib.idle_add(self.__scale_progress.set_range, 0, video_length)
 
         #
@@ -1060,4 +1069,4 @@ class MediaPlayerWidget(Gtk.Box):
         self.__scale_progress_pressed = False
 
     def __on_scale_progress_value_changed(self, widget, *_):
-        self.__label_video_progress.set_text(format_milliseconds_to_time(int(widget.get_value())))
+        self.__label_video_progress.set_text(milliseconds_to_str(int(widget.get_value())))
