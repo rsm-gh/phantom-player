@@ -23,6 +23,7 @@ import shutil
 import random
 
 from Paths import *
+from controller.factory import str_to_boolean
 from model.Video import Video, path_is_video, generate_list_from_videos_folder
 
 MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
@@ -112,19 +113,19 @@ class Series(object):
                                     print("Incrementing duplicated id")
 
                             try:
-                                play = row[2]
+                                play = str_to_boolean(row[2])
                             except Exception:
-                                play = 'true'
+                                play = True
 
                             try:
-                                o_played = row[3]
+                                o_played = str_to_boolean(row[3])
                             except Exception:
-                                o_played = 'false'
+                                o_played = False
 
                             try:
-                                r_played = row[4]
+                                r_played = str_to_boolean(row[4])
                             except Exception:
-                                r_played = 'false'
+                                r_played = False
 
                             try:
                                 position = float(row[5])
@@ -132,9 +133,9 @@ class Series(object):
                                 position = 0.0
 
                             try:
-                                display = row[6]
+                                display = str_to_boolean(row[6])
                             except Exception:
-                                display = 'true'
+                                display = False
 
                             video = Video(path, video_id)
                             video.load_info(play, o_played, r_played, position, display)
@@ -556,7 +557,7 @@ class Series(object):
 
     def set_keep_playing(self, value, write=True):
 
-        self.__keep_playing = value in ('true', 'True', True)
+        self.__keep_playing = value
 
         if write:
             self.save()
@@ -579,8 +580,7 @@ class Series(object):
             self.save()
 
     def set_recursive(self, recursive, write=True):
-
-        self.__recursive = recursive in ('true', 'True', True)
+        self.__recursive = recursive
 
         if write:
             self.save()
@@ -621,7 +621,7 @@ class Series(object):
 
     def set_random(self, is_random, write=True):
 
-        self.__random = is_random in ('true', 'True', True)
+        self.__random = is_random
 
         if write:
             self.save()
