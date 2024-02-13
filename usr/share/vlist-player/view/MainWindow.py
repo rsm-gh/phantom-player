@@ -524,19 +524,29 @@ class MainWindow:
 
     def on_button_series_delete_clicked(self, *_):
 
-        selected_series_name = self.__selected_series.get_name()
+        series_name = self.__selected_series.get_name()
 
-        if gtk_utils.gtk_dialog_question(self.window_series_settings,
-                                         Texts.DialogSeries.confirm_delete.format(selected_series_name)):
+        if not gtk_utils.gtk_dialog_question(self.window_series_settings, Texts.DialogSeries.confirm_delete.format(series_name)):
+            return
 
-            self.window_series_settings.hide()
+        if self.__current_media.is_series_name(series_name):
+            self.__media_player.pause()
 
-            self.__series_dict.pop(self.__selected_series.get_name())
+        gtk_utils.gtk_liststore_remove_first_selected_row(self.treeview_selection_series)
 
-            gtk_utils.gtk_liststore_remove_first_selected_row(self.treeview_selection_series)
+        if len(self.liststore_series) > 0:
+            self.treeview_series.set_cursor(0)
+        else:
+            self.liststore_episodes.clear()
 
-            if os.path.exists(SERIES_PATH.format(selected_series_name)):
-                os.remove(SERIES_PATH.format(selected_series_name))
+        self.__series_dict.pop(series_name)
+
+        if os.path.exists(SERIES_PATH.format(series_name)):
+            os.remove(SERIES_PATH.format(series_name))
+
+        self.window_series_settings.hide()
+
+
 
     def on_button_series_add_clicked(self, *_):
 
@@ -557,7 +567,12 @@ class MainWindow:
 
         if os.path.exists(self.__new_series.get_path()) or not self.checkbox_hide_missing_series.get_active():
             pixbuf = Pixbuf.new_from_file_at_size(self.__new_series.get_image_path(), -1, 30)
-            GLib.idle_add(self.__liststore_series_append, (pixbuf, self.__new_series.get_name()))
+            self.__liststore_series_append([pixbuf, self.__new_series.get_name()])
+
+            for i, row in enumerate(self.liststore_series):
+                if row[1] == series_name:
+                    self.treeview_series.set_cursor(i)
+                    break
 
         self.__new_series = None
         self.window_series_settings.hide()
@@ -748,7 +763,7 @@ class MainWindow:
             self.window_series_settings.set_title(series.get_name() + " " + Texts.WindowSettings.edit_title)
             self.button_series_add.hide()
             self.liststore_paths.append([series.get_path(), series.get_recursive()])
-            print("HERE", series.get_recursive())
+
 
         self.button_series_path_add.set_sensitive(new_series)
         self.button_series_path_remove.set_sensitive(False)
