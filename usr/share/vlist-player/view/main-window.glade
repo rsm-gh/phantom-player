@@ -1029,7 +1029,9 @@ Author: Rafael Senties Martinelli
                         <property name="title" translatable="yes">Recursive</property>
                         <property name="clickable">True</property>
                         <child>
-                          <object class="GtkCellRendererToggle"/>
+                          <object class="GtkCellRendererToggle" id="on_cellrenderertoggle_series_recursive">
+                            <signal name="toggled" handler="on_cellrenderertoggle_series_recursive_toggled" swapped="no"/>
+                          </object>
                           <attributes>
                             <attribute name="active">1</attribute>
                           </attributes>

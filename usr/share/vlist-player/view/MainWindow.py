@@ -38,6 +38,7 @@ from Texts import Texts
 from view import gtk_utils
 from model.Series import Series
 from controller.CCParser import CCParser
+from controller.factory import str_to_boolean
 from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
@@ -403,6 +404,14 @@ class MainWindow:
     def on_cellrenderertoggle_rplayed_toggled(self, _, row):
         self.on_checkbox_episodes_toggled(int(row), 6)
 
+    def on_cellrenderertoggle_series_recursive_toggled(self, _, row):
+        state = not self.liststore_paths[row][1]
+        self.liststore_paths[row][1] = state
+        series = self.__get_setting_series()
+        series.set_recursive(state)
+        if self.__new_series is None:
+            series.save()
+
     def on_spinbutton_audio_value_changed(self, spinbutton):
 
         if self.__populating_settings:
@@ -547,7 +556,8 @@ class MainWindow:
         self.__series_dict[series_name] = self.__new_series
 
         if os.path.exists(self.__new_series.get_path()) or not self.checkbox_hide_missing_series.get_active():
-            GLib.idle_add(self.__liststore_series_append, (self.__new_series.get_image(), self.__new_series.get_name()))
+            pixbuf = Pixbuf.new_from_file_at_size(self.__new_series.get_image_path(), -1, 30)
+            GLib.idle_add(self.__liststore_series_append, (pixbuf, self.__new_series.get_name()))
 
         self.__new_series = None
         self.window_series_settings.hide()
@@ -738,6 +748,7 @@ class MainWindow:
             self.window_series_settings.set_title(series.get_name() + " " + Texts.WindowSettings.edit_title)
             self.button_series_add.hide()
             self.liststore_paths.append([series.get_path(), series.get_recursive()])
+            print("HERE", series.get_recursive())
 
         self.button_series_path_add.set_sensitive(new_series)
         self.button_series_path_remove.set_sensitive(False)
@@ -938,11 +949,11 @@ class MainWindow:
                 print("Error, Wrong format for series file = ", file_path)  # todo: show user message
                 continue
 
-            data_path = series_path[0]
-            recursive = series_path[1]
+            data_path = series_path[0].strip()
+            recursive = str_to_boolean(series_path[1])
 
-            random = series_header[0]
-            keep_playing = series_header[1]
+            random = str_to_boolean(series_header[0])
+            keep_playing = str_to_boolean(series_header[1])
             start_at = float(series_header[2])
             audio_track = int(series_header[3])
             subtitles_track = int(series_header[4])

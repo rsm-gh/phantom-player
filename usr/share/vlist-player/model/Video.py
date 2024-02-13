@@ -23,6 +23,9 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
+
+from controller.factory import str_to_boolean
+
 magic_mimetype = magic.open(magic.MAGIC_MIME)
 magic_mimetype.load()
 
@@ -94,21 +97,13 @@ class Video(object):
         self.update_state()
 
     def load_info(self, play, o_played, r_played, position, display):
-
-        if play.strip().lower() == 'false':
-            self.set_play(False)
-
-        if o_played.strip().lower() == 'true':
-            self.set_o_played(True)
-
-        if r_played.strip().lower() == 'true':
-            self.set_r_played(True)
-
+        self.set_play(play)
+        self.set_o_played(o_played)
+        self.set_r_played(r_played)
+        self.set_display(display)
         if position > 0:
             self.set_position(position)
 
-        if display.strip().lower() != 'true':
-            self.set_display(False)
 
     def update_state(self):
         if os.path.exists(self.__path):
