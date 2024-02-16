@@ -56,7 +56,7 @@ class MainWindow:
         self.__series_dict = {}
         self.__threads = []
 
-        self.__ccp = CCParser(CONFIGURATION_FILE, 'vlist-player')
+        self.__ccp = CCParser(CONFIGURATION_FILE, 'phantom-player')
 
         """
             load items from glade
@@ -952,39 +952,40 @@ class MainWindow:
         #
         # Load the files header
         #
-        for file_name in sorted(os.listdir(FOLDER_LIST_PATH)):
+        if os.path.exists(FOLDER_LIST_PATH):
+            for file_name in sorted(os.listdir(FOLDER_LIST_PATH)):
 
-            if not file_name.lower().endswith('.csv'):
-                continue
+                if not file_name.lower().endswith('.csv'):
+                    continue
 
-            file_path = os.path.join(FOLDER_LIST_PATH, file_name)
+                file_path = os.path.join(FOLDER_LIST_PATH, file_name)
 
-            with open(file_path, mode='rt', encoding='utf-8') as f:
-                series_header = f.readline().split('|')
-                series_path = f.readline().split('|')
+                with open(file_path, mode='rt', encoding='utf-8') as f:
+                    series_header = f.readline().split('|')
+                    series_path = f.readline().split('|')
 
-            if len(series_header) != 5 or len(series_path) != 2:
-                print("Error, Wrong format for series file = ", file_path)  # todo: show user message
-                continue
+                if len(series_header) != 5 or len(series_path) != 2:
+                    print("Error, Wrong format for series file = ", file_path)  # todo: show user message
+                    continue
 
-            data_path = series_path[0].strip()
-            recursive = str_to_boolean(series_path[1])
+                data_path = series_path[0].strip()
+                recursive = str_to_boolean(series_path[1])
 
-            random = str_to_boolean(series_header[0])
-            keep_playing = str_to_boolean(series_header[1])
-            start_at = float(series_header[2])
-            audio_track = int(series_header[3])
-            subtitles_track = int(series_header[4])
+                random = str_to_boolean(series_header[0])
+                keep_playing = str_to_boolean(series_header[1])
+                start_at = float(series_header[2])
+                audio_track = int(series_header[3])
+                subtitles_track = int(series_header[4])
 
-            self.__series_load_from_path(file_name,
-                                         data_path,
-                                         recursive,
-                                         random,
-                                         keep_playing,
-                                         start_at,
-                                         audio_track,
-                                         subtitles_track,
-                                         select=False)
+                self.__series_load_from_path(file_name,
+                                             data_path,
+                                             recursive,
+                                             random,
+                                             keep_playing,
+                                             start_at,
+                                             audio_track,
+                                             subtitles_track,
+                                             select=False)
 
         #
         #   Select & Load the last series that was played

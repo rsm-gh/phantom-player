@@ -19,7 +19,7 @@
 
 class Texts:
     class GUI:
-        title = "Video List Player"
+        title = "Phantom Player"
 
     class MenuItemSeries:
         search = "Search"
