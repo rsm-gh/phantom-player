@@ -1,16 +1,22 @@
 
 ![Player Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview.png)
 
-`phantom-player` is a software to play lists of videos with comfort, some of its major features are:
+**Phantom Player** is a Media Player that allows organizing and reproducing lists of videos with comfort.
+It will give you the feeling of having a streaming platform with the content of your hard drive.
+
+If you're still having a hard drive with lots of videos or downloading & seeding torrents, this
+software will be great for you.
+
+Some of its major features are:
 + Play lists of videos in order or randomly (without repeating episodes).
-+ Keep playing mode.
-+ Start playing videos where you left off.
-+ Automatically discover new videos.
 + Organize the play order (without affecting the data on your hard drive).
-+ Hide/Skip some videos or files (without affecting the data on your hard drive).
-+ Turn off the screensaver while playing.
++ Hide videos or files (without affecting the data on your hard drive).
++ Automatically discover new videos.
++ Start playing lists & videos where you left off.
 + Set a default time to skip the intro of videos (handy for the series intro).
 + Set the default audio or subtitle track.
++ Turn off the screensaver while playing.
++ Keep playing mode.
 + Fullscreen mode.
 
 ## How to Install
