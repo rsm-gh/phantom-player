@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Phantom Player
+Exec=phantom-player
+Terminal=false
+Type=Application
+Icon=/usr/share/phantom-player/view/img/movie-icon-medium.png
+Categories=Video

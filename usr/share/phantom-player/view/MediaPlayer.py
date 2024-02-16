@@ -78,7 +78,7 @@ def format_track(track):
 
 
 def gtk_dialog_folder(parent, start_path=''):
-    window_choose_file = Gtk.FileChooserDialog('Video List Player',
+    window_choose_file = Gtk.FileChooserDialog('Phantom Player',
                                                parent,
                                                Gtk.FileChooserAction.OPEN,
                                                (Gtk.STOCK_CANCEL,

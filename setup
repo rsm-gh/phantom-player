@@ -54,10 +54,10 @@ function install_files(){
 
 install_files "/usr/bin"
 install_files "/usr/share/applications"
-install_files "/usr/share/doc/vlist-player"
-install_files "/usr/share/vlist-player"
-install_files "/usr/share/vlist-player/controller"
-install_files "/usr/share/vlist-player/model"
-install_files "/usr/share/vlist-player/view"
-install_files "/usr/share/vlist-player/view/img"
+install_files "/usr/share/doc/phantom-player"
+install_files "/usr/share/phantom-player"
+install_files "/usr/share/phantom-player/controller"
+install_files "/usr/share/phantom-player/model"
+install_files "/usr/share/phantom-player/view"
+install_files "/usr/share/phantom-player/view/img"
 

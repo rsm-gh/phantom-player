@@ -1,7 +1,7 @@
 
-![Player Window](https://github.com/rsm-gh/vlist-player/blob/master/usr/share/doc/vlist-player/preview.png)
+![Player Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview.png)
 
-`vlist-player` is a software to play lists of videos with comfort, some of its major features are:
+`phantom-player` is a software to play lists of videos with comfort, some of its major features are:
 + Play lists of videos in order or randomly (without repeating episodes).
 + Keep playing mode.
 + Start playing videos where you left off.
@@ -15,7 +15,7 @@
 
 ## How to Install
 
-1. Download the [stable branch](https://github.com/rsm-gh/vlist-player/archive/master.zip).
+1. Download the [stable branch](https://github.com/rsm-gh/phantom-player/archive/master.zip).
 2. Install the dependencies:
     * Debian based distributions: `apt-get install python3 python3-vlc libgtk-3-0 gir1.2-webkit2-3.0`.
     * ArchLinux: `pacman -Suy python python-vlc gtk3`.
@@ -56,7 +56,7 @@ There are two different find functions that you can use:
 
 A) When you select a single file:
 	
-You will be asked to select a file, and once you have selected it, the vlist-player will try to find the rest of the missing episodes in the same folder.
+You will be asked to select a file, and once you have selected it, the phantom-player will try to find the rest of the missing episodes in the same folder.
 This will work even if you have renamed the files with some easy patterns at the begging or the end of the file names. Examples:
 
 ```
@@ -75,8 +75,8 @@ B) When you select multiple files:
 You will be asked to select a directory, and once you select it will try to find the missing episodes by matching their name. If the names have modifications, it won't find them.
 
 ### Location of the program files
-+ Configuration File: `~/.config/vlist-player.ini`
-+ Series Files: `~/.local/share/vlist-player/<series name>.csv`
++ Configuration File: `~/.config/phantom-player.ini`
++ Series Files: `~/.local/share/phantom-player/<series name>.csv`
 
 ### Series files
 
