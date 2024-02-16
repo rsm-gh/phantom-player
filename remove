@@ -37,7 +37,7 @@ function remove_dir(){
     fi
 }
 
-remove_dir "/usr/share/vlist-player"
-remove_dir "/usr/share/doc/vlist-player"
-remove_file "/usr/share/applications/vlist-player.desktop"
-remove_file "/usr/bin/vlist-player"
+remove_dir "/usr/share/phantom-player"
+remove_dir "/usr/share/doc/phantom-player"
+remove_file "/usr/share/applications/phantom-player.desktop"
+remove_file "/usr/bin/phantom-player"
