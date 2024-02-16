@@ -163,19 +163,19 @@ class Series(object):
         self.clean_episodes()
         self.update_ids()  # this is in case there were videos with duplicated ids
 
+    def get_save_path(self):
+        file_path = SERIES_PATH.format(self.__name)
+        if not file_path.lower().endswith(".csv"):
+            file_path += ".csv"
+
+        return file_path
 
     def save(self):
 
         if not os.path.exists(FOLDER_LIST_PATH):
             os.mkdir(FOLDER_LIST_PATH)
 
-
-        file_path = SERIES_PATH.format(self.__name)
-        if not file_path.lower().endswith(".csv"):
-            file_path += ".csv"
-
-
-        with open(file_path, mode='wt', encoding='utf-8') as f:
+        with open(self.get_save_path(), mode='wt', encoding='utf-8') as f:
             csv_list = csv.writer(f, delimiter='|')
 
             csv_list.writerow([self.__random,

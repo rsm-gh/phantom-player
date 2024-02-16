@@ -39,6 +39,7 @@ from Paths import *
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
 
+_DEFAULT_PROGRESS_LABEL = "00:00 / 00:00"
 
 def format_milliseconds_to_time(number):
     if number <= 0:
@@ -140,7 +141,6 @@ class MediaPlayerWidget(Gtk.VBox):
         super().__init__()
 
         self.__root_window = root_window
-        self.__has_media = False
         self.__motion_time = time()
         self.__scale_progress_pressed = False
         self.__media_length = 0
@@ -213,7 +213,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__buttons_box.pack_start(child=self.__scale_progress, expand=True, fill=True, padding=3)
 
         self.__label_progress = Gtk.Label()
-        self.__label_progress.set_text("00:00 / 00:00")
+        self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
         self.__label_progress.set_margin_end(5)
         self.__set_css(self.__label_progress)
         self.__buttons_box.pack_start(self.__label_progress, expand=False, fill=False, padding=3)
@@ -295,6 +295,10 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def stop(self):
         self.__vlc_widget.player.stop()
+        self.__buttons_box.set_sensitive(False)
+        self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
+        self.__label_volume.hide()
+        self.__scale_progress.set_value(0)
 
     def is_playing(self):
         if self.get_state() == vlc.State.Playing:
@@ -330,6 +334,9 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_volume.hide()
         self.__widgets_shown = WidgetsShown.none
 
+    def hide_volume_label(self):
+        self.__label_volume.hide()
+
     def join(self):
         self.__thread_player_activity.join()
         self.__thread_scan_motion.join()
@@ -359,14 +366,12 @@ class MediaPlayerWidget(Gtk.VBox):
 
         media = VLC_INSTANCE.media_new(file_path)
         media.parse()
-
-        self.__has_media = True
         media_title = media.get_meta(0)
 
         turn_off_screensaver(True)
 
         self.__video_length = "00:00"
-        GLib.idle_add(self.__label_progress.set_text, "00:00 / 00:00")
+        GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
         GLib.idle_add(self.__vlc_widget.player.play)
@@ -446,24 +451,18 @@ class MediaPlayerWidget(Gtk.VBox):
 
         return self.__toggletoolbutton_keep_playing.get_active()
 
-    def __set_label_length(self):
-        self.__media_length = self.__vlc_widget.player.get_length()
-        self.__video_length = format_milliseconds_to_time(self.__media_length)
+    def get_media(self):
+        self.__vlc_widget.player.get_media()
 
-    def __set_cursor_empty(self):
-        self.get_window().set_cursor(self.__empty_cursor)
-
-    def __set_cursor_default(self):
-        self.get_window().set_cursor(self.__default_cursor)
 
     def __populate_settings_menubutton(self):
 
         menu = Gtk.Menu()
         self.__menubutton_settings.set_popup(menu)
 
-        """
-            Audio Menu
-        """
+        #
+        # Audio Menu
+        #
         menuitem = Gtk.MenuItem(label="Audio")
         menu.append(menuitem)
         submenu = Gtk.Menu()
@@ -493,9 +492,9 @@ class MediaPlayerWidget(Gtk.VBox):
                     item.set_active(True)
                 submenu.append(item)
 
-        """
-            Subtitles
-        """
+        #
+        # Subtitles
+        #
         menuitem = Gtk.MenuItem(label="Subtitles")
         menu.append(menuitem)
         submenu = Gtk.Menu()
@@ -527,6 +526,35 @@ class MediaPlayerWidget(Gtk.VBox):
                 submenu.append(item)
 
         menu.show_all()
+
+
+    def __set_label_length(self):
+        self.__media_length = self.__vlc_widget.player.get_length()
+        self.__video_length = format_milliseconds_to_time(self.__media_length)
+
+    def __set_cursor_empty(self):
+        self.get_window().set_cursor(self.__empty_cursor)
+
+    def __set_cursor_default(self):
+        self.get_window().set_cursor(self.__default_cursor)
+
+    def __set_fullscreen(self, fullscreen):
+
+        if self.__un_maximized_fixed_toolbar:
+            parent = self.__buttons_box.get_parent()
+            if parent is not None:
+                parent.remove(self.__buttons_box)
+
+        if fullscreen:
+            self.__root_window.fullscreen()
+            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.un_fullscreen)
+            if self.__un_maximized_fixed_toolbar:
+                self.__overlay.add_overlay(self.__buttons_box)
+        else:
+            self.__root_window.unfullscreen()
+            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
+            if self.__un_maximized_fixed_toolbar:
+                self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
 
     def __on_thread_scan(self):
         """
@@ -595,7 +623,7 @@ class MediaPlayerWidget(Gtk.VBox):
             if (time_delta > 3 and not self.__scale_progress_pressed and \
                     ((not self.__un_maximized_fixed_toolbar and self.__widgets_shown > WidgetsShown.none) or
                      (self.__widgets_shown != WidgetsShown.toolbox and fullscreen is not None) or
-                     (self.__hidden_controls is False and self.__has_media))):
+                     (self.__hidden_controls is False and self.get_media()))):
 
                 GLib.idle_add(self.__label_volume.hide)
                 GLib.idle_add(self.__set_cursor_empty)
@@ -614,7 +642,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         key = event.keyval
 
-        if key == EventCodes.Keyboard.f11 and self.__has_media:
+        if key == EventCodes.Keyboard.f11 and self.get_media() is not None:
             self.__set_fullscreen(True)
 
         elif Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
@@ -646,7 +674,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_mouse_scroll(self, _, event):
 
-        if not self.__has_media:
+        if self.get_media() is None:
             return
 
         elif event.direction == Gdk.ScrollDirection.UP:
@@ -657,7 +685,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_mouse_button_press(self, _, event):
 
-        if not self.__has_media:
+        if self.get_media() is None:
             return
 
         elif self.__scale_progress_pressed:
@@ -703,24 +731,6 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_toolbutton_end_clicked(self, *_):
         self.__vlc_widget.player.set_position(1)
-
-    def __set_fullscreen(self, fullscreen):
-
-        if self.__un_maximized_fixed_toolbar:
-            parent = self.__buttons_box.get_parent()
-            if parent is not None:
-                parent.remove(self.__buttons_box)
-
-        if fullscreen:
-            self.__root_window.fullscreen()
-            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.un_fullscreen)
-            if self.__un_maximized_fixed_toolbar:
-                self.__overlay.add_overlay(self.__buttons_box)
-        else:
-            self.__root_window.unfullscreen()
-            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
-            if self.__un_maximized_fixed_toolbar:
-                self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
 
     def __on_toolbutton_fullscreen_clicked(self, *_):
         self.__set_fullscreen(not self.__window_is_fullscreen())

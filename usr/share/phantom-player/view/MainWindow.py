@@ -179,6 +179,7 @@ class MainWindow:
 
         self.window_root.maximize()
         self.window_root.show_all()
+        self.__media_player.hide_volume_label()
 
         """
             Load the existent series
@@ -531,9 +532,6 @@ class MainWindow:
         if not gtk_utils.gtk_dialog_question(self.window_series_settings, Texts.DialogSeries.confirm_delete.format(series_name)):
             return
 
-        if self.__current_media.is_series_name(series_name):
-            self.__media_player.pause()
-
         gtk_utils.gtk_liststore_remove_first_selected_row(self.treeview_selection_series)
 
         if len(self.liststore_series) > 0:
@@ -541,12 +539,17 @@ class MainWindow:
         else:
             self.liststore_episodes.clear()
 
+        self.window_series_settings.hide()
+
+        if self.__current_media.is_series_name(series_name):
+            self.__media_player.stop()
+            self.__current_media = CurrentMedia()
+
+        series = self.__series_dict[series_name]
         self.__series_dict.pop(series_name)
 
-        if os.path.exists(SERIES_PATH.format(series_name)):
-            os.remove(SERIES_PATH.format(series_name))
-
-        self.window_series_settings.hide()
+        if os.path.exists(series.get_save_path()):
+            os.remove(series.get_save_path())
 
 
 
