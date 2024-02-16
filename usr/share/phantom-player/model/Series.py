@@ -425,10 +425,7 @@ class Series(object):
 
     def get_image_path(self):
 
-        if not os.path.exists(self.__path):
-            return ICON_ERROR_BIG
-
-        elif self.__icon_path is None or not os.path.exists(self.__icon_path):
+        if self.__icon_path is None or not os.path.exists(self.__icon_path):
             return ICON_LOGO_MEDIUM
 
         return self.__icon_path
