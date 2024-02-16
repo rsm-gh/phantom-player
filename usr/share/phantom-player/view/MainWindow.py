@@ -179,7 +179,6 @@ class MainWindow:
 
         self.window_root.maximize()
         self.window_root.show_all()
-        self.__media_player.hide_controls()
 
         """
             Load the existent series
@@ -1172,7 +1171,3 @@ def run():
     Gtk.main()
     vlist_player.join()
     VLC_INSTANCE.release()
-
-
-if __name__ == '__main__':
-    run()
