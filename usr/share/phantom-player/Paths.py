@@ -27,11 +27,6 @@ ICON_LOGO_SMALL = os.path.join(IMG_DIR, "movie-icon-small.png")
 ICON_LOGO_MEDIUM = os.path.join(IMG_DIR, "movie-icon-medium.png")
 ICON_LOGO_BIG = os.path.join(IMG_DIR, "movie-icon-big.png")
 
-ICON_ERROR = os.path.join(IMG_DIR, "error.png")
-ICON_ERROR_BIG = os.path.join(IMG_DIR, "error-big.png")
-ICON_CHECK = os.path.join(IMG_DIR, "check.png")
-ICON_ADD = os.path.join(IMG_DIR, "add.png")
-
 # Files
 if getpass.getuser() == "root":
     HOME_PATH = "/root"
