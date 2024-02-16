@@ -39,8 +39,8 @@ from Paths import *
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
 
-def format_milliseconds_to_time(number):
 
+def format_milliseconds_to_time(number):
     if number <= 0:
         return "00:00"
 
@@ -120,7 +120,7 @@ class ThemeButtons:
     pause = "media-playback-pause"
     next = "go-next"
     previous = "go-previous"
-    volume = ["audio-volume-muted","audio-volume-high","audio-volume-medium"]
+    volume = ["audio-volume-muted", "audio-volume-high", "audio-volume-medium"]
     fullscreen = "view-fullscreen"
     un_fullscreen = "view-restore"
     random = "media-playlist-shuffle"
@@ -128,30 +128,46 @@ class ThemeButtons:
     settings = "preferences-desktop"
 
 
-class MediaPlayerWidget(Gtk.Overlay):
+class MediaPlayerWidget(Gtk.VBox):
     __gtype_name__ = 'MediaPlayerWidget'
 
-    def __init__(self, root_window, random_button=False, keep_playing_button=False):
+    def __init__(self,
+                 root_window,
+                 random_button=False,
+                 keep_playing_button=False,
+                 un_max_fixed_toolbar=True):  # Automatically hide the toolbar when the window is un-maximized
 
         super().__init__()
 
         self.__root_window = root_window
         self.__has_media = False
-        self.__widgets_shown = WidgetsShown.none
         self.__motion_time = time()
         self.__scale_progress_pressed = False
         self.__media_length = 0
         self.__video_length = "00:00"
+        self.__hidden_controls = False
+
+        self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
+        self.__widgets_shown = WidgetsShown.toolbox
 
         display = self.get_display()
         self.__empty_cursor = Gdk.Cursor.new_from_name(display, 'none')
         self.__default_cursor = Gdk.Cursor.new_from_name(display, 'default')
 
-        self.__vlc_widget = VLCWidget()
-        self.add(self.__vlc_widget)
+        self.__overlay = Gtk.Overlay()
+        self.pack_start(self.__overlay, expand=True, fill=True, padding=0)
 
-        self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
-        self.__vlc_widget.connect('motion_notify_event', self.__on_motion_notify_event)
+        self.__vlc_widget = VLCWidget()
+        self.__overlay.add(self.__vlc_widget)
+
+        if un_max_fixed_toolbar:
+            # It is important to add the motion_notify to the root_window,
+            # to avoid hiding-it on un-maximized mode.
+            event_widget = self.__root_window
+        else:
+            event_widget = self.__vlc_widget
+        event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
+        event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
         self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
@@ -166,7 +182,7 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__set_css(self.__buttons_box)
         self.__buttons_box.set_valign(Gtk.Align.END)
         self.__buttons_box.set_halign(Gtk.Align.FILL)
-        self.add_overlay(self.__buttons_box)
+        self.__buttons_box.set_sensitive(False)
 
         self.__toolbutton_previous = Gtk.ToolButton()
         self.__toolbutton_previous.set_icon_name(ThemeButtons.previous)
@@ -225,15 +241,14 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__scale_volume.set_icons(ThemeButtons.volume)
         self.__scale_volume.connect('value_changed', self.__on_scale_volume_changed)
         # this is being called when the button is pressed, not the scale...
-        #self.__scale_volume.connect('button-press-event', self.__on_scale_volume_press)
-        #self.__scale_volume.connect('button-release-event', self.__on_scale_volume_release)
+        # self.__scale_volume.connect('button-press-event', self.__on_scale_volume_press)
+        # self.__scale_volume.connect('button-release-event', self.__on_scale_volume_release)
         self.__buttons_box.pack_start(self.__scale_volume, expand=False, fill=False, padding=3)
 
         self.__toolbutton_fullscreen = Gtk.ToolButton()
         self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
         self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
-
 
         #   Extra volume label
         self.__label_volume = Gtk.Label()
@@ -243,7 +258,15 @@ class MediaPlayerWidget(Gtk.Overlay):
         self.__label_volume.set_halign(Gtk.Align.END)
         self.__label_volume.set_margin_start(5)
         self.__label_volume.set_margin_end(5)
-        self.add_overlay(self.__label_volume)
+        self.__overlay.add_overlay(self.__label_volume)
+
+        #
+        # Add the toolbar
+        #
+        if self.__un_maximized_fixed_toolbar:
+            self.__set_fullscreen(False)
+        else:
+            self.__overlay.add_overlay(self.__buttons_box)
 
         """
             Init the threads
@@ -327,10 +350,12 @@ class MediaPlayerWidget(Gtk.Overlay):
                   play=True):
 
         if play is False:
-            return # todo: fix this
+            return  # todo: fix this
 
         if not os.path.exists(file_path):
             return
+
+        GLib.idle_add(self.__buttons_box.set_sensitive, True)
 
         media = VLC_INSTANCE.media_new(file_path)
         media.parse()
@@ -415,13 +440,11 @@ class MediaPlayerWidget(Gtk.Overlay):
 
         return self.__toggletoolbutton_random.get_active()
 
-
     def get_keep_playing(self):
         if self.__toggletoolbutton_keep_playing is None:
             return False
 
         return self.__toggletoolbutton_keep_playing.get_active()
-
 
     def __set_label_length(self):
         self.__media_length = self.__vlc_widget.player.get_length()
@@ -484,7 +507,6 @@ class MediaPlayerWidget(Gtk.Overlay):
         if selected_track == -1:
             default_item.set_active(True)
         default_item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
-
 
         submenu.append(default_item)
 
@@ -563,22 +585,37 @@ class MediaPlayerWidget(Gtk.Overlay):
 
             time_delta = time() - self.__motion_time
 
-            if time_delta > 3 and self.__widgets_shown > WidgetsShown.none and not self.__scale_progress_pressed:
-                self.__widgets_shown = WidgetsShown.none
+            if self.__un_maximized_fixed_toolbar:
+                fullscreen = self.__window_is_fullscreen()
+            else:
+                fullscreen = None
+
+            # print("CALLED", self.__widgets_shown)
+
+            if (time_delta > 3 and not self.__scale_progress_pressed and \
+                    ((not self.__un_maximized_fixed_toolbar and self.__widgets_shown > WidgetsShown.none) or
+                     (self.__widgets_shown != WidgetsShown.toolbox and fullscreen is not None) or
+                     (self.__hidden_controls is False and self.__has_media))):
 
                 GLib.idle_add(self.__label_volume.hide)
-                GLib.idle_add(self.__buttons_box.hide)
                 GLib.idle_add(self.__set_cursor_empty)
 
-            sleep(.5)
+                if fullscreen in (True, None):
+                    self.__widgets_shown = WidgetsShown.none
+                    GLib.idle_add(self.__buttons_box.hide)
+                else:
+                    self.__widgets_shown = WidgetsShown.toolbox
 
+                self.__hidden_controls = True
+
+            sleep(.5)
 
     def __on_key_pressed(self, _, event):
 
         key = event.keyval
 
         if key == EventCodes.Keyboard.f11 and self.__has_media:
-            self.__root_window.fullscreen()
+            self.__set_fullscreen(True)
 
         elif Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
 
@@ -587,7 +624,7 @@ class MediaPlayerWidget(Gtk.Overlay):
                 self.__motion_time = time()
 
             if key == EventCodes.Keyboard.esc:
-                self.__root_window.unfullscreen()
+                self.__set_fullscreen(False)
 
             elif key in (EventCodes.Keyboard.space_bar, EventCodes.Keyboard.enter):
                 self.__on_toolbutton_play_clicked(None, None)
@@ -601,7 +638,8 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __on_motion_notify_event(self, *_):
         self.__motion_time = time()
 
-        if self.__has_media and self.__widgets_shown < WidgetsShown.toolbox:
+        if self.__hidden_controls:
+            self.__hidden_controls = False
             self.__widgets_shown = WidgetsShown.toolbox
             self.__buttons_box.show()
             self.__set_cursor_default()
@@ -666,14 +704,38 @@ class MediaPlayerWidget(Gtk.Overlay):
     def __on_toolbutton_end_clicked(self, *_):
         self.__vlc_widget.player.set_position(1)
 
-    def __on_toolbutton_fullscreen_clicked(self, *_):
+    def __set_fullscreen(self, fullscreen):
 
-        if Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
-            self.__root_window.unfullscreen()
-            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
-        else:
+        if self.__un_maximized_fixed_toolbar:
+            parent = self.__buttons_box.get_parent()
+            if parent is not None:
+                parent.remove(self.__buttons_box)
+
+        if fullscreen:
             self.__root_window.fullscreen()
             self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.un_fullscreen)
+            if self.__un_maximized_fixed_toolbar:
+                self.__overlay.add_overlay(self.__buttons_box)
+        else:
+            self.__root_window.unfullscreen()
+            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
+            if self.__un_maximized_fixed_toolbar:
+                self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
+
+    def __on_toolbutton_fullscreen_clicked(self, *_):
+        self.__set_fullscreen(not self.__window_is_fullscreen())
+
+    def __window_is_fullscreen(self):
+
+        window = self.__root_window.get_window()
+
+        if window is None:
+            return False
+
+        elif Gdk.WindowState.FULLSCREEN & window.get_state():
+            return True
+
+        return False
 
     def __on_scale_volume_changed(self, _, value):
         value = int(value * 100)
@@ -685,7 +747,7 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def __on_scale_volume_press(self, *_):
         pass
-        #self.__scale_progress_pressed = True
+        # self.__scale_progress_pressed = True
 
     def __on_scale_volume_release(self, *_):
         pass
@@ -693,11 +755,11 @@ class MediaPlayerWidget(Gtk.Overlay):
 
     def __on_scale_progress_press(self, *_):
         self.__scale_progress_pressed = True
-        self.__vlc_widget.player.pause() # In case of long press
+        self.__vlc_widget.player.pause()  # In case of long press
 
     def __on_scale_progress_release(self, widget, *_):
         self.__vlc_widget.player.set_position(widget.get_value())
-        self.__vlc_widget.player.play() # In case of long press
+        self.__vlc_widget.player.play()  # In case of long press
         self.__motion_time = time()
         self.__scale_progress_pressed = False
 
@@ -705,7 +767,8 @@ class MediaPlayerWidget(Gtk.Overlay):
         if self.__media_length > 0:
             video_time = widget.get_value() * self.__media_length
             video_time = format_milliseconds_to_time(video_time)
-            self.__label_progress.set_text(video_time+" / "+self.__video_length)
+            self.__label_progress.set_text(video_time + " / " + self.__video_length)
+
 
 class MediaPlayer(Gtk.Window):
     """ This class creates a media player built in a Gtk.Window """
