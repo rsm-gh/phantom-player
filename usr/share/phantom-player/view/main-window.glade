@@ -180,6 +180,7 @@ Author: Rafael Senties Martinelli
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">New</property>
+                        <property name="use-underline">True</property>
                         <signal name="activate" handler="on_menuitem_series_new_activate" swapped="no"/>
                       </object>
                     </child>
@@ -771,7 +772,7 @@ Author: Rafael Senties Martinelli
                 <property name="can-focus">False</property>
                 <property name="halign">start</property>
                 <property name="margin-end">10</property>
-                <property name="label" translatable="yes">Start at minute</property>
+                <property name="label" translatable="yes">Start at</property>
               </object>
               <packing>
                 <property name="left-attach">0</property>
@@ -833,7 +834,7 @@ Author: Rafael Senties Martinelli
                 <property name="can-focus">False</property>
                 <property name="halign">start</property>
                 <property name="margin-top">10</property>
-                <property name="label" translatable="yes">Content</property>
+                <property name="label" translatable="yes">Sources</property>
                 <attributes>
                   <attribute name="weight" value="bold"/>
                 </attributes>
