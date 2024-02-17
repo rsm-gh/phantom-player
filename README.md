@@ -51,6 +51,7 @@ discover new downloaded videos, and reproduce everything with comfort !*
 + Change the volume with the mouse wheel or the up/down arrows**.
 + Toggle Pause/Play with a left-click or the space bar**.
 + Change the subtitles or the audio track with the button from the media player.
++ Resize the player by grabbing the separator with and moving it up or down.
 
 ***Only in fullscreen mode.*  
 **The media player controls only work if a video is loaded.*  
