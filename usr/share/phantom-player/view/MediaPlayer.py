@@ -39,11 +39,12 @@ from Paths import *
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
 
-_DEFAULT_PROGRESS_LABEL = "00:00 / 00:00"
+_EMPTY__VIDEO_LENGTH = "00:00"
+_DEFAULT_PROGRESS_LABEL = "{0} / {0}".format(_EMPTY__VIDEO_LENGTH)
 
 def format_milliseconds_to_time(number):
     if number <= 0:
-        return "00:00"
+        return _EMPTY__VIDEO_LENGTH
 
     time_string = str(timedelta(milliseconds=number)).split('.')[0]
 
@@ -144,7 +145,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__motion_time = time()
         self.__scale_progress_pressed = False
         self.__media_length = 0
-        self.__video_length = "00:00"
+        self.__video_length = _EMPTY__VIDEO_LENGTH
         self.__hidden_controls = False
 
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
@@ -367,7 +368,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         turn_off_screensaver(True)
 
-        self.__video_length = "00:00"
+        self.__video_length = _EMPTY__VIDEO_LENGTH
         GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
