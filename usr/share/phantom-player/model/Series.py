@@ -30,6 +30,16 @@ MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 MAGIC_MIMETYPE.load()
 
 
+class SeriesListStoreColumns:
+    id = 0
+    name = 1
+    ext = 2
+    play = 3
+    o_played = 4
+    r_played = 5
+    color = 6
+
+
 class Series(object):
 
     def __init__(self,
@@ -269,11 +279,11 @@ class Series(object):
 
                 if video.get_name() == episode_name:
 
-                    if column == 4:
+                    if column == SeriesListStoreColumns.play:
                         video.set_play(state)
-                    elif column == 5:
+                    elif column == SeriesListStoreColumns.o_played:
                         video.set_o_played(state)
-                    elif column == 6:
+                    elif column == SeriesListStoreColumns.r_played:
                         video.set_r_played(state)
 
                     break
