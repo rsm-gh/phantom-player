@@ -317,11 +317,11 @@ class Series(object):
 
                 self.__nb_videos -= 1
                 self.update_ids()
-                self.save()
-
                 self.update_not_hidden_videos()
 
-                break
+                return video
+
+        return None
 
 
     def find_series(self, path):
