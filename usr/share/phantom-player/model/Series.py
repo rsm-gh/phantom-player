@@ -49,8 +49,8 @@ class Series(object):
                  is_random=False,
                  keep_playing=True,
                  start_at=0.0,
-                 audio_track=-2,
-                 subtitles_track=-2):
+                 audio_track=0,
+                 subtitles_track=0):
 
         self.__name = ""
         self.set_name(name)
@@ -60,8 +60,8 @@ class Series(object):
         self.__random = False
         self.__keep_playing = False
         self.__start_at = 0.0
-        self.__audio_track = -2
-        self.__subtitles_track = -2
+        self.__audio_track = 0
+        self.__subtitles_track = 0
 
         self.set_recursive(recursive, False)
         self.set_random(is_random, False)
@@ -596,12 +596,12 @@ class Series(object):
             print(self.__name)
             print("set_audio_track error:")
             print(str(e))
-            value = -2
+            value = 0
 
         if value == -1 or value >= 0:
             self.__audio_track = value
         else:
-            self.__audio_track = -2
+            self.__audio_track = 0
 
         if write:
             self.save()
@@ -613,12 +613,12 @@ class Series(object):
             print(self.__name)
             print("set_subtitles_track error:")
             print(str(e))
-            value = -2
+            value = 0
 
         if value == -1 or value >= 0:
             self.__subtitles_track = value
         else:
-            self.__subtitles_track = -2
+            self.__subtitles_track = 0
 
         if write:
             self.save()
