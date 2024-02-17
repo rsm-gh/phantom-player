@@ -25,8 +25,6 @@
         + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
             I haven't found a solution for this, because the press signals connect to the button and not the scale.
 
-        + Remove the border of self.__menubutton_settings.
-
         + Fixes to the menu of the subtitles & audio tracks?
 
         + Fix to the VolumeButton: it should get hidden when clicking out of the button.
@@ -257,6 +255,7 @@ scale, label, box {
             self.__toggletoolbutton_random = None
 
         self.__menubutton_settings = Gtk.MenuButton()
+        self.__menubutton_settings.set_relief(Gtk.ReliefStyle.NONE)
         self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons.settings, Gtk.IconSize.BUTTON))
         self.__menubutton_settings.set_direction(Gtk.ArrowType.UP)
         self.__buttons_box.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
