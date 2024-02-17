@@ -143,10 +143,10 @@ class Video(object):
         self.__is_new = True
 
     def set_position(self, pos):
-        if 1 > pos >= 0:
+        if 1 >= pos >= 0:
             self.__position = pos
         else:
-            print(self.__name, "wrong set_position")
+            print(self.__name, "wrong set_position", pos)
 
     def set_display(self, bool_value):
         self.__display = bool_value

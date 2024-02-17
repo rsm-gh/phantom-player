@@ -16,6 +16,16 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""
+    + Fix: when searching in the series liststore, the episodes shall be emptied.
+    + Add: accelerators to the series menu.
+    + Manage multiple paths into the series settings menu.
+    + Apply the "load video" methods into a thread.
+    + Re-enable find videos?
+"""
+
+
+
 import os
 import gi
 import sys
