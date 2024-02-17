@@ -17,6 +17,25 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+"""
+    Open Points:
+        + Sometimes when clicking very fast the progress scale, the video position is not modified.
+            Despite multiple ways of trying to fix this, I haven't found a solution.
+
+        + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
+            I haven't found a solution for this, because the press signals connect to the button and not the scale.
+
+        + Remove the border of self.__menubutton_settings.
+
+        + Fixes to the menu of the subtitles & audio tracks?
+
+        + Fix to the VolumeButton: it should get hidden when clicking out of the button.
+
+    Hacks:
+        + It seems that: self.__vlc_widget.player.get_media() is always returning None. Why?
+            To fix it, I created self.__media
+"""
+
 import os
 import gi
 import vlc
@@ -64,7 +83,7 @@ def format_track(track):
     number = str(track[0])
 
     try:
-        content = track[1].strip().replace('[', '').replace(']', '').replace('_', ' ').title()
+        content = track[1].strip().replace('[', '').replace(']', '').replace('_', ' ').title().strip()
     except Exception as e:
         content = track[1]
         print(str(e))
@@ -72,11 +91,11 @@ def format_track(track):
     if len(number) == 0:
         numb = '  '
     elif len(number) == 1:
-        numb = ' {}'.format(number)
+        numb = '  {}'.format(number)
     else:
         numb = str(number)
 
-    return ' {}   {}'.format(numb, content)
+    return '{}:   {}'.format(numb, content)
 
 
 def gtk_dialog_folder(parent, start_path=''):
@@ -147,6 +166,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__media_length = 0
         self.__video_length = _EMPTY__VIDEO_LENGTH
         self.__hidden_controls = False
+        self.__media = None
 
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
         self.__widgets_shown = WidgetsShown.toolbox
@@ -232,13 +252,13 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__menubutton_settings.set_direction(Gtk.ArrowType.UP)
         self.__buttons_box.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
 
-        self.__scale_volume = Gtk.VolumeButton()
-        self.__scale_volume.set_icons(ThemeButtons.volume)
-        self.__scale_volume.connect('value_changed', self.__on_scale_volume_changed)
+        self.__volumebutton = Gtk.VolumeButton()
+        self.__volumebutton.set_icons(ThemeButtons.volume)
+        self.__volumebutton.connect('value_changed', self.__on_scale_volume_changed)
         # this is being called when the button is pressed, not the scale...
-        # self.__scale_volume.connect('button-press-event', self.__on_scale_volume_press)
-        # self.__scale_volume.connect('button-release-event', self.__on_scale_volume_release)
-        self.__buttons_box.pack_start(self.__scale_volume, expand=False, fill=False, padding=3)
+        # self.__volumebutton.connect('button-press-event', self.__on_scale_volume_press)
+        # self.__volumebutton.connect('button-release-event', self.__on_scale_volume_release)
+        self.__buttons_box.pack_start(self.__volumebutton, expand=False, fill=False, padding=3)
 
         self.__toolbutton_fullscreen = Gtk.ToolButton()
         self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
@@ -297,6 +317,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
         self.__label_volume.hide()
         self.__scale_progress.set_value(0)
+        self.__media = None
 
     def is_playing(self):
         if self.get_state() == vlc.State.Playing:
@@ -349,8 +370,8 @@ class MediaPlayerWidget(Gtk.VBox):
     def set_video(self,
                   file_path,
                   position=0.0,
-                  subtitles_track=-2,
-                  audio_track=-2,
+                  subtitles_track=0,
+                  audio_track=0,
                   start_at=0.0,
                   play=True):
 
@@ -364,6 +385,8 @@ class MediaPlayerWidget(Gtk.VBox):
 
         media = VLC_INSTANCE.media_new(file_path)
         media.parse()
+        self.__media = media
+
         media_title = media.get_meta(0)
 
         turn_off_screensaver(True)
@@ -375,8 +398,11 @@ class MediaPlayerWidget(Gtk.VBox):
         GLib.idle_add(self.__vlc_widget.player.play)
 
         GLib.timeout_add_seconds(.5, self.__populate_settings_menubutton)
-        GLib.timeout_add_seconds(.5, self.__vlc_widget.player.audio_set_track, audio_track)
-        GLib.timeout_add_seconds(.5, self.__vlc_widget.player.video_set_spu, subtitles_track)
+        if audio_track != 0:
+            GLib.timeout_add_seconds(.5, self.__vlc_widget.player.audio_set_track, audio_track)
+
+        if subtitles_track != 0:
+            GLib.timeout_add_seconds(.5, self.__vlc_widget.player.video_set_spu, subtitles_track)
 
         #
         # Calculate the player position
@@ -449,7 +475,8 @@ class MediaPlayerWidget(Gtk.VBox):
         return self.__toggletoolbutton_keep_playing.get_active()
 
     def get_media(self):
-        self.__vlc_widget.player.get_media()
+        #self.__vlc_widget.player.get_media()
+        return self.__media
 
 
     def __populate_settings_menubutton(self):
@@ -467,12 +494,6 @@ class MediaPlayerWidget(Gtk.VBox):
 
         selected_track = self.__vlc_widget.player.audio_get_track()
 
-        default_item = Gtk.RadioMenuItem(label="-1  Disable")
-        if selected_track == -1:
-            default_item.set_active(True)
-        default_item.connect('activate', self.__on_menu_video_subs_audio, 0, -1)
-        submenu.append(default_item)
-
         try:
             tracks = [(audio[0], audio[1].decode('utf-8')) for audio in
                       self.__vlc_widget.player.audio_get_track_description()]
@@ -480,14 +501,23 @@ class MediaPlayerWidget(Gtk.VBox):
             tracks = self.__vlc_widget.player.audio_get_track_description()
             print(str(e))
 
+        default_item = Gtk.RadioMenuItem(label="-1:  Disable")
+        if selected_track == -1:
+            default_item.set_active(True)
+        default_item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
+        submenu.append(default_item)
+
         for track in tracks:
-            if 'Disable' not in track:
-                item = Gtk.RadioMenuItem(label=format_track(track))
-                item.connect('activate', self.__on_menu_video_subs_audio, 0, track[0])
-                item.join_group(default_item)
-                if selected_track == track[0]:
-                    item.set_active(True)
-                submenu.append(item)
+            if 'Disable' in track:
+                continue
+
+            item = Gtk.RadioMenuItem(label=format_track(track))
+            item.connect('activate', self.__on_menu_video_subs_audio, 0, track[0])
+            item.join_group(default_item)
+
+            if selected_track == track[0]:
+                item.set_active(True)
+            submenu.append(item)
 
         #
         # Subtitles
@@ -499,11 +529,10 @@ class MediaPlayerWidget(Gtk.VBox):
 
         selected_track = self.__vlc_widget.player.video_get_spu()
 
-        default_item = Gtk.RadioMenuItem(label="-1  Disable")
+        default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
             default_item.set_active(True)
         default_item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
-
         submenu.append(default_item)
 
         try:
@@ -514,13 +543,15 @@ class MediaPlayerWidget(Gtk.VBox):
             print(str(e))
 
         for track in tracks:
-            if 'Disable' not in track:
-                item = Gtk.RadioMenuItem(label=format_track(track))
-                item.join_group(default_item)
-                if selected_track == track[0]:
-                    item.set_active(True)
-                item.connect('activate', self.__on_menu_video_subs_audio, 2, track[0])
-                submenu.append(item)
+            if 'Disable' in track:
+                continue
+
+            item = Gtk.RadioMenuItem(label=format_track(track))
+            item.join_group(default_item)
+            if selected_track == track[0]:
+                item.set_active(True)
+            item.connect('activate', self.__on_menu_video_subs_audio, 2, track[0])
+            submenu.append(item)
 
         menu.show_all()
 
@@ -582,9 +613,9 @@ class MediaPlayerWidget(Gtk.VBox):
                     Update the volume. Is this necessary?
                 """
                 vlc_volume = self.__vlc_widget.player.audio_get_volume()
-                scale_volume_value = int(self.__scale_volume.get_value() * 100)
+                scale_volume_value = int(self.__volumebutton.get_value() * 100)
                 if vlc_volume <= 100 and vlc_volume != scale_volume_value:
-                    GLib.idle_add(self.__scale_volume.set_value, vlc_volume / 100.000)
+                    GLib.idle_add(self.__volumebutton.set_value, vlc_volume / 100.000)
                     GLib.idle_add(self.__label_volume.set_text, " Vol: {}% ".format(vlc_volume))
                     GLib.idle_add(self.__label_volume.show)
 
