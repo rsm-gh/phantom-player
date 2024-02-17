@@ -138,18 +138,6 @@ class MainWindow:
         """
             configuration
         """
-
-        # font colors
-        color = Gdk.RGBA()
-        color.parse(gtk_utils.gtk_default_font_color())
-        color.to_string()
-        self.__default_font_color = color
-
-        color = Gdk.RGBA()
-        color.parse('#FF0000')
-        color.to_string()
-        self.__hidden_font_color = color
-
         # extra
         self.window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.window_root.connect('delete-event', self.quit)
@@ -529,7 +517,8 @@ class MainWindow:
 
         series_name = self.__selected_series.get_name()
 
-        if not gtk_utils.gtk_dialog_question(self.window_series_settings, Texts.DialogSeries.confirm_delete.format(series_name)):
+        if not gtk_utils.gtk_dialog_question(self.window_series_settings,
+                                             Texts.DialogSeries.confirm_delete.format(series_name)):
             return
 
         gtk_utils.gtk_liststore_remove_first_selected_row(self.treeview_selection_series)
@@ -550,8 +539,6 @@ class MainWindow:
 
         if os.path.exists(series.get_save_path()):
             os.remove(series.get_save_path())
-
-
 
     def on_button_series_add_clicked(self, *_):
 
@@ -769,7 +756,6 @@ class MainWindow:
             self.button_series_add.hide()
             self.liststore_paths.append([series.get_path(), series.get_recursive()])
 
-
         self.button_series_path_add.set_sensitive(new_series)
         self.button_series_path_remove.set_sensitive(False)
         self.button_series_path_edit.set_sensitive(not new_series)
@@ -912,25 +898,47 @@ class MainWindow:
             except Exception as e:
                 print(str(e))
 
+        _, default_color = gtk_utils.gtk_default_font_color('theme_text_color',
+                                                            widget=self.treeview_episodes,
+                                                            on_error="#000000")
+
+        _, hide_color = gtk_utils.gtk_default_font_color('warning_color',
+                                                         widget=self.treeview_episodes,
+                                                         on_error="#ff9900")
+
+        _, error_color = gtk_utils.gtk_default_font_color('error_color',
+                                                         widget=self.treeview_episodes,
+                                                         on_error="#ff0000")
+
+        _, new_color = gtk_utils.gtk_default_font_color('success_color',
+                                                         widget=self.treeview_episodes,
+                                                         on_error="#009933")
+
         for video in videos_list:
             if video:
 
-                # get the color of the font
-                if video.get_display():
-                    color = self.__default_font_color
+                if not video.get_display():
+                    color = hide_color
+
+                elif video.get_is_new():
+                    color = new_color
+
+                elif not video.exists():
+                    color = error_color
+
                 else:
-                    color = self.__hidden_font_color
+                    color = default_color
+
+
 
                 # add the video to the list store
                 if video.get_display() or not self.checkbox_hidden_items.get_active():
                     self.liststore_episodes.append([video.get_id(),
                                                     video.get_empty_name(),
                                                     video.get_extension(),
-                                                    video.get_state(),
                                                     video.get_play(),
                                                     video.get_o_played(),
                                                     video.get_r_played(),
-                                                    " ",
                                                     color])
             else:
                 print("Error loading the liststore_episodes. The series '{}' has an empty video.".format(
