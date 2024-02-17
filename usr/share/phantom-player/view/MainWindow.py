@@ -17,11 +17,21 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
+    + Remove the play column, it is not necessary because the video can be "ignored".
+    + Fix: when a series is changed, update the "random", "keep playing" states of the player.
+    + Playlist Settings: ADD keep playing and Random.
+    + Disable the check-boxes for hidden episodes?
+    + Add the episodes path to the liststore
+    + Add a series progress bar on the liststore.
+    + Merge O-Played and R-Played? Replace them with a progress bar?
+    + Select & focus the video on the liststore when start playing a series
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
     + Add: accelerators to the playlist menu.
     + Manage multiple paths into the playlist settings menu.
     + Apply the "load video" methods into a thread.
     + Re-enable find videos?
+    + Add option: end at
+    + Rename episodes dialog
 """
 
 
@@ -795,7 +805,7 @@ class MainWindow:
         else:
 
             position = video.get_position()
-            if position >= .999 and replay:
+            if position >= 1 and replay:
                 position = 0
 
             self.__media_player.set_video(video.get_path(),
@@ -952,9 +962,9 @@ class MainWindow:
     def __liststore_videos_mark(self, video_name, random):
 
         if random:
-            column = 6
+            column = PlaylistListStoreColumns.r_played
         else:
-            column = 5
+            column = PlaylistListStoreColumns.o_played
 
         for i, (_, e_name, *_) in enumerate(self.liststore_videos):
             if video_name == e_name:
