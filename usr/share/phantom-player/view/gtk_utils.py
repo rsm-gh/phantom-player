@@ -74,8 +74,8 @@ def gtk_liststore_remove_first_selected_row(gtk_selection):
         model.remove(model.get_iter(treepaths[0]))
 
 
-def gtk_treepath_get_merged_cells(gtk_liststore, gtk_treepath, cell1, cell2):
-    return '{}{}'.format(gtk_liststore[gtk_treepath][cell1], gtk_liststore[gtk_treepath][cell2])
+def gtk_treepath_get_merged_cells(gtk_liststore, gtk_treepath, column1, column2):
+    return '{}{}'.format(gtk_liststore[gtk_treepath][column1], gtk_liststore[gtk_treepath][column2])
 
 def gtk_dialog_file(parent, start_path=None):
     dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,

@@ -220,7 +220,7 @@ Author: Rafael Senties Martinelli
                                 <property name="use-action-appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Series Missing Warning</property>
+                                <property name="label" translatable="yes">Missing series warning</property>
                                 <signal name="toggled" handler="on_checkbox_hide_warning_missing_series_toggled" swapped="no"/>
                               </object>
                             </child>
@@ -252,7 +252,7 @@ Author: Rafael Senties Martinelli
                                 <property name="use-action-appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Display Ignored Episodes</property>
+                                <property name="label" translatable="yes">Ignored Episodes</property>
                                 <property name="active">True</property>
                                 <signal name="toggled" handler="on_checkbox_hidden_items_toggled" swapped="no"/>
                               </object>
