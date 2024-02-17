@@ -27,6 +27,11 @@ from gi.repository import Gtk, GObject, Gdk
 from Texts import Texts
 from Paths import ICON_LOGO_SMALL
 
+def gtk_set_css(widget, css):
+    provider = Gtk.CssProvider()
+    provider.load_from_data(css.encode('utf-8'))
+    context = widget.get_style_context()
+    context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
 def gtk_default_font_color(text_type='theme_text_color', widget=None, on_error='#000000'):
     """
