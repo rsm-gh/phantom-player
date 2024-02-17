@@ -43,10 +43,20 @@ from model.Series import Series, SeriesListStoreColumns
 from system_utils import EventCodes, open_directory
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 
+_DARK_CSS = """
+@define-color theme_text_color white;
+@define-color warning_color orange;
+@define-color error_color red;
+@define-color success_color green;
+
+window, treeview, box, menu {
+    background: #262626;
+    color: white;
+}"""
 
 class MainWindow:
 
-    def __init__(self):
+    def __init__(self, dark_mode=False):
 
         self.__populating_settings = False
         self.__selected_series = None
@@ -58,9 +68,9 @@ class MainWindow:
 
         self.__ccp = CCParser(CONFIGURATION_FILE, 'phantom-player')
 
-        """
-            load items from glade
-        """
+        #
+        #    load items from glade
+        #
         builder = Gtk.Builder()
         builder.add_from_file(os.path.join(_SCRIPT_DIR, "main-window.glade"))
         builder.connect_signals(self)
@@ -112,6 +122,12 @@ class MainWindow:
             'window_about',
         )
 
+        if dark_mode:
+            css_style = _DARK_CSS
+        else:
+            css_style = None
+
+
         for glade_id in glade_ids:
             setattr(self, glade_id, builder.get_object(glade_id))
 
@@ -124,7 +140,8 @@ class MainWindow:
         """
         self.__media_player = MediaPlayerWidget(self.window_root,
                                                 random_button=True,
-                                                keep_playing_button=True)
+                                                keep_playing_button=True,
+                                                css_style=css_style)
 
         self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
         self.__paned.add1(self.__media_player)
@@ -135,9 +152,10 @@ class MainWindow:
         self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
         self.__thread_scan_media_player.start()
 
-        """
-            configuration
-        """
+        #
+        #    configuration
+        #
+
         # extra
         self.window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.window_root.connect('delete-event', self.quit)
@@ -160,18 +178,23 @@ class MainWindow:
                 checkbox = getattr(self, item_name.replace("hide_ep_", "checkbox_hide_"))
                 checkbox.set_active(True)
 
-        """
-            Display the window
-        """
+        #
+        #    Display the window
+        #
         self.menuitem_series_settings.set_sensitive(False)
+
+        if dark_mode:
+            gtk_utils.gtk_set_css(self.window_root, css_style)
+            gtk_utils.gtk_set_css(self.treeview_episodes, css_style)
+        
 
         self.window_root.maximize()
         self.window_root.show_all()
         self.__media_player.hide_volume_label()
 
-        """
-            Load the existent series
-        """
+        #
+        #    Load the existent series
+        #
         th = Thread(target=self.__on_thread_load_series)
         th.start()
         self.__threads.append(th)
