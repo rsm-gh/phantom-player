@@ -1,6 +1,6 @@
 
 ![Player Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview.png)  
-**The icons and color are defined by your Desktop theme.*
+**Your Desktop theme will define the icons and look of the player.*
 
 **Phantom Player** is a Media Player that allows organizing and reproducing lists of videos with comfort.
 It will give you the feeling of having a streaming platform with the content of your hard drive.
