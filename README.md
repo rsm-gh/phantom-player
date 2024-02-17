@@ -3,10 +3,7 @@
 **Your Desktop theme will define the icons and look of the player.*
 
 **Phantom Player** is a Media Player that allows organizing and reproducing lists of videos with comfort.
-It will give you the feeling of having a streaming platform with the content of your hard drive.
-
-If you're still having a hard drive with lots of videos or downloading & seeding torrents, this
-software will be great for you.
+It gives the feeling of having a streaming platform with the content of a hard drive.
 
 Some of its major features are:
 + Play lists of videos in order or randomly (without repeating episodes).
@@ -19,6 +16,10 @@ Some of its major features are:
 + Turn off the screensaver while playing.
 + Keep playing mode.
 + Fullscreen mode.
+
+*Note: This software is great for reproducing lists of videos that have been downloaded 
+from torrents. It allows hiding the unnecessary stuff, having multiple sources, keep seeding, 
+discover new downloaded videos, and reproduce everything with comfort !*
 
 ## How to Install
 
@@ -37,34 +38,37 @@ Some of its major features are:
 ### Series List
 + Select a series with single left-click.
 + Start playing a series with a double left-click.
-+ Open the series menu with a right-click.
++ Open the series settings with a right-click.
 
 ### Episodes List
 + Play an episode with a double left-click.
 + Open the episode's menu with a right-click.
 + Order the episodes with drag and drop.
-+ Check the play columns to select if an episode should be play / play in order mode / play in random mode.
 
 ### Media Player
-+ Toggle the fullscreen with a double left-click, or use the esc key to quit**.
++ Turn to fullscreen with the F11 key or with the button from the media player.
++ Turn off the fullscreen with the Esc key or with the button from the media player.
 + Change the volume with the mouse wheel or the up/down arrows**.
 + Toggle Pause/Play with a left-click or the space bar**.
-+ Change the subtitles or the audio track from the right-click menu.
++ Change the subtitles or the audio track with the button from the media player.
 
-**The media player controls will only work if a video is loaded.*  
-***Only in fullscreen mode.*
+***Only in fullscreen mode.*  
+**The media player controls only work if a video is loaded.*  
 
 ## Extra
 ### Searching missing Episodes
 
-When an episode is missing, an error icon will appear, you can then find files by using `right-click menu > find`.
+When an episode is missing, the text will be displayed in red*, 
+you can then find it by using `right-click menu > find`.
 
-There are two different find functions that you can use:
+There are two different method functions that you can use to perform this action:
 
-A) When you select a single file:
+A) By selecting a single row:
 	
-You will be asked to select a file, and once you have selected it, the phantom-player will try to find the rest of the missing episodes in the same folder.
-This will work even if you have renamed the files with some easy patterns at the begging or the end of the file names. Examples:
+You will be asked to select a file, and the player will try to find the rest of the 
+missing episodes in the same directory.
+
+This will work even if some files are renamed with easy patterns, for example:
 
 ```
 foo-700 -> lol-700
@@ -77,9 +81,12 @@ foo-700 -> 700
 foo-700 -> 701
 ```
 				
-B) When you select multiple files:
+B) By selecting multiple rows:
 	
-You will be asked to select a directory, and once you select it will try to find the missing episodes by matching their name. If the names have modifications, it won't find them.
+You will be asked to select a directory, and the player will try to find the missing episodes 
+by matching their exact name.
+
+**The font-colors depend on your Desktop theme.*
 
 ### Location of the program files
 + Configuration File: `~/.config/phantom-player.ini`
@@ -87,13 +94,17 @@ You will be asked to select a directory, and once you select it will try to find
 
 ### Series files
 
-They use the CSV format with a "|" as separator. If some of the files that you want to add have this character, they will be rejected.
+Each series is stored in a CSV file that uses a "|" as separator. 
 
-The first line will contain:
+The first line will contain the series properties:
 ```
-Absolute Path | Recursive | Random | Keep Playing | Start At | Audio Track | Subtitles Track
+Random | Keep Playing | Start At | Audio Track | Subtitles Track
 ```
-Then each episode will be added in a separate line:
+Then, the series paths will be listed as:
 ```
-Number | Absolute Path | Play | O-Played | R-Played | Position | Hide
+Path | Recursive
+```
+And finally, there will be one line per video:
+```
+Number | Absolute Path | Play | O-Played | R-Played | Position | Ignore
 ```
