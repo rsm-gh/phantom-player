@@ -54,6 +54,17 @@ window, treeview, box, menu {
     color: white;
 }"""
 
+
+class GlobalConfigTags:
+    checkbox_missing_series_warning = "missing-series-warning"
+    checkbox_hidden_videos = "hidden-videos"
+    checkbox_hide_missing_series = "hide-missing-series"
+
+    @staticmethod
+    def convert_conf_to_gui(name):
+        return name.replace("hide_ep_", "checkbox_hide_")
+
+
 class MainWindow:
 
     def __init__(self, dark_mode=False):
@@ -127,7 +138,6 @@ class MainWindow:
         else:
             css_style = None
 
-
         for glade_id in glade_ids:
             setattr(self, glade_id, builder.get_object(glade_id))
 
@@ -163,9 +173,12 @@ class MainWindow:
         self.window_root.connect("visibility_notify_event", self.__on_window_root_notify_event)
 
         # checkboxes
-        self.checkbox_hide_warning_missing_series.set_active(self.__ccp.get_bool('warningMissingSeries'))
-        self.checkbox_hidden_items.set_active(self.__ccp.get_bool_defval('hidden', False))
-        self.checkbox_hide_missing_series.set_active(self.__ccp.get_bool_defval('hide-missing-series', False))
+        self.checkbox_hide_warning_missing_series.set_active(
+            self.__ccp.get_bool(GlobalConfigTags.checkbox_missing_series_warning))
+        self.checkbox_hidden_items.set_active(
+            self.__ccp.get_bool_defval(GlobalConfigTags.checkbox_hidden_videos, False))
+        self.checkbox_hide_missing_series.set_active(
+            self.__ccp.get_bool_defval(GlobalConfigTags.checkbox_hide_missing_series, False))
 
         for item_name in ("hide_ep_number",
                           "hide_ep_name",
@@ -175,8 +188,27 @@ class MainWindow:
                           "hide_ep_rplayed"):
 
             if self.__ccp.get_bool(item_name):
-                checkbox = getattr(self, item_name.replace("hide_ep_", "checkbox_hide_"))
+                checkbox = getattr(self, GlobalConfigTags.convert_conf_to_gui(item_name))
                 checkbox.set_active(True)
+
+        #
+        # Font colors
+        #
+        _, self.__font_default_color = gtk_utils.gtk_default_font_color('theme_text_color',
+                                                                        widget=self.treeview_episodes,
+                                                                        on_error="#000000")
+
+        _, self.__font_hide_color = gtk_utils.gtk_default_font_color('warning_color',
+                                                                     widget=self.treeview_episodes,
+                                                                     on_error="#ff9900")
+
+        _, self.__font_error_color = gtk_utils.gtk_default_font_color('error_color',
+                                                                      widget=self.treeview_episodes,
+                                                                      on_error="#ff0000")
+
+        _, self.__font_new_color = gtk_utils.gtk_default_font_color('success_color',
+                                                                    widget=self.treeview_episodes,
+                                                                    on_error="#009933")
 
         #
         #    Display the window
@@ -186,7 +218,6 @@ class MainWindow:
         if dark_mode:
             gtk_utils.gtk_set_css(self.window_root, css_style)
             gtk_utils.gtk_set_css(self.treeview_episodes, css_style)
-        
 
         self.window_root.maximize()
         self.window_root.show_all()
@@ -315,7 +346,10 @@ class MainWindow:
 
             self.__save_current_video_position()
 
-            episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes, treepaths[0], 1, 2)
+            episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
+                                                                   treepaths[0],
+                                                                   SeriesListStoreColumns.name,
+                                                                   SeriesListStoreColumns.ext)
 
             self.__current_media = CurrentMedia(self.__selected_series)
             self.__set_video(episode_name)
@@ -371,8 +405,10 @@ class MainWindow:
             """
                 Menu "Fin videos"
             """
-            list_of_names = [gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes, treepath, 1, 2) for
-                             treepath in
+            list_of_names = [gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
+                                                                     treepath,
+                                                                     SeriesListStoreColumns.name,
+                                                                     SeriesListStoreColumns.ext) for treepath in
                              treepaths]
 
             if self.__selected_series.missing_videos(list_of_names):
@@ -465,7 +501,7 @@ class MainWindow:
         self.__selected_series.change_checkbox_state(episode_name, column, state)
 
     def on_checkbox_hide_missing_series_toggled(self, *_):
-        self.__ccp.write('hide-missing-series', self.checkbox_hide_missing_series.get_active())
+        self.__ccp.write(GlobalConfigTags.checkbox_hide_missing_series, self.checkbox_hide_missing_series.get_active())
         self.__liststore_series_populate()
 
     def on_checkbox_hide_number_toggled(self, *_):
@@ -499,10 +535,11 @@ class MainWindow:
         self.__ccp.write('hide_ep_rplayed', state)
 
     def on_checkbox_hide_warning_missing_series_toggled(self, *_):
-        self.__ccp.write('warningMissingSeries', self.checkbox_hide_warning_missing_series.get_active())
+        self.__ccp.write(GlobalConfigTags.checkbox_missing_series_warning,
+                         self.checkbox_hide_warning_missing_series.get_active())
 
     def on_checkbox_hidden_items_toggled(self, *_):
-        self.__ccp.write('hide-items', self.checkbox_hidden_items.get_active())
+        self.__ccp.write(GlobalConfigTags.checkbox_hidden_videos, self.checkbox_hidden_items.get_active())
         self.__liststore_episodes_populate()
 
     def on_menuitem_about_activate(self, *_):
@@ -528,7 +565,10 @@ class MainWindow:
 
         episode_names = []
         for treepath in treepaths:
-            episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes, treepath, 1, 2)
+            episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
+                                                                   treepath,
+                                                                   SeriesListStoreColumns.name,
+                                                                   SeriesListStoreColumns.ext)
             self.liststore_episodes[treepath][column] = state
             episode_names.append(episode_name)
 
@@ -713,6 +753,18 @@ class MainWindow:
         if self.__new_series is None:
             self.__liststore_episodes_populate()
 
+    def __get_video_color(self, video):
+        if not video.get_display():
+            return self.__font_hide_color
+
+        elif video.get_is_new():
+            return self.__font_new_color
+
+        elif not video.exists():
+            return self.__font_error_color
+
+        return self.__font_default_color
+
     def __set_video(self, video_name=None, play=True, replay=False, ignore_none=False):
 
         if self.__current_media.series is None:
@@ -873,7 +925,8 @@ class MainWindow:
             series = self.__series_dict[name]
 
             if os.path.exists(series.get_path()) or not self.checkbox_hide_missing_series.get_active():
-                self.liststore_series.append([series.get_image(), series.get_name()])
+                pixbuf = Pixbuf.new_from_file_at_size(series.get_image_path(), -1, 30)
+                self.liststore_series.append([pixbuf, series.get_name()])
 
         # Select the current series
         #
@@ -921,37 +974,8 @@ class MainWindow:
             except Exception as e:
                 print(str(e))
 
-        _, default_color = gtk_utils.gtk_default_font_color('theme_text_color',
-                                                            widget=self.treeview_episodes,
-                                                            on_error="#000000")
-
-        _, hide_color = gtk_utils.gtk_default_font_color('warning_color',
-                                                         widget=self.treeview_episodes,
-                                                         on_error="#ff9900")
-
-        _, error_color = gtk_utils.gtk_default_font_color('error_color',
-                                                         widget=self.treeview_episodes,
-                                                         on_error="#ff0000")
-
-        _, new_color = gtk_utils.gtk_default_font_color('success_color',
-                                                         widget=self.treeview_episodes,
-                                                         on_error="#009933")
-
         for video in videos_list:
             if video:
-
-                if not video.get_display():
-                    color = hide_color
-
-                elif video.get_is_new():
-                    color = new_color
-
-                elif not video.exists():
-                    color = error_color
-
-                else:
-                    color = default_color
-
 
 
                 # add the video to the list store
@@ -962,7 +986,7 @@ class MainWindow:
                                                     video.get_play(),
                                                     video.get_o_played(),
                                                     video.get_r_played(),
-                                                    color])
+                                                    self.__get_video_color(video)])
             else:
                 print("Error loading the liststore_episodes. The series '{}' has an empty video.".format(
                     self.__selected_series.get_name()))
@@ -1170,29 +1194,44 @@ class MainWindow:
 
         model, treepaths = self.treeview_selection_episodes.get_selected_rows()
 
-        if not treepaths == []:
-            for treepath in treepaths:
-                episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
-                                                                       treepath,
-                                                                       1,
-                                                                       2)
-                self.__selected_series.ignore_video(episode_name)
+        if not treepaths:
+            return
 
-            self.__liststore_episodes_populate()
+        hide_row = self.checkbox_hidden_items.get_active()
+
+        for treepath in reversed(treepaths):
+            episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
+                                                                   treepath,
+                                                                   SeriesListStoreColumns.name,
+                                                                   SeriesListStoreColumns.ext)
+            self.__selected_series.ignore_video(episode_name)
+
+            if hide_row:
+                iter = model.get_iter(treepath)
+                model.remove(iter)
+            else:
+                self.liststore_episodes[treepath][SeriesListStoreColumns.color] = self.__font_hide_color
+
+        self.treeview_selection_episodes.unselect_all()
+        self.__selected_series.save()
 
     def __on_menuitem_series_dont_ignore_episode(self, _):
 
         model, treepaths = self.treeview_selection_episodes.get_selected_rows()
 
-        if not treepaths == []:
-            for treepath in treepaths:
-                episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
-                                                                       treepath,
-                                                                       1,
-                                                                       2)
-                self.__selected_series.dont_ignore_video(episode_name)
+        if not treepaths:
+            return
 
-            self.__liststore_episodes_populate()
+        for treepath in treepaths:
+            episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
+                                                                   treepath,
+                                                                   SeriesListStoreColumns.name,
+                                                                   SeriesListStoreColumns.ext)
+            video = self.__selected_series.dont_ignore_video(episode_name)
+            self.liststore_episodes[treepath][SeriesListStoreColumns.color] = self.__get_video_color(video)
+
+        self.treeview_selection_episodes.unselect_all()
+        self.__selected_series.save()
 
     def __on_menuitem_episode_open_dir(self, _, video_name):
         path = self.__selected_series.get_path_from_video_name(video_name)
