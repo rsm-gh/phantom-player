@@ -36,10 +36,10 @@ sys.path.insert(0, _PROJECT_DIR)
 from Paths import *
 from Texts import Texts
 from view import gtk_utils
-from model.Series import Series
 from controller.CCParser import CCParser
 from controller.factory import str_to_boolean
 from model.CurrentMedia import CurrentMedia
+from model.Series import Series, SeriesListStoreColumns
 from system_utils import EventCodes, open_directory
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 
@@ -332,18 +332,18 @@ class MainWindow:
 
             elif selection_length > 1:
 
-                for i, label in enumerate((Texts.MenuItemEpisodes.reproduce,
-                                           Texts.MenuItemEpisodes.o_played,
-                                           Texts.MenuItemEpisodes.r_played), 4):
+                for column, label in ((SeriesListStoreColumns.play, Texts.MenuItemEpisodes.reproduce),
+                                      (SeriesListStoreColumns.o_played, Texts.MenuItemEpisodes.o_played),
+                                      (SeriesListStoreColumns.r_played, Texts.MenuItemEpisodes.r_played)):
                     # mark to check
-                    menuitem = Gtk.ImageMenuItem(label="Mark " + label)
+                    menuitem = Gtk.ImageMenuItem(label=label + " - Check")
                     menu.append(menuitem)
-                    menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, True)
+                    menuitem.connect('activate', self.on_menuitem_checkbox_activated, column, True)
 
                     # mark to uncheck
-                    menuitem = Gtk.ImageMenuItem(label="Un-mark " + label)
+                    menuitem = Gtk.ImageMenuItem(label=label + " - Un-check")
                     menu.append(menuitem)
-                    menuitem.connect('activate', self.on_menuitem_checkbox_activated, i, False)
+                    menuitem.connect('activate', self.on_menuitem_checkbox_activated, column, False)
 
             """
                 Menu "Fin videos"
@@ -387,13 +387,13 @@ class MainWindow:
         self.__liststore_episodes_populate()
 
     def on_cellrenderertoggle_play_toggled(self, _, row):
-        self.on_checkbox_episodes_toggled(int(row), 4)
+        self.on_checkbox_episodes_toggled(int(row), SeriesListStoreColumns.play)
 
     def on_cellrenderertoggle_oplayed_toggled(self, _, row):
-        self.on_checkbox_episodes_toggled(int(row), 5)
+        self.on_checkbox_episodes_toggled(int(row), SeriesListStoreColumns.o_played)
 
     def on_cellrenderertoggle_rplayed_toggled(self, _, row):
-        self.on_checkbox_episodes_toggled(int(row), 6)
+        self.on_checkbox_episodes_toggled(int(row), SeriesListStoreColumns.r_played)
 
     def on_cellrenderertoggle_series_recursive_toggled(self, _, row):
         state = not self.liststore_paths[row][1]

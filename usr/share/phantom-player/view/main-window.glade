@@ -252,7 +252,7 @@ Author: Rafael Senties Martinelli
                                 <property name="use-action-appearance">False</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Ignored Episodes</property>
+                                <property name="label" translatable="yes">Display Ignored Episodes</property>
                                 <property name="active">True</property>
                                 <signal name="toggled" handler="on_checkbox_hidden_items_toggled" swapped="no"/>
                               </object>
@@ -505,7 +505,7 @@ Author: Rafael Senties Martinelli
                             <signal name="toggled" handler="on_cellrenderertoggle_play_toggled" swapped="no"/>
                           </object>
                           <attributes>
-                            <attribute name="active">4</attribute>
+                            <attribute name="active">3</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -520,7 +520,7 @@ Author: Rafael Senties Martinelli
                             <signal name="toggled" handler="on_cellrenderertoggle_oplayed_toggled" swapped="no"/>
                           </object>
                           <attributes>
-                            <attribute name="active">5</attribute>
+                            <attribute name="active">4</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -535,7 +535,7 @@ Author: Rafael Senties Martinelli
                             <signal name="toggled" handler="on_cellrenderertoggle_rplayed_toggled" swapped="no"/>
                           </object>
                           <attributes>
-                            <attribute name="active">6</attribute>
+                            <attribute name="active">5</attribute>
                           </attributes>
                         </child>
                       </object>
