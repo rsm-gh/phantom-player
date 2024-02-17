@@ -30,7 +30,7 @@ MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 MAGIC_MIMETYPE.load()
 
 
-class SeriesListStoreColumns:
+class PlaylistListStoreColumns:
     id = 0
     name = 1
     ext = 2
@@ -40,7 +40,7 @@ class SeriesListStoreColumns:
     color = 6
 
 
-class Series(object):
+class Playlist(object):
 
     def __init__(self,
                  name="",
@@ -167,7 +167,7 @@ class Series(object):
 
                 self.__videos_instances.append(new_video)
 
-        self.clean_episodes()
+        self.clean_videos()
         self.update_ids()  # this is in case there were videos with duplicated ids
 
     def get_save_path(self):
@@ -234,7 +234,7 @@ class Series(object):
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_id(i)
 
-    def clean_episodes(self):
+    def clean_videos(self):
 
         videos = []
         for video in self.__videos_instances:
@@ -248,19 +248,19 @@ class Series(object):
     def update_not_hidden_videos(self):
         self.__nb_videos = len([0 for video in self.__videos_instances if video.get_display()])
 
-    def missing_videos(self, episodes_names):
+    def missing_videos(self, videos_names):
         """Return if from the selected videos there is someone missing"""
-        for episode_name in episodes_names:
-            for episode in self.__videos_instances:
-                if episode.get_name() == episode_name:
-                    if not os.path.exists(episode.get_path()):
+        for video_name in videos_names:
+            for video in self.__videos_instances:
+                if video.get_name() == video_name:
+                    if not os.path.exists(video.get_path()):
                         return True
 
         return False
 
-    def mark_episode(self, episode, is_random, new_state):
+    def mark_video(self, video, is_random, new_state):
         for video in self.__videos_instances:
-            if video == episode:
+            if video == video:
                 if is_random:
                     video.set_r_played(new_state)
                 else:
@@ -269,21 +269,21 @@ class Series(object):
                 self.save()
                 break
 
-    def change_checkbox_state(self, episode_names, column, state):
+    def change_checkbox_state(self, video_names, column, state):
 
-        if isinstance(episode_names, str):
-            episode_names = [episode_names]
+        if isinstance(video_names, str):
+            video_names = [video_names]
 
-        for episode_name in episode_names:
+        for video_name in video_names:
             for video in self.__videos_instances:
 
-                if video.get_name() == episode_name:
+                if video.get_name() == video_name:
 
-                    if column == SeriesListStoreColumns.play:
+                    if column == PlaylistListStoreColumns.play:
                         video.set_play(state)
-                    elif column == SeriesListStoreColumns.o_played:
+                    elif column == PlaylistListStoreColumns.o_played:
                         video.set_o_played(state)
-                    elif column == SeriesListStoreColumns.r_played:
+                    elif column == PlaylistListStoreColumns.r_played:
                         video.set_r_played(state)
 
                     break
@@ -291,7 +291,7 @@ class Series(object):
         self.save()
 
     def ignore_video(self, del_video):
-        """ Ignore a video from the series by giving its name.
+        """ Ignore a video from the playlist by giving its name.
         """
 
         for video in self.__videos_instances:
@@ -324,17 +324,17 @@ class Series(object):
         return None
 
 
-    def find_series(self, path):
+    def find_playlist(self, path):
         self.__path = path
         self.find_videos(path)
         self.update_not_hidden_videos()
         self.save()
 
-    def find_video(self, episode_name, new_path):
+    def find_video(self, video_name, new_path):
         """
             Try to find videos other videos in case
             the name of an extension changed, or the start part
-            of the episode.
+            of the video.
 
             Ex 1:
                 foo.ogg -> foo
@@ -352,20 +352,20 @@ class Series(object):
         """
 
         """
-            change the path of the selected episode
+            change the path of the selected video
         """
-        for episode in self.__videos_instances:
-            if episode_name == episode.get_name():
-                episode.set_path(new_path)
+        for video in self.__videos_instances:
+            if video_name == video.get_name():
+                video.set_path(new_path)
                 break
 
         # Find the pattern
 
         new_name = os.path.basename(new_path).strip()
-        old_name = episode_name.strip()
+        old_name = video_name.strip()
 
         len_new_name = len(new_name)
-        len_old_name = len(episode_name)
+        len_old_name = len(video_name)
 
         found_videos = 0
         if new_name in old_name or old_name in new_name:
@@ -443,7 +443,7 @@ class Series(object):
     def get_videos(self):
         return self.__videos_instances
 
-    def get_first_episode(self):
+    def get_first_video(self):
         if len(self.__videos_instances) <= 0:
             return None
 
@@ -481,11 +481,11 @@ class Series(object):
         else:
             return 0, self.__nb_videos, 0
 
-    def get_o_episode(self, after=None):
+    def get_o_video(self, after=None):
         """
-            Get the next episode.
+            Get the next video.
 
-            If an episode is provided, get the episode next to this one, and
+            If a video is provided, get the video next to this one, and
             if there is no next video to the one provided, go to the beginning.
         """
 
@@ -506,13 +506,13 @@ class Series(object):
 
         # Try to return a video from the beginning
         if after is not None:
-            episode = self.get_o_episode()
-            if episode:
-                return episode
+            video = self.get_o_video()
+            if video:
+                return video
 
         return None
 
-    def get_r_episode(self):
+    def get_r_video(self):
         for video in self.__videos_instances:
             if not video.get_r_played() and video.get_play() and video.get_path() and video.get_display():
                 while True:

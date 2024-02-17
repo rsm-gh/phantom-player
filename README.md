@@ -6,12 +6,12 @@
 It gives the feeling of having a streaming platform with the content of a hard drive.
 
 Some of its major features are:
-+ Play lists of videos in order or randomly (without repeating episodes).
++ Play lists of videos in order or randomly (without repeating videos).
 + Organize the play order (without affecting the data on your hard drive).
 + Hide videos or files (without affecting the data on your hard drive).
 + Automatically discover new videos.
 + Start playing lists & videos where you left off.
-+ Set a default time to skip the intro of videos (handy for the series intro).
++ Set a default time to skip the intro of videos (handy for the playlist intro).
 + Set the default audio or subtitle track.
 + Turn off the screensaver while playing.
 + Keep playing mode.
@@ -35,15 +35,15 @@ discover new downloaded videos, and reproduce everything with comfort !*
 
 ## Controls
 
-### Series List
-+ Select a series with single left-click.
-+ Start playing a series with a double left-click.
-+ Open the series settings with a right-click.
+### Playlist List
++ Select a playlist with single left-click.
++ Start playing a playlist with a double left-click.
++ Open the playlist settings with a right-click.
 
-### Episodes List
-+ Play an episode with a double left-click.
-+ Open the episode's menu with a right-click.
-+ Order the episodes with drag and drop.
+### Videos List
++ Play a video with a double left-click.
++ Open the video's menu with a right-click.
++ Order the videos with drag and drop.
 
 ### Media Player
 + Turn to fullscreen with the F11 key or with the button from the media player.
@@ -56,9 +56,9 @@ discover new downloaded videos, and reproduce everything with comfort !*
 **The media player controls only work if a video is loaded.*  
 
 ## Extra
-### Searching missing Episodes
+### Searching missing Videos
 
-When an episode is missing, the text will be displayed in red*, 
+When a video is missing, the text will be displayed in red*, 
 you can then find it by using `right-click menu > find`.
 
 There are two different method functions that you can use to perform this action:
@@ -66,7 +66,7 @@ There are two different method functions that you can use to perform this action
 A) By selecting a single row:
 	
 You will be asked to select a file, and the player will try to find the rest of the 
-missing episodes in the same directory.
+missing videos in the same directory.
 
 This will work even if some files are renamed with easy patterns, for example:
 
@@ -83,24 +83,24 @@ foo-700 -> 701
 				
 B) By selecting multiple rows:
 	
-You will be asked to select a directory, and the player will try to find the missing episodes 
+You will be asked to select a directory, and the player will try to find the missing videos 
 by matching their exact name.
 
 **The font-colors depend on your Desktop theme.*
 
 ### Location of the program files
 + Configuration File: `~/.config/phantom-player.ini`
-+ Series Files: `~/.local/share/phantom-player/<series name>.csv`
++ Playlist Files: `~/.local/share/phantom-player/<playlist name>.csv`
 
-### Series files
+### Playlist files
 
-Each series is stored in a CSV file that uses a "|" as separator. 
+Each playlist is stored in a CSV file that uses a "|" as separator. 
 
-The first line will contain the series properties:
+The first line will contain the playlist properties:
 ```
 Random | Keep Playing | Start At | Audio Track | Subtitles Track
 ```
-Then, the series paths will be listed as:
+Then, the playlist paths will be listed as:
 ```
 Path | Recursive
 ```

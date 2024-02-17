@@ -17,41 +17,41 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 class CurrentMedia:
-    def __init__(self, series=None):
-        self.series = series
-        self.__episode = None
+    def __init__(self, playlist=None):
+        self.playlist = playlist
+        self.__video = None
 
-    def is_series_name(self, series_name):
-        if self.series is not None:
-            return self.series.get_name() == series_name
+    def is_playlist_name(self, playlist_name):
+        if self.playlist is not None:
+            return self.playlist.get_name() == playlist_name
 
         return False
 
-    def mark_seen_episode(self):
-        self.__episode.set_position(0)
-        self.series.mark_episode(self.__episode, self.series.get_random(), True)
+    def mark_seen_video(self):
+        self.__video.set_position(0)
+        self.playlist.mark_video(self.__video, self.playlist.get_random(), True)
 
-    def get_next_episode(self):
+    def get_next_video(self):
 
-        if self.series.get_random():
-            episode = self.series.get_r_episode()
+        if self.playlist.get_random():
+            video = self.playlist.get_r_video()
         else:
-            episode = self.series.get_o_episode(self.__episode)
+            video = self.playlist.get_o_video(self.__video)
 
-        self.__episode = episode
+        self.__video = video
 
-        return episode
+        return video
 
-    def current_episode(self):
-        return self.__episode
+    def current_video(self):
+        return self.__video
 
-    def get_episode(self, episode_name):
-        self.__episode = self.series.get_video(episode_name)
-        return self.__episode
+    def get_video(self, video_name):
+        self.__video = self.playlist.get_video(video_name)
+        return self.__video
 
-    def get_episode_name(self):
+    def get_video_name(self):
 
-        if self.__episode is None:
+        if self.__video is None:
             return None
 
-        return self.__episode.get_name()
+        return self.__video.get_name()

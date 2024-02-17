@@ -21,25 +21,25 @@ class Texts:
     class GUI:
         title = "Phantom Player"
 
-    class MenuItemSeries:
+    class MenuItemPlaylist:
         search = "Search"
         open_dir = "Open Directory"
         settings = "Settings"
 
-    class DialogSeries:
+    class DialogPlaylist:
         confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
         confirm_reset = 'Are you sure that you want to restart "{0}"?.'
-        is_missing = 'The series can not be reproduced because the episodes are missing!\n\nUse the search button to find them.'
-        already_exist = 'The series "{}" already exists.\n\nPlease rename the other series before adding this one.'
-        name_exist = 'The series "{}" already exists.\n\nPlease choose a different name.'
-        all_episodes_played = 'All the episodes have been played, restart the series to watch it again.'
+        is_missing = 'The playlist can not be reproduced because the videos are missing!\n\nUse the search button to find them.'
+        already_exist = 'The playlist "{}" already exists.\n\nPlease rename the other playlist before adding this one.'
+        name_exist = 'The playlist "{}" already exists.\n\nPlease choose a different name.'
+        all_videos_played = 'All the videos have been played, restart the playlist to watch it again.'
 
     class WindowSettings:
-        new_title = "New Series"
+        new_title = "New Playlist"
         edit_title = "Settings"
-        series_name_empty = "The series name can not be empty."
+        playlist_name_empty = "The playlist name can not be empty."
 
-    class MenuItemEpisodes:
+    class MenuItemVideos:
         open_dir = "Open Directory"
         ignore = "Ignore"
         dont_ignore = "Don't Ignore"
@@ -48,8 +48,8 @@ class Texts:
         o_played = "O-Played"
         r_played = "R-Played"
 
-    class DialogEpisodes:
-        delete = '''Are you sure that you want to delete the selected episodes?\n\nThey wont be removed from your hard drive.'''
-        missing = 'The episode can not be reproduced because the file is missing. Use the search button to find it.'
+    class DialogVideos:
+        delete = '''Are you sure that you want to delete the selected videos?\n\nThey wont be removed from your hard drive.'''
+        missing = 'The video can not be reproduced because the file is missing. Use the search button to find it.'
         found_x = '{0} videos have been found.'
         other_found = '{0} other videos have been found.'
