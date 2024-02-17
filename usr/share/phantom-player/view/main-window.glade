@@ -117,16 +117,12 @@ Author: Rafael Senties Martinelli
       <column type="gchararray"/>
       <!-- column-name extension -->
       <column type="gchararray"/>
-      <!-- column-name found -->
-      <column type="gchararray"/>
       <!-- column-name play -->
       <column type="gboolean"/>
       <!-- column-name o_play -->
       <column type="gboolean"/>
       <!-- column-name rplay -->
       <column type="gboolean"/>
-      <!-- column-name fill -->
-      <column type="gchararray"/>
       <!-- column-name color -->
       <column type="GdkRGBA"/>
     </columns>
@@ -463,7 +459,7 @@ Author: Rafael Senties Martinelli
                           <object class="GtkCellRendererText" id="cellrenderertext1"/>
                           <attributes>
                             <attribute name="text">0</attribute>
-                            <attribute name="foreground-rgba">8</attribute>
+                            <attribute name="foreground-rgba">6</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -474,11 +470,12 @@ Author: Rafael Senties Martinelli
                         <property name="sizing">fixed</property>
                         <property name="fixed-width">200</property>
                         <property name="title" translatable="yes">Name</property>
+                        <property name="expand">True</property>
                         <child>
                           <object class="GtkCellRendererText" id="cellrenderertext2"/>
                           <attributes>
                             <attribute name="text">1</attribute>
-                            <attribute name="foreground-rgba">8</attribute>
+                            <attribute name="foreground-rgba">6</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -493,21 +490,7 @@ Author: Rafael Senties Martinelli
                           <object class="GtkCellRendererText" id="cellrenderertext3"/>
                           <attributes>
                             <attribute name="text">2</attribute>
-                            <attribute name="foreground-rgba">8</attribute>
-                          </attributes>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkTreeViewColumn" id="treeviewcolumn4">
-                        <property name="resizable">True</property>
-                        <property name="sizing">fixed</property>
-                        <property name="fixed-width">60</property>
-                        <property name="title" translatable="yes">Found</property>
-                        <child>
-                          <object class="GtkCellRendererPixbuf" id="cellrendererpixbuf1"/>
-                          <attributes>
-                            <attribute name="stock-id">3</attribute>
+                            <attribute name="foreground-rgba">6</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -553,18 +536,6 @@ Author: Rafael Senties Martinelli
                           </object>
                           <attributes>
                             <attribute name="active">6</attribute>
-                          </attributes>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkTreeViewColumn" id="treeviewcolumn1">
-                        <property name="title" translatable="yes"> </property>
-                        <property name="expand">True</property>
-                        <child>
-                          <object class="GtkCellRendererText" id="cellrenderertext4"/>
-                          <attributes>
-                            <attribute name="text">7</attribute>
                           </attributes>
                         </child>
                       </object>

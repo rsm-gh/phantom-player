@@ -153,10 +153,7 @@ class Series(object):
                 new_video = Video(video_path, self.__nb_videos)
 
                 if os.path.exists(new_video.get_path()):
-                    new_video.set_state_new()
-                else:
-                    # In case it is a broken link:
-                    new_video.update_state()
+                    new_video.set_is_new()
 
                 self.__videos_instances.append(new_video)
 

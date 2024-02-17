@@ -19,13 +19,6 @@
 import os
 import magic
 
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
-
-
-from controller.factory import str_to_boolean
-
 magic_mimetype = magic.open(magic.MAGIC_MIME)
 magic_mimetype.load()
 
@@ -68,7 +61,7 @@ class Video(object):
         self.__dir_path = ""
 
         self.__id = -1
-        self.__state = Gtk.STOCK_DIALOG_WARNING
+        self.__is_new = False
 
         self.__play = True
         self.__o_played = False
@@ -94,8 +87,6 @@ class Video(object):
                 self.__empty_name = self.__empty_name + self.__extension
                 self.__extension = ''
 
-        self.update_state()
-
     def load_info(self, play, o_played, r_played, position, display):
         self.set_play(play)
         self.set_o_played(o_played)
@@ -103,13 +94,6 @@ class Video(object):
         self.set_display(display)
         if position > 0:
             self.set_position(position)
-
-
-    def update_state(self):
-        if os.path.exists(self.__path):
-            self.__state = Gtk.STOCK_APPLY
-        else:
-            self.__state = Gtk.STOCK_DIALOG_WARNING
 
     def get_extension(self):
         return self.__extension
@@ -145,16 +129,18 @@ class Video(object):
     def get_position(self):
         return self.__position
 
+    def get_is_new(self):
+        return self.__is_new
+
     def set_path(self, path):
         self.__path = path
         self.__name = os.path.basename(path)
-        self.update_state()
 
-    def set_state_new(self):
-        self.__state = Gtk.STOCK_ADD
+    def exists(self):
+        return os.path.exists(self.__path)
 
-    def set_state(self, pixbuffer):
-        self.__state = pixbuffer
+    def set_is_new(self):
+        self.__is_new = True
 
     def set_position(self, pos):
         if 1 > pos >= 0:

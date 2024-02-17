@@ -28,22 +28,23 @@ from Texts import Texts
 from Paths import ICON_LOGO_SMALL
 
 
-def gtk_default_font_color():
-    settings = Gtk.Settings.get_default()
+def gtk_default_font_color(text_type='theme_text_color', widget=None, on_error='#000000'):
+    """
+        theme_text_color
+        warning_color
+        error_color
+    """
 
-    colors = settings.get_property('gtk-color-scheme')
-    colors = colors.split('\n')
+    if widget is None:
+        widget = Gtk.Entry()
 
-    for color in colors:
-        if 'text' in color:
-            text_color = color.split(':')[1].strip()
+    found, color = widget.get_style_context().lookup_color(text_type)
 
-            if ';' in text_color:
-                text_color = text_color.split(';', 1)[0]
+    if not found:
+        color = Gdk.RGBA()
+        color.parse(on_error)
 
-            return text_color
-
-    return '#000000'
+    return found, color
 
 def gtk_selection_get_first_selected_cell(gtk_selection, column=0):
     model, treepaths = gtk_selection.get_selected_rows()
@@ -165,3 +166,11 @@ def gtk_dialog_info(parent, text1, text2=None):
 
     _ = dialog.run()
     dialog.destroy()
+
+if __name__ == "__main__":
+    print(gtk_default_font_color('theme_text_color'))
+    print(gtk_default_font_color('error_color'))
+    print(gtk_default_font_color('warning_color'))
+
+
+

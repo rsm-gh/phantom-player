@@ -179,7 +179,6 @@ class MediaPlayerWidget(Gtk.VBox):
 
         # Buttons Box
         self.__buttons_box = Gtk.Box()
-        self.__set_css(self.__buttons_box)
         self.__buttons_box.set_valign(Gtk.Align.END)
         self.__buttons_box.set_halign(Gtk.Align.FILL)
         self.__buttons_box.set_sensitive(False)
@@ -203,10 +202,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__scale_progress.set_range(0, 1)
         self.__scale_progress.set_draw_value(False)
         self.__scale_progress.set_hexpand(True)
-        self.__scale_progress.add_mark(0.25, Gtk.PositionType.TOP, None)
-        self.__scale_progress.add_mark(0.5, Gtk.PositionType.TOP, None)
-        self.__scale_progress.add_mark(0.75, Gtk.PositionType.TOP, None)
-        self.__set_css(self.__scale_progress)
         self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
         self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
         self.__scale_progress.connect('value_changed', self.__on_scale_progress_changed)
@@ -215,7 +210,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_progress = Gtk.Label()
         self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
         self.__label_progress.set_margin_end(5)
-        self.__set_css(self.__label_progress)
         self.__buttons_box.pack_start(self.__label_progress, expand=False, fill=False, padding=3)
 
         if keep_playing_button:
@@ -250,14 +244,16 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
 
+        self.__set_css(self.__buttons_box)
+
         #   Extra volume label
         self.__label_volume = Gtk.Label()
-        self.__set_css(self.__label_volume)
         self.__label_volume.set_text(" Vol: 0% ")
         self.__label_volume.set_valign(Gtk.Align.START)
         self.__label_volume.set_halign(Gtk.Align.END)
         self.__label_volume.set_margin_start(5)
         self.__label_volume.set_margin_end(5)
+        self.__set_css(self.__label_volume)
         self.__overlay.add_overlay(self.__label_volume)
 
         #
@@ -283,7 +279,8 @@ class MediaPlayerWidget(Gtk.VBox):
         provider.load_from_data(b"""
         scale, label, box {
             background-color: @theme_bg_color;
-        }""")
+        }
+        """)
         context = widget.get_style_context()
         context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
@@ -376,7 +373,6 @@ class MediaPlayerWidget(Gtk.VBox):
         GLib.idle_add(self.__root_window.set_title, media_title)
         GLib.idle_add(self.__vlc_widget.player.play)
 
-        GLib.timeout_add_seconds(.5, self.__set_label_length)
         GLib.timeout_add_seconds(.5, self.__populate_settings_menubutton)
         GLib.timeout_add_seconds(.5, self.__vlc_widget.player.audio_set_track, audio_track)
         GLib.timeout_add_seconds(.5, self.__vlc_widget.player.video_set_spu, subtitles_track)
@@ -527,11 +523,6 @@ class MediaPlayerWidget(Gtk.VBox):
 
         menu.show_all()
 
-
-    def __set_label_length(self):
-        self.__media_length = self.__vlc_widget.player.get_length()
-        self.__video_length = format_milliseconds_to_time(self.__media_length)
-
     def __set_cursor_empty(self):
         self.get_window().set_cursor(self.__empty_cursor)
 
@@ -563,7 +554,15 @@ class MediaPlayerWidget(Gtk.VBox):
 
         this_thread = current_thread()
 
+        cached_progress = 0
+
         while getattr(this_thread, "do_run", True):
+
+            # Why can get_media() be none when vlc is playing? Is this an error?
+            if self.__media_length <= 0 and (self.is_playing() or self.get_media() is not None):
+                self.__media_length = self.__vlc_widget.player.get_length()
+                self.__video_length = format_milliseconds_to_time(self.__media_length)
+
 
             if not self.__scale_progress_pressed:
 
@@ -598,12 +597,17 @@ class MediaPlayerWidget(Gtk.VBox):
                     # 'not self.__scale_progress_pressed' in case that
                     # the scale be pressed when the method is being executed.
                     vlc_position = self.__vlc_widget.player.get_position()
-                    GLib.idle_add(self.__scale_progress.set_value, vlc_position)
+
+                    round_position = round(vlc_position, 4)
+
+                    if round_position != cached_progress:
+                        cached_progress = round_position
+                        GLib.idle_add(self.__scale_progress.set_value, cached_progress)
 
             """
                 Wait
             """
-            sleep(0.25)
+            sleep(.25)
 
     def __on_thread_motion_activity(self, *_):
 
@@ -618,9 +622,7 @@ class MediaPlayerWidget(Gtk.VBox):
             else:
                 fullscreen = None
 
-            # print("CALLED", self.__widgets_shown)
-
-            if (time_delta > 3 and not self.__scale_progress_pressed and \
+            if (time_delta > 3 and not self.__scale_progress_pressed and
                     ((not self.__un_maximized_fixed_toolbar and self.__widgets_shown > WidgetsShown.none) or
                      (self.__widgets_shown != WidgetsShown.toolbox and fullscreen is not None) or
                      (self.__hidden_controls is False and self.get_media()))):
@@ -760,21 +762,25 @@ class MediaPlayerWidget(Gtk.VBox):
         # self.__scale_progress_pressed = True
 
     def __on_scale_volume_release(self, *_):
-        pass
         self.__scale_progress_pressed = False
 
     def __on_scale_progress_press(self, *_):
         self.__scale_progress_pressed = True
-        self.__vlc_widget.player.pause()  # In case of long press
+        GLib.timeout_add_seconds(.5, self.__on_scale_progress_long_press)
+
+    def __on_scale_progress_long_press(self):
+        if self.__scale_progress_pressed:
+            self.__vlc_widget.player.pause()  # In case of long press
 
     def __on_scale_progress_release(self, widget, *_):
         self.__vlc_widget.player.set_position(widget.get_value())
-        self.__vlc_widget.player.play()  # In case of long press
+        if self.is_paused():
+            self.__vlc_widget.player.play()  # In case of long press
         self.__motion_time = time()
         self.__scale_progress_pressed = False
 
     def __on_scale_progress_changed(self, widget, *_):
-        if self.__media_length > 0:
+        if self.__media_length >= 0:
             video_time = widget.get_value() * self.__media_length
             video_time = format_milliseconds_to_time(video_time)
             self.__label_progress.set_text(video_time + " / " + self.__video_length)
@@ -800,7 +806,7 @@ class MediaPlayer(Gtk.Window):
 
     def play_video(self, path):
         self.__media_player_widget.set_video(path,
-                                             position=.5,
+                                             position=.1,
                                              play=True)
 
 
