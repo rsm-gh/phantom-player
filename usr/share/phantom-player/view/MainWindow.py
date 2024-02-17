@@ -322,8 +322,8 @@ class MainWindow:
 
                 selected_episode_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_episodes,
                                                                                 treepaths[0],
-                                                                                1,
-                                                                                2)
+                                                                                SeriesListStoreColumns.name,
+                                                                                SeriesListStoreColumns.ext)
 
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemEpisodes.open_dir)
                 menu.append(menuitem)

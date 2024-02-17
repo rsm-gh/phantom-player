@@ -29,7 +29,7 @@ Some of its major features are:
 
 3. Execute the setup file.
 
-**If the dependencies are satisfied, the software can be directly launched, the installation is not mandatory.* 
+**If the dependencies are satisfied, the software can be directly launched, the installation is not mandatory.*  
 ***Currently I'm working to create the version 2.0. When I finish, I'll create some packages for popular distributions & windows.*  
 
 ## Controls
