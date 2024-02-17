@@ -56,6 +56,7 @@ sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
+from view.gtk_utils import gtk_set_css
 from system_utils import EventCodes, turn_off_screensaver
 
 _EMPTY__VIDEO_LENGTH = "00:00"
@@ -156,7 +157,8 @@ class MediaPlayerWidget(Gtk.VBox):
                  root_window,
                  random_button=False,
                  keep_playing_button=False,
-                 un_max_fixed_toolbar=True):  # Automatically hide the toolbar when the window is un-maximized
+                 un_max_fixed_toolbar=True,
+                 css_style=None):  # Automatically hide the toolbar when the window is un-maximized
 
         super().__init__()
 
@@ -198,6 +200,13 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__root_window.connect('key-press-event', self.__on_key_pressed)
 
+        # Style
+        if css_style is None:
+            css_style = """
+scale, label, box {
+    background-color: @theme_bg_color;
+}
+"""
         # Buttons Box
         self.__buttons_box = Gtk.Box()
         self.__buttons_box.set_valign(Gtk.Align.END)
@@ -265,7 +274,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
 
-        self.__set_css(self.__buttons_box)
+        gtk_set_css(self.__buttons_box, css_style)
 
         #   Extra volume label
         self.__label_volume = Gtk.Label()
@@ -274,7 +283,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_volume.set_halign(Gtk.Align.END)
         self.__label_volume.set_margin_start(5)
         self.__label_volume.set_margin_end(5)
-        self.__set_css(self.__label_volume)
+        gtk_set_css(self.__label_volume, css_style)
         self.__overlay.add_overlay(self.__label_volume)
 
         #
@@ -293,17 +302,6 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__thread_scan_motion = Thread(target=self.__on_thread_motion_activity)
         self.__thread_scan_motion.start()
-
-    @staticmethod
-    def __set_css(widget):
-        provider = Gtk.CssProvider()
-        provider.load_from_data(b"""
-        scale, label, box {
-            background-color: @theme_bg_color;
-        }
-        """)
-        context = widget.get_style_context()
-        context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
     def play(self):
         self.__vlc_widget.player.play()
