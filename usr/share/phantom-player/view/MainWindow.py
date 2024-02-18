@@ -340,11 +340,11 @@ class MainWindow:
     def on_treeview_videos_drag_end(self, *_):
 
         # Get the new order
-        new_order = [row[0] for row in self.liststore_videos]
+        new_order = [row[PlaylistListStoreColumns.id] for row in self.liststore_videos]
 
         # Update the treeview
         for i, row in enumerate(self.liststore_videos, 1):
-            row[0] = i
+            row[PlaylistListStoreColumns.id] = i
 
         # Update the CSV file
         self.__selected_playlist.reorder(new_order)
