@@ -54,7 +54,7 @@ def gtk_default_font_color(text_type='theme_text_color', widget=None, on_error='
 def gtk_selection_get_first_selected_cell(gtk_selection, column=0):
     model, treepaths = gtk_selection.get_selected_rows()
 
-    if treepaths == []:
+    if not treepaths:
         return None
 
     return model[treepaths[0]][column]
@@ -72,10 +72,6 @@ def gtk_liststore_remove_first_selected_row(gtk_selection):
 
     if len(treepaths) > 0:
         model.remove(model.get_iter(treepaths[0]))
-
-
-def gtk_treepath_get_merged_cells(gtk_liststore, gtk_treepath, column1, column2):
-    return '{}{}'.format(gtk_liststore[gtk_treepath][column1], gtk_liststore[gtk_treepath][column2])
 
 def gtk_dialog_select_directory(parent, start_path=None):
     dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
