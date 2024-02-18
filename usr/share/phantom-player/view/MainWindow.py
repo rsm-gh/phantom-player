@@ -17,11 +17,8 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
-    + Identify the videos from the liststore with their path or id (instead of name+ext) which can
-      lead to bugs because there could be duplications.
     + Remove the thread scan_media_player and replace it by signals from the media player.
-    + Fix: when a series is changed, update the "random", "keep playing" states of the player.
-    + Playlist Settings: ADD keep playing and Random.
+    + Fix: save the series status when the player changes random/keep plating.
     + Move the series icon to the .local phantom dir
     + Select & focus the video on the liststore when start playing a series
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
@@ -29,7 +26,7 @@
     + Manage multiple paths into the playlist settings menu.
     + Apply the "load video" methods into a thread.
     + Add option: end at
-    + Rename episodes dialog
+    + Create a dialog to rename videos.
 """
 
 import os
@@ -140,6 +137,8 @@ class MainWindow:
             'window_playlist_settings',
             'entry_playlist_name',
             'image_playlist',
+            'switch_setting_keep_playing',
+            'switch_setting_random_playing',
             'spinbutton_subtitles',
             'spinbutton_start_at',
             'spinbutton_audio',
@@ -451,6 +450,22 @@ class MainWindow:
         if self.__new_playlist is None:
             playlist.save()
 
+    def on_switch_setting_keep_playing_button_press_event(self, widget, *_):
+        status = not widget.get_active()
+        playlist = self.__get_setting_playlist()
+        playlist.set_keep_playing(status)
+
+        if self.__current_media.is_playlist_name(playlist.get_name()):
+            self.__media_player.set_keep_playing(status)
+
+    def on_switch_setting_random_playing_button_press_event(self, widget, *_):
+        status = not widget.get_active()
+        playlist = self.__get_setting_playlist()
+        playlist.set_random(status)
+
+        if self.__current_media.is_playlist_name(playlist.get_name()):
+            self.__media_player.set_random(status)
+
     def on_spinbutton_audio_value_changed(self, spinbutton):
 
         if self.__populating_settings:
@@ -529,10 +544,10 @@ class MainWindow:
         self.menuitem_playlist_settings.set_sensitive(len(treepaths) > 0)
 
     def on_menuitem_playlist_new_activate(self, *_):
-        self.__ignore_settings_window(new_playlist=True)
+        self.__display_playlist_dialog(new_playlist=True)
 
     def on_menuitem_playlist_settings_activate(self, *_):
-        self.__ignore_settings_window()
+        self.__display_playlist_dialog()
 
     def on_button_playlist_delete_clicked(self, *_):
 
@@ -773,7 +788,7 @@ class MainWindow:
 
             self.__current_media.playlist.save()
 
-    def __ignore_settings_window(self, new_playlist=False):
+    def __display_playlist_dialog(self, new_playlist=False):
 
         self.liststore_paths.clear()
 
@@ -796,6 +811,8 @@ class MainWindow:
         self.button_playlist_path_reload_all.set_sensitive(not new_playlist)
 
         self.entry_playlist_name.set_text(playlist.get_name())
+        self.switch_setting_keep_playing.set_active(playlist.get_keep_playing())
+        self.switch_setting_random_playing.set_active(playlist.get_random())
 
         pixbuf = Pixbuf.new_from_file_at_size(playlist.get_image_path(), -1, 30)
         self.image_playlist.set_from_pixbuf(pixbuf)
@@ -1124,7 +1141,7 @@ class MainWindow:
         self.__selected_playlist.save()
 
     def __on_menuitem_playlist_settings(self, *_):
-        self.__ignore_settings_window()
+        self.__display_playlist_dialog()
 
     def __on_menuitem_playlist_ignore_video(self, _):
 
