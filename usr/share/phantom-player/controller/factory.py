@@ -50,7 +50,7 @@ def load_videos(playlist):
             columns = row.split('|')
 
             try:
-                video_id = int(row[0])
+                video_id = int(columns[0])
             except Exception:
                 print("\terror getting the id", columns)
                 video_id = -1
@@ -124,7 +124,7 @@ def load_videos(playlist):
         if video_path not in playlist_paths:
             new_video = Video(video_path)
             new_video.set_is_new()
-            playlist.add_video(video)
+            playlist.add_video(new_video)
 
     playlist.clean_videos()
 
