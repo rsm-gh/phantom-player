@@ -1118,10 +1118,14 @@ class MainWindow:
 
         for treepath in treepaths:
             self.liststore_videos[treepath][VideosListstoreColumnsIndex.progress] = progress
-            video_id = self.listore_videos[treepath][VideosListstoreColumnsIndex.id]
+            video_id = self.liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            video = self.__selected_playlist.get_video(video_id)
+            if progress == 0:
+                video.set_position(0)
+            else:
+                video.set_position(progress/100)
 
-            self.__selected_playlist
-
+        self.__selected_playlist.save()
 
     def __on_menuitem_playlist_settings(self, *_):
         self.__ignore_settings_window()
