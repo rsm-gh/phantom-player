@@ -73,7 +73,7 @@ window, treeview, box, menu {
     color: white;
 }"""
 
-class PlaylistListStoreColumns:
+class VideosListstoreColumnsIndex:
     color = 0
     id = 1
     path = 2
@@ -340,11 +340,11 @@ class MainWindow:
     def on_treeview_videos_drag_end(self, *_):
 
         # Get the new order
-        new_order = [row[PlaylistListStoreColumns.id] for row in self.liststore_videos]
+        new_order = [row[VideosListstoreColumnsIndex.id] for row in self.liststore_videos]
 
         # Update the treeview
         for i, row in enumerate(self.liststore_videos, 1):
-            row[PlaylistListStoreColumns.id] = i
+            row[VideosListstoreColumnsIndex.id] = i
 
         # Update the CSV file
         self.__selected_playlist.reorder(new_order)
@@ -367,7 +367,7 @@ class MainWindow:
 
             self.__ccp.write('current_playlist', self.__selected_playlist.get_name())
             self.__save_current_video_position()
-            video_id = self.liststore_videos[treepaths[0]][PlaylistListStoreColumns.id]
+            video_id = self.liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
             self.__current_media = CurrentMedia(self.__selected_playlist)
             self.__set_video(video_id)
 
@@ -402,8 +402,8 @@ class MainWindow:
             # Find videos
             list_of_names = [gtk_utils.gtk_treepath_get_merged_cells(self.liststore_videos,
                                                                      treepath,
-                                                                     PlaylistListStoreColumns.name,
-                                                                     PlaylistListStoreColumns.ext) for treepath in
+                                                                     VideosListstoreColumnsIndex.name,
+                                                                     VideosListstoreColumnsIndex.ext) for treepath in
                              treepaths]
 
             if self.__selected_playlist.missing_videos(list_of_names):
@@ -425,8 +425,8 @@ class MainWindow:
             if selection_length == 1:
                 selected_video_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_videos,
                                                                               treepaths[0],
-                                                                              PlaylistListStoreColumns.name,
-                                                                              PlaylistListStoreColumns.ext)
+                                                                              VideosListstoreColumnsIndex.name,
+                                                                              VideosListstoreColumnsIndex.ext)
 
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.open_dir)
                 menu.append(menuitem)
@@ -1079,8 +1079,8 @@ class MainWindow:
                 # if self.__selected_playlist.get_name() == self.__current_media.playlist.get_name():
                 #    video_id = cached_video.get_id()
                 #    for i in len(self.liststore_videos):
-                #        if self.listore_videos[i][PlaylistListStoreColumns.id] == video_id:
-                #            self.liststore_videos[i][PlaylistListStoreColumns.progress] = 100
+                #        if self.listore_videos[i][VideosListstoreColumnsIndex.id] == video_id:
+                #            self.liststore_videos[i][VideosListstoreColumnsIndex.progress] = 100
                 #            break
 
                 # Play the next video
@@ -1136,8 +1136,8 @@ class MainWindow:
             return
 
         for treepath in treepaths:
-            self.liststore_videos[treepath][PlaylistListStoreColumns.progress] = progress
-            video_id = self.listore_videos[treepath][PlaylistListStoreColumns.id]
+            self.liststore_videos[treepath][VideosListstoreColumnsIndex.progress] = progress
+            video_id = self.listore_videos[treepath][VideosListstoreColumnsIndex.id]
 
             self.__selected_playlist
 
@@ -1155,17 +1155,16 @@ class MainWindow:
         hide_row = self.checkbox_hidden_items.get_active()
 
         for treepath in reversed(treepaths):
-            video_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_videos,
-                                                                 treepath,
-                                                                 PlaylistListStoreColumns.name,
-                                                                 PlaylistListStoreColumns.ext)
-            self.__selected_playlist.ignore_video(video_name)
+
+            video_id = self.liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            video = self.__selected_playlist.get_video(video_id)
+            video.set_ignore(True)
 
             if hide_row:
                 row_iter = model.get_iter(treepath)
                 model.remove(row_iter)
             else:
-                self.liststore_videos[treepath][PlaylistListStoreColumns.color] = self.__font_hide_color
+                self.liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__font_hide_color
 
         self.treeview_selection_videos.unselect_all()
         self.__selected_playlist.save()
@@ -1180,10 +1179,10 @@ class MainWindow:
         for treepath in treepaths:
             video_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_videos,
                                                                  treepath,
-                                                                 PlaylistListStoreColumns.name,
-                                                                 PlaylistListStoreColumns.ext)
+                                                                 VideosListstoreColumnsIndex.name,
+                                                                 VideosListstoreColumnsIndex.ext)
             video = self.__selected_playlist.dont_ignore_video(video_name)
-            self.liststore_videos[treepath][PlaylistListStoreColumns.color] = self.__get_video_color(video)
+            self.liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__get_video_color(video)
 
         self.treeview_selection_videos.unselect_all()
         self.__selected_playlist.save()

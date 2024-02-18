@@ -99,12 +99,6 @@ class Video(object):
     def set_ignore(self, bool_value):
         self.__ignore = bool_value
 
-    def set_o_played(self, bool_value):
-        self.__o_played = bool_value
-
-    def set_play(self, bool_value):
-        self.__play = bool_value
-
     def set_id(self, integer):
         if int(integer) < 0:
             print("video id error " + self.__name)
