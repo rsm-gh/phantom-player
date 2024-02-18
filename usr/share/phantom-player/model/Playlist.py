@@ -121,7 +121,7 @@ class Playlist(object):
 
         videos = []
         for video in self.__videos_instances:
-            if video and not os.path.exists(video.get_path()) and not video.get_ignore():
+            if not os.path.exists(video.get_path()) and video.get_ignore():
                 '''Delete the hidden and un-existing videos'''
             else:
                 videos.append(video)
