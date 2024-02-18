@@ -163,7 +163,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__root_window = root_window
         self.__motion_time = time()
         self.__scale_progress_pressed = False
-        self.__media_length = 0
         self.__video_length = _EMPTY__VIDEO_LENGTH
         self.__hidden_controls = False
         self.__media = None
@@ -293,9 +292,9 @@ scale, label, box {
         else:
             self.__overlay.add_overlay(self.__buttons_box)
 
-        """
-            Init the threads
-        """
+        #
+        #    Init the threads
+        #
         self.__thread_player_activity = Thread(target=self.__on_thread_scan)
         self.__thread_player_activity.start()
 
@@ -382,13 +381,12 @@ scale, label, box {
 
         media = VLC_INSTANCE.media_new(file_path)
         media.parse()
-        self.__media = media
-
         media_title = media.get_meta(0)
+        self.__video_length = format_milliseconds_to_time(media.get_duration())
+        self.__media = media
 
         turn_off_screensaver(True)
 
-        self.__video_length = _EMPTY__VIDEO_LENGTH
         GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
@@ -584,18 +582,13 @@ scale, label, box {
         this_thread = current_thread()
 
         cached_progress = 0
+        cached_length = -1
 
         while getattr(this_thread, "do_run", True):
 
-            # Why can get_media() be none when vlc is playing? Is this an error?
-            if self.__media_length <= 0 and (self.is_playing() or self.get_media() is not None):
-                self.__media_length = self.__vlc_widget.player.get_length()
-                self.__video_length = format_milliseconds_to_time(self.__media_length)
-
+            vlc_is_playing = self.is_playing()
 
             if not self.__scale_progress_pressed:
-
-                vlc_is_playing = self.is_playing()
 
                 """
                     Update the play-pause button
@@ -809,8 +802,8 @@ scale, label, box {
         self.__scale_progress_pressed = False
 
     def __on_scale_progress_changed(self, widget, *_):
-        if self.__media_length >= 0:
-            video_time = widget.get_value() * self.__media_length
+        if self.__media is not None:
+            video_time = widget.get_value() * self.__media.get_duration()
             video_time = format_milliseconds_to_time(video_time)
             self.__label_progress.set_text(video_time + " / " + self.__video_length)
 
@@ -841,6 +834,6 @@ class MediaPlayer(Gtk.Window):
 
 if __name__ == '__main__':
     player = MediaPlayer()
-    player.play_video('/home/cadweb/Downloads/Seed/InkMaster/Ink.Master.S15E06.1080p.WEB.h264-EDITH[eztv.re].mkv')
+    #player.play_video('/home/cadweb/Downloads/Seed/InkMaster/Ink.Master.S15E06.1080p.WEB.h264-EDITH[eztv.re].mkv')
     Gtk.main()
     VLC_INSTANCE.release()
