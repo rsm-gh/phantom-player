@@ -45,7 +45,7 @@ class Texts:
         dont_ignore = "Don't Ignore"
         search = "Search"
         reproduce = "Play"
-        progress_reset = "Reset Progress"
+        progress_reset = "Restart Progress"
         progress_fill = "Fill Progress"
 
     class DialogVideos:

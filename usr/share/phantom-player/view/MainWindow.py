@@ -914,34 +914,15 @@ class MainWindow:
         self.liststore_videos.clear()
         self.column_name.set_spacing(0)
 
-        if not os.path.exists(self.__selected_playlist.get_path()):
-            return
-
-        # initialize the list
-        videos_list = []
-        for _ in self.__selected_playlist.get_videos():
-            videos_list.append(None)
-
-        # sort it by id
         for video in self.__selected_playlist.get_videos():
-            try:
-                videos_list[video.get_id() - 1] = video
-            except Exception as e:
-                print(str(e))
+            if not video.get_ignore() or not self.checkbox_hidden_items.get_active():
+                self.liststore_videos.append([self.__get_video_color(video),
+                                              video.get_id(),
+                                              video.get_path(),
+                                              video.get_name(),
+                                              video.get_extension(),
+                                              video.get_progress()])
 
-        for video in videos_list:
-            if video:
-                # add the video to the list store
-                if not video.get_ignore() or not self.checkbox_hidden_items.get_active():
-                    self.liststore_videos.append([self.__get_video_color(video),
-                                                  video.get_id(),
-                                                  video.get_path(),
-                                                  video.get_name(),
-                                                  video.get_extension(),
-                                                  video.get_progress()])
-            else:
-                print("Error loading the liststore_videos. The playlist '{}' has an empty video.".format(
-                    self.__selected_playlist.get_name()))
 
     def __menu_playlist_display(self, event):
 
