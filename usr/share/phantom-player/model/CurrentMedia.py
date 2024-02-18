@@ -27,16 +27,12 @@ class CurrentMedia:
 
         return False
 
-    def mark_seen_video(self):
-        self.__video.set_position(0)
-        self.playlist.mark_video(self.__video, self.playlist.get_random(), True)
-
     def get_next_video(self):
 
         if self.playlist.get_random():
-            video = self.playlist.get_r_video()
+            video = self.playlist.get_next_random_video()
         else:
-            video = self.playlist.get_o_video(self.__video)
+            video = self.playlist.get_next_organized_video(self.__video)
 
         self.__video = video
 
@@ -46,6 +42,10 @@ class CurrentMedia:
         return self.__video
 
     def get_video(self, video_name):
+
+        if self.playlist is None:
+            return None
+
         self.__video = self.playlist.get_video(video_name)
         return self.__video
 
@@ -55,3 +55,10 @@ class CurrentMedia:
             return None
 
         return self.__video.get_name()
+
+    def set_video_position(self, pos):
+
+        if self.__video is None:
+            return
+
+        self.__video.set_position(pos)
