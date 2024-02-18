@@ -144,12 +144,12 @@ def __file_is_video(path, forgive_broken_links=False):
 
 
 def __generate_videos_list_from_directory(dir_path, recursive):
-    if os.path.exists(dir_path) and os.path.isdir(dir_path):
-        if recursive:
-            paths = [os.path.join(dp, filename) for dp, dn, filenames in os.walk(dir_path) for filename in filenames]
-        else:
-            paths = [os.path.join(dir_path, filename) for filename in os.listdir(dir_path)]
+    if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
+        return []
 
-        return [path for path in sorted(paths) if __file_is_video(path)]
+    if recursive:
+        paths = [os.path.join(dp, filename) for dp, dn, filenames in os.walk(dir_path) for filename in filenames]
+    else:
+        paths = [os.path.join(dir_path, filename) for filename in os.listdir(dir_path)]
 
-    return []
+    return [path for path in sorted(paths) if __file_is_video(path)]

@@ -22,7 +22,6 @@
     + Remove the thread scan_media_player and replace it by signals from the media player.
     + Fix: when a series is changed, update the "random", "keep playing" states of the player.
     + Playlist Settings: ADD keep playing and Random.
-    + Use series id's instead of names?
     + Move the series icon to the .local phantom dir
     + Select & focus the video on the liststore when start playing a series
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
@@ -400,7 +399,7 @@ class MainWindow:
             menuitem.connect('activate', self.__on_menuitem_set_progress, 0)
 
             # Find videos
-            selected_ids = [self.liststore_videos[treepaths][VideosListstoreColumnsIndex.id] for treepath in treepaths]
+            selected_ids = [self.liststore_videos[treepath][VideosListstoreColumnsIndex.id] for treepath in treepaths]
             if self.__selected_playlist.missing_videos(selected_ids):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.search)
                 menuitem.connect('activate', self.__playlist_find_videos, selected_ids)
@@ -418,14 +417,12 @@ class MainWindow:
 
             # Open the containing folder (only if the user selected one video)
             if selection_length == 1:
-                selected_video_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_videos,
-                                                                              treepaths[0],
-                                                                              VideosListstoreColumnsIndex.name,
-                                                                              VideosListstoreColumnsIndex.ext)
+                video_id = self.liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
+                video = self.__selected_playlist.get_video(video_id)
 
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.open_dir)
                 menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_video_open_dir, selected_video_name)
+                menuitem.connect('activate', self.__on_menuitem_video_open_dir, video.get_path())
 
             menu.show_all()
             menu.popup(None, None, None, None, event.button, event.time)
@@ -1059,7 +1056,7 @@ class MainWindow:
                 # if self.__selected_playlist.get_name() == self.__current_media.playlist.get_name():
                 #    video_id = cached_video.get_id()
                 #    for i in len(self.liststore_videos):
-                #        if self.listore_videos[i][VideosListstoreColumnsIndex.id] == video_id:
+                #        if self.liststore_videos[i][VideosListstoreColumnsIndex.id] == video_id:
                 #            self.liststore_videos[i][VideosListstoreColumnsIndex.progress] = 100
                 #            break
 
@@ -1139,7 +1136,6 @@ class MainWindow:
         hide_row = self.checkbox_hidden_items.get_active()
 
         for treepath in reversed(treepaths):
-
             video_id = self.liststore_videos[treepath][VideosListstoreColumnsIndex.id]
             video = self.__selected_playlist.get_video(video_id)
             video.set_ignore(True)
@@ -1161,18 +1157,15 @@ class MainWindow:
             return
 
         for treepath in treepaths:
-            video_name = gtk_utils.gtk_treepath_get_merged_cells(self.liststore_videos,
-                                                                 treepath,
-                                                                 VideosListstoreColumnsIndex.name,
-                                                                 VideosListstoreColumnsIndex.ext)
-            video = self.__selected_playlist.dont_ignore_video(video_name)
+            video_id = self.liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            video = self.__selected_playlist.get_video(video_id)
+            video.set_ignore(False)
             self.liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__get_video_color(video)
 
         self.treeview_selection_videos.unselect_all()
         self.__selected_playlist.save()
 
-    def __on_menuitem_video_open_dir(self, _, video_name):
-        path = self.__selected_playlist.get_path_from_video_name(video_name)
+    def __on_menuitem_video_open_dir(self, _, path):
         if os.path.exists(path):
             open_directory(path)
 

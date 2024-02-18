@@ -379,13 +379,6 @@ class Playlist(object):
     def get_recursive(self):
         return self.__recursive
 
-    def get_path_from_video_name(self, name):
-        for video in self.__videos_instances:
-            if video and video.get_name() == name:
-                return video.get_path()
-
-        return None
-
     def get_video(self, video_id):
         for video in self.__videos_instances:
             if video.get_id() == video_id:
