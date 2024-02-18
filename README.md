@@ -107,5 +107,5 @@ Path | Recursive
 ```
 And finally, there will be one line per video:
 ```
-Number | Absolute Path | Play | O-Played | R-Played | Position | Ignore
+Number | Absolute Path | Name | Position | Ignore
 ```
