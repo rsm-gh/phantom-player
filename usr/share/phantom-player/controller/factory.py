@@ -86,7 +86,7 @@ def load_videos(playlist):
                 print("\tExit line because empty path.", columns)
                 continue
 
-            elif not __file_is_video(path,True):
+            elif os.path.exists(path) and not __file_is_video(path,True):
                 print("\tExit line because not video.", columns)
                 continue
 
