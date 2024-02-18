@@ -131,13 +131,13 @@ class Playlist(object):
     def update_not_hidden_videos(self):
         self.__active_videos_nb = len([0 for video in self.__videos_instances if video.get_ignore()])
 
-    def missing_videos(self, videos_names):
+    def missing_videos(self, videos_id):
         """Return if from the selected videos there is someone missing"""
-        for video_name in videos_names:
+
+        for vid in videos_id:
             for video in self.__videos_instances:
-                if video.get_name() == video_name:
-                    if not os.path.exists(video.get_path()):
-                        return True
+                if video.get_id() == vid and not os.path.exists(video.get_path()):
+                    return True
 
         return False
 
@@ -179,7 +179,7 @@ class Playlist(object):
         self.update_not_hidden_videos()
         self.save()
 
-    def find_video(self, video_name, new_path):
+    def find_video(self, video_id, new_path):
         """
             Try to find videos other videos in case
             the name of an extension changed, or the start part
@@ -203,13 +203,15 @@ class Playlist(object):
         """
             change the path of the selected video
         """
-        for video in self.__videos_instances:
-            if video_name == video.get_name():
-                video.set_path(new_path)
-                break
+        video = self.get_video(video_id)
+        video_name = video.get_name()
+
+        if video is None:
+            return
+
+        video.set_path(new_path)
 
         # Find the pattern
-
         new_name = os.path.basename(new_path).strip()
         old_name = video_name.strip()
 
@@ -261,15 +263,13 @@ class Playlist(object):
 
     def find_videos(self, path):
 
-        path = path + '/'
-        path.replace('//', '/')
-
         video_counter = 0
         for video in self.__videos_instances:
             if not os.path.exists(video.get_path()):
-                if os.path.exists(path + video.get_name()):
+                full_path = os.path.join(path, video.get_full_name())
+                if os.path.exists(full_path):
                     video_counter += 1
-                    video.set_path(path + video.get_name())
+                    video.set_path(full_path)
 
         if video_counter > 0:
             self.save()

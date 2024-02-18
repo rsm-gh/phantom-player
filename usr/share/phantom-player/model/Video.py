@@ -55,6 +55,9 @@ class Video(object):
     def get_name(self):
         return self.__name
 
+    def get_full_name(self):
+        return self.__name + "." + self.__extension
+
     def get_id(self):
         return self.__id
 
@@ -63,9 +66,6 @@ class Video(object):
 
     def get_path(self):
         return self.__path
-
-    def get_name(self):
-        return self.__name
 
     def get_position(self):
         return self.__position
