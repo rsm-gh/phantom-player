@@ -18,27 +18,10 @@
 
 import os  # why is os not being detected on pycharm?
 import csv
-import magic
 import shutil
 import random
 
 from Paths import *
-from controller.factory import str_to_boolean
-from model.Video import Video, path_is_video, generate_list_from_videos_folder
-
-MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
-MAGIC_MIMETYPE.load()
-
-
-class PlaylistListStoreColumns:
-    id = 0
-    name = 1
-    ext = 2
-    play = 3
-    o_played = 4
-    r_played = 5
-    color = 6
-
 
 class Playlist(object):
 
@@ -53,9 +36,7 @@ class Playlist(object):
                  subtitles_track=0):
 
         self.__name = ""
-        self.set_name(name)
-
-        self.__path = data_path
+        self.__data_path = data_path
         self.__recursive = False
         self.__random = False
         self.__keep_playing = False
@@ -63,6 +44,7 @@ class Playlist(object):
         self.__audio_track = 0
         self.__subtitles_track = 0
 
+        self.set_name(name)
         self.set_recursive(recursive, False)
         self.set_random(is_random, False)
         self.set_keep_playing(keep_playing, False)
@@ -72,110 +54,8 @@ class Playlist(object):
 
         # Variables
         self.__videos_instances = []
-        self.__nb_videos = 0
-        self.__icon_path = os.path.join(self.__path, "icon")
-
-
-    def load_videos(self):
-
-        if os.path.exists(SERIES_PATH.format(self.__name)):
-
-            """
-                Get the number of rows of the file, this is important in case there be an error with the id's
-            """
-            number_of_rows = 0
-            if os.path.exists(SERIES_PATH.format(self.__name)):
-                with open(SERIES_PATH.format(self.__name), mode='rt', encoding='utf-8') as f:
-                    number_of_rows = len(f.readlines())
-
-            """
-                Load the videos (and their data) from the program files
-            """
-            with open(SERIES_PATH.format(self.__name), mode='rt', encoding='utf-8') as f:
-                rows = csv.reader(f, delimiter='|')
-                next(f)
-                for row in rows:
-                    try:
-                        path = row[1].strip()
-                    except Exception:
-                        print("error getting the path")
-                        path = False
-
-                    """
-                        check for duplicates
-                    """
-                    if path and not any(
-                            path == video.get_path() for video in self.__videos_instances) and path_is_video(path,
-                                                                                                             True):
-                        try:
-                            video_id = int(row[0])
-                        except Exception:
-                            print("error getting the id")
-                        else:
-                            """
-                                check if the Id has already been used
-                            """
-                            for video in self.__videos_instances:
-                                if video_id == video.get_id():
-                                    # Send the video to the end
-                                    number_of_rows += 1
-                                    video_id = number_of_rows
-                                    print("Incrementing duplicated id")
-
-                            try:
-                                play = str_to_boolean(row[2])
-                            except Exception:
-                                play = True
-
-                            try:
-                                o_played = str_to_boolean(row[3])
-                            except Exception:
-                                o_played = False
-
-                            try:
-                                r_played = str_to_boolean(row[4])
-                            except Exception:
-                                r_played = False
-
-                            try:
-                                position = float(row[5])
-                            except Exception:
-                                position = 0.0
-
-                            try:
-                                display = str_to_boolean(row[6])
-                            except Exception:
-                                display = False
-
-                            video = Video(path, video_id)
-                            video.load_info(play, o_played, r_played, position, display)
-
-                            self.__videos_instances.append(video)
-                            self.__nb_videos += 1
-
-        """
-            Get the videos from the folder. This will find new videos.
-        """
-        for video_path in generate_list_from_videos_folder(self.__path, self.__recursive):
-            if not any(video_path == video.get_path() for video in self.__videos_instances):
-
-                self.__nb_videos += 1
-                new_video = Video(video_path, self.__nb_videos)
-
-                if os.path.exists(new_video.get_path()):
-                    new_video.set_is_new()
-
-                self.__videos_instances.append(new_video)
-
-        self.clean_videos()
-        self.update_ids()  # this is in case there were videos with duplicated ids
-
-    def get_save_path(self):
-        file_path = SERIES_PATH.format(self.__name)
-        if not file_path.lower().endswith(".csv"):
-            file_path += ".csv"
-
-        return file_path
+        self.__active_videos_nb = 0
+        self.__icon_path = os.path.join(self.__data_path, "icon")
 
     def save(self):
 
@@ -191,23 +71,18 @@ class Playlist(object):
                                self.__audio_track,
                                self.__subtitles_track])
 
-            csv_list.writerow([self.__path, self.__recursive])
+            csv_list.writerow([self.__data_path, self.__recursive])
 
             for video in self.__videos_instances:
                 csv_list.writerow([video.get_id(),
                                    video.get_path(),
-                                   video.get_play(),
-                                   video.get_o_played(),
-                                   video.get_r_played(),
+                                   video.get_name(),
                                    video.get_position(),
-                                   video.get_display()])
+                                   video.get_ignore()])
 
 
     def restart(self):
         for video in self.__videos_instances:
-            video.set_play(True)
-            video.set_o_played(False)
-            video.set_r_played(False)
             video.set_position(0)
 
         self.save()
@@ -234,11 +109,19 @@ class Playlist(object):
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_id(i)
 
+    def add_video(self, video):
+
+        if video.get_id() == -1:
+            video.set_id(len(self.__videos_instances) + 1)
+
+        self.__videos_instances.append(video)
+        self.__active_videos_nb += 1
+
     def clean_videos(self):
 
         videos = []
         for video in self.__videos_instances:
-            if video and not os.path.exists(video.get_path()) and not video.get_display():
+            if video and not os.path.exists(video.get_path()) and not video.get_ignore():
                 '''Delete the hidden and un-existing videos'''
             else:
                 videos.append(video)
@@ -246,7 +129,7 @@ class Playlist(object):
         self.__videos_instances = videos
 
     def update_not_hidden_videos(self):
-        self.__nb_videos = len([0 for video in self.__videos_instances if video.get_display()])
+        self.__active_videos_nb = len([0 for video in self.__videos_instances if video.get_ignore()])
 
     def missing_videos(self, videos_names):
         """Return if from the selected videos there is someone missing"""
@@ -258,51 +141,17 @@ class Playlist(object):
 
         return False
 
-    def mark_video(self, video, is_random, new_state):
-        for video in self.__videos_instances:
-            if video == video:
-                if is_random:
-                    video.set_r_played(new_state)
-                else:
-                    video.set_o_played(new_state)
-
-                self.save()
-                break
-
-    def change_checkbox_state(self, video_names, column, state):
-
-        if isinstance(video_names, str):
-            video_names = [video_names]
-
-        for video_name in video_names:
-            for video in self.__videos_instances:
-
-                if video.get_name() == video_name:
-
-                    if column == PlaylistListStoreColumns.play:
-                        video.set_play(state)
-                    elif column == PlaylistListStoreColumns.o_played:
-                        video.set_o_played(state)
-                    elif column == PlaylistListStoreColumns.r_played:
-                        video.set_r_played(state)
-
-                    break
-
-        self.save()
-
-    def ignore_video(self, del_video):
-        """ Ignore a video from the playlist by giving its name.
-        """
+    def ignore_video(self, video_name):
 
         for video in self.__videos_instances:
-            if video.get_name() == del_video:
+            if video.get_name() == video_name:
 
                 if os.path.exists(video.get_path()):
-                    video.set_display(False)
+                    video.set_ignore(True)
                 else:
                     self.__videos_instances.remove(video)
 
-                self.__nb_videos -= 1
+                self.__active_videos_nb -= 1
                 self.update_ids()
                 self.save()
 
@@ -313,9 +162,9 @@ class Playlist(object):
     def dont_ignore_video(self, video_name):
         for video in self.__videos_instances:
             if video.get_name() == video_name:
-                video.set_display(True)
+                video.set_ignore(False)
 
-                self.__nb_videos -= 1
+                self.__active_videos_nb -= 1
                 self.update_ids()
                 self.update_not_hidden_videos()
 
@@ -325,7 +174,7 @@ class Playlist(object):
 
 
     def find_playlist(self, path):
-        self.__path = path
+        self.__data_path = path
         self.find_videos(path)
         self.update_not_hidden_videos()
         self.save()
@@ -343,7 +192,7 @@ class Playlist(object):
                 Videos-video700 -> video700
                 videos-video800 -> video800
 
-    Could this be more powerful and search other kinds of string sequences?
+        Could this be more powerful and search other kinds of string sequences?
 
             ex:
                 video-VIDEO700 -> video-video700
@@ -427,6 +276,13 @@ class Playlist(object):
 
         return video_counter
 
+    def get_save_path(self):
+        file_path = SERIES_PATH.format(self.__name)
+        if not file_path.lower().endswith(".csv"):
+            file_path += ".csv"
+
+        return file_path
+
     def get_start_at(self):
         return self.__start_at
 
@@ -440,48 +296,28 @@ class Playlist(object):
     def get_name(self):
         return self.__name
 
-    def get_videos(self):
-        return self.__videos_instances
-
     def get_first_video(self):
         if len(self.__videos_instances) <= 0:
             return None
 
         return self.__videos_instances[0]
 
-    def get_o_played_stats(self):
-        """
-            returns: played, total, percent
-        """
-        self.update_not_hidden_videos()
+    def get_progress(self):
 
-        i = 0.00
+        total_of_videos = 0
+        total_percent = 0
         for video in self.__videos_instances:
-            if video.get_o_played() and video.get_display():
-                i += 1.00
+            if not video.get_ignore():
+                total_percent += video.get_progress()
+                total_of_videos += 1
 
-        if i > 0 and self.__nb_videos > 0:
-            return int(i), self.__nb_videos, (i / self.__nb_videos)
-        else:
-            return 0, self.__nb_videos, 0
+        if total_of_videos <= 0:
+            return 0
 
-    def get_r_played_stats(self):
-        """
-            returns: played,total,percent
-        """
-        self.update_not_hidden_videos()
+        return total_percent / total_of_videos
 
-        i = 0.00
-        for video in self.__videos_instances:
-            if video.get_r_played() and video.get_display():
-                i += 1.00
 
-        if i > 0 and self.__nb_videos > 0:
-            return int(i), self.__nb_videos, (i / self.__nb_videos)
-        else:
-            return 0, self.__nb_videos, 0
-
-    def get_o_video(self, after=None):
+    def get_next_organized_video(self, after=None):
         """
             Get the next video.
 
@@ -501,34 +337,35 @@ class Playlist(object):
                 elif not after_found:
                     continue
 
-            if not video.get_o_played() and video.get_play() and video.get_path() and video.get_display():
+            if video.exists() and not video.get_was_played() and not video.get_ignore():
                 return video
 
         # Try to return a video from the beginning
         if after is not None:
-            video = self.get_o_video()
-            if video:
-                return video
+            return self.get_next_organized_video()
 
         return None
 
-    def get_r_video(self):
+    def get_next_random_video(self):
+
+        videos = []
         for video in self.__videos_instances:
-            if not video.get_r_played() and video.get_play() and video.get_path() and video.get_display():
-                while True:
-                    random_ep = random.randint(0, self.__nb_videos - 1)
-                    random_video = self.__videos_instances[random_ep]
+            if not video.get_was_played() and video.exists() and not video.get_ignore():
+                videos.append(video)
 
-                    if not random_video.get_r_played() and random_video.get_play() and random_video.get_path():
-                        return random_video
+        if not videos:
+            return None
 
-        return None
+        elif len(videos) == 1:
+            return videos[0]
+
+        return random.choice(videos)
 
     def get_nb_videos(self):
-        return self.__nb_videos
+        return self.__active_videos_nb
 
     def get_path(self):
-        return self.__path
+        return self.__data_path
 
     def get_audio_track(self):
         return self.__audio_track
@@ -549,12 +386,15 @@ class Playlist(object):
 
         return None
 
-    def get_video(self, name):
+    def get_video(self, video_id):
         for video in self.__videos_instances:
-            if video and video.get_name() == name:
+            if video.get_id() == video_id:
                 return video
 
         return None
+
+    def get_videos(self):
+        return self.__videos_instances
 
     def get_keep_playing(self):
         return self.__keep_playing
@@ -646,8 +486,8 @@ class Playlist(object):
     def set_image_path(self, path):
         self.__icon_path = path
         if os.path.exists(path):
-            shutil.copy2(path, os.path.join(self.__path, "icon"))
+            shutil.copy2(path, os.path.join(self.__data_path, "icon"))
 
 
     def set_path(self, path):
-        self.__path = path
+        self.__data_path = path

@@ -45,8 +45,8 @@ class Texts:
         dont_ignore = "Don't Ignore"
         search = "Search"
         reproduce = "Play"
-        o_played = "O-Played"
-        r_played = "R-Played"
+        progress_reset = "Reset Progress"
+        progress_fill = "Fill Progress"
 
     class DialogVideos:
         delete = '''Are you sure that you want to delete the selected videos?\n\nThey wont be removed from your hard drive.'''
