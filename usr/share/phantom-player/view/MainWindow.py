@@ -29,7 +29,6 @@
     + Add: accelerators to the playlist menu.
     + Manage multiple paths into the playlist settings menu.
     + Apply the "load video" methods into a thread.
-    + Re-enable find videos?
     + Add option: end at
     + Rename episodes dialog
 """
@@ -348,6 +347,7 @@ class MainWindow:
 
         # Update the CSV file
         self.__selected_playlist.reorder(new_order)
+        self.treeview_selection_videos.unselect_all()
 
     def on_treeview_videos_press_event(self, _, event):
         model, treepaths = self.treeview_selection_videos.get_selected_rows()
@@ -400,15 +400,10 @@ class MainWindow:
             menuitem.connect('activate', self.__on_menuitem_set_progress, 0)
 
             # Find videos
-            list_of_names = [gtk_utils.gtk_treepath_get_merged_cells(self.liststore_videos,
-                                                                     treepath,
-                                                                     VideosListstoreColumnsIndex.name,
-                                                                     VideosListstoreColumnsIndex.ext) for treepath in
-                             treepaths]
-
-            if self.__selected_playlist.missing_videos(list_of_names):
+            selected_ids = [self.liststore_videos[treepaths][VideosListstoreColumnsIndex.id] for treepath in treepaths]
+            if self.__selected_playlist.missing_videos(selected_ids):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.search)
-                menuitem.connect('activate', self.__playlist_find_videos, list_of_names)
+                menuitem.connect('activate', self.__playlist_find_videos, selected_ids)
                 menu.append(menuitem)
 
             # ignore videos
@@ -660,7 +655,7 @@ class MainWindow:
         file_filter.add_pattern('*.jpg')
         file_filter.add_pattern('*.png')
 
-        file = gtk_utils.gtk_dialog_folder(self.window_playlist_settings, file_filter)
+        file = gtk_utils.gtk_dialog_select_file(self.window_playlist_settings, file_filter)
         if file is not None:
 
             setting_playlist = self.__get_setting_playlist()
@@ -676,7 +671,7 @@ class MainWindow:
 
     def on_button_playlist_path_add_clicked(self, *_):
 
-        path = gtk_utils.gtk_dialog_file(self.window_root)
+        path = gtk_utils.gtk_dialog_select_directory(self.window_root)
         if path is None:
             return
 
@@ -698,7 +693,7 @@ class MainWindow:
 
     def on_button_playlist_path_edit_clicked(self, *_):
 
-        path = gtk_utils.gtk_dialog_file(self.window_root)
+        path = gtk_utils.gtk_dialog_select_directory(self.window_root)
         if path is None:
             return
 
@@ -853,27 +848,31 @@ class MainWindow:
                     GLib.idle_add(self.treeview_playlist.set_cursor, i)
                     break
 
-    """
-    def __playlist_find_videos(self, _, video_names):
 
-        path = gtk_dialog_folder(self.window_root)
+    def __playlist_find_videos(self, _, videos_id):
 
-        if path is None:
-            return
+        if len(videos_id) == 1:  # if the user only selected one video to find...
 
-        if len(video_names) == 1:  # if the user only selected one video to find...
-            found_videos = playlist_data.find_video(video_names[0], path)
-            if found_videos:
-                gtk_dialog_info(self.window_root, Texts.DialogVideos.other_found.format(found_videos), None)
+            path = gtk_utils.gtk_dialog_select_file(self.window_root)
 
-        elif len(video_names) > 1:
+            if path is None:
+                return
+
+            found_videos = self.__selected_playlist.find_video(videos_id[0], path)
+            gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogVideos.other_found.format(found_videos), None)
+
+        else:
+
+            path = gtk_utils.gtk_dialog_select_directory(self.window_root)
+
+            if path is None:
+                return
+
             found_videos = self.__selected_playlist.find_videos(path)
+            gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogVideos.found_x.format(found_videos), None)
 
-            if found_videos:
-                gtk_dialog_info(self.window_root, Texts.DialogVideos.found_x.format(found_videos), None)
-
-        self.__liststore_videos_populate()
-    """
+        if found_videos > 0:
+            self.__liststore_videos_populate()
 
     def __liststore_playlist_append(self, data):
         """

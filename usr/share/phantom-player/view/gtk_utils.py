@@ -77,7 +77,7 @@ def gtk_liststore_remove_first_selected_row(gtk_selection):
 def gtk_treepath_get_merged_cells(gtk_liststore, gtk_treepath, column1, column2):
     return '{}{}'.format(gtk_liststore[gtk_treepath][column1], gtk_liststore[gtk_treepath][column2])
 
-def gtk_dialog_file(parent, start_path=None):
+def gtk_dialog_select_directory(parent, start_path=None):
     dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
                                    parent=parent,
                                    action=Gtk.FileChooserAction.SELECT_FOLDER)
@@ -102,7 +102,7 @@ def gtk_dialog_file(parent, start_path=None):
 
     return dir_path
 
-def gtk_dialog_folder(parent, file_filter=None, start_path=None):
+def gtk_dialog_select_file(parent, file_filter=None, start_path=None):
     dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
                                    parent=parent,
                                    action=Gtk.FileChooserAction.OPEN)
@@ -117,7 +117,7 @@ def gtk_dialog_folder(parent, file_filter=None, start_path=None):
 
     dialog.set_transient_for(parent)
 
-    if filter is not None:
+    if file_filter is not None:
         dialog.add_filter(file_filter)
 
     if start_path is not None and os.path.exists(start_path):

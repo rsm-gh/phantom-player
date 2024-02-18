@@ -84,7 +84,7 @@ foo-700 -> 701
 				
 B) By selecting multiple rows:
 	
-You will be asked to select a directory, and the player will try to find the missing videos 
+You will be asked to select a directory, and the player will try to find all the missing videos 
 by matching their exact name.
 
 **The font-colors depend on your Desktop theme.*
