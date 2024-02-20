@@ -23,7 +23,6 @@
     + Move the series icon to the .local phantom dir
     + Select & focus the video on the liststore when start playing a series
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
-    + Add: accelerators to the playlist menu.
     + Manage multiple paths into the playlist settings menu.
     + Apply the "load video" methods into a thread.
     + Add option: end at
