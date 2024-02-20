@@ -54,7 +54,7 @@ sys.path.insert(0, _PROJECT_DIR)
 
 from Paths import *
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
-from view.gtk_utils import gtk_set_css
+from view.gtk_utils import set_css
 from system_utils import EventCodes, turn_off_screensaver
 
 _EMPTY__VIDEO_LENGTH = "00:00"
@@ -97,7 +97,7 @@ def format_track(track):
     return '{}:   {}'.format(numb, content)
 
 
-def gtk_dialog_select_file(parent, start_path=''):
+def dialog_select_file(parent, start_path=''):
     window_choose_file = Gtk.FileChooserDialog('Phantom Player',
                                                parent,
                                                Gtk.FileChooserAction.OPEN,
@@ -272,7 +272,7 @@ scale, label, box {
         self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
 
-        gtk_set_css(self.__buttons_box, css_style)
+        set_css(self.__buttons_box, css_style)
 
         #   Extra volume label
         self.__label_volume = Gtk.Label()
@@ -281,7 +281,7 @@ scale, label, box {
         self.__label_volume.set_halign(Gtk.Align.END)
         self.__label_volume.set_margin_start(5)
         self.__label_volume.set_margin_end(5)
-        gtk_set_css(self.__label_volume, css_style)
+        set_css(self.__label_volume, css_style)
         self.__overlay.add_overlay(self.__label_volume)
 
         #
@@ -438,7 +438,7 @@ scale, label, box {
             Todo: read the result of player.video_set_subtitle_file(path) and display a message
             in case of problem.
         """
-        path = gtk_dialog_select_file(self.__root_window)
+        path = dialog_select_file(self.__root_window)
 
         if path is not None:
             self.__vlc_widget.player.video_set_subtitle_file(path)

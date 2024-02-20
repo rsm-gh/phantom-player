@@ -27,13 +27,13 @@ from gi.repository import Gtk, GObject, Gdk
 from Texts import Texts
 from Paths import ICON_LOGO_SMALL
 
-def gtk_set_css(widget, css):
+def set_css(widget, css):
     provider = Gtk.CssProvider()
     provider.load_from_data(css.encode('utf-8'))
     context = widget.get_style_context()
     context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
-def gtk_default_font_color(text_type='theme_text_color', widget=None, on_error='#000000'):
+def get_default_color(text_type='theme_text_color', widget=None, on_error='#000000'):
     """
         theme_text_color
         warning_color
@@ -51,7 +51,7 @@ def gtk_default_font_color(text_type='theme_text_color', widget=None, on_error='
 
     return found, color
 
-def gtk_selection_get_first_selected_cell(gtk_selection, column=0):
+def treeview_selection_get_first_cell(gtk_selection, column=0):
     model, treepaths = gtk_selection.get_selected_rows()
 
     if not treepaths:
@@ -60,20 +60,20 @@ def gtk_selection_get_first_selected_cell(gtk_selection, column=0):
     return model[treepaths[0]][column]
 
 
-def gtk_selection_set_first_selected_cell(gtk_selection, column, value):
+def treeview_selection_set_first_cell(gtk_selection, column, value):
     model, treepaths = gtk_selection.get_selected_rows()
 
     if len(treepaths) > 0:
         model[treepaths[0]][column] = value
 
 
-def gtk_liststore_remove_first_selected_row(gtk_selection):
+def treeview_selection_remove_first_row(gtk_selection):
     model, treepaths = gtk_selection.get_selected_rows()
 
     if len(treepaths) > 0:
         model.remove(model.get_iter(treepaths[0]))
 
-def gtk_dialog_select_directory(parent, start_path=None):
+def dialog_select_directory(parent, start_path=None):
     dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
                                    parent=parent,
                                    action=Gtk.FileChooserAction.SELECT_FOLDER)
@@ -98,7 +98,7 @@ def gtk_dialog_select_directory(parent, start_path=None):
 
     return dir_path
 
-def gtk_dialog_select_file(parent, file_filter=None, start_path=None):
+def dialog_select_file(parent, file_filter=None, start_path=None):
     dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
                                    parent=parent,
                                    action=Gtk.FileChooserAction.OPEN)
@@ -129,7 +129,7 @@ def gtk_dialog_select_file(parent, file_filter=None, start_path=None):
     return file_path
 
 
-def gtk_dialog_question(parent, text1, text2=None):
+def dialog_yes_no(parent, text1, text2=None):
     dialog = Gtk.MessageDialog(parent,
                                Gtk.DialogFlags.MODAL,
                                Gtk.MessageType.QUESTION,
@@ -151,7 +151,7 @@ def gtk_dialog_question(parent, text1, text2=None):
     elif response == Gtk.ResponseType.NO:
         return False
 
-def gtk_dialog_info(parent, text1, text2=None):
+def dialog_info(parent, text1, text2=None):
     dialog = Gtk.MessageDialog(parent,
                                Gtk.DialogFlags.MODAL,
                                Gtk.MessageType.INFO,
@@ -167,11 +167,3 @@ def gtk_dialog_info(parent, text1, text2=None):
 
     _ = dialog.run()
     dialog.destroy()
-
-if __name__ == "__main__":
-    print(gtk_default_font_color('theme_text_color'))
-    print(gtk_default_font_color('error_color'))
-    print(gtk_default_font_color('warning_color'))
-
-
-
