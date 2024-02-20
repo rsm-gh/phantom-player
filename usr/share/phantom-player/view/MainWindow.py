@@ -17,12 +17,12 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
+    + Fix: save the series status when the player changes random/keep plating.
+    + Fix: when searching in the playlist liststore, the videos shall be emptied.
     + Separate the settings dialog from the main GUI.
     + Remove the thread scan_media_player and replace it by signals from the media player.
-    + Fix: save the series status when the player changes random/keep plating.
     + Move the series icon to the .local phantom dir
     + Select & focus the video on the liststore when start playing a series
-    + Fix: when searching in the playlist liststore, the videos shall be emptied.
     + Manage multiple paths into the playlist settings menu.
     + Apply the "load video" methods into a thread.
     + Add option: end at
@@ -199,19 +199,19 @@ class MainWindow:
         #
         # Font colors
         #
-        _, self.__font_default_color = gtk_utils.gtk_default_font_color('theme_text_color',
+        _, self.__font_default_color = gtk_utils.get_default_color('theme_text_color',
                                                                         widget=self.treeview_videos,
                                                                         on_error="#000000")
 
-        _, self.__font_hide_color = gtk_utils.gtk_default_font_color('warning_color',
+        _, self.__font_hide_color = gtk_utils.get_default_color('warning_color',
                                                                      widget=self.treeview_videos,
                                                                      on_error="#ff9900")
 
-        _, self.__font_error_color = gtk_utils.gtk_default_font_color('error_color',
+        _, self.__font_error_color = gtk_utils.get_default_color('error_color',
                                                                       widget=self.treeview_videos,
                                                                       on_error="#ff0000")
 
-        _, self.__font_new_color = gtk_utils.gtk_default_font_color('success_color',
+        _, self.__font_new_color = gtk_utils.get_default_color('success_color',
                                                                     widget=self.treeview_videos,
                                                                     on_error="#009933")
 
@@ -221,8 +221,8 @@ class MainWindow:
         self.menuitem_playlist_settings.set_sensitive(False)
 
         if dark_mode:
-            gtk_utils.gtk_set_css(self.window_root, css_style)
-            gtk_utils.gtk_set_css(self.treeview_videos, css_style)
+            gtk_utils.set_css(self.window_root, css_style)
+            gtk_utils.set_css(self.treeview_videos, css_style)
 
         self.window_root.maximize()
         self.window_root.show_all()
@@ -260,7 +260,7 @@ class MainWindow:
             self.__selected_playlist = None
             return
 
-        selected_playlist_name = gtk_utils.gtk_selection_get_first_selected_cell(self.treeview_selection_playlist, 1)
+        selected_playlist_name = gtk_utils.treeview_selection_get_first_cell(self.treeview_selection_playlist, 1)
         self.__selected_playlist = self.__playlist_dict[selected_playlist_name]
 
         #
@@ -296,7 +296,7 @@ class MainWindow:
                 # check if the liststore is empty
                 if len(self.liststore_videos) <= 0:
                     if not self.checkbox_hide_warning_missing_playlist.get_active():
-                        gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogPlaylist.is_missing)
+                        gtk_utils.dialog_info(self.window_root, Texts.DialogPlaylist.is_missing)
 
                     return
 
@@ -419,7 +419,7 @@ class MainWindow:
             self.__selected_playlist = None
             return
 
-        selected_playlist_name = gtk_utils.gtk_selection_get_first_selected_cell(treeselection, 1)
+        selected_playlist_name = gtk_utils.treeview_selection_get_first_cell(treeselection, 1)
 
         # This is because "press event" is executed before, so it is not necessary to re-define this
         if self.__selected_playlist is None or selected_playlist_name != self.__selected_playlist.get_name():
@@ -533,11 +533,11 @@ class MainWindow:
 
         playlist_name = self.__selected_playlist.get_name()
 
-        if not gtk_utils.gtk_dialog_question(self.window_playlist_settings,
+        if not gtk_utils.dialog_yes_no(self.window_playlist_settings,
                                              Texts.DialogPlaylist.confirm_delete.format(playlist_name)):
             return
 
-        gtk_utils.gtk_liststore_remove_first_selected_row(self.treeview_selection_playlist)
+        gtk_utils.treeview_selection_remove_first_row(self.treeview_selection_playlist)
 
         if len(self.liststore_playlist) > 0:
             self.treeview_playlist.set_cursor(0)
@@ -561,11 +561,11 @@ class MainWindow:
         playlist_name = self.entry_playlist_name.get_text().strip()
 
         if playlist_name == "":
-            gtk_utils.gtk_dialog_info(self.window_playlist_settings, Texts.WindowSettings.playlist_name_empty)
+            gtk_utils.dialog_info(self.window_playlist_settings, Texts.WindowSettings.playlist_name_empty)
             return
 
         elif playlist_name in self.__playlist_dict.keys():
-            gtk_utils.gtk_dialog_info(self.window_playlist_settings,
+            gtk_utils.dialog_info(self.window_playlist_settings,
                                       Texts.DialogPlaylist.name_exist.format(playlist_name))
             return
 
@@ -597,11 +597,11 @@ class MainWindow:
                 pass
 
             elif new_name == "":
-                gtk_utils.gtk_dialog_info(self.window_playlist_settings, Texts.WindowSettings.playlist_name_empty)
+                gtk_utils.dialog_info(self.window_playlist_settings, Texts.WindowSettings.playlist_name_empty)
                 return
 
             elif new_name in self.__playlist_dict.keys():
-                gtk_utils.gtk_dialog_info(self.window_playlist_settings,
+                gtk_utils.dialog_info(self.window_playlist_settings,
                                           Texts.DialogPlaylist.name_exist.format(new_name))
                 return
 
@@ -609,7 +609,7 @@ class MainWindow:
                 self.__playlist_dict.pop(self.__selected_playlist.get_name())
                 self.__selected_playlist.rename(new_name)
                 self.__playlist_dict[new_name] = self.__selected_playlist
-                gtk_utils.gtk_selection_set_first_selected_cell(self.treeview_selection_playlist, 1, new_name)
+                gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist, 1, new_name)
 
         self.window_playlist_settings.hide()
 
@@ -617,7 +617,7 @@ class MainWindow:
 
         selected_playlist_name = self.__selected_playlist.get_name()
 
-        if not gtk_utils.gtk_dialog_question(self.window_playlist_settings,
+        if not gtk_utils.dialog_yes_no(self.window_playlist_settings,
                                              Texts.DialogPlaylist.confirm_reset.format(selected_playlist_name)):
             return
 
@@ -647,7 +647,7 @@ class MainWindow:
         file_filter.add_pattern('*.jpg')
         file_filter.add_pattern('*.png')
 
-        file = gtk_utils.gtk_dialog_select_file(self.window_playlist_settings, file_filter)
+        file = gtk_utils.dialog_select_file(self.window_playlist_settings, file_filter)
         if file is not None:
 
             setting_playlist = self.__get_setting_playlist()
@@ -657,13 +657,13 @@ class MainWindow:
             self.image_playlist.set_from_pixbuf(pixbuf)
 
             if self.__new_playlist is None:
-                gtk_utils.gtk_selection_set_first_selected_cell(self.treeview_selection_playlist,
+                gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist,
                                                                 0,
                                                                 pixbuf)
 
     def on_button_playlist_path_add_clicked(self, *_):
 
-        path = gtk_utils.gtk_dialog_select_directory(self.window_root)
+        path = gtk_utils.dialog_select_directory(self.window_root)
         if path is None:
             return
 
@@ -685,7 +685,7 @@ class MainWindow:
 
     def on_button_playlist_path_edit_clicked(self, *_):
 
-        path = gtk_utils.gtk_dialog_select_directory(self.window_root)
+        path = gtk_utils.dialog_select_directory(self.window_root)
         if path is None:
             return
 
@@ -731,10 +731,10 @@ class MainWindow:
 
         if video is None:
             if not ignore_none:
-                gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogPlaylist.all_videos_played)
+                gtk_utils.dialog_info(self.window_root, Texts.DialogPlaylist.all_videos_played)
 
         elif not os.path.exists(video.get_path()):
-            gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogVideos.missing)
+            gtk_utils.dialog_info(self.window_root, Texts.DialogVideos.missing)
 
         else:
 
@@ -841,23 +841,23 @@ class MainWindow:
 
         if len(videos_id) == 1:  # if the user only selected one video to find...
 
-            path = gtk_utils.gtk_dialog_select_file(self.window_root)
+            path = gtk_utils.dialog_select_file(self.window_root)
 
             if path is None:
                 return
 
             found_videos = self.__selected_playlist.find_video(videos_id[0], path)
-            gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogVideos.other_found.format(found_videos), None)
+            gtk_utils.dialog_info(self.window_root, Texts.DialogVideos.other_found.format(found_videos), None)
 
         else:
 
-            path = gtk_utils.gtk_dialog_select_directory(self.window_root)
+            path = gtk_utils.dialog_select_directory(self.window_root)
 
             if path is None:
                 return
 
             found_videos = self.__selected_playlist.find_videos(path)
-            gtk_utils.gtk_dialog_info(self.window_root, Texts.DialogVideos.found_x.format(found_videos), None)
+            gtk_utils.dialog_info(self.window_root, Texts.DialogVideos.found_x.format(found_videos), None)
 
         if found_videos > 0:
             self.__liststore_videos_populate()
@@ -1061,7 +1061,7 @@ class MainWindow:
 
                     if next_video is None:
                         GLib.idle_add(self.window_root.unfullscreen)
-                        GLib.idle_add(gtk_utils.gtk_dialog_info, self.window_root,
+                        GLib.idle_add(gtk_utils.dialog_info, self.window_root,
                                       Texts.DialogPlaylist.all_videos_played)
 
                     else:
