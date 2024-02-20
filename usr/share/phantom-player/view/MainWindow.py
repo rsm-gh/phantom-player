@@ -17,6 +17,7 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
+    + Separate the settings dialog from the main GUI.
     + Remove the thread scan_media_player and replace it by signals from the media player.
     + Fix: save the series status when the player changes random/keep plating.
     + Move the series icon to the .local phantom dir
@@ -55,6 +56,7 @@ from controller.factory import str_to_boolean
 from model.Playlist import Playlist
 from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
+from view.SettingsDialog import SettingsDialog
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 
 _DARK_CSS = """
@@ -133,42 +135,26 @@ class MainWindow:
             'checkbox_hide_progress',
             'checkbox_hide_warning_missing_playlist',
             'checkbox_hide_missing_playlist',
-
-            'window_playlist_settings',
-            'entry_playlist_name',
-            'image_playlist',
-            'switch_setting_keep_playing',
-            'switch_setting_random_playing',
-            'spinbutton_subtitles',
-            'spinbutton_start_at',
-            'spinbutton_audio',
-            'button_playlist_delete',
-            'button_playlist_restart',
-            'button_playlist_add',
-            'liststore_paths',
-            'button_playlist_path_add',
-            'button_playlist_path_remove',
-            'button_playlist_path_edit',
-            'button_playlist_path_reload_all',
-
             'window_about',
         )
+
+        for glade_id in glade_ids:
+            setattr(self, glade_id, builder.get_object(glade_id))
 
         if dark_mode:
             css_style = _DARK_CSS
         else:
             css_style = None
 
-        for glade_id in glade_ids:
-            setattr(self, glade_id, builder.get_object(glade_id))
-
         self.menubar.set_sensitive(False)
         self.treeview_playlist.set_sensitive(False)
         self.window_root.get_root_window().set_cursor(Gdk.Cursor.new_from_name(self.window_root.get_display(), 'wait'))
 
-        """
-            Media Player
-        """
+        self.__settings_dialog = SettingsDialog(self.window_root)
+
+        #
+        #    Media Player
+        #
         self.__media_player = MediaPlayerWidget(self.window_root,
                                                 random_button=True,
                                                 keep_playing_button=True,
@@ -184,7 +170,7 @@ class MainWindow:
         self.__thread_scan_media_player.start()
 
         #
-        #    configuration
+        #    Configuration
         #
 
         # extra
@@ -442,14 +428,6 @@ class MainWindow:
 
         self.__liststore_videos_populate()
 
-    def on_cellrenderertoggle_playlist_recursive_toggled(self, _, row):
-        state = not self.liststore_paths[row][1]
-        self.liststore_paths[row][1] = state
-        playlist = self.__get_setting_playlist()
-        playlist.set_recursive(state)
-        if self.__new_playlist is None:
-            playlist.save()
-
     def on_switch_setting_keep_playing_button_press_event(self, widget, *_):
         status = not widget.get_active()
         playlist = self.__get_setting_playlist()
@@ -544,10 +522,13 @@ class MainWindow:
         self.menuitem_playlist_settings.set_sensitive(len(treepaths) > 0)
 
     def on_menuitem_playlist_new_activate(self, *_):
-        self.__display_playlist_dialog(new_playlist=True)
+        new_playlist = Playlist()
+        response = self.__settings_dialog.run(new_playlist, is_new=True)
+        print(response)
 
     def on_menuitem_playlist_settings_activate(self, *_):
-        self.__display_playlist_dialog()
+        response = self.__settings_dialog.run(self.__selected_playlist, is_new=False)
+        print(response)
 
     def on_button_playlist_delete_clicked(self, *_):
 
@@ -771,12 +752,6 @@ class MainWindow:
 
             self.__media_player.set_random(self.__current_media.playlist.get_random())
             self.__media_player.set_keep_playing(self.__current_media.playlist.get_keep_playing())
-
-    def __get_setting_playlist(self):
-        if self.__new_playlist is not None:
-            return self.__new_playlist
-
-        return self.__selected_playlist
 
     def __save_current_video_position(self):
         if self.__current_media.playlist is not None:
@@ -1141,7 +1116,8 @@ class MainWindow:
         self.__selected_playlist.save()
 
     def __on_menuitem_playlist_settings(self, *_):
-        self.__display_playlist_dialog()
+        response = self.__settings_dialog.run(self.__selected_playlist, is_new=False)
+        print(response)
 
     def __on_menuitem_playlist_ignore_video(self, _):
 
