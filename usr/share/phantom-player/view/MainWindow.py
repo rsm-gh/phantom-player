@@ -56,6 +56,7 @@ from model.Playlist import Playlist
 from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
 from view.SettingsDialog import SettingsDialog
+from view.SettingsDialog import ResponseType as SettingsDialogResponse
 from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
 
 _DARK_CSS = """
@@ -69,6 +70,11 @@ window, treeview, box, menu {
     color: white;
 }"""
 
+class PlaylistListstoreColumnsIndex:
+    icon = 0
+    name = 1
+    percent = 2
+
 class VideosListstoreColumnsIndex:
     color = 0
     id = 1
@@ -76,6 +82,7 @@ class VideosListstoreColumnsIndex:
     name = 3
     ext = 4
     progress = 5
+
 
 class GlobalConfigTags:
     checkbox_missing_playlist_warning = "missing-playlist-warning"
@@ -200,20 +207,20 @@ class MainWindow:
         # Font colors
         #
         _, self.__font_default_color = gtk_utils.get_default_color('theme_text_color',
-                                                                        widget=self.treeview_videos,
-                                                                        on_error="#000000")
+                                                                   widget=self.treeview_videos,
+                                                                   on_error="#000000")
 
         _, self.__font_hide_color = gtk_utils.get_default_color('warning_color',
-                                                                     widget=self.treeview_videos,
-                                                                     on_error="#ff9900")
+                                                                widget=self.treeview_videos,
+                                                                on_error="#ff9900")
 
         _, self.__font_error_color = gtk_utils.get_default_color('error_color',
-                                                                      widget=self.treeview_videos,
-                                                                      on_error="#ff0000")
+                                                                 widget=self.treeview_videos,
+                                                                 on_error="#ff0000")
 
         _, self.__font_new_color = gtk_utils.get_default_color('success_color',
-                                                                    widget=self.treeview_videos,
-                                                                    on_error="#009933")
+                                                               widget=self.treeview_videos,
+                                                               on_error="#009933")
 
         #
         #    Display the window
@@ -243,6 +250,10 @@ class MainWindow:
         self.__media_player.join()
 
     def quit(self, *_):
+
+        for playlist in self.__playlist_dict.values():
+            playlist.save()
+
         self.__save_current_video_position()
         self.__media_player.quit()
         self.__thread_scan_media_player.do_run = False
@@ -427,54 +438,6 @@ class MainWindow:
 
         self.__liststore_videos_populate()
 
-    def on_switch_setting_keep_playing_button_press_event(self, widget, *_):
-        status = not widget.get_active()
-        playlist = self.__get_setting_playlist()
-        playlist.set_keep_playing(status)
-
-        if self.__current_media.is_playlist_name(playlist.get_name()):
-            self.__media_player.set_keep_playing(status)
-
-    def on_switch_setting_random_playing_button_press_event(self, widget, *_):
-        status = not widget.get_active()
-        playlist = self.__get_setting_playlist()
-        playlist.set_random(status)
-
-        if self.__current_media.is_playlist_name(playlist.get_name()):
-            self.__media_player.set_random(status)
-
-    def on_spinbutton_audio_value_changed(self, spinbutton):
-
-        if self.__populating_settings:
-            return
-
-        value = spinbutton.get_value_as_int()
-        self.__selected_playlist.set_audio_track(value)
-
-    def on_spinbutton_subtitles_value_changed(self, spinbutton):
-
-        if self.__populating_settings:
-            return
-
-        value = spinbutton.get_value_as_int()
-        self.__selected_playlist.set_subtitles_track(value)
-
-    def on_spinbutton_start_at_value_changed(self, spinbutton):
-
-        if self.__populating_settings:
-            return
-
-        value = float(spinbutton.get_value())
-
-        str_value = str(value).split('.')
-        minutes = int(str_value[0])
-        seconds = int(str_value[1])
-        if seconds > 60:
-            minutes += 1
-            spinbutton.set_value(minutes + 0.00)
-
-        self.__selected_playlist.set_start_at(value)
-
     def on_checkbox_hide_missing_playlist_toggled(self, checkbox, *_):
         self.__liststore_playlist_populate()
         self.__ccp.write(GlobalConfigTags.checkbox_hide_missing_playlist, checkbox.get_active())
@@ -522,144 +485,107 @@ class MainWindow:
 
     def on_menuitem_playlist_new_activate(self, *_):
         new_playlist = Playlist()
-        response = self.__settings_dialog.run(new_playlist, is_new=True)
-        print(response)
+        response = self.__settings_dialog.run(new_playlist,
+                                              is_new=True,
+                                              playlist_names=self.__playlist_dict.keys())
+
+        if response == SettingsDialogResponse.close:
+            # Delete the image (if saved)
+            icon_path = new_playlist.get_image_path(allow_default=False)
+            if icon_path is not None and os.path.exists(icon_path):
+                os.remove(icon_path)
+
+        elif response == SettingsDialogResponse.add:
+            playlist_name = new_playlist.get_name()
+            self.__playlist_dict[playlist_name] = new_playlist
+            new_playlist.save()
+
+            if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
+                pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_image_path(), -1, 30)
+                self.__liststore_playlist_append([pixbuf, playlist_name, 0])
+
+                for i, row in enumerate(self.liststore_playlist):
+                    if row[1] == playlist_name:
+                        self.treeview_playlist.set_cursor(i)
+                        break
 
     def on_menuitem_playlist_settings_activate(self, *_):
+
         response = self.__settings_dialog.run(self.__selected_playlist, is_new=False)
-        print(response)
-
-    def on_button_playlist_delete_clicked(self, *_):
-
         playlist_name = self.__selected_playlist.get_name()
 
-        if not gtk_utils.dialog_yes_no(self.window_playlist_settings,
-                                             Texts.DialogPlaylist.confirm_delete.format(playlist_name)):
-            return
+        if response == SettingsDialogResponse.delete:
 
-        gtk_utils.treeview_selection_remove_first_row(self.treeview_selection_playlist)
+            self.__playlist_dict.pop(self.__selected_playlist.get_name())
 
-        if len(self.liststore_playlist) > 0:
-            self.treeview_playlist.set_cursor(0)
-        else:
-            self.liststore_videos.clear()
+            # Remove from the player (if necessary)
+            if self.__current_media.is_playlist_name(playlist_name):
+                self.__media_player.stop()
+                self.__current_media = CurrentMedia()
 
-        self.window_playlist_settings.hide()
+            # Delete the image (if saved)
+            icon_path = self.__selected_playlist.get_image_path(allow_default=False)
+            if icon_path is not None and os.path.exists(icon_path):
+                os.remove(icon_path)
 
-        if self.__current_media.is_playlist_name(playlist_name):
-            self.__media_player.stop()
-            self.__current_media = CurrentMedia()
+            if os.path.exists(self.__selected_playlist.get_save_path()):
+                os.remove(self.__selected_playlist.get_save_path())
 
-        playlist = self.__playlist_dict[playlist_name]
-        self.__playlist_dict.pop(playlist_name)
+            gtk_utils.treeview_selection_remove_first_row(self.treeview_selection_playlist)
 
-        if os.path.exists(playlist.get_save_path()):
-            os.remove(playlist.get_save_path())
-
-    def on_button_playlist_add_clicked(self, *_):
-
-        playlist_name = self.entry_playlist_name.get_text().strip()
-
-        if playlist_name == "":
-            gtk_utils.dialog_info(self.window_playlist_settings, Texts.WindowSettings.playlist_name_empty)
-            return
-
-        elif playlist_name in self.__playlist_dict.keys():
-            gtk_utils.dialog_info(self.window_playlist_settings,
-                                      Texts.DialogPlaylist.name_exist.format(playlist_name))
-            return
-
-        self.__new_playlist.rename(playlist_name)
-        self.__new_playlist.save()
-        self.__playlist_dict[playlist_name] = self.__new_playlist
-
-        if os.path.exists(self.__new_playlist.get_path()) or not self.checkbox_hide_missing_playlist.get_active():
-            pixbuf = Pixbuf.new_from_file_at_size(self.__new_playlist.get_image_path(), -1, 30)
-            self.__liststore_playlist_append([pixbuf, self.__new_playlist.get_name()])
-
-            for i, row in enumerate(self.liststore_playlist):
-                if row[1] == playlist_name:
-                    self.treeview_playlist.set_cursor(i)
-                    break
-
-        self.__new_playlist = None
-        self.window_playlist_settings.hide()
-
-    def on_button_playlist_close(self, *_):
-
-        if self.__new_playlist is not None:
-            self.__new_playlist = None
-
-        else:
-            new_name = self.entry_playlist_name.get_text().strip()
-
-            if self.__selected_playlist.get_name() == new_name:
-                pass
-
-            elif new_name == "":
-                gtk_utils.dialog_info(self.window_playlist_settings, Texts.WindowSettings.playlist_name_empty)
-                return
-
-            elif new_name in self.__playlist_dict.keys():
-                gtk_utils.dialog_info(self.window_playlist_settings,
-                                          Texts.DialogPlaylist.name_exist.format(new_name))
-                return
-
+            if len(self.liststore_playlist) > 0:
+                self.treeview_playlist.set_cursor(0)
             else:
-                self.__playlist_dict.pop(self.__selected_playlist.get_name())
-                self.__selected_playlist.rename(new_name)
-                self.__playlist_dict[new_name] = self.__selected_playlist
-                gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist, 1, new_name)
+                self.liststore_videos.clear()
 
-        self.window_playlist_settings.hide()
-
-    def on_button_playlist_restart_clicked(self, *_):
-
-        selected_playlist_name = self.__selected_playlist.get_name()
-
-        if not gtk_utils.dialog_yes_no(self.window_playlist_settings,
-                                             Texts.DialogPlaylist.confirm_reset.format(selected_playlist_name)):
             return
 
-        self.window_playlist_settings.hide()
 
-        # This is done before to avoid updating the playlist data
-        was_playing = False
-        if self.__current_media.is_playlist_name(selected_playlist_name):
-            if self.__media_player.is_playing():
-                was_playing = True
-                self.__media_player.pause()
+        #
+        # In all the other cases
+        #
 
-        playlist = self.__playlist_dict[selected_playlist_name]
-        playlist.restart()
+        self.__selected_playlist.save()
+
+        # Update the icon
+        pixbuf = Pixbuf.new_from_file_at_size(self.__selected_playlist.get_image_path(), -1, 30)
+        gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist,
+                                                    PlaylistListstoreColumnsIndex.icon,
+                                                    pixbuf)
+
+        # Update the name
+        old_name = gtk_utils.treeview_selection_get_first_cell(self.treeview_selection_playlist,
+                                                               PlaylistListstoreColumnsIndex.name)
+
+        if self.__selected_playlist.get_name() != old_name:
+            self.__playlist_dict.pop(old_name)
+            self.__playlist_dict[self.__selected_playlist.get_name()] = self.__selected_playlist
+            gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist,
+                                                        PlaylistListstoreColumnsIndex.name,
+                                                        self.__selected_playlist.get_name())
+
+        # Update the media player
+        if self.__current_media.is_playlist_name(self.__selected_playlist.get_name()):
+            self.__media_player.set_keep_playing(self.__selected_playlist.get_keep_playing())
+            self.__media_player.set_random(self.__selected_playlist.get_random())
+
+
+        if response == SettingsDialogResponse.restart:
+
+            # This is done before to avoid updating the playlist data
+            was_playing = False
+            if self.__current_media.is_playlist_name(playlist_name):
+                if self.__media_player.is_playing():
+                    was_playing = True
+                    self.__media_player.pause()
+
+            self.__selected_playlist.restart()
+
+            if was_playing:
+                self.__set_video()
+
+
         self.__liststore_videos_populate()
-
-        if was_playing:
-            self.__set_video()
-
-    def on_button_playlist_set_image_clicked(self, *_):
-        """
-            Add a picture to a playlist
-        """
-        file_filter = Gtk.FileFilter()
-        file_filter.set_name('Image')
-        file_filter.add_pattern('*.jpeg')
-        file_filter.add_pattern('*.jpg')
-        file_filter.add_pattern('*.png')
-
-        file = gtk_utils.dialog_select_file(self.window_playlist_settings, file_filter)
-        if file is not None:
-
-            setting_playlist = self.__get_setting_playlist()
-            setting_playlist.set_image_path(file)
-
-            pixbuf = Pixbuf.new_from_file_at_size(file, -1, 30)
-            self.image_playlist.set_from_pixbuf(pixbuf)
-
-            if self.__new_playlist is None:
-                gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist,
-                                                                0,
-                                                                pixbuf)
 
     def on_button_playlist_path_add_clicked(self, *_):
 
@@ -679,9 +605,6 @@ class MainWindow:
         self.button_playlist_path_add.set_sensitive(False)
         self.button_playlist_path_edit.set_sensitive(True)
         self.button_playlist_path_reload_all.set_sensitive(True)
-
-    def on_button_playlist_path_remove_clicked(self, *_):
-        pass
 
     def on_button_playlist_path_edit_clicked(self, *_):
 
@@ -762,45 +685,6 @@ class MainWindow:
 
             self.__current_media.playlist.save()
 
-    def __display_playlist_dialog(self, new_playlist=False):
-
-        self.liststore_paths.clear()
-
-        if new_playlist:
-            playlist = Playlist()
-            self.__new_playlist = playlist
-            self.window_playlist_settings.set_title(Texts.WindowSettings.new_title)
-            self.button_playlist_add.show()
-
-        else:
-            playlist = self.__selected_playlist
-            self.__new_playlist = None
-            self.window_playlist_settings.set_title(playlist.get_name() + " " + Texts.WindowSettings.edit_title)
-            self.button_playlist_add.hide()
-            self.liststore_paths.append([playlist.get_path(), playlist.get_recursive()])
-
-        self.button_playlist_path_add.set_sensitive(new_playlist)
-        self.button_playlist_path_remove.set_sensitive(False)
-        self.button_playlist_path_edit.set_sensitive(not new_playlist)
-        self.button_playlist_path_reload_all.set_sensitive(not new_playlist)
-
-        self.entry_playlist_name.set_text(playlist.get_name())
-        self.switch_setting_keep_playing.set_active(playlist.get_keep_playing())
-        self.switch_setting_random_playing.set_active(playlist.get_random())
-
-        pixbuf = Pixbuf.new_from_file_at_size(playlist.get_image_path(), -1, 30)
-        self.image_playlist.set_from_pixbuf(pixbuf)
-        self.button_playlist_delete.set_sensitive(not new_playlist)
-        self.button_playlist_restart.set_sensitive(not new_playlist)
-
-        self.__populating_settings = True
-        self.spinbutton_audio.set_value(playlist.get_audio_track())
-        self.spinbutton_subtitles.set_value(playlist.get_subtitles_track())
-        self.spinbutton_start_at.set_value(playlist.get_start_at())
-        self.__populating_settings = False
-
-        self.window_playlist_settings.show()
-
     def __playlist_load_from_path(self,
                                   name,
                                   data_path,
@@ -823,7 +707,7 @@ class MainWindow:
 
         self.__playlist_dict[new_playlist.get_name()] = new_playlist
 
-        if os.path.exists(new_playlist.get_path()) or not self.checkbox_hide_missing_playlist.get_active():
+        if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
             pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_image_path(), -1, 30)
             GLib.idle_add(self.__liststore_playlist_append, [pixbuf, new_playlist.get_name(), 0])
 
@@ -835,7 +719,6 @@ class MainWindow:
                 if row[1] == new_playlist.get_name():
                     GLib.idle_add(self.treeview_playlist.set_cursor, i)
                     break
-
 
     def __playlist_find_videos(self, _, videos_id):
 
@@ -878,7 +761,7 @@ class MainWindow:
         for name in sorted(self.__playlist_dict.keys()):
             playlist = self.__playlist_dict[name]
 
-            if os.path.exists(playlist.get_path()) or not self.checkbox_hide_missing_playlist.get_active():
+            if os.path.exists(playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
                 pixbuf = Pixbuf.new_from_file_at_size(playlist.get_image_path(), -1, 30)
                 self.liststore_playlist.append([pixbuf, playlist.get_name(), playlist.get_progress()])
 
@@ -910,14 +793,13 @@ class MainWindow:
                                               video.get_extension(),
                                               video.get_progress()])
 
-
     def __menu_playlist_display(self, event):
 
         menu = Gtk.Menu()
 
         menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemPlaylist.settings)
         menu.append(menuitem)
-        menuitem.connect('activate', self.__on_menuitem_playlist_settings)
+        menuitem.connect('activate', self.on_menuitem_playlist_settings_activate)
 
         menu.show_all()
         menu.popup(None, None, None, None, event.button, event.time)
@@ -1110,13 +992,9 @@ class MainWindow:
             if progress == 0:
                 video.set_position(0)
             else:
-                video.set_position(progress/100)
+                video.set_position(progress / 100)
 
         self.__selected_playlist.save()
-
-    def __on_menuitem_playlist_settings(self, *_):
-        response = self.__settings_dialog.run(self.__selected_playlist, is_new=False)
-        print(response)
 
     def __on_menuitem_playlist_ignore_video(self, _):
 
