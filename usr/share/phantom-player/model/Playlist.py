@@ -45,12 +45,12 @@ class Playlist(object):
         self.__subtitles_track = 0
 
         self.set_name(name)
-        self.set_recursive(recursive, False)
-        self.set_random(is_random, False)
-        self.set_keep_playing(keep_playing, False)
-        self.set_audio_track(audio_track, False)
-        self.set_subtitles_track(subtitles_track, False)
-        self.set_start_at(start_at, False)
+        self.set_recursive(recursive)
+        self.set_random(is_random)
+        self.set_keep_playing(keep_playing)
+        self.set_audio_track(audio_track)
+        self.set_subtitles_track(subtitles_track)
+        self.set_start_at(start_at)
 
         # Variables
         self.__videos_instances = []
@@ -286,9 +286,9 @@ class Playlist(object):
     def get_start_at(self):
         return self.__start_at
 
-    def get_image_path(self):
+    def get_image_path(self, allow_default=True):
 
-        if self.__icon_path is None or not os.path.exists(self.__icon_path):
+        if (self.__icon_path is None or not os.path.exists(self.__icon_path)) and allow_default:
             return ICON_LOGO_MEDIUM
 
         return self.__icon_path
@@ -364,7 +364,7 @@ class Playlist(object):
     def get_nb_videos(self):
         return self.__active_videos_nb
 
-    def get_path(self):
+    def get_data_path(self):
         return self.__data_path
 
     def get_audio_track(self):
@@ -392,14 +392,10 @@ class Playlist(object):
     def get_keep_playing(self):
         return self.__keep_playing
 
-    def set_keep_playing(self, value, write=True):
-
+    def set_keep_playing(self, value):
         self.__keep_playing = value
 
-        if write:
-            self.save()
-
-    def set_start_at(self, value, write=True):
+    def set_start_at(self, value):
         try:
             value = float(value)
         except Exception as e:
@@ -413,16 +409,10 @@ class Playlist(object):
         else:
             self.__start_at = 0.0
 
-        if write:
-            self.save()
-
-    def set_recursive(self, recursive, write=True):
+    def set_recursive(self, recursive):
         self.__recursive = recursive
 
-        if write:
-            self.save()
-
-    def set_audio_track(self, value, write=True):
+    def set_audio_track(self, value):
         try:
             value = int(value)
         except Exception as e:
@@ -436,10 +426,7 @@ class Playlist(object):
         else:
             self.__audio_track = 0
 
-        if write:
-            self.save()
-
-    def set_subtitles_track(self, value, write=True):
+    def set_subtitles_track(self, value):
         try:
             value = int(value)
         except Exception as e:
@@ -453,21 +440,13 @@ class Playlist(object):
         else:
             self.__subtitles_track = 0
 
-        if write:
-            self.save()
-
-    def set_random(self, is_random, write=True):
-
+    def set_random(self, is_random):
         self.__random = is_random
-
-        if write:
-            self.save()
 
     def set_video_position(self, video_to_find, position):
         for video in self.__videos_instances:
-            if video_to_find == video:
+            if video_to_find.get_id() == video.get_id():
                 video.set_position(position)
-                self.save()
                 return
 
     def set_name(self, new_name):

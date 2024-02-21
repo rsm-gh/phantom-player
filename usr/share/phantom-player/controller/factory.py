@@ -120,7 +120,7 @@ def load_videos(playlist):
     #    Get the videos from the folder. This will find new videos.
     #
     playlist_paths = [video.get_path() for video in playlist.get_videos()]
-    for video_path in __generate_videos_list_from_directory(playlist.get_path(), playlist.get_recursive()):
+    for video_path in __generate_videos_list_from_directory(playlist.get_data_path(), playlist.get_recursive()):
         if video_path not in playlist_paths:
             new_video = Video(video_path)
             new_video.set_is_new()
