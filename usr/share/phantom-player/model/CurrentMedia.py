@@ -49,12 +49,12 @@ class CurrentMedia:
         self.__video = self.playlist.get_video(video_name)
         return self.__video
 
-    def get_video_name(self):
+    def get_video_id(self):
 
         if self.__video is None:
             return None
 
-        return self.__video.get_name()
+        return self.__video.get_id()
 
     def set_video_position(self, pos):
 
@@ -62,3 +62,11 @@ class CurrentMedia:
             return
 
         self.__video.set_position(pos)
+
+
+    def get_video_progress(self):
+
+        if self.__video is None:
+            return
+
+        return self.__video.get_progress()
