@@ -19,8 +19,6 @@
 """
     + Fix: save the series status when the player changes random/keep plating.
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
-    + Separate the settings dialog from the main GUI.
-    + Remove the thread scan_media_player and replace it by signals from the media player.
     + Move the series icon to the .local phantom dir
     + Select & focus the video on the liststore when start playing a series
     + Manage multiple paths into the playlist settings menu.
@@ -32,8 +30,7 @@
 import os
 import gi
 import sys
-import time
-from threading import Thread, current_thread
+from threading import Thread
 
 os.environ["GDK_BACKEND"] = "x11"
 
@@ -57,7 +54,7 @@ from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
 from view.SettingsDialog import SettingsDialog
 from view.SettingsDialog import ResponseType as SettingsDialogResponse
-from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE
+from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
 
 _DARK_CSS = """
 @define-color theme_text_color white;
@@ -70,10 +67,12 @@ window, treeview, box, menu {
     color: white;
 }"""
 
+
 class PlaylistListstoreColumnsIndex:
     icon = 0
     name = 1
     percent = 2
+
 
 class VideosListstoreColumnsIndex:
     color = 0
@@ -166,14 +165,16 @@ class MainWindow:
                                                 keep_playing_button=True,
                                                 css_style=css_style)
 
+        self.__media_player.connect(CustomSignals.position_changed, self.__on_media_player_position_changed)
+        self.__media_player.connect(CustomSignals.btn_keep_playing_toggled, self.__on_media_player_btn_keep_playing_toggled)
+        self.__media_player.connect(CustomSignals.btn_random_toggled, self.__on_media_player_btn_random_toggled)
+        self.__media_player.connect(CustomSignals.video_end, self.__on_media_player_video_end)
+
         self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
         self.__paned.add1(self.__media_player)
         self.box_window.remove(self.main_paned)
         self.__paned.add2(self.main_paned)
         self.box_window.pack_start(self.__paned, True, True, 0)
-
-        self.__thread_scan_media_player = Thread(target=self.__on_thread_scan_media_player)
-        self.__thread_scan_media_player.start()
 
         #
         #    Configuration
@@ -246,7 +247,6 @@ class MainWindow:
         for th in self.__threads:
             th.join()
 
-        self.__thread_scan_media_player.join()
         self.__media_player.join()
 
     def quit(self, *_):
@@ -254,9 +254,7 @@ class MainWindow:
         for playlist in self.__playlist_dict.values():
             playlist.save()
 
-        self.__save_current_video_position()
         self.__media_player.quit()
-        self.__thread_scan_media_player.do_run = False
         Gtk.main_quit()
 
     def on_treeview_playlist_press_event(self, _, event, inside_treeview=True):
@@ -320,8 +318,6 @@ class MainWindow:
                             self.__media_player.play()
 
                         return
-                    else:
-                        self.__save_current_video_position()
 
                 """
                     Play a video of the playlist
@@ -360,7 +356,6 @@ class MainWindow:
             """
 
             self.__ccp.write('current_playlist', self.__selected_playlist.get_name())
-            self.__save_current_video_position()
             video_id = self.liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
             self.__current_media = CurrentMedia(self.__selected_playlist)
             self.__set_video(video_id)
@@ -540,7 +535,6 @@ class MainWindow:
 
             return
 
-
         #
         # In all the other cases
         #
@@ -569,7 +563,6 @@ class MainWindow:
             self.__media_player.set_keep_playing(self.__selected_playlist.get_keep_playing())
             self.__media_player.set_random(self.__selected_playlist.get_random())
 
-
         if response == SettingsDialogResponse.restart:
 
             # This is done before to avoid updating the playlist data
@@ -583,7 +576,6 @@ class MainWindow:
 
             if was_playing:
                 self.__set_video()
-
 
         self.__liststore_videos_populate()
 
@@ -674,16 +666,6 @@ class MainWindow:
 
             self.__media_player.set_random(self.__current_media.playlist.get_random())
             self.__media_player.set_keep_playing(self.__current_media.playlist.get_keep_playing())
-
-    def __save_current_video_position(self):
-        if self.__current_media.playlist is not None:
-            video = self.__current_media.current_video()
-            if video is not None:
-                position = self.__media_player.get_position()
-                if position > 0:
-                    video.set_position(position)
-
-            self.__current_media.playlist.save()
 
     def __playlist_load_from_path(self,
                                   name,
@@ -887,74 +869,57 @@ class MainWindow:
         GLib.idle_add(self.treeview_playlist.set_sensitive, True)
         GLib.idle_add(self.menubar.set_sensitive, True)
 
-    def __on_thread_scan_media_player(self):
+    def __on_media_player_btn_random_toggled(self, _, state):
+        self.__current_media.playlist.set_random(state)
 
-        this_thread = current_thread()
+    def __on_media_player_btn_keep_playing_toggled(self, _, state):
+        self.__current_media.playlist.set_keep_playing(state)
 
-        cached_video = None
-        cached_position = 0
+    def __on_media_player_position_changed(self, _, position):
+        """
+            Only update the liststore if the progress is different
+        """
 
-        while getattr(this_thread, "do_run", True):
+        update_progress = self.__current_media.is_playlist_name(self.__selected_playlist.get_name())
+        if update_progress:
+            current_progress = self.__current_media.get_video_progress()
 
-            if self.__current_media.playlist is None:
-                continue
+        self.__current_media.set_video_position(position)
 
-            position = self.__media_player.get_position()
-            current_video = self.__current_media.current_video()
+        if update_progress:
+            new_progress = self.__current_media.get_video_progress()
 
-            if current_video != cached_video:
-                cached_video = current_video
-                cached_position = 0
+            if current_progress == new_progress:
+                return
 
-            if cached_video is None:
-                continue
+            video_id = self.__current_media.get_video_id()
+            for i, row_video in enumerate(self.liststore_videos):
+                if row_video[VideosListstoreColumnsIndex.id] == video_id:
+                    self.liststore_videos[i][VideosListstoreColumnsIndex.progress] = new_progress
+                    return
 
-            if self.__media_player.is_paused() and position != cached_position:
-                cached_position = position
-                self.__current_media.playlist.set_video_position(cached_video, cached_position)
 
-            if self.__media_player.get_random() != self.__current_media.playlist.get_random():
-                self.__current_media.playlist.set_random(self.__media_player.get_random())
-                self.__current_media.playlist.save()
 
-            if self.__media_player.get_keep_playing() != self.__current_media.playlist.get_keep_playing():
-                self.__current_media.playlist.set_keep_playing(self.__media_player.get_keep_playing())
-                self.__current_media.playlist.save()
+    def __on_media_player_video_end(self, *_):
+        if not self.__current_media.playlist.get_keep_playing():
+            GLib.idle_add(self.__media_player.pause)
+            GLib.idle_add(self.window_root.unfullscreen)
 
-            # If the current video got to the end...
-            if round(position, 3) >= 1:
-                self.__current_media.set_video_position(1)
+        else:
+            next_video = self.__current_media.get_next_video()
 
-                # Update the treeview if the playlist is selected
-                # if self.__selected_playlist.get_name() == self.__current_media.playlist.get_name():
-                #    video_id = cached_video.get_id()
-                #    for i in len(self.liststore_videos):
-                #        if self.liststore_videos[i][VideosListstoreColumnsIndex.id] == video_id:
-                #            self.liststore_videos[i][VideosListstoreColumnsIndex.progress] = 100
-                #            break
+            if next_video is None:
+                GLib.idle_add(self.window_root.unfullscreen)
+                GLib.idle_add(gtk_utils.dialog_info, self.window_root,
+                              Texts.DialogPlaylist.all_videos_played)
 
-                # Play the next video
-                if not self.__current_media.playlist.get_keep_playing():
-                    GLib.idle_add(self.__media_player.pause)
-                    GLib.idle_add(self.window_root.unfullscreen)
-
-                else:
-                    next_video = self.__current_media.get_next_video()
-
-                    if next_video is None:
-                        GLib.idle_add(self.window_root.unfullscreen)
-                        GLib.idle_add(gtk_utils.dialog_info, self.window_root,
-                                      Texts.DialogPlaylist.all_videos_played)
-
-                    else:
-                        self.__media_player.set_video(next_video.get_path(),
-                                                      next_video.get_position(),
-                                                      self.__current_media.playlist.get_subtitles_track(),
-                                                      self.__current_media.playlist.get_audio_track(),
-                                                      self.__current_media.playlist.get_start_at(),
-                                                      True)
-
-            time.sleep(0.5)
+            else:
+                self.__media_player.set_video(next_video.get_path(),
+                                              next_video.get_position(),
+                                              self.__current_media.playlist.get_subtitles_track(),
+                                              self.__current_media.playlist.get_audio_track(),
+                                              self.__current_media.playlist.get_start_at(),
+                                              True)
 
     def __on_window_root_notify_event(self, *_):
         # Resize the VLC widget
@@ -1035,7 +1000,8 @@ class MainWindow:
         self.treeview_selection_videos.unselect_all()
         self.__selected_playlist.save()
 
-    def __on_menuitem_video_open_dir(self, _, path):
+    @staticmethod
+    def __on_menuitem_video_open_dir(_, path):
         if os.path.exists(path):
             open_directory(path)
 

@@ -29,6 +29,8 @@
 
         + Fix to the VolumeButton: it should get hidden when clicking out of the button.
 
+        + Start/Stop __on_thread_scan when paused, stopped? ?
+
     Hacks:
         + It seems that: self.__vlc_widget.player.get_media() is always returning None. Why?
             To fix it, I created self.__media
@@ -147,6 +149,16 @@ class ThemeButtons:
     keep_playing = "media-playlist-repeat"
     settings = "preferences-desktop"
 
+class CustomSignals:
+    paused = 'paused'
+    play = 'play'
+    stop = 'stop'
+    position_changed = 'position-changed'
+    video_restart = 'video-restart'
+    video_end = 'video-end'
+    btn_random_toggled = 'btn-random-clicked'
+    btn_keep_playing_toggled = 'btn-keep-playing-clicked'
+
 
 class MediaPlayerWidget(Gtk.VBox):
     __gtype_name__ = 'MediaPlayerWidget'
@@ -242,6 +254,7 @@ scale, label, box {
         if keep_playing_button:
             self.__toggletoolbutton_keep_playing = Gtk.ToggleToolButton()
             self.__toggletoolbutton_keep_playing.set_icon_name(ThemeButtons.keep_playing)
+            self.__toggletoolbutton_keep_playing.connect('toggled', self.__on_togglebutton_keep_playing_toggled)
             self.__buttons_box.pack_start(self.__toggletoolbutton_keep_playing, expand=False, fill=False, padding=3)
         else:
             self.__toggletoolbutton_keep_playing = None
@@ -249,6 +262,7 @@ scale, label, box {
         if random_button:
             self.__toggletoolbutton_random = Gtk.ToggleToolButton()
             self.__toggletoolbutton_random.set_icon_name(ThemeButtons.random)
+            self.__toggletoolbutton_random.connect('toggled', self.__on_togglebutton_random_toggled)
             self.__buttons_box.pack_start(self.__toggletoolbutton_random, expand=False, fill=False, padding=3)
         else:
             self.__toggletoolbutton_random = None
@@ -292,6 +306,20 @@ scale, label, box {
         else:
             self.__overlay.add_overlay(self.__buttons_box)
 
+
+        #
+        # Create the custom signals
+        #
+        GObject.signal_new(CustomSignals.paused, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
+        GObject.signal_new(CustomSignals.play, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
+        GObject.signal_new(CustomSignals.stop, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
+        GObject.signal_new(CustomSignals.video_end, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
+        GObject.signal_new(CustomSignals.video_restart, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
+        GObject.signal_new(CustomSignals.position_changed, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, (float,))
+        GObject.signal_new(CustomSignals.btn_random_toggled, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, (bool,))
+        GObject.signal_new(CustomSignals.btn_keep_playing_toggled, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, (bool,))
+
+
         #
         #    Init the threads
         #
@@ -302,10 +330,16 @@ scale, label, box {
         self.__thread_scan_motion.start()
 
     def play(self):
+        self.__toolbutton_play.set_icon_name(ThemeButtons.pause)
         self.__vlc_widget.player.play()
+        turn_off_screensaver(True)
+        self.emit(CustomSignals.play)
 
     def pause(self):
+        self.__toolbutton_play.set_icon_name(ThemeButtons.play)
         self.__vlc_widget.player.pause()
+        turn_off_screensaver(False)
+        self.emit(CustomSignals.paused)
 
     def stop(self):
         self.__vlc_widget.player.stop()
@@ -314,6 +348,7 @@ scale, label, box {
         self.__label_volume.hide()
         self.__scale_progress.set_value(0)
         self.__media = None
+        self.emit(CustomSignals.stop)
 
     def is_playing(self):
         if self.get_state() == vlc.State.Playing:
@@ -390,7 +425,7 @@ scale, label, box {
         GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
         GLib.idle_add(self.__vlc_widget.player.set_media, media)
         GLib.idle_add(self.__root_window.set_title, media_title)
-        GLib.idle_add(self.__vlc_widget.player.play)
+        GLib.idle_add(self.play)
 
         GLib.timeout_add_seconds(.5, self.__populate_settings_menubutton)
         if audio_track != 0:
@@ -581,8 +616,7 @@ scale, label, box {
 
         this_thread = current_thread()
 
-        cached_progress = 0
-        cached_length = -1
+        cached_position = 0
 
         while getattr(this_thread, "do_run", True):
 
@@ -615,16 +649,22 @@ scale, label, box {
                 """
                     Update the time of the scale and the time
                 """
-                if vlc_is_playing and not self.__scale_progress_pressed:
+                if not self.__scale_progress_pressed:
                     # 'not self.__scale_progress_pressed' in case that
                     # the scale be pressed when the method is being executed.
                     vlc_position = self.__vlc_widget.player.get_position()
 
                     round_position = round(vlc_position, 4)
+                    if round_position > 1.0:
+                        round_position = 1.0
 
-                    if round_position != cached_progress:
-                        cached_progress = round_position
-                        GLib.idle_add(self.__scale_progress.set_value, cached_progress)
+                    if round_position != cached_position and round_position >= 0:
+                        cached_position = round_position
+                        GLib.idle_add(self.__scale_progress.set_value, cached_position)
+                        self.emit(CustomSignals.position_changed, cached_position)
+
+                        if round_position >= 1.0:
+                            self.emit(CustomSignals.video_end)
 
             """
                 Wait
@@ -740,21 +780,25 @@ scale, label, box {
         elif player_type == 2:
             self.__vlc_widget.player.video_set_spu(track)
 
+    def __on_togglebutton_keep_playing_toggled(self, widget):
+        self.emit(CustomSignals.btn_keep_playing_toggled, widget.get_active())
+
+    def __on_togglebutton_random_toggled(self, widget):
+        self.emit(CustomSignals.btn_random_toggled, widget.get_active())
+
     def __on_toolbutton_play_clicked(self, *_):
         if self.is_playing():
-            self.__toolbutton_play.set_icon_name(ThemeButtons.play)
-            self.__vlc_widget.player.pause()
-            turn_off_screensaver(False)
+            self.pause()
         else:
-            self.__toolbutton_play.set_icon_name(ThemeButtons.pause)
-            self.__vlc_widget.player.play()
-            turn_off_screensaver(True)
+            self.play()
 
     def __on_toolbutton_restart_clicked(self, *_):
         self.__vlc_widget.player.set_position(0)
+        self.emit(CustomSignals.video_restart)
 
     def __on_toolbutton_end_clicked(self, *_):
-        self.__vlc_widget.player.set_position(1)
+        self.__vlc_widget.player.set_position(.9999999) # position = 1 will not work
+        #self.emit(CustomSignals.video_end) the thread will emit This signal
 
     def __on_toolbutton_fullscreen_clicked(self, *_):
         self.__set_fullscreen(not self.__window_is_fullscreen())
@@ -816,7 +860,6 @@ class MediaPlayer(Gtk.Window):
 
         self.__media_player_widget = MediaPlayerWidget(self)
         self.add(self.__media_player_widget)
-
         self.connect('delete-event', self.quit)
 
         self.set_size_request(600, 300)
@@ -834,6 +877,6 @@ class MediaPlayer(Gtk.Window):
 
 if __name__ == '__main__':
     player = MediaPlayer()
-    #player.play_video('/home/cadweb/Downloads/Seed/InkMaster/Ink.Master.S15E06.1080p.WEB.h264-EDITH[eztv.re].mkv')
+    player.play_video('/home/cadweb/Downloads/Torrents/InkMaster/Ink.Master.S15E03.1080p.HEVC.x265-MeGusta[eztv.re].mkv')
     Gtk.main()
     VLC_INSTANCE.release()
