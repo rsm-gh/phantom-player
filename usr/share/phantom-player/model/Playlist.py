@@ -16,18 +16,19 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import os  # why is os not being detected on pycharm?
+import os
 import csv
 import shutil
 import random
 
-from Paths import *
+from Paths import _ICON_LOGO_MEDIUM, _SERIES_DIR
 
 class Playlist(object):
 
     def __init__(self,
                  name="",
                  data_path="",
+                 icon_extension="",
                  recursive=False,
                  is_random=False,
                  keep_playing=True,
@@ -36,6 +37,7 @@ class Playlist(object):
                  subtitles_track=0):
 
         self.__name = ""
+        self.__icon_extension = icon_extension
         self.__data_path = data_path
         self.__recursive = False
         self.__random = False
@@ -55,12 +57,11 @@ class Playlist(object):
         # Variables
         self.__videos_instances = []
         self.__active_videos_nb = 0
-        self.__icon_path = os.path.join(self.__data_path, "icon")
 
     def save(self):
 
-        if not os.path.exists(FOLDER_LIST_PATH):
-            os.mkdir(FOLDER_LIST_PATH)
+        if not os.path.exists(_SERIES_DIR):
+            os.mkdir(_SERIES_DIR)
 
         with open(self.get_save_path(), mode='wt', encoding='utf-8') as f:
             csv_list = csv.writer(f, delimiter='|')
@@ -69,7 +70,8 @@ class Playlist(object):
                                self.__keep_playing,
                                self.__start_at,
                                self.__audio_track,
-                               self.__subtitles_track])
+                               self.__subtitles_track,
+                               self.__icon_extension])
 
             csv_list.writerow([self.__data_path, self.__recursive])
 
@@ -96,14 +98,6 @@ class Playlist(object):
             video.set_id(i)
 
         self.save()
-
-    def rename(self, new_name):
-        # update the data file
-        if os.path.exists(SERIES_PATH.format(self.__name)):
-            os.rename(SERIES_PATH.format(self.__name), SERIES_PATH.format(new_name))
-
-        # update the class
-        self.__name = new_name
 
     def update_ids(self):
         for i, video in enumerate(self.__videos_instances, 1):
@@ -277,21 +271,23 @@ class Playlist(object):
         return video_counter
 
     def get_save_path(self):
-        file_path = SERIES_PATH.format(self.__name)
-        if not file_path.lower().endswith(".csv"):
-            file_path += ".csv"
+        path = os.path.join(_SERIES_DIR, self.__name)
+        if not path.lower().endswith(".csv"):
+            path += ".csv"
 
-        return file_path
+        return path
 
     def get_start_at(self):
         return self.__start_at
 
     def get_image_path(self, allow_default=True):
 
-        if (self.__icon_path is None or not os.path.exists(self.__icon_path)) and allow_default:
-            return ICON_LOGO_MEDIUM
+        icon_path = os.path.join(_SERIES_DIR, self.__name+"."+self.__icon_extension)
 
-        return self.__icon_path
+        if not os.path.exists(icon_path) and allow_default:
+            return _ICON_LOGO_MEDIUM
+
+        return icon_path
 
     def get_name(self):
         return self.__name
@@ -450,15 +446,53 @@ class Playlist(object):
                 return
 
     def set_name(self, new_name):
+        """
+            Set a new name, or rename.
+        """
         if new_name.lower().endswith(".csv"):
             new_name = new_name.rsplit(".",1)[0]
 
+        if new_name == self.__name:
+            return
+
+        elif self.__name == "":
+            self.__name = new_name
+            return
+
+        old_icon_path = self.get_image_path(allow_default=False)
+        old_save_path = self.get_save_path()
+
         self.__name = new_name
 
-    def set_image_path(self, path):
-        self.__icon_path = path
+        if os.path.exists(old_save_path):
+            os.rename(old_save_path, self.get_save_path())
+
+        if os.path.exists(old_icon_path):
+            os.rename(old_icon_path, self.get_image_path(allow_default=False))
+
+
+    def set_image(self, path):
+
+        #
+        # Remove the existent image
+        #
+        if os.path.exists(self.get_image_path(allow_default=False)):
+            os.remove(self.get_image_path(allow_default=False))
+
+
+        #
+        # Set the new image
+        #
+
+        file_name = os.path.basename(path)
+
+        if '.' in file_name:
+            self.__icon_extension = file_name.rsplit(".", 1)[1]
+        else:
+            self.__icon_extension = ""
+
         if os.path.exists(path):
-            shutil.copy2(path, os.path.join(self.__data_path, "icon"))
+            shutil.copy2(path, self.get_image_path(allow_default=False))
 
 
     def set_path(self, path):

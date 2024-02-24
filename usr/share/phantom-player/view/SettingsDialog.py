@@ -192,7 +192,7 @@ class SettingsDialog:
                                   Texts.DialogPlaylist.name_exist.format(playlist_name))
             return
 
-        self.__playlist.rename(playlist_name)
+        self.__playlist.set_name(playlist_name)
 
         self.settings_dialog.response(ResponseType.add)
 
@@ -209,16 +209,14 @@ class SettingsDialog:
                 gtk_utils.dialog_info(self.settings_dialog, Texts.WindowSettings.playlist_name_empty)
                 return
 
-            elif new_name in self.__playlist_dict.keys():
+            elif new_name in self.__playlist_names:
                 gtk_utils.dialog_info(self.settings_dialog,
                                       Texts.DialogPlaylist.name_exist.format(new_name))
                 return
 
             else:
-                self.__playlist_dict.pop(self.__selected_playlist.get_name())
-                self.__selected_playlist.rename(new_name)
-                self.__playlist_dict[new_name] = self.__selected_playlist
-                gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist, 1, new_name)
+                self.__playlist.set_name(new_name)
+
 
         self.settings_dialog.response(ResponseType.close)
 
@@ -242,7 +240,7 @@ class SettingsDialog:
 
         file = gtk_utils.dialog_select_file(self.settings_dialog, file_filter)
         if file is not None:
-            self.__playlist.set_image_path(file)
+            self.__playlist.set_image(file)
             pixbuf = Pixbuf.new_from_file_at_size(file, -1, 30)
             self.image_playlist.set_from_pixbuf(pixbuf)
 

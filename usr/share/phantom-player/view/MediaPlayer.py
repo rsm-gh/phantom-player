@@ -109,11 +109,11 @@ def dialog_select_file(parent, start_path=''):
                                                 Gtk.ResponseType.OK))
 
     window_choose_file.set_default_response(Gtk.ResponseType.NONE)
-    window_choose_file.set_icon_from_file(ICON_LOGO_SMALL)
+    window_choose_file.set_icon_from_file(_ICON_LOGO_SMALL)
     window_choose_file.set_transient_for(parent)
 
     if start_path == '':
-        window_choose_file.set_current_folder(HOME_PATH)
+        window_choose_file.set_current_folder(_HOME_DIR)
     else:
         window_choose_file.set_current_folder(start_path)
 
