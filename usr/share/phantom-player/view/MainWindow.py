@@ -493,11 +493,10 @@ class MainWindow:
         elif response == SettingsDialogResponse.add:
             playlist_name = new_playlist.get_name()
             self.__playlist_dict[playlist_name] = new_playlist
-            new_playlist.save()
 
             if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
                 pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_image_path(), -1, 30)
-                self.liststore_playlist.append([pixbuf, playlist_name, 0])
+                self.liststore_playlist.append([pixbuf, playlist_name, new_playlist.get_progress()])
 
                 for i, row in enumerate(self.liststore_playlist):
                     if row[1] == playlist_name:
@@ -538,8 +537,6 @@ class MainWindow:
         #
         # In all the other cases
         #
-
-        self.__selected_playlist.save()
 
         # Update the icon
         pixbuf = Pixbuf.new_from_file_at_size(self.__selected_playlist.get_image_path(), -1, 30)
@@ -777,7 +774,7 @@ class MainWindow:
 
                 if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
                     pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_image_path(), -1, 30)
-                    GLib.idle_add(self.__liststore_playlist_append, (pixbuf, new_playlist.get_name(), 0))
+                    GLib.idle_add(self.__liststore_playlist_append, (pixbuf, new_playlist.get_name(), new_playlist.get_progress()))
 
         #
         #   Select & Load the last playlist that was played
@@ -794,16 +791,26 @@ class MainWindow:
 
         playlist_found = False
         for i, row in enumerate(self.liststore_playlist):
-            if row[1] == current_playlist_name:
+            if row[PlaylistListstoreColumnsIndex.name] == current_playlist_name:
                 GLib.idle_add(self.treeview_playlist.set_cursor, i)
+                row[PlaylistListstoreColumnsIndex.percent] = playlist_data.get_progress() # is it safe to do this without GLib?
                 playlist_found = True
+                break
 
         #
         #   Load the rest of the videos
         #
         for playlist in self.__playlist_dict.values():
-            if playlist != playlist_data:
-                factory.load_videos(playlist)
+            if playlist == playlist_data:
+                continue
+
+            factory.load_videos(playlist)
+
+            for i, row in enumerate(self.liststore_playlist):
+                if row[PlaylistListstoreColumnsIndex.name] == playlist.get_name():
+                    row[PlaylistListstoreColumnsIndex.percent] = playlist.get_progress() # is it safe to do this without GLib?
+                    break
+
 
         #
         #   Select a default playlist if none
@@ -830,24 +837,26 @@ class MainWindow:
         """
             Only update the liststore if the progress is different
         """
-
-        update_progress = self.__current_media.is_playlist_name(self.__selected_playlist.get_name())
-        if update_progress:
-            current_progress = self.__current_media.get_video_progress()
-
         self.__current_media.set_video_position(position)
+        selected_series_name = self.__selected_playlist.get_name()
 
-        if update_progress:
-            new_progress = self.__current_media.get_video_progress()
+        #
+        # Update the GUI
+        #
+        if not self.__current_media.is_playlist_name(selected_series_name):
+            return
 
-            if current_progress == new_progress:
+        for row in self.liststore_playlist:
+            if row[PlaylistListstoreColumnsIndex.name] == selected_series_name:
+                row[PlaylistListstoreColumnsIndex.percent] = self.__current_media.playlist.get_progress()
+                break
+
+
+        video_id = self.__current_media.get_video_id()
+        for i, row_video in enumerate(self.liststore_videos):
+            if row_video[VideosListstoreColumnsIndex.id] == video_id:
+                self.liststore_videos[i][VideosListstoreColumnsIndex.progress] = self.__current_media.get_video_progress()
                 return
-
-            video_id = self.__current_media.get_video_id()
-            for i, row_video in enumerate(self.liststore_videos):
-                if row_video[VideosListstoreColumnsIndex.id] == video_id:
-                    self.liststore_videos[i][VideosListstoreColumnsIndex.progress] = new_progress
-                    return
 
 
 
@@ -898,7 +907,13 @@ class MainWindow:
             else:
                 video.set_position(progress / 100)
 
-        self.__selected_playlist.save()
+
+        for i, row in enumerate(self.liststore_playlist):
+            if row[PlaylistListstoreColumnsIndex.name] == self.__selected_playlist.get_name():
+                row[PlaylistListstoreColumnsIndex.percent] = self.__selected_playlist.get_progress() # is it safe to do this without GLib?
+                break
+
+
 
     def __on_menuitem_playlist_ignore_video(self, _):
 
@@ -921,7 +936,6 @@ class MainWindow:
                 self.liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__font_hide_color
 
         self.treeview_selection_videos.unselect_all()
-        self.__selected_playlist.save()
 
     def __on_menuitem_playlist_dont_ignore_video(self, _):
 
@@ -937,7 +951,6 @@ class MainWindow:
             self.liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__get_video_color(video)
 
         self.treeview_selection_videos.unselect_all()
-        self.__selected_playlist.save()
 
     @staticmethod
     def __on_menuitem_video_open_dir(_, path):

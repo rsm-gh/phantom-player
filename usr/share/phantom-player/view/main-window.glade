@@ -313,6 +313,8 @@ Author: Rafael Senties Martinelli
                         <child>
                           <object class="GtkCellRendererProgress">
                             <property name="orientation">vertical</property>
+                            <property name="text">  </property>
+                            <property name="inverted">True</property>
                           </object>
                           <attributes>
                             <attribute name="value">2</attribute>

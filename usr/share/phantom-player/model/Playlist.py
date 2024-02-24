@@ -310,7 +310,7 @@ class Playlist(object):
         if total_of_videos <= 0:
             return 0
 
-        return total_percent / total_of_videos
+        return int(round(total_percent / total_of_videos))
 
 
     def get_next_organized_video(self, after=None):
