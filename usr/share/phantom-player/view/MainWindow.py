@@ -23,6 +23,7 @@
     + Select & focus the video on the liststore when start playing a series
     + Manage multiple paths into the playlist settings menu.
     + Apply the "load video" methods into a thread.
+    + Fix start at
     + Add option: end at
     + Create a dialog to rename videos.
 """
@@ -432,6 +433,7 @@ class MainWindow:
             self.__selected_playlist = self.__playlist_dict[selected_playlist_name]
 
         self.__liststore_videos_populate()
+        self.__liststore_videos_select_current()
 
     def on_checkbox_hide_missing_playlist_toggled(self, checkbox, *_):
         self.__liststore_playlist_populate()
@@ -666,6 +668,7 @@ class MainWindow:
 
             self.__media_player.set_random(self.__current_media.playlist.get_random())
             self.__media_player.set_keep_playing(self.__current_media.playlist.get_keep_playing())
+            self.__liststore_videos_select_current()
 
     def __playlist_load_from_path(self,
                                   name,
@@ -774,6 +777,20 @@ class MainWindow:
                                               video.get_name(),
                                               video.get_extension(),
                                               video.get_progress()])
+
+    def __liststore_videos_select_current(self):
+        """
+            Select the current video from the videos liststore.
+        """
+        if not self.__current_media.is_playlist_name(self.__selected_playlist.get_name()):
+            return
+
+        video_id = self.__current_media.get_video_id()
+
+        for i, row in enumerate(self.liststore_videos):
+            if row[VideosListstoreColumnsIndex.id] == video_id:
+                self.treeview_videos.set_cursor(i)
+                break
 
     def __menu_playlist_display(self, event):
 
@@ -914,6 +931,8 @@ class MainWindow:
                               Texts.DialogPlaylist.all_videos_played)
 
             else:
+
+
                 self.__media_player.set_video(next_video.get_path(),
                                               next_video.get_position(),
                                               self.__current_media.playlist.get_subtitles_track(),
