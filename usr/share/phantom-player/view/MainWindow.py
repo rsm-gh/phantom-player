@@ -650,25 +650,35 @@ class MainWindow:
             if not ignore_none:
                 gtk_utils.dialog_info(self.window_root, Texts.DialogPlaylist.all_videos_played)
 
+            self.window_root.unfullscreen()
+            return
+
         elif not os.path.exists(video.get_path()):
             gtk_utils.dialog_info(self.window_root, Texts.DialogVideos.missing)
+            return
 
-        else:
+        #
+        # Play the video
+        #
 
-            position = video.get_position()
-            if position >= 1 and replay:
-                position = 0
+        position = video.get_position()
+        if position >= .9999 and replay:
+            position = 0
 
-            self.__media_player.set_video(video.get_path(),
-                                          position,
-                                          self.__current_media.playlist.get_subtitles_track(),
-                                          self.__current_media.playlist.get_audio_track(),
-                                          self.__current_media.playlist.get_start_at(),
-                                          play)
+        self.__media_player.set_video(video.get_path(),
+                                      position,
+                                      self.__current_media.playlist.get_subtitles_track(),
+                                      self.__current_media.playlist.get_audio_track(),
+                                      self.__current_media.playlist.get_start_at(),
+                                      play)
 
+        if self.__media_player.get_random() != self.__current_media.playlist.get_random():
             self.__media_player.set_random(self.__current_media.playlist.get_random())
+
+        if self.__media_player.get_keep_playing() != self.__current_media.playlist.get_keep_playing():
             self.__media_player.set_keep_playing(self.__current_media.playlist.get_keep_playing())
-            self.__liststore_videos_select_current()
+
+        self.__liststore_videos_select_current()
 
     def __playlist_load_from_path(self,
                                   name,
@@ -919,26 +929,12 @@ class MainWindow:
 
     def __on_media_player_video_end(self, *_):
         if not self.__current_media.playlist.get_keep_playing():
-            GLib.idle_add(self.__media_player.pause)
-            GLib.idle_add(self.window_root.unfullscreen)
+            self.__media_player.pause()
+            self.window_root.unfullscreen()
+            return
 
-        else:
-            next_video = self.__current_media.get_next_video()
+        self.__set_video()
 
-            if next_video is None:
-                GLib.idle_add(self.window_root.unfullscreen)
-                GLib.idle_add(gtk_utils.dialog_info, self.window_root,
-                              Texts.DialogPlaylist.all_videos_played)
-
-            else:
-
-
-                self.__media_player.set_video(next_video.get_path(),
-                                              next_video.get_position(),
-                                              self.__current_media.playlist.get_subtitles_track(),
-                                              self.__current_media.playlist.get_audio_track(),
-                                              self.__current_media.playlist.get_start_at(),
-                                              True)
 
     def __on_window_root_notify_event(self, *_):
         # Resize the VLC widget
