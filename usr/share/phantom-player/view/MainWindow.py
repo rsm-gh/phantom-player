@@ -20,7 +20,6 @@
     + Fix: save the series status when the player changes random/keep plating.
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
     + Move the series icon to the .local phantom dir
-    + Select & focus the video on the liststore when start playing a series
     + Manage multiple paths into the playlist settings menu.
     + Apply the "load video" methods into a thread.
     + Fix start at
@@ -29,6 +28,8 @@
 """
 
 import os
+import time
+
 import gi
 import sys
 from threading import Thread
@@ -240,7 +241,7 @@ class MainWindow:
         #
         #    Load the existent playlist
         #
-        th = Thread(target=self.__on_thread_load_playlist)
+        th = Thread(target=self.__on_thread_load_playlists)
         th.start()
         self.__threads.append(th)
 
@@ -499,7 +500,7 @@ class MainWindow:
 
             if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
                 pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_image_path(), -1, 30)
-                self.__liststore_playlist_append([pixbuf, playlist_name, 0])
+                self.liststore_playlist.append([pixbuf, playlist_name, 0])
 
                 for i, row in enumerate(self.liststore_playlist):
                     if row[1] == playlist_name:
@@ -581,49 +582,6 @@ class MainWindow:
 
         self.__liststore_videos_populate()
 
-    def on_button_playlist_path_add_clicked(self, *_):
-
-        path = gtk_utils.dialog_select_directory(self.window_root)
-        if path is None:
-            return
-
-        playlist = self.__get_setting_playlist()
-        playlist.set_path(path)
-        playlist.save()
-
-        self.liststore_paths.clear()
-        self.liststore_paths.append([path, False])
-
-        factory.load_videos(playlist)
-
-        self.button_playlist_path_add.set_sensitive(False)
-        self.button_playlist_path_edit.set_sensitive(True)
-        self.button_playlist_path_reload_all.set_sensitive(True)
-
-    def on_button_playlist_path_edit_clicked(self, *_):
-
-        path = gtk_utils.dialog_select_directory(self.window_root)
-        if path is None:
-            return
-
-        self.liststore_paths.clear()
-        self.liststore_paths.append([path, False])
-
-        playlist = self.__get_setting_playlist()
-        playlist.set_path(path)
-        factory.load_videos(playlist)
-        playlist.save()
-
-        if self.__new_playlist is None:
-            self.__liststore_videos_populate()
-
-    def on_button_playlist_path_reload_all_clicked(self, *_):
-        playlist = self.__get_setting_playlist()
-        factory.load_videos(playlist)
-
-        if self.__new_playlist is None:
-            self.__liststore_videos_populate()
-
     def __get_video_color(self, video):
         if video.get_ignore():
             return self.__font_hide_color
@@ -679,41 +637,6 @@ class MainWindow:
             self.__media_player.set_keep_playing(self.__current_media.playlist.get_keep_playing())
 
         self.__liststore_videos_select_current()
-
-    def __playlist_load_from_path(self,
-                                  name,
-                                  data_path,
-                                  recursive,
-                                  random,
-                                  keep_playing,
-                                  start_at=0.0,
-                                  audio_track=-2,
-                                  subtitles_track=-2,
-                                  select=True):
-
-        new_playlist = Playlist(name,
-                                data_path,
-                                recursive,
-                                random,
-                                keep_playing,
-                                start_at,
-                                audio_track,
-                                subtitles_track)
-
-        self.__playlist_dict[new_playlist.get_name()] = new_playlist
-
-        if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
-            pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_image_path(), -1, 30)
-            GLib.idle_add(self.__liststore_playlist_append, [pixbuf, new_playlist.get_name(), 0])
-
-        if select:  # select the row once the playlist has been added
-
-            factory.load_videos(new_playlist)
-
-            for i, row in enumerate(self.liststore_playlist):
-                if row[1] == new_playlist.get_name():
-                    GLib.idle_add(self.treeview_playlist.set_cursor, i)
-                    break
 
     def __playlist_find_videos(self, _, videos_id):
 
@@ -815,7 +738,7 @@ class MainWindow:
 
         return True
 
-    def __on_thread_load_playlist(self):
+    def __on_thread_load_playlists(self):
 
         #
         # Load the files header
@@ -845,15 +768,20 @@ class MainWindow:
                 audio_track = int(playlist_header[3])
                 subtitles_track = int(playlist_header[4])
 
-                self.__playlist_load_from_path(file_name,
-                                               data_path,
-                                               recursive,
-                                               random,
-                                               keep_playing,
-                                               start_at,
-                                               audio_track,
-                                               subtitles_track,
-                                               select=False)
+                new_playlist = Playlist(file_name,
+                                        data_path,
+                                        recursive,
+                                        random,
+                                        keep_playing,
+                                        start_at,
+                                        audio_track,
+                                        subtitles_track)
+
+                self.__playlist_dict[new_playlist.get_name()] = new_playlist
+
+                if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
+                    pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_image_path(), -1, 30)
+                    GLib.idle_add(self.__liststore_playlist_append, (pixbuf, new_playlist.get_name(), 0))
 
         #
         #   Select & Load the last playlist that was played
@@ -1022,7 +950,7 @@ class MainWindow:
 
 
 def run():
-    vlist_player = MainWindow()
+    ph_player = MainWindow()
     Gtk.main()
-    vlist_player.join()
+    ph_player.join()
     VLC_INSTANCE.release()
