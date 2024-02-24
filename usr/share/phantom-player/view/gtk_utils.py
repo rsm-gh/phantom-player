@@ -25,7 +25,7 @@ gi.require_version('GdkX11', '3.0')
 from gi.repository import Gtk, GObject, Gdk
 
 from Texts import Texts
-from Paths import ICON_LOGO_SMALL
+from Paths import _ICON_LOGO_SMALL
 
 def set_css(widget, css):
     provider = Gtk.CssProvider()
@@ -83,7 +83,7 @@ def dialog_select_directory(parent, start_path=None):
                        Gtk.STOCK_OPEN,
                        Gtk.ResponseType.OK)
 
-    dialog.set_icon_from_file(ICON_LOGO_SMALL)
+    dialog.set_icon_from_file(_ICON_LOGO_SMALL)
 
     if start_path is not None and os.path.exists(start_path):
         dialog.set_current_folder(start_path)
@@ -109,7 +109,7 @@ def dialog_select_file(parent, file_filter=None, start_path=None):
                        Gtk.ResponseType.OK)
 
     dialog.set_default_response(Gtk.ResponseType.NONE)
-    dialog.set_icon_from_file(ICON_LOGO_SMALL)
+    dialog.set_icon_from_file(_ICON_LOGO_SMALL)
 
     dialog.set_transient_for(parent)
 
@@ -136,7 +136,7 @@ def dialog_yes_no(parent, text1, text2=None):
                                Gtk.ButtonsType.YES_NO,
                                text1)
 
-    dialog.set_icon_from_file(ICON_LOGO_SMALL)
+    dialog.set_icon_from_file(_ICON_LOGO_SMALL)
 
     if text2 is not None:
         dialog.format_secondary_text(text2)
@@ -160,7 +160,7 @@ def dialog_info(parent, text1, text2=None):
 
     dialog.set_default_response(Gtk.ResponseType.NONE)
 
-    dialog.set_icon_from_file(ICON_LOGO_SMALL)
+    dialog.set_icon_from_file(_ICON_LOGO_SMALL)
 
     if text2 is not None:
         dialog.format_secondary_text(text2)
