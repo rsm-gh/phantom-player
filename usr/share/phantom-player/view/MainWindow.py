@@ -19,7 +19,6 @@
 """
     + Fix: save the series status when the player changes random/keep plating.
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
-    + Move the series icon to the .local phantom dir
     + Manage multiple paths into the playlist settings menu.
     + Apply the "load video" methods into a thread.
     + Fix start at
@@ -28,8 +27,6 @@
 """
 
 import os
-import time
-
 import gi
 import sys
 from threading import Thread
@@ -45,7 +42,7 @@ _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
 sys.path.insert(0, _PROJECT_DIR)
 
-from Paths import *
+from Paths import _SERIES_DIR, _CONF_FILE
 from Texts import Texts
 from view import gtk_utils
 from controller import factory
@@ -107,7 +104,7 @@ class MainWindow:
         self.__playlist_dict = {}
         self.__threads = []
 
-        self.__ccp = CCParser(CONFIGURATION_FILE, 'phantom-player')
+        self.__ccp = CCParser(_CONF_FILE, 'phantom-player')
 
         #
         #    load items from glade
@@ -739,25 +736,18 @@ class MainWindow:
         return True
 
     def __on_thread_load_playlists(self):
-
-        #
-        # Load the files header
-        #
-        if os.path.exists(FOLDER_LIST_PATH):
-            for file_name in sorted(os.listdir(FOLDER_LIST_PATH)):
+        if os.path.exists(_SERIES_DIR):
+            for file_name in sorted(os.listdir(_SERIES_DIR)):
 
                 if not file_name.lower().endswith('.csv'):
                     continue
 
-                file_path = os.path.join(FOLDER_LIST_PATH, file_name)
+                file_path = os.path.join(_SERIES_DIR, file_name)
 
                 with open(file_path, mode='rt', encoding='utf-8') as f:
                     playlist_header = f.readline().split('|')
                     playlist_path = f.readline().split('|')
 
-                if len(playlist_header) != 5 or len(playlist_path) != 2:
-                    print("Error, Wrong format for playlist file = ", file_path)  # todo: show user message
-                    continue
 
                 data_path = playlist_path[0].strip()
                 recursive = str_to_boolean(playlist_path[1])
@@ -768,8 +758,14 @@ class MainWindow:
                 audio_track = int(playlist_header[3])
                 subtitles_track = int(playlist_header[4])
 
+                try:
+                    icon_extension = playlist_header[5].strip()
+                except Exception:
+                    icon_extension = ""
+
                 new_playlist = Playlist(file_name,
                                         data_path,
+                                        icon_extension,
                                         recursive,
                                         random,
                                         keep_playing,

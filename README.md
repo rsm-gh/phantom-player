@@ -99,7 +99,7 @@ Each playlist is stored in a CSV file that uses a "|" as separator.
 
 The first line will contain the playlist properties:
 ```
-Random | Keep Playing | Start At | Audio Track | Subtitles Track
+Random | Keep Playing | Start At | Audio Track | Subtitles Track | Icon Name
 ```
 Then, the playlist paths will be listed as:
 ```

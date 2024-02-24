@@ -19,20 +19,19 @@
 import os
 import getpass
 
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))
-IMG_DIR = os.path.join(SRC_DIR, "view/img")
+__SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+__IMG_DIR = os.path.join(__SRC_DIR, "view/img")
 
 # Icons
-ICON_LOGO_SMALL = os.path.join(IMG_DIR, "movie-icon-small.png")
-ICON_LOGO_MEDIUM = os.path.join(IMG_DIR, "movie-icon-medium.png")
-ICON_LOGO_BIG = os.path.join(IMG_DIR, "movie-icon-big.png")
+_ICON_LOGO_SMALL = os.path.join(__IMG_DIR, "movie-icon-small.png")
+_ICON_LOGO_MEDIUM = os.path.join(__IMG_DIR, "movie-icon-medium.png")
+_ICON_LOGO_BIG = os.path.join(__IMG_DIR, "movie-icon-big.png")
 
 # Files
 if getpass.getuser() == "root":
-    HOME_PATH = "/root"
+    _HOME_DIR = "/root"
 else:
-    HOME_PATH = "/home/" + getpass.getuser()
+    _HOME_DIR = "/home/" + getpass.getuser()
 
-FOLDER_LIST_PATH = os.path.join(HOME_PATH, ".local/share/phantom-player")
-CONFIGURATION_FILE = os.path.join(HOME_PATH,  ".config/phantom-player.ini")
-SERIES_PATH = os.path.join(FOLDER_LIST_PATH, "{}.csv")
+_SERIES_DIR = os.path.join(_HOME_DIR, ".local/share/phantom-player")
+_CONF_FILE = os.path.join(_HOME_DIR,  ".config/phantom-player.ini")
