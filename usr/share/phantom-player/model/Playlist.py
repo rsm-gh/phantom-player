@@ -194,9 +194,9 @@ class Playlist(object):
 
         """
 
-        """
-            change the path of the selected video
-        """
+        #
+        #    change the path of the selected video
+        #
         video = self.get_video(video_id)
         video_name = video.get_name()
 
@@ -280,14 +280,19 @@ class Playlist(object):
     def get_start_at(self):
         return self.__start_at
 
-    def get_image_path(self, allow_default=True):
+    def get_icon_path(self, allow_default=True):
 
-        icon_path = os.path.join(_SERIES_DIR, self.__name+"."+self.__icon_extension)
+        if self.__name != "":
 
-        if not os.path.exists(icon_path) and allow_default:
+            icon_path = os.path.join(_SERIES_DIR, self.__name+"."+self.__icon_extension)
+
+            if os.path.exists(icon_path) and os.path.isfile(icon_path):
+                return icon_path
+
+        if allow_default:
             return _ICON_LOGO_MEDIUM
 
-        return icon_path
+        return None
 
     def get_name(self):
         return self.__name
@@ -459,7 +464,7 @@ class Playlist(object):
             self.__name = new_name
             return
 
-        old_icon_path = self.get_image_path(allow_default=False)
+        old_icon_path = self.get_icon_path(allow_default=False)
         old_save_path = self.get_save_path()
 
         self.__name = new_name
@@ -468,16 +473,16 @@ class Playlist(object):
             os.rename(old_save_path, self.get_save_path())
 
         if os.path.exists(old_icon_path):
-            os.rename(old_icon_path, self.get_image_path(allow_default=False))
+            os.rename(old_icon_path, self.get_icon_path(allow_default=False))
 
 
-    def set_image(self, path):
+    def set_icon_path(self, path):
 
         #
         # Remove the existent image
         #
-        if os.path.exists(self.get_image_path(allow_default=False)):
-            os.remove(self.get_image_path(allow_default=False))
+        if os.path.exists(self.get_icon_path(allow_default=False)):
+            os.remove(self.get_icon_path(allow_default=False))
 
 
         #
@@ -492,7 +497,7 @@ class Playlist(object):
             self.__icon_extension = ""
 
         if os.path.exists(path):
-            shutil.copy2(path, self.get_image_path(allow_default=False))
+            shutil.copy2(path, self.get_icon_path(allow_default=False))
 
 
     def set_path(self, path):

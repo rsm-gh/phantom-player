@@ -31,7 +31,7 @@ class Video(object):
         self.__extension = ""
         self.__id = -1
         self.__is_new = False
-        self.__position = 0
+        self.__position = VideoPosition.start
         self.__ignore = False
 
         #
