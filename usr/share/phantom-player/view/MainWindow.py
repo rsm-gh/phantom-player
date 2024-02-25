@@ -17,10 +17,9 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
-    + Fix: save the series status when the player changes random/keep plating.
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
     + Manage multiple paths into the playlist settings menu.
-    + Apply the "load video" methods into a thread.
+    + Apply the "load video" methods of the settings dialog into a thread.
     + Fix start at
     + Add option: end at
     + Create a dialog to rename videos.
@@ -657,6 +656,13 @@ class MainWindow:
         if found_videos > 0:
             self.__liststore_videos_populate()
 
+    def __liststore_playlist_set_progress(self, playlist_name, value):
+        for i, row in enumerate(self.liststore_playlist):
+            if row[PlaylistListstoreColumnsIndex.name] == playlist_name:
+                if row[PlaylistListstoreColumnsIndex.percent] != value:
+                    self.liststore_playlist[i][PlaylistListstoreColumnsIndex.percent] = value
+                break
+
     def __liststore_playlist_append(self, data):
         """
             I do not understand why this must be a separate method.
@@ -793,7 +799,9 @@ class MainWindow:
         for i, row in enumerate(self.liststore_playlist):
             if row[PlaylistListstoreColumnsIndex.name] == current_playlist_name:
                 GLib.idle_add(self.treeview_playlist.set_cursor, i)
-                row[PlaylistListstoreColumnsIndex.percent] = playlist_data.get_progress() # is it safe to do this without GLib?
+                GLib.idle_add(self.__liststore_playlist_set_progress,
+                              current_playlist_name,
+                              playlist_data.get_progress())
                 playlist_found = True
                 break
 
@@ -801,15 +809,14 @@ class MainWindow:
         #   Load the rest of the videos
         #
         for playlist in self.__playlist_dict.values():
-            if playlist == playlist_data:
+            if playlist_data is not None and playlist.get_name() == playlist_data.get_name():
                 continue
 
             factory.load_videos(playlist)
 
-            for i, row in enumerate(self.liststore_playlist):
-                if row[PlaylistListstoreColumnsIndex.name] == playlist.get_name():
-                    row[PlaylistListstoreColumnsIndex.percent] = playlist.get_progress() # is it safe to do this without GLib?
-                    break
+            GLib.idle_add(self.__liststore_playlist_set_progress,
+                          playlist.get_name(),
+                          playlist.get_progress())
 
 
         #
@@ -846,18 +853,16 @@ class MainWindow:
         if not self.__current_media.is_playlist_name(selected_series_name):
             return
 
-        for row in self.liststore_playlist:
-            if row[PlaylistListstoreColumnsIndex.name] == selected_series_name:
-                row[PlaylistListstoreColumnsIndex.percent] = self.__current_media.playlist.get_progress()
-                break
-
+        GLib.idle_add(self.__liststore_playlist_set_progress,
+                      selected_series_name,
+                      self.__current_media.playlist.get_progress())
 
         video_id = self.__current_media.get_video_id()
-        for i, row_video in enumerate(self.liststore_videos):
-            if row_video[VideosListstoreColumnsIndex.id] == video_id:
-                self.liststore_videos[i][VideosListstoreColumnsIndex.progress] = self.__current_media.get_video_progress()
-                return
-
+        for i, row in enumerate(self.liststore_videos):
+            if row[VideosListstoreColumnsIndex.id] == video_id:
+                if row[VideosListstoreColumnsIndex.progress] != self.__current_media.get_video_progress():
+                    self.liststore_videos[i][VideosListstoreColumnsIndex.progress] = self.__current_media.get_video_progress()
+                break
 
 
     def __on_media_player_video_end(self, *_):
@@ -907,11 +912,9 @@ class MainWindow:
             else:
                 video.set_position(progress / 100)
 
-
-        for i, row in enumerate(self.liststore_playlist):
-            if row[PlaylistListstoreColumnsIndex.name] == self.__selected_playlist.get_name():
-                row[PlaylistListstoreColumnsIndex.percent] = self.__selected_playlist.get_progress() # is it safe to do this without GLib?
-                break
+        GLib.idle_add(self.__liststore_playlist_set_progress,
+                      self.__selected_playlist.get_name(),
+                      self.__selected_playlist.get_progress())
 
 
 
