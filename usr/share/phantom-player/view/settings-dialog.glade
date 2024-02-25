@@ -118,7 +118,7 @@ Author: Rafael Senties Martinelli
             <property name="baseline-position">bottom</property>
             <property name="layout-style">end</property>
             <child>
-              <object class="GtkButton" id="button_playlist_delete">
+              <object class="GtkButton" id="button_delete">
                 <property name="label" translatable="yes">Delete</property>
                 <property name="width-request">50</property>
                 <property name="visible">True</property>
@@ -128,7 +128,7 @@ Author: Rafael Senties Martinelli
                 <property name="margin-end">10</property>
                 <property name="image">image_delete</property>
                 <property name="always-show-image">True</property>
-                <signal name="clicked" handler="on_button_playlist_delete_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_button_delete_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -137,7 +137,7 @@ Author: Rafael Senties Martinelli
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button_playlist_restart">
+              <object class="GtkButton" id="button_restart">
                 <property name="label" translatable="yes">Restart</property>
                 <property name="width-request">50</property>
                 <property name="visible">True</property>
@@ -146,7 +146,7 @@ Author: Rafael Senties Martinelli
                 <property name="receives-default">True</property>
                 <property name="image">image_restart</property>
                 <property name="always-show-image">True</property>
-                <signal name="clicked" handler="on_button_playlist_restart_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_button_restart_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -155,14 +155,14 @@ Author: Rafael Senties Martinelli
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button_playlist_close">
+              <object class="GtkButton" id="button_close">
                 <property name="label" translatable="yes">Close</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
                 <property name="image">image_close</property>
                 <property name="always-show-image">True</property>
-                <signal name="clicked" handler="on_button_playlist_close" swapped="no"/>
+                <signal name="clicked" handler="on_button_close" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -171,7 +171,7 @@ Author: Rafael Senties Martinelli
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button_playlist_add">
+              <object class="GtkButton" id="button_add">
                 <property name="label" translatable="yes">Add</property>
                 <property name="width-request">50</property>
                 <property name="visible">True</property>
@@ -179,7 +179,7 @@ Author: Rafael Senties Martinelli
                 <property name="receives-default">True</property>
                 <property name="image">image_add</property>
                 <property name="always-show-image">True</property>
-                <signal name="clicked" handler="on_button_playlist_add_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_button_add_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -244,7 +244,7 @@ Author: Rafael Senties Martinelli
                     <property name="halign">center</property>
                     <property name="valign">center</property>
                     <property name="margin-start">10</property>
-                    <signal name="clicked" handler="on_button_playlist_set_image_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_button_set_image_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -589,7 +589,7 @@ Author: Rafael Senties Martinelli
                   <placeholder/>
                 </child>
                 <child>
-                  <object class="GtkButton" id="button_playlist_path_add">
+                  <object class="GtkButton" id="button_path_add">
                     <property name="label" translatable="yes">Add</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
@@ -597,7 +597,7 @@ Author: Rafael Senties Martinelli
                     <property name="margin-top">30</property>
                     <property name="image">image_path_add</property>
                     <property name="always-show-image">True</property>
-                    <signal name="clicked" handler="on_button_playlist_path_add_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_button_path_add_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -606,14 +606,14 @@ Author: Rafael Senties Martinelli
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="button_playlist_path_remove">
+                  <object class="GtkButton" id="button_path_remove">
                     <property name="label" translatable="yes">Remove</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
                     <property name="image">image_path_remove</property>
                     <property name="always-show-image">True</property>
-                    <signal name="clicked" handler="on_button_playlist_path_remove_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_button_path_remove_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -622,14 +622,14 @@ Author: Rafael Senties Martinelli
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="button_playlist_path_edit">
+                  <object class="GtkButton" id="button_path_edit">
                     <property name="label" translatable="yes">Edit</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
                     <property name="image">image_path_edit</property>
                     <property name="always-show-image">True</property>
-                    <signal name="clicked" handler="on_button_playlist_path_edit_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_button_path_edit_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -638,14 +638,14 @@ Author: Rafael Senties Martinelli
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="button_playlist_path_reload_all">
+                  <object class="GtkButton" id="button_path_reload_all">
                     <property name="label" translatable="yes">Reload All</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="receives-default">True</property>
                     <property name="image">image_path_reload</property>
                     <property name="always-show-image">True</property>
-                    <signal name="clicked" handler="on_button_playlist_path_reload_all_clicked" swapped="no"/>
+                    <signal name="clicked" handler="on_button_path_reload_all_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
