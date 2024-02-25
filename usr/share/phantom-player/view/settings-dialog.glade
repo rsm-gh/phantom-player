@@ -128,7 +128,6 @@ Author: Rafael Senties Martinelli
                 <property name="margin-end">10</property>
                 <property name="image">image_delete</property>
                 <property name="always-show-image">True</property>
-                <signal name="clicked" handler="on_button_delete_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -146,7 +145,6 @@ Author: Rafael Senties Martinelli
                 <property name="receives-default">True</property>
                 <property name="image">image_restart</property>
                 <property name="always-show-image">True</property>
-                <signal name="clicked" handler="on_button_restart_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -162,7 +160,6 @@ Author: Rafael Senties Martinelli
                 <property name="receives-default">True</property>
                 <property name="image">image_close</property>
                 <property name="always-show-image">True</property>
-                <signal name="clicked" handler="on_button_close" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -179,7 +176,6 @@ Author: Rafael Senties Martinelli
                 <property name="receives-default">True</property>
                 <property name="image">image_add</property>
                 <property name="always-show-image">True</property>
-                <signal name="clicked" handler="on_button_add_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -236,7 +232,7 @@ Author: Rafael Senties Martinelli
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton">
+                  <object class="GtkButton" id="button_set_image">
                     <property name="label" translatable="yes">Change...</property>
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
@@ -381,7 +377,6 @@ Author: Rafael Senties Martinelli
                 <property name="adjustment">adjustment_start_at</property>
                 <property name="climb-rate">0.5</property>
                 <property name="digits">2</property>
-                <signal name="value-changed" handler="on_spinbutton_start_at_value_changed" swapped="no"/>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -399,7 +394,6 @@ Author: Rafael Senties Martinelli
                 <property name="adjustment">adjustment_subtitles</property>
                 <property name="climb-rate">1</property>
                 <property name="value">-2</property>
-                <signal name="value-changed" handler="on_spinbutton_subtitles_value_changed" swapped="no"/>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -417,7 +411,6 @@ Author: Rafael Senties Martinelli
                 <property name="adjustment">adjustment_audio</property>
                 <property name="climb-rate">1</property>
                 <property name="value">-2</property>
-                <signal name="value-changed" handler="on_spinbutton_audio_value_changed" swapped="no"/>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -450,12 +443,11 @@ Author: Rafael Senties Martinelli
               </packing>
             </child>
             <child>
-              <object class="GtkSwitch" id="switch_setting_random_playing">
+              <object class="GtkSwitch" id="switch_random_playing">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="halign">start</property>
                 <property name="margin-top">5</property>
-                <signal name="button-press-event" handler="on_switch_setting_random_playing_button_press_event" swapped="no"/>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -463,12 +455,11 @@ Author: Rafael Senties Martinelli
               </packing>
             </child>
             <child>
-              <object class="GtkSwitch" id="switch_setting_keep_playing">
+              <object class="GtkSwitch" id="switch_keep_playing">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="halign">start</property>
                 <property name="margin-top">5</property>
-                <signal name="button-press-event" handler="on_switch_setting_random_playing_button_press_event" swapped="no"/>
               </object>
               <packing>
                 <property name="left-attach">1</property>
@@ -560,9 +551,7 @@ Author: Rafael Senties Martinelli
                         <property name="title" translatable="yes">Recursive</property>
                         <property name="clickable">True</property>
                         <child>
-                          <object class="GtkCellRendererToggle" id="on_cellrenderertoggle_playlist_recursive">
-                            <signal name="toggled" handler="on_cellrenderertoggle_playlist_recursive_toggled" swapped="no"/>
-                          </object>
+                          <object class="GtkCellRendererToggle" id="cellrenderertoggle_recursive"/>
                           <attributes>
                             <attribute name="active">1</attribute>
                           </attributes>
@@ -597,7 +586,6 @@ Author: Rafael Senties Martinelli
                     <property name="margin-top">30</property>
                     <property name="image">image_path_add</property>
                     <property name="always-show-image">True</property>
-                    <signal name="clicked" handler="on_button_path_add_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -613,7 +601,6 @@ Author: Rafael Senties Martinelli
                     <property name="receives-default">True</property>
                     <property name="image">image_path_remove</property>
                     <property name="always-show-image">True</property>
-                    <signal name="clicked" handler="on_button_path_remove_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -629,7 +616,6 @@ Author: Rafael Senties Martinelli
                     <property name="receives-default">True</property>
                     <property name="image">image_path_edit</property>
                     <property name="always-show-image">True</property>
-                    <signal name="clicked" handler="on_button_path_edit_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -645,7 +631,6 @@ Author: Rafael Senties Martinelli
                     <property name="receives-default">True</property>
                     <property name="image">image_path_reload</property>
                     <property name="always-show-image">True</property>
-                    <signal name="clicked" handler="on_button_path_reload_all_clicked" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
