@@ -286,7 +286,10 @@ class Playlist(object):
 
             icon_path = os.path.join(_SERIES_DIR, self.__name+"."+self.__icon_extension)
 
-            if os.path.exists(icon_path) and os.path.isfile(icon_path):
+            if not allow_default:
+                return icon_path
+
+            elif os.path.exists(icon_path) and os.path.isfile(icon_path):
                 return icon_path
 
         if allow_default:
@@ -450,14 +453,14 @@ class Playlist(object):
                 video.set_position(position)
                 return
 
-    def set_name(self, new_name):
+    def set_name(self, new_name, force=False):
         """
             Set a new name, or rename.
         """
         if new_name.lower().endswith(".csv"):
             new_name = new_name.rsplit(".",1)[0]
 
-        if new_name == self.__name:
+        if new_name == self.__name and not force:
             return
 
         elif self.__name == "":
@@ -481,7 +484,8 @@ class Playlist(object):
         #
         # Remove the existent image
         #
-        if os.path.exists(self.get_icon_path(allow_default=False)):
+        current_icon_path = self.get_icon_path(allow_default=False)
+        if current_icon_path is not None and os.path.exists(current_icon_path):
             os.remove(self.get_icon_path(allow_default=False))
 
 
@@ -495,6 +499,8 @@ class Playlist(object):
             self.__icon_extension = file_name.rsplit(".", 1)[1]
         else:
             self.__icon_extension = ""
+
+        new_path = self.get_icon_path(allow_default=False)
 
         if os.path.exists(path):
             shutil.copy2(path, self.get_icon_path(allow_default=False))
