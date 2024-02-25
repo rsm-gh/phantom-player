@@ -77,7 +77,7 @@ class SettingsDialog:
         for glade_id in glade_ids:
             setattr(self, glade_id, builder.get_object(glade_id))
 
-        self.settings_dialog.set_parent(parent)
+        self.settings_dialog.set_transient_for(parent)
 
     def run(self, playlist, is_new, playlist_names=None):
 
