@@ -107,7 +107,7 @@ class SettingsDialog:
         self.switch_setting_keep_playing.set_active(playlist.get_keep_playing())
         self.switch_setting_random_playing.set_active(playlist.get_random())
 
-        pixbuf = Pixbuf.new_from_file_at_size(playlist.get_image_path(), -1, 30)
+        pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(), -1, 30)
         self.image_playlist.set_from_pixbuf(pixbuf)
         self.button_playlist_delete.set_sensitive(not is_new)
         self.button_playlist_restart.set_sensitive(not is_new)
@@ -240,7 +240,7 @@ class SettingsDialog:
 
         file = gtk_utils.dialog_select_file(self.settings_dialog, file_filter)
         if file is not None:
-            self.__playlist.set_image(file)
+            self.__playlist.set_icon_path(file)
             pixbuf = Pixbuf.new_from_file_at_size(file, -1, 30)
             self.image_playlist.set_from_pixbuf(pixbuf)
 

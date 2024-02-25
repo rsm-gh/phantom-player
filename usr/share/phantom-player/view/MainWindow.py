@@ -486,7 +486,7 @@ class MainWindow:
 
         if response == SettingsDialogResponse.close:
             # Delete the image (if saved)
-            icon_path = new_playlist.get_image_path(allow_default=False)
+            icon_path = new_playlist.get_icon_path(allow_default=False)
             if icon_path is not None and os.path.exists(icon_path):
                 os.remove(icon_path)
 
@@ -495,7 +495,7 @@ class MainWindow:
             self.__playlist_dict[playlist_name] = new_playlist
 
             if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
-                pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_image_path(), -1, 30)
+                pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
                 self.liststore_playlist.append([pixbuf, playlist_name, new_playlist.get_progress()])
 
                 for i, row in enumerate(self.liststore_playlist):
@@ -518,7 +518,7 @@ class MainWindow:
                 self.__current_media = CurrentMedia()
 
             # Delete the image (if saved)
-            icon_path = self.__selected_playlist.get_image_path(allow_default=False)
+            icon_path = self.__selected_playlist.get_icon_path(allow_default=False)
             if icon_path is not None and os.path.exists(icon_path):
                 os.remove(icon_path)
 
@@ -539,7 +539,7 @@ class MainWindow:
         #
 
         # Update the icon
-        pixbuf = Pixbuf.new_from_file_at_size(self.__selected_playlist.get_image_path(), -1, 30)
+        pixbuf = Pixbuf.new_from_file_at_size(self.__selected_playlist.get_icon_path(), -1, 30)
         gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist,
                                                     PlaylistListstoreColumnsIndex.icon,
                                                     pixbuf)
@@ -674,7 +674,7 @@ class MainWindow:
             playlist = self.__playlist_dict[name]
 
             if os.path.exists(playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
-                pixbuf = Pixbuf.new_from_file_at_size(playlist.get_image_path(), -1, 30)
+                pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(), -1, 30)
                 self.liststore_playlist.append([pixbuf, playlist.get_name(), playlist.get_progress()])
 
         # Select the current playlist
@@ -773,7 +773,7 @@ class MainWindow:
                 self.__playlist_dict[new_playlist.get_name()] = new_playlist
 
                 if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
-                    pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_image_path(), -1, 30)
+                    pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
                     GLib.idle_add(self.__liststore_playlist_append, (pixbuf, new_playlist.get_name(), new_playlist.get_progress()))
 
         #
