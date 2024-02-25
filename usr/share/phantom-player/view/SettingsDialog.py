@@ -90,17 +90,23 @@ class SettingsDialog:
         else:
             self.__playlist_names = playlist_names
 
+        self.button_playlist_path_add.set_sensitive(True)
+
         if is_new:
             window_title = Texts.WindowSettings.new_title
             self.button_playlist_add.show()
         else:
             window_title = playlist.get_name() + " " + Texts.WindowSettings.edit_title
             self.button_playlist_add.hide()
-            self.liststore_paths.append([playlist.get_data_path(), playlist.get_recursive()])
+
+            data_path = playlist.get_data_path()
+            if data_path != "":
+                self.button_playlist_path_add.set_sensitive(False)
+                self.liststore_paths.append([playlist.get_data_path(), playlist.get_recursive()])
 
         self.settings_dialog.set_title(window_title)
 
-        self.button_playlist_path_add.set_sensitive(is_new)
+
         self.button_playlist_path_remove.set_sensitive(False)
         self.button_playlist_path_edit.set_sensitive(not is_new)
         self.button_playlist_path_reload_all.set_sensitive(not is_new)
@@ -267,10 +273,8 @@ class SettingsDialog:
         self.button_playlist_path_edit.set_sensitive(True)
         self.button_playlist_path_reload_all.set_sensitive(True)
 
-        self.__playlist.set_path(path)
+        self.__playlist.set_data_path(path)
         factory.load_videos(self.__playlist)
-
-        self.settings_dialog.response(ResponseType.add)
 
     def on_button_playlist_path_remove_clicked(self, *_):
         pass
@@ -284,7 +288,7 @@ class SettingsDialog:
         self.liststore_paths.clear()
         self.liststore_paths.append([path, False])
 
-        self.__playlist.set_path(path)
+        self.__playlist.set_data_path(path)
         factory.load_videos(self.__playlist)
 
     def on_button_playlist_path_reload_all_clicked(self, *_):

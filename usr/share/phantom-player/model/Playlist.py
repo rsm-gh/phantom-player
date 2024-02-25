@@ -500,11 +500,9 @@ class Playlist(object):
         else:
             self.__icon_extension = ""
 
-        new_path = self.get_icon_path(allow_default=False)
-
         if os.path.exists(path):
             shutil.copy2(path, self.get_icon_path(allow_default=False))
 
 
-    def set_path(self, path):
+    def set_data_path(self, path):
         self.__data_path = path
