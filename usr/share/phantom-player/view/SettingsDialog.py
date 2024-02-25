@@ -50,6 +50,7 @@ class SettingsDialog:
         self.__playlist = None
         self.__populating_settings = False
         self.__playlist_names = []
+        self.__icon_path = None
 
         builder = Gtk.Builder()
         builder.add_from_file(os.path.join(_SCRIPT_DIR, "settings-dialog.glade"))
@@ -82,6 +83,7 @@ class SettingsDialog:
     def run(self, playlist, is_new, playlist_names=None):
 
         self.liststore_paths.clear()
+        self.__icon_path = None
 
         if playlist_names is None:
             self.__playlist_names = []
@@ -125,6 +127,12 @@ class SettingsDialog:
 
         if response != ResponseType.delete:
             playlist.set_name(self.entry_playlist_name.get_text())
+
+            if is_new and response == ResponseType.close:
+                pass
+
+            elif self.__icon_path is not None:
+                playlist.set_icon_path(self.__icon_path)
 
         self.settings_dialog.hide()
         return response
@@ -230,7 +238,9 @@ class SettingsDialog:
 
     def on_button_playlist_set_image_clicked(self, *_):
         """
-            Add a picture to a playlist
+            Add a picture to a playlist.
+            Note: set_icon_path shall not be called here,
+                   because the playlist must be named / renamed first.
         """
         file_filter = Gtk.FileFilter()
         file_filter.set_name('Image')
@@ -240,7 +250,7 @@ class SettingsDialog:
 
         file = gtk_utils.dialog_select_file(self.settings_dialog, file_filter)
         if file is not None:
-            self.__playlist.set_icon_path(file)
+            self.__icon_path = file
             pixbuf = Pixbuf.new_from_file_at_size(file, -1, 30)
             self.image_playlist.set_from_pixbuf(pixbuf)
 
