@@ -56,33 +56,30 @@ class SettingsDialog:
         builder.add_from_file(os.path.join(_SCRIPT_DIR, "settings-dialog.glade"))
         builder.connect_signals(self)
 
-        glade_ids = (
-            'settings_dialog',
-            'entry_playlist_name',
-            'image_playlist',
-            'switch_setting_keep_playing',
-            'switch_setting_random_playing',
-            'spinbutton_subtitles',
-            'spinbutton_start_at',
-            'spinbutton_audio',
-            'button_playlist_delete',
-            'button_playlist_restart',
-            'button_playlist_add',
-            'liststore_paths',
-            'button_playlist_path_add',
-            'button_playlist_path_remove',
-            'button_playlist_path_edit',
-            'button_playlist_path_reload_all',
-        )
+        self.__settings_dialog = builder.get_object('settings_dialog')
+        self.__entry_playlist_name = builder.get_object('entry_playlist_name')
+        self.__image_playlist = builder.get_object('image_playlist')
+        self.__switch_setting_keep_playing = builder.get_object('switch_setting_keep_playing')
+        self.__switch_setting_random_playing = builder.get_object('switch_setting_random_playing')
+        self.__spinbutton_subtitles = builder.get_object('spinbutton_subtitles')
+        self.__spinbutton_start_at = builder.get_object('spinbutton_start_at')
+        self.__spinbutton_audio = builder.get_object('spinbutton_audio')
+        self.__liststore_paths = builder.get_object('liststore_paths')
 
-        for glade_id in glade_ids:
-            setattr(self, glade_id, builder.get_object(glade_id))
+        self.__button_path_add = builder.get_object('button_path_add')
+        self.__button_path_remove = builder.get_object('button_path_remove')
+        self.__button_path_edit = builder.get_object('button_path_edit')
+        self.__button_path_reload_all = builder.get_object('button_path_reload_all')
 
-        self.settings_dialog.set_transient_for(parent)
+        self.__button_delete = builder.get_object('button_delete')
+        self.__button_restart = builder.get_object('button_restart')
+        self.__button_add = builder.get_object('button_add')
+
+        self.__settings_dialog.set_transient_for(parent)
 
     def run(self, playlist, is_new, playlist_names=None):
 
-        self.liststore_paths.clear()
+        self.__liststore_paths.clear()
         self.__icon_path = None
 
         if playlist_names is None:
@@ -90,49 +87,49 @@ class SettingsDialog:
         else:
             self.__playlist_names = playlist_names
 
-        self.button_playlist_path_add.set_sensitive(True)
+        self.__button_path_add.set_sensitive(True)
 
         if is_new:
             window_title = Texts.WindowSettings.new_title
-            self.button_playlist_add.show()
+            self.__button_add.show()
         else:
             window_title = playlist.get_name() + " " + Texts.WindowSettings.edit_title
-            self.button_playlist_add.hide()
+            self.__button_add.hide()
 
             data_path = playlist.get_data_path()
             if data_path != "":
-                self.button_playlist_path_add.set_sensitive(False)
-                self.liststore_paths.append([playlist.get_data_path(), playlist.get_recursive()])
+                self.__button_path_add.set_sensitive(False)
+                self.__liststore_paths.append([playlist.get_data_path(), playlist.get_recursive()])
 
-        self.settings_dialog.set_title(window_title)
+        self.__settings_dialog.set_title(window_title)
 
 
-        self.button_playlist_path_remove.set_sensitive(False)
-        self.button_playlist_path_edit.set_sensitive(not is_new)
-        self.button_playlist_path_reload_all.set_sensitive(not is_new)
+        self.__button_path_remove.set_sensitive(False)
+        self.__button_path_edit.set_sensitive(not is_new)
+        self.__button_path_reload_all.set_sensitive(not is_new)
 
-        self.entry_playlist_name.set_text(playlist.get_name())
-        self.switch_setting_keep_playing.set_active(playlist.get_keep_playing())
-        self.switch_setting_random_playing.set_active(playlist.get_random())
+        self.__entry_playlist_name.set_text(playlist.get_name())
+        self.__switch_setting_keep_playing.set_active(playlist.get_keep_playing())
+        self.__switch_setting_random_playing.set_active(playlist.get_random())
 
         pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(), -1, 30)
-        self.image_playlist.set_from_pixbuf(pixbuf)
-        self.button_playlist_delete.set_sensitive(not is_new)
-        self.button_playlist_restart.set_sensitive(not is_new)
+        self.__image_playlist.set_from_pixbuf(pixbuf)
+        self.__button_delete.set_sensitive(not is_new)
+        self.__button_restart.set_sensitive(not is_new)
 
         self.__populating_settings = True
-        self.spinbutton_audio.set_value(playlist.get_audio_track())
-        self.spinbutton_subtitles.set_value(playlist.get_subtitles_track())
-        self.spinbutton_start_at.set_value(playlist.get_start_at())
+        self.__spinbutton_audio.set_value(playlist.get_audio_track())
+        self.__spinbutton_subtitles.set_value(playlist.get_subtitles_track())
+        self.__spinbutton_start_at.set_value(playlist.get_start_at())
         self.__populating_settings = False
 
         self.__playlist = playlist
         self.__is_new_playlist = is_new
 
-        response = self.settings_dialog.run()
+        response = self.__settings_dialog.run()
 
         if response != ResponseType.delete:
-            playlist.set_name(self.entry_playlist_name.get_text())
+            playlist.set_name(self.__entry_playlist_name.get_text())
 
             if is_new and response == ResponseType.close:
                 pass
@@ -140,7 +137,7 @@ class SettingsDialog:
             elif self.__icon_path is not None:
                 playlist.set_icon_path(self.__icon_path)
 
-        self.settings_dialog.hide()
+        self.__settings_dialog.hide()
         return response
 
     def on_switch_setting_keep_playing_button_press_event(self, widget, *_):
@@ -184,47 +181,47 @@ class SettingsDialog:
         self.__playlist.set_start_at(value)
 
     def on_cellrenderertoggle_playlist_recursive_toggled(self, _, row):
-        state = not self.liststore_paths[row][1]
-        self.liststore_paths[row][1] = state
+        state = not self.__liststore_paths[row][1]
+        self.__liststore_paths[row][1] = state
         self.__playlist.set_recursive(state)
 
-    def on_button_playlist_delete_clicked(self, *_):
-        if gtk_utils.dialog_yes_no(self.settings_dialog,
+    def on_button_delete_clicked(self, *_):
+        if gtk_utils.dialog_yes_no(self.__settings_dialog,
                                    Texts.DialogPlaylist.confirm_delete.format(self.__playlist.get_name())):
-            self.settings_dialog.response(ResponseType.delete)
+            self.__settings_dialog.response(ResponseType.delete)
 
-    def on_button_playlist_add_clicked(self, *_):
+    def on_button_add_clicked(self, *_):
 
-        playlist_name = self.entry_playlist_name.get_text().strip()
+        playlist_name = self.__entry_playlist_name.get_text().strip()
 
         if playlist_name == "":
-            gtk_utils.dialog_info(self.settings_dialog, Texts.WindowSettings.playlist_name_empty)
+            gtk_utils.dialog_info(self.__settings_dialog, Texts.WindowSettings.playlist_name_empty)
             return
 
         elif playlist_name in self.__playlist_names:
-            gtk_utils.dialog_info(self.settings_dialog,
+            gtk_utils.dialog_info(self.__settings_dialog,
                                   Texts.DialogPlaylist.name_exist.format(playlist_name))
             return
 
         self.__playlist.set_name(playlist_name)
 
-        self.settings_dialog.response(ResponseType.add)
+        self.__settings_dialog.response(ResponseType.add)
 
-    def on_button_playlist_close(self, *_):
+    def on_button_close(self, *_):
 
         if not self.__is_new_playlist:
 
-            new_name = self.entry_playlist_name.get_text().strip()
+            new_name = self.__entry_playlist_name.get_text().strip()
 
             if self.__playlist.get_name() == new_name:
                 pass
 
             elif new_name == "":
-                gtk_utils.dialog_info(self.settings_dialog, Texts.WindowSettings.playlist_name_empty)
+                gtk_utils.dialog_info(self.__settings_dialog, Texts.WindowSettings.playlist_name_empty)
                 return
 
             elif new_name in self.__playlist_names:
-                gtk_utils.dialog_info(self.settings_dialog,
+                gtk_utils.dialog_info(self.__settings_dialog,
                                       Texts.DialogPlaylist.name_exist.format(new_name))
                 return
 
@@ -232,17 +229,17 @@ class SettingsDialog:
                 self.__playlist.set_name(new_name)
 
 
-        self.settings_dialog.response(ResponseType.close)
+        self.__settings_dialog.response(ResponseType.close)
 
-    def on_button_playlist_restart_clicked(self, *_):
+    def on_button_restart_clicked(self, *_):
 
         selected_playlist_name = self.__playlist.get_name()
 
-        if gtk_utils.dialog_yes_no(self.settings_dialog,
+        if gtk_utils.dialog_yes_no(self.__settings_dialog,
                                    Texts.DialogPlaylist.confirm_reset.format(selected_playlist_name)):
-            self.settings_dialog.response(ResponseType.restart)
+            self.__settings_dialog.response(ResponseType.restart)
 
-    def on_button_playlist_set_image_clicked(self, *_):
+    def on_button_set_image_clicked(self, *_):
         """
             Add a picture to a playlist.
             Note: set_icon_path shall not be called here,
@@ -254,42 +251,42 @@ class SettingsDialog:
         file_filter.add_pattern('*.jpg')
         file_filter.add_pattern('*.png')
 
-        file = gtk_utils.dialog_select_file(self.settings_dialog, file_filter)
+        file = gtk_utils.dialog_select_file(self.__settings_dialog, file_filter)
         if file is not None:
             self.__icon_path = file
             pixbuf = Pixbuf.new_from_file_at_size(file, -1, 30)
-            self.image_playlist.set_from_pixbuf(pixbuf)
+            self.__image_playlist.set_from_pixbuf(pixbuf)
 
-    def on_button_playlist_path_add_clicked(self, *_):
+    def on_button_path_add_clicked(self, *_):
 
-        path = gtk_utils.dialog_select_directory(self.settings_dialog)
+        path = gtk_utils.dialog_select_directory(self.__settings_dialog)
         if path is None:
             return
 
-        self.liststore_paths.clear()
-        self.liststore_paths.append([path, False])
+        self.__liststore_paths.clear()
+        self.__liststore_paths.append([path, False])
 
-        self.button_playlist_path_add.set_sensitive(False)
-        self.button_playlist_path_edit.set_sensitive(True)
-        self.button_playlist_path_reload_all.set_sensitive(True)
+        self.__button_path_add.set_sensitive(False)
+        self.__button_path_edit.set_sensitive(True)
+        self.__button_path_reload_all.set_sensitive(True)
 
         self.__playlist.set_data_path(path)
         factory.load_videos(self.__playlist)
 
-    def on_button_playlist_path_remove_clicked(self, *_):
+    def on_button_path_remove_clicked(self, *_):
         pass
 
-    def on_button_playlist_path_edit_clicked(self, *_):
+    def on_button_path_edit_clicked(self, *_):
 
-        path = gtk_utils.dialog_select_directory(self.settings_dialog)
+        path = gtk_utils.dialog_select_directory(self.__settings_dialog)
         if path is None:
             return
 
-        self.liststore_paths.clear()
-        self.liststore_paths.append([path, False])
+        self.__liststore_paths.clear()
+        self.__liststore_paths.append([path, False])
 
         self.__playlist.set_data_path(path)
         factory.load_videos(self.__playlist)
 
-    def on_button_playlist_path_reload_all_clicked(self, *_):
+    def on_button_path_reload_all_clicked(self, *_):
         factory.load_videos(self.__playlist)
