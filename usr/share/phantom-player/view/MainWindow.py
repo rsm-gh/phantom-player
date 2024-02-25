@@ -86,10 +86,6 @@ class GlobalConfigTags:
     checkbox_hidden_videos = "hidden-videos"
     checkbox_hide_missing_playlist = "hide-missing-playlist"
 
-    @staticmethod
-    def convert_conf_to_gui(name):
-        return name.replace("hide_video_", "checkbox_hide_")
-
 
 class MainWindow:
 
@@ -106,132 +102,126 @@ class MainWindow:
         self.__ccp = CCParser(_CONF_FILE, 'phantom-player')
 
         #
-        #    load items from glade
+        #    Load the GTK objects
         #
         builder = Gtk.Builder()
         builder.add_from_file(os.path.join(_SCRIPT_DIR, "main-window.glade"))
         builder.connect_signals(self)
 
-        glade_ids = (
-            'window_root',
-            'menubar',
-            'menuitem_playlist_settings',
-            'box_window',
-            'main_paned',
-            'treeview_videos',
-            'treeview_playlist',
-            'treeview_selection_playlist',
-            'treeview_selection_videos',
-            'liststore_playlist',
-            'liststore_videos',
-            'column_number',
-            'column_path',
-            'column_name',
-            'column_extension',
-            'column_progress',
-            'checkbox_hidden_items',
-            'checkbox_hide_extensions',
-            'checkbox_hide_number',
-            'checkbox_hide_path',
-            'checkbox_hide_name',
-            'checkbox_hide_extension',
-            'checkbox_hide_progress',
-            'checkbox_hide_warning_missing_playlist',
-            'checkbox_hide_missing_playlist',
-            'window_about',
-        )
-
-        for glade_id in glade_ids:
-            setattr(self, glade_id, builder.get_object(glade_id))
+        self.__window_root = builder.get_object('window_root')
+        self.__window_about = builder.get_object('window_about')
+        self.__menubar = builder.get_object('menubar')
+        self.__menuitem_playlist_settings = builder.get_object('menuitem_playlist_settings')
+        self.__main_paned = builder.get_object('main_paned')
+        self.__treeview_videos = builder.get_object('treeview_videos')
+        self.__treeview_playlist = builder.get_object('treeview_playlist')
+        self.__treeview_selection_playlist = builder.get_object('treeview_selection_playlist')
+        self.__treeview_selection_videos = builder.get_object('treeview_selection_videos')
+        self.__checkbox_hidden_items = builder.get_object('checkbox_hidden_items')
+        self.__checkbox_hide_ext = builder.get_object('checkbox_hide_ext')
+        self.__checkbox_hide_number = builder.get_object('checkbox_hide_number')
+        self.__checkbox_hide_path = builder.get_object('checkbox_hide_path')
+        self.__checkbox_hide_name = builder.get_object('checkbox_hide_name')
+        self.__checkbox_hide_extension = builder.get_object('checkbox_hide_extension')
+        self.__checkbox_hide_progress = builder.get_object('checkbox_hide_progress')
+        self.__checkbox_hide_warning_missing_playlist = builder.get_object('checkbox_hide_warning_missing_playlist')
+        self.__checkbox_hide_missing_playlist = builder.get_object('checkbox_hide_missing_playlist')
+        self.__column_number = builder.get_object('column_number')
+        self.__column_path = builder.get_object('column_path')
+        self.__column_name = builder.get_object('column_name')
+        self.__column_extension = builder.get_object('column_extension')
+        self.__column_progress = builder.get_object('column_progress')
+        self.__liststore_playlist = builder.get_object('liststore_playlist')
+        self.__liststore_videos = builder.get_object('liststore_videos')
+        box_window = builder.get_object('box_window')
 
         if dark_mode:
             css_style = _DARK_CSS
         else:
             css_style = None
 
-        self.menubar.set_sensitive(False)
-        self.treeview_playlist.set_sensitive(False)
-        self.window_root.get_root_window().set_cursor(Gdk.Cursor.new_from_name(self.window_root.get_display(), 'wait'))
+        self.__menubar.set_sensitive(False)
+        self.__treeview_playlist.set_sensitive(False)
+        self.__window_root.get_root_window().set_cursor(
+            Gdk.Cursor.new_from_name(self.__window_root.get_display(), 'wait'))
 
-        self.__settings_dialog = SettingsDialog(self.window_root)
+        self.__settings_dialog = SettingsDialog(self.__window_root)
 
         #
         #    Media Player
         #
-        self.__media_player = MediaPlayerWidget(self.window_root,
+        self.__media_player = MediaPlayerWidget(self.__window_root,
                                                 random_button=True,
                                                 keep_playing_button=True,
                                                 css_style=css_style)
 
         self.__media_player.connect(CustomSignals.position_changed, self.__on_media_player_position_changed)
-        self.__media_player.connect(CustomSignals.btn_keep_playing_toggled, self.__on_media_player_btn_keep_playing_toggled)
+        self.__media_player.connect(CustomSignals.btn_keep_playing_toggled,
+                                    self.__on_media_player_btn_keep_playing_toggled)
         self.__media_player.connect(CustomSignals.btn_random_toggled, self.__on_media_player_btn_random_toggled)
         self.__media_player.connect(CustomSignals.video_end, self.__on_media_player_video_end)
 
         self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
         self.__paned.add1(self.__media_player)
-        self.box_window.remove(self.main_paned)
-        self.__paned.add2(self.main_paned)
-        self.box_window.pack_start(self.__paned, True, True, 0)
+        box_window.remove(self.__main_paned)
+        self.__paned.add2(self.__main_paned)
+        box_window.pack_start(self.__paned, True, True, 0)
 
         #
         #    Configuration
         #
 
         # extra
-        self.window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        self.window_root.connect('delete-event', self.quit)
-        self.window_root.connect("configure-event", self.__on_window_root_configure_event)
-        self.window_root.connect("visibility_notify_event", self.__on_window_root_notify_event)
+        self.__window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.__window_root.connect('delete-event', self.quit)
+        self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
+        self.__window_root.connect("visibility_notify_event", self.__on_window_root_notify_event)
 
         # checkboxes
-        self.checkbox_hide_warning_missing_playlist.set_active(
+        self.__checkbox_hide_warning_missing_playlist.set_active(
             self.__ccp.get_bool(GlobalConfigTags.checkbox_missing_playlist_warning))
-        self.checkbox_hidden_items.set_active(
+        self.__checkbox_hidden_items.set_active(
             self.__ccp.get_bool_defval(GlobalConfigTags.checkbox_hidden_videos, False))
-        self.checkbox_hide_missing_playlist.set_active(
+        self.__checkbox_hide_missing_playlist.set_active(
             self.__ccp.get_bool_defval(GlobalConfigTags.checkbox_hide_missing_playlist, False))
 
-        for item_name in ("hide_video_number",
-                          "hide_video_path",
-                          "hide_video_name",
-                          "hide_video_extension",
-                          "hide_video_progress"):
+        self.__checkbox_hide_number.set_active(self.__ccp.get_bool('hide_video_number'))
+        self.__checkbox_hide_path.set_active(self.__ccp.get_bool('hide_video_path'))
+        self.__checkbox_hide_name.set_active(self.__ccp.get_bool('hide_video_name'))
+        self.__checkbox_hide_extension.set_active(self.__ccp.get_bool('hide_video_extension'))
+        self.__checkbox_hide_progress.set_active(self.__ccp.get_bool('hide_video_progress'))
 
-            if self.__ccp.get_bool(item_name):
-                checkbox = getattr(self, GlobalConfigTags.convert_conf_to_gui(item_name))
-                checkbox.set_active(True)
 
         #
         # Font colors
         #
         _, self.__font_default_color = gtk_utils.get_default_color('theme_text_color',
-                                                                   widget=self.treeview_videos,
+                                                                   widget=self.__treeview_videos,
                                                                    on_error="#000000")
 
         _, self.__font_hide_color = gtk_utils.get_default_color('warning_color',
-                                                                widget=self.treeview_videos,
+                                                                widget=self.__treeview_videos,
                                                                 on_error="#ff9900")
 
         _, self.__font_error_color = gtk_utils.get_default_color('error_color',
-                                                                 widget=self.treeview_videos,
+                                                                 widget=self.__treeview_videos,
                                                                  on_error="#ff0000")
 
         _, self.__font_new_color = gtk_utils.get_default_color('success_color',
-                                                               widget=self.treeview_videos,
+                                                               widget=self.__treeview_videos,
                                                                on_error="#009933")
 
         #
         #    Display the window
         #
-        self.menuitem_playlist_settings.set_sensitive(False)
+        self.__menuitem_playlist_settings.set_sensitive(False)
 
         if dark_mode:
-            gtk_utils.set_css(self.window_root, css_style)
-            gtk_utils.set_css(self.treeview_videos, css_style)
+            gtk_utils.set_css(self.__window_root, css_style)
+            gtk_utils.set_css(self.__treeview_videos, css_style)
 
-        self.window_root.maximize()
-        self.window_root.show_all()
+        self.__window_root.maximize()
+        self.__window_root.show_all()
         self.__media_player.hide_volume_label()
 
         #
@@ -263,11 +253,11 @@ class MainWindow:
         #
         # Select the current playlist
         #
-        if self.treeview_selection_playlist.count_selected_rows() <= 0:
+        if self.__treeview_selection_playlist.count_selected_rows() <= 0:
             self.__selected_playlist = None
             return
 
-        selected_playlist_name = gtk_utils.treeview_selection_get_first_cell(self.treeview_selection_playlist, 1)
+        selected_playlist_name = gtk_utils.treeview_selection_get_first_cell(self.__treeview_selection_playlist, 1)
         self.__selected_playlist = self.__playlist_dict[selected_playlist_name]
 
         #
@@ -283,17 +273,17 @@ class MainWindow:
             elif event.button == EventCodes.Cursor.right_click:
 
                 # Get the iter where the user is pointing
-                path = self.treeview_playlist.get_path_at_pos(event.x, event.y)
+                path = self.__treeview_playlist.get_path_at_pos(event.x, event.y)
 
                 if path is not None:
                     pointing_treepath = path[0]
 
                     # If the iter is not in the selected iters, remove the previous selection
-                    model, treepaths = self.treeview_selection_playlist.get_selected_rows()
+                    model, treepaths = self.__treeview_selection_playlist.get_selected_rows()
 
                     if pointing_treepath not in treepaths and inside_treeview:
-                        self.treeview_selection_playlist.unselect_all()
-                        self.treeview_selection_playlist.select_path(pointing_treepath)
+                        self.__treeview_selection_playlist.unselect_all()
+                        self.__treeview_selection_playlist.select_path(pointing_treepath)
 
                     self.__menu_playlist_display(event)
 
@@ -301,9 +291,9 @@ class MainWindow:
             if event.button == EventCodes.Cursor.left_click:
 
                 # check if the liststore is empty
-                if len(self.liststore_videos) <= 0:
-                    if not self.checkbox_hide_warning_missing_playlist.get_active():
-                        gtk_utils.dialog_info(self.window_root, Texts.DialogPlaylist.is_missing)
+                if len(self.__liststore_videos) <= 0:
+                    if not self.__checkbox_hide_warning_missing_playlist.get_active():
+                        gtk_utils.dialog_info(self.__window_root, Texts.DialogPlaylist.is_missing)
 
                     return
 
@@ -327,18 +317,18 @@ class MainWindow:
     def on_treeview_videos_drag_end(self, *_):
 
         # Get the new order
-        new_order = [row[VideosListstoreColumnsIndex.id] for row in self.liststore_videos]
+        new_order = [row[VideosListstoreColumnsIndex.id] for row in self.__liststore_videos]
 
         # Update the treeview
-        for i, row in enumerate(self.liststore_videos, 1):
+        for i, row in enumerate(self.__liststore_videos, 1):
             row[VideosListstoreColumnsIndex.id] = i
 
         # Update the CSV file
         self.__selected_playlist.reorder(new_order)
-        self.treeview_selection_videos.unselect_all()
+        self.__treeview_selection_videos.unselect_all()
 
     def on_treeview_videos_press_event(self, _, event):
-        model, treepaths = self.treeview_selection_videos.get_selected_rows()
+        model, treepaths = self.__treeview_selection_videos.get_selected_rows()
 
         if len(treepaths) == 0:
             return
@@ -354,7 +344,7 @@ class MainWindow:
             """
 
             self.__ccp.write('current_playlist', self.__selected_playlist.get_name())
-            video_id = self.liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
+            video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
             self.__current_media = CurrentMedia(self.__selected_playlist)
             self.__set_video(video_id)
 
@@ -363,16 +353,16 @@ class MainWindow:
 
             # get the iter where the user is pointing
             try:
-                pointing_treepath = self.treeview_videos.get_path_at_pos(event.x, event.y)[0]
+                pointing_treepath = self.__treeview_videos.get_path_at_pos(event.x, event.y)[0]
             except Exception:
                 return
 
             # if the iter is not in the selected iters, remove the previous selection
-            model, treepaths = self.treeview_selection_videos.get_selected_rows()
+            model, treepaths = self.__treeview_selection_videos.get_selected_rows()
 
             if pointing_treepath not in treepaths:
-                self.treeview_selection_videos.unselect_all()
-                self.treeview_selection_videos.select_path(pointing_treepath)
+                self.__treeview_selection_videos.unselect_all()
+                self.__treeview_selection_videos.select_path(pointing_treepath)
 
             menu = Gtk.Menu()
 
@@ -387,7 +377,7 @@ class MainWindow:
             menuitem.connect('activate', self.__on_menuitem_set_progress, 0)
 
             # Find videos
-            selected_ids = [self.liststore_videos[treepath][VideosListstoreColumnsIndex.id] for treepath in treepaths]
+            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id] for treepath in treepaths]
             if self.__selected_playlist.missing_videos(selected_ids):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.search)
                 menuitem.connect('activate', self.__playlist_find_videos, selected_ids)
@@ -405,7 +395,7 @@ class MainWindow:
 
             # Open the containing folder (only if the user selected one video)
             if selection_length == 1:
-                video_id = self.liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
+                video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
                 video = self.__selected_playlist.get_video(video_id)
 
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.open_dir)
@@ -438,44 +428,44 @@ class MainWindow:
 
     def on_checkbox_hide_number_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.column_number.set_visible(not state)
+        self.__column_number.set_visible(not state)
         self.__ccp.write('hide_video_number', state)
 
     def on_checkbox_hide_path_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.column_path.set_visible(not state)
+        self.__column_path.set_visible(not state)
         self.__ccp.write('hide_video_path', state)
 
     def on_checkbox_hide_name_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.column_name.set_visible(not state)
+        self.__column_name.set_visible(not state)
         self.__ccp.write('hide_video_name', state)
 
     def on_checkbox_hide_extension_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.column_extension.set_visible(not state)
+        self.__column_extension.set_visible(not state)
         self.__ccp.write('hide_video_extension', state)
 
     def on_checkbox_hide_progress_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.column_progress.set_visible(not state)
+        self.__column_progress.set_visible(not state)
         self.__ccp.write('hide_video_progress', state)
 
     def on_checkbox_hide_warning_missing_playlist_toggled(self, *_):
         self.__ccp.write(GlobalConfigTags.checkbox_missing_playlist_warning,
-                         self.checkbox_hide_warning_missing_playlist.get_active())
+                         self.__checkbox_hide_warning_missing_playlist.get_active())
 
     def on_checkbox_hidden_items_toggled(self, *_):
-        self.__ccp.write(GlobalConfigTags.checkbox_hidden_videos, self.checkbox_hidden_items.get_active())
+        self.__ccp.write(GlobalConfigTags.checkbox_hidden_videos, self.__checkbox_hidden_items.get_active())
         self.__liststore_videos_populate()
 
     def on_menuitem_about_activate(self, *_):
-        _ = self.window_about.run()
-        self.window_about.hide()
+        _ = self.__window_about.run()
+        self.__window_about.hide()
 
     def on_menuitem_playlist_activate(self, *_):
-        model, treepaths = self.treeview_selection_playlist.get_selected_rows()
-        self.menuitem_playlist_settings.set_sensitive(len(treepaths) > 0)
+        model, treepaths = self.__treeview_selection_playlist.get_selected_rows()
+        self.__menuitem_playlist_settings.set_sensitive(len(treepaths) > 0)
 
     def on_menuitem_playlist_new_activate(self, *_):
         new_playlist = Playlist()
@@ -493,13 +483,13 @@ class MainWindow:
             playlist_name = new_playlist.get_name()
             self.__playlist_dict[playlist_name] = new_playlist
 
-            if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
+            if os.path.exists(new_playlist.get_data_path()) or not self.__checkbox_hide_missing_playlist.get_active():
                 pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
-                self.liststore_playlist.append([pixbuf, playlist_name, new_playlist.get_progress()])
+                self.__liststore_playlist.append([pixbuf, playlist_name, new_playlist.get_progress()])
 
-                for i, row in enumerate(self.liststore_playlist):
+                for i, row in enumerate(self.__liststore_playlist):
                     if row[1] == playlist_name:
-                        self.treeview_playlist.set_cursor(i)
+                        self.__treeview_playlist.set_cursor(i)
                         break
 
     def on_menuitem_playlist_settings_activate(self, *_):
@@ -524,12 +514,12 @@ class MainWindow:
             if os.path.exists(self.__selected_playlist.get_save_path()):
                 os.remove(self.__selected_playlist.get_save_path())
 
-            gtk_utils.treeview_selection_remove_first_row(self.treeview_selection_playlist)
+            gtk_utils.treeview_selection_remove_first_row(self.__treeview_selection_playlist)
 
-            if len(self.liststore_playlist) > 0:
-                self.treeview_playlist.set_cursor(0)
+            if len(self.__liststore_playlist) > 0:
+                self.__treeview_playlist.set_cursor(0)
             else:
-                self.liststore_videos.clear()
+                self.__liststore_videos.clear()
 
             return
 
@@ -539,18 +529,18 @@ class MainWindow:
 
         # Update the icon
         pixbuf = Pixbuf.new_from_file_at_size(self.__selected_playlist.get_icon_path(), -1, 30)
-        gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist,
+        gtk_utils.treeview_selection_set_first_cell(self.__treeview_selection_playlist,
                                                     PlaylistListstoreColumnsIndex.icon,
                                                     pixbuf)
 
         # Update the name
-        old_name = gtk_utils.treeview_selection_get_first_cell(self.treeview_selection_playlist,
+        old_name = gtk_utils.treeview_selection_get_first_cell(self.__treeview_selection_playlist,
                                                                PlaylistListstoreColumnsIndex.name)
 
         if self.__selected_playlist.get_name() != old_name:
             self.__playlist_dict.pop(old_name)
             self.__playlist_dict[self.__selected_playlist.get_name()] = self.__selected_playlist
-            gtk_utils.treeview_selection_set_first_cell(self.treeview_selection_playlist,
+            gtk_utils.treeview_selection_set_first_cell(self.__treeview_selection_playlist,
                                                         PlaylistListstoreColumnsIndex.name,
                                                         self.__selected_playlist.get_name())
 
@@ -599,13 +589,13 @@ class MainWindow:
 
         if video is None:
             if not ignore_none:
-                gtk_utils.dialog_info(self.window_root, Texts.DialogPlaylist.all_videos_played)
+                gtk_utils.dialog_info(self.__window_root, Texts.DialogPlaylist.all_videos_played)
 
-            self.window_root.unfullscreen()
+            self.__window_root.unfullscreen()
             return
 
         elif not os.path.exists(video.get_path()):
-            gtk_utils.dialog_info(self.window_root, Texts.DialogVideos.missing)
+            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.missing)
             return
 
         #
@@ -635,81 +625,81 @@ class MainWindow:
 
         if len(videos_id) == 1:  # if the user only selected one video to find...
 
-            path = gtk_utils.dialog_select_file(self.window_root)
+            path = gtk_utils.dialog_select_file(self.__window_root)
 
             if path is None:
                 return
 
             found_videos = self.__selected_playlist.find_video(videos_id[0], path)
-            gtk_utils.dialog_info(self.window_root, Texts.DialogVideos.other_found.format(found_videos), None)
+            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.other_found.format(found_videos), None)
 
         else:
 
-            path = gtk_utils.dialog_select_directory(self.window_root)
+            path = gtk_utils.dialog_select_directory(self.__window_root)
 
             if path is None:
                 return
 
             found_videos = self.__selected_playlist.find_videos(path)
-            gtk_utils.dialog_info(self.window_root, Texts.DialogVideos.found_x.format(found_videos), None)
+            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.found_x.format(found_videos), None)
 
         if found_videos > 0:
             self.__liststore_videos_populate()
 
     def __liststore_playlist_set_progress(self, playlist_name, value):
-        for i, row in enumerate(self.liststore_playlist):
+        for i, row in enumerate(self.__liststore_playlist):
             if row[PlaylistListstoreColumnsIndex.name] == playlist_name:
                 if row[PlaylistListstoreColumnsIndex.percent] != value:
-                    self.liststore_playlist[i][PlaylistListstoreColumnsIndex.percent] = value
+                    self.__liststore_playlist[i][PlaylistListstoreColumnsIndex.percent] = value
                 break
 
     def __liststore_playlist_append(self, data):
         """
             I do not understand why this must be a separate method.
-            It is not possible to call directly: GLib.idle_add(self.liststore_playlist.append, data)
+            It is not possible to call directly: GLib.idle_add(self.__liststore_playlist.append, data)
         """
-        self.liststore_playlist.append(data)
+        self.__liststore_playlist.append(data)
 
     def __liststore_playlist_populate(self):
 
         # Populate
         #
-        self.liststore_playlist.clear()
+        self.__liststore_playlist.clear()
 
         for name in sorted(self.__playlist_dict.keys()):
             playlist = self.__playlist_dict[name]
 
-            if os.path.exists(playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
+            if os.path.exists(playlist.get_data_path()) or not self.__checkbox_hide_missing_playlist.get_active():
                 pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(), -1, 30)
-                self.liststore_playlist.append([pixbuf, playlist.get_name(), playlist.get_progress()])
+                self.__liststore_playlist.append([pixbuf, playlist.get_name(), playlist.get_progress()])
 
         # Select the current playlist
         #
         current_playlist_name = self.__ccp.get_str('current_playlist')
 
-        for i, row in enumerate(self.liststore_playlist):
+        for i, row in enumerate(self.__liststore_playlist):
             if row[1] == current_playlist_name:
-                self.treeview_playlist.set_cursor(i)
+                self.__treeview_playlist.set_cursor(i)
                 return
 
-        self.treeview_playlist.set_cursor(0)
+        self.__treeview_playlist.set_cursor(0)
 
     def __liststore_videos_populate(self):
 
         if self.__selected_playlist is None:
             return
 
-        self.liststore_videos.clear()
-        self.column_name.set_spacing(0)
+        self.__liststore_videos.clear()
+        self.__column_name.set_spacing(0)
 
         for video in self.__selected_playlist.get_videos():
-            if not video.get_ignore() or not self.checkbox_hidden_items.get_active():
-                self.liststore_videos.append([self.__get_video_color(video),
-                                              video.get_id(),
-                                              video.get_path(),
-                                              video.get_name(),
-                                              video.get_extension(),
-                                              video.get_progress()])
+            if not video.get_ignore() or not self.__checkbox_hidden_items.get_active():
+                self.__liststore_videos.append([self.__get_video_color(video),
+                                                video.get_id(),
+                                                video.get_path(),
+                                                video.get_name(),
+                                                video.get_extension(),
+                                                video.get_progress()])
 
     def __liststore_videos_select_current(self):
         """
@@ -720,9 +710,9 @@ class MainWindow:
 
         video_id = self.__current_media.get_video_id()
 
-        for i, row in enumerate(self.liststore_videos):
+        for i, row in enumerate(self.__liststore_videos):
             if row[VideosListstoreColumnsIndex.id] == video_id:
-                self.treeview_videos.set_cursor(i)
+                self.__treeview_videos.set_cursor(i)
                 break
 
     def __menu_playlist_display(self, event):
@@ -751,7 +741,6 @@ class MainWindow:
                     playlist_header = f.readline().split('|')
                     playlist_path = f.readline().split('|')
 
-
                 data_path = playlist_path[0].strip()
                 recursive = str_to_boolean(playlist_path[1])
 
@@ -778,9 +767,11 @@ class MainWindow:
 
                 self.__playlist_dict[new_playlist.get_name()] = new_playlist
 
-                if os.path.exists(new_playlist.get_data_path()) or not self.checkbox_hide_missing_playlist.get_active():
+                if os.path.exists(
+                        new_playlist.get_data_path()) or not self.__checkbox_hide_missing_playlist.get_active():
                     pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
-                    GLib.idle_add(self.__liststore_playlist_append, (pixbuf, new_playlist.get_name(), new_playlist.get_progress()))
+                    GLib.idle_add(self.__liststore_playlist_append,
+                                  (pixbuf, new_playlist.get_name(), new_playlist.get_progress()))
 
         #
         #   Select & Load the last playlist that was played
@@ -796,9 +787,9 @@ class MainWindow:
             self.__current_media = CurrentMedia(playlist_data)
 
         playlist_found = False
-        for i, row in enumerate(self.liststore_playlist):
+        for i, row in enumerate(self.__liststore_playlist):
             if row[PlaylistListstoreColumnsIndex.name] == current_playlist_name:
-                GLib.idle_add(self.treeview_playlist.set_cursor, i)
+                GLib.idle_add(self.__treeview_playlist.set_cursor, i)
                 GLib.idle_add(self.__liststore_playlist_set_progress,
                               current_playlist_name,
                               playlist_data.get_progress())
@@ -818,21 +809,20 @@ class MainWindow:
                           playlist.get_name(),
                           playlist.get_progress())
 
-
         #
         #   Select a default playlist if none
         #
         if not playlist_found:
-            GLib.idle_add(self.treeview_playlist.set_cursor, 0)
-            GLib.idle_add(self.window_root.set_sensitive, True)
+            GLib.idle_add(self.__treeview_playlist.set_cursor, 0)
+            GLib.idle_add(self.__window_root.set_sensitive, True)
 
         #
         #   Enable the GUI
         #
-        default_cursor = Gdk.Cursor.new_from_name(self.window_root.get_display(), 'default')
-        GLib.idle_add(self.window_root.get_root_window().set_cursor, default_cursor)
-        GLib.idle_add(self.treeview_playlist.set_sensitive, True)
-        GLib.idle_add(self.menubar.set_sensitive, True)
+        default_cursor = Gdk.Cursor.new_from_name(self.__window_root.get_display(), 'default')
+        GLib.idle_add(self.__window_root.get_root_window().set_cursor, default_cursor)
+        GLib.idle_add(self.__treeview_playlist.set_sensitive, True)
+        GLib.idle_add(self.__menubar.set_sensitive, True)
 
     def __on_media_player_btn_random_toggled(self, _, state):
         self.__current_media.playlist.set_random(state)
@@ -858,30 +848,29 @@ class MainWindow:
                       self.__current_media.playlist.get_progress())
 
         video_id = self.__current_media.get_video_id()
-        for i, row in enumerate(self.liststore_videos):
+        for i, row in enumerate(self.__liststore_videos):
             if row[VideosListstoreColumnsIndex.id] == video_id:
                 if row[VideosListstoreColumnsIndex.progress] != self.__current_media.get_video_progress():
-                    self.liststore_videos[i][VideosListstoreColumnsIndex.progress] = self.__current_media.get_video_progress()
+                    self.__liststore_videos[i][
+                        VideosListstoreColumnsIndex.progress] = self.__current_media.get_video_progress()
                 break
-
 
     def __on_media_player_video_end(self, *_):
         if not self.__current_media.playlist.get_keep_playing():
             self.__media_player.pause()
-            self.window_root.unfullscreen()
+            self.__window_root.unfullscreen()
             return
 
         self.__set_video()
 
-
     def __on_window_root_notify_event(self, *_):
         # Resize the VLC widget
-        _, window_height = self.window_root.get_size()
+        _, window_height = self.__window_root.get_size()
         self.__paned.set_position(window_height / 2)
 
     def __on_window_root_configure_event(self, *_):
 
-        if Gdk.WindowState.FULLSCREEN & self.window_root.get_window().get_state():
+        if Gdk.WindowState.FULLSCREEN & self.__window_root.get_window().get_state():
             fullscreen = True
         else:
             fullscreen = False
@@ -890,22 +879,22 @@ class MainWindow:
             self.__is_full_screen = fullscreen
 
             if fullscreen:
-                self.menubar.hide()
-                self.main_paned.hide()
+                self.__menubar.hide()
+                self.__main_paned.hide()
             else:
-                self.menubar.show()
-                self.main_paned.show()
+                self.__menubar.show()
+                self.__main_paned.show()
 
     def __on_menuitem_set_progress(self, _, progress):
 
-        model, treepaths = self.treeview_selection_videos.get_selected_rows()
+        model, treepaths = self.__treeview_selection_videos.get_selected_rows()
 
         if len(treepaths) == 0:
             return
 
         for treepath in treepaths:
-            self.liststore_videos[treepath][VideosListstoreColumnsIndex.progress] = progress
-            video_id = self.liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            self.__liststore_videos[treepath][VideosListstoreColumnsIndex.progress] = progress
+            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id]
             video = self.__selected_playlist.get_video(video_id)
             if progress == 0:
                 video.set_position(0)
@@ -916,19 +905,17 @@ class MainWindow:
                       self.__selected_playlist.get_name(),
                       self.__selected_playlist.get_progress())
 
-
-
     def __on_menuitem_playlist_ignore_video(self, _):
 
-        model, treepaths = self.treeview_selection_videos.get_selected_rows()
+        model, treepaths = self.__treeview_selection_videos.get_selected_rows()
 
         if not treepaths:
             return
 
-        hide_row = self.checkbox_hidden_items.get_active()
+        hide_row = self.__checkbox_hidden_items.get_active()
 
         for treepath in reversed(treepaths):
-            video_id = self.liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id]
             video = self.__selected_playlist.get_video(video_id)
             video.set_ignore(True)
 
@@ -936,24 +923,24 @@ class MainWindow:
                 row_iter = model.get_iter(treepath)
                 model.remove(row_iter)
             else:
-                self.liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__font_hide_color
+                self.__liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__font_hide_color
 
-        self.treeview_selection_videos.unselect_all()
+        self.__treeview_selection_videos.unselect_all()
 
     def __on_menuitem_playlist_dont_ignore_video(self, _):
 
-        model, treepaths = self.treeview_selection_videos.get_selected_rows()
+        model, treepaths = self.__treeview_selection_videos.get_selected_rows()
 
         if not treepaths:
             return
 
         for treepath in treepaths:
-            video_id = self.liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id]
             video = self.__selected_playlist.get_video(video_id)
             video.set_ignore(False)
-            self.liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__get_video_color(video)
+            self.__liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__get_video_color(video)
 
-        self.treeview_selection_videos.unselect_all()
+        self.__treeview_selection_videos.unselect_all()
 
     @staticmethod
     def __on_menuitem_video_open_dir(_, path):
