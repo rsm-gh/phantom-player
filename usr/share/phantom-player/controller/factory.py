@@ -126,8 +126,6 @@ def load_videos(playlist):
             new_video.set_is_new()
             playlist.add_video(new_video)
 
-    playlist.clean_videos()
-
 def __file_is_video(path, forgive_broken_links=False):
     if os.path.islink(path):
         if forgive_broken_links and not os.path.exists(os.path.realpath(path)):
