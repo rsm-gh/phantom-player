@@ -70,7 +70,7 @@ def load_videos(playlist):
             try:
                 position = float(columns[3])
             except Exception:
-                position = 0.0
+                position = VideoPosition.start
                 print("\terror getting the position", columns)
 
             try:
@@ -123,7 +123,7 @@ def load_videos(playlist):
     for video_path in __generate_videos_list_from_directory(playlist.get_data_path(), playlist.get_recursive()):
         if video_path not in playlist_paths:
             new_video = Video(video_path)
-            new_video.set_is_new()
+            new_video.set_is_new(True)
             playlist.add_video(new_video)
 
 def __file_is_video(path, forgive_broken_links=False):

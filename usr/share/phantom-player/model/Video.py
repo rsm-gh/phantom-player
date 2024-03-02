@@ -87,8 +87,8 @@ class Video(object):
     def exists(self):
         return os.path.exists(self.__path)
 
-    def set_is_new(self):
-        self.__is_new = True
+    def set_is_new(self, value):
+        self.__is_new = value
 
     def set_position(self, pos):
         if VideoPosition.end >= pos >= VideoPosition.start:

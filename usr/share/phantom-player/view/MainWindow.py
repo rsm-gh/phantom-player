@@ -19,10 +19,12 @@
 """
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
     + Manage multiple paths into the playlist settings menu.
+    + Add delete episode option (instead of clean)
     + Apply the "load video" methods of the settings dialog into a thread.
     + Fix start at
     + Add option: end at
     + Create a dialog to rename videos.
+    + Create a dialog to find videos?
 """
 
 import os
