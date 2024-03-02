@@ -2,29 +2,29 @@
 ![Player Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview.png)  
 **Your Desktop theme will define the icons and look of the player.*
 
-**Phantom Player** is a Media Player that allows organizing and reproducing lists of videos with comfort.
-It gives the feeling of having a streaming platform with the content of a hard drive.
+**Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive with comfort.
+It is perfect for users who still downloading and seeding torrents.
 
 Some of its major features are:
+
 + Play lists of videos in order or randomly (without repeating videos).
-+ Organize the play order (without affecting the data on your hard drive).
-+ Hide videos or files (without affecting the data on your hard drive).
++ Remember the last played playlist, and the videos progress.
++ Organize the play order.
++ Hide videos or files.
 + Automatically discover new videos.
-+ Start playing lists & videos where you left off.
-+ Set a default time to skip the intro of videos (handy for the playlist intro).
-+ Set the default audio or subtitle track.
++ Set a start/end time to skip the introduction/credits.
++ Set the default audio/subtitle track.
 + Turn off the screensaver while playing.
 + Keep playing mode.
 + Fullscreen mode.
 
-*Note: This software is great for reproducing lists of videos that have been downloaded 
-from torrents. It allows hiding the unnecessary stuff, having multiple sources, keep seeding, 
-discover new downloaded videos, and reproduce everything with comfort !*
+*Note: When organizing the playlists and videos, the software will never modify 
+any of the hard-drive content.*
 
 ## How to Install
 
 1. Download the [stable branch](https://github.com/rsm-gh/phantom-player/archive/master.zip).
-2. Install the dependencies:
+2. Install the dependencies:[README.md](README.md)
     * Debian based distributions: `apt-get install python3 python3-vlc libgtk-3-0 gir1.2-webkit2-3.0`.
     * ArchLinux: `pacman -Suy python python-vlc gtk3`.
 
@@ -49,7 +49,7 @@ discover new downloaded videos, and reproduce everything with comfort !*
 + Turn to fullscreen with the F11 key or with the button from the media player.
 + Turn off the fullscreen with the Esc key or with the button from the media player.
 + Change the volume with the mouse wheel or the up/down arrows**.
-+ Toggle Pause/Play with a left-click or the space bar**.
++ Toggle Play/Pause with a left-click, the space bar or the enter key**.
 + Change the subtitles or the audio track with the button from the media player.
 + Resize the player by grabbing the separator with and moving it up or down.
 
