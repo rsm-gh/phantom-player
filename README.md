@@ -1,6 +1,6 @@
 
 ![Player Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview.png)  
-**Your Desktop theme will define the icons and look of the player.*
+<sub><sup>*The Desktop theme defines the look and the icons of the player.</sup></sub>
 
 **Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive with comfort.
 It is perfect for users who still downloading and seeding torrents.
@@ -18,7 +18,7 @@ Some of its major features are:
 + Keep playing mode.
 + Fullscreen mode.
 
-*Note: When organizing the playlists and videos, the software will never modify 
+**When organizing the playlists and videos, the software will never modify 
 any of the hard-drive content.*
 
 ## How to Install
@@ -30,8 +30,8 @@ any of the hard-drive content.*
 
 3. Execute the setup file.
 
-**If the dependencies are satisfied, the software can be directly launched, the installation is not mandatory.*  
-***Currently I'm working to create the version 2.0. When I finish, I'll create some packages for popular distributions & windows.*  
+**If the dependencies are satisfied, the software can be directly executed, the installation is not mandatory.*  
+**When the version 2 be released, I will create some packages for popular distributions & windows.* 
 
 ## Controls
 
