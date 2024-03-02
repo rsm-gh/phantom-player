@@ -2,8 +2,8 @@
 ![Player Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview.png)  
 <sub><sup>*The Desktop theme defines the look and the icons of the player.</sup></sub>
 
-**Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive with comfort.
-It is perfect for users who still downloading and seeding torrents.
+**Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive,
+and it is particularly useful for users who still downloading torrents.
 
 Some of its major features are:
 
