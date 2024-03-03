@@ -18,9 +18,40 @@
 
 import os
 import sys
+import gi
 
 _PROJECT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, _PROJECT_DIR)
 
-from view.MainWindow import run
-run()
+os.environ["GDK_BACKEND"] = "x11"
+
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+
+from view.PhantomPlayer import PhantomPlayer
+
+
+class PhantomApp(Gtk.Application):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.__phantom_player = None
+
+    def do_activate(self):
+        active_window = self.props.active_window
+        if active_window:
+            active_window.present()
+        else:
+            self.__phantom_player = PhantomPlayer(application=self)
+            self.__phantom_player.present()
+
+    def close(self):
+        if self.__phantom_player is None:
+            return
+
+        self.__phantom_player.join()
+        self.__phantom_player.save()
+
+
+app = PhantomApp(application_id="com.senties-martinelli.PhantomPlayer")
+app.run(sys.argv)
+app.close()
