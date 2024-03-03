@@ -46,17 +46,17 @@ from threading import Thread, current_thread
 
 os.environ["GDK_BACKEND"] = "x11"
 
-gi.require_version('Gtk', '3.0')
-gi.require_version('GdkX11', '3.0')
-from gi.repository import Gtk, GObject, Gdk, GLib
+gi.require_version('Gtk', '4.0')
+gi.require_version('GdkX11', '4.0')
+from gi.repository import Gtk, GObject, Gdk, GLib, GdkX11
 
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
 sys.path.insert(0, _PROJECT_DIR)
 
-from Paths import *
-from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from view.gtk_utils import set_css
+from view.VLCWidget import VLCWidget, VLC_INSTANCE
+from Paths import _ICON_LOGO_SMALL, _HOME_DIR
 from system_utils import EventCodes, turn_off_screensaver
 
 _EMPTY__VIDEO_LENGTH = "00:00"
@@ -160,11 +160,12 @@ class CustomSignals:
     btn_keep_playing_toggled = 'btn-keep-playing-clicked'
 
 
-class MediaPlayerWidget(Gtk.VBox):
+class MediaPlayerWidget(Gtk.Box):
     __gtype_name__ = 'MediaPlayerWidget'
 
     def __init__(self,
                  root_window,
+                 application,
                  random_button=False,
                  keep_playing_button=False,
                  un_max_fixed_toolbar=True,
@@ -172,6 +173,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         super().__init__()
 
+        self.__app = application
         self.__root_window = root_window
         self.__motion_time = time()
         self.__scale_progress_pressed = False
@@ -182,15 +184,11 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
         self.__widgets_shown = WidgetsShown.toolbox
 
-        display = self.get_display()
-        self.__empty_cursor = Gdk.Cursor.new_from_name(display, 'none')
-        self.__default_cursor = Gdk.Cursor.new_from_name(display, 'default')
-
         self.__overlay = Gtk.Overlay()
-        self.pack_start(self.__overlay, expand=True, fill=True, padding=0)
+        self.append(self.__overlay)
 
-        self.__vlc_widget = VLCWidget()
-        self.__overlay.add(self.__vlc_widget)
+        self.__vlc_widget = VLCWidget(application)
+        self.__overlay.set_child(self.__vlc_widget)
 
         if un_max_fixed_toolbar:
             # It is important to add the motion_notify to the root_window,
@@ -198,16 +196,17 @@ class MediaPlayerWidget(Gtk.VBox):
             event_widget = self.__root_window
         else:
             event_widget = self.__vlc_widget
-        event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
-        event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
-        self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
+        #event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
+        #event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
-        self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
-        self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
+        #self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        #self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
 
-        self.__root_window.connect('key-press-event', self.__on_key_pressed)
+        #self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
+        #self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
+
+        #self.__root_window.connect('key-press-event', self.__on_key_pressed)
 
         # Style
         if css_style is None:
@@ -222,34 +221,34 @@ scale, label, box {
         self.__buttons_box.set_halign(Gtk.Align.FILL)
         self.__buttons_box.set_sensitive(False)
 
-        self.__toolbutton_previous = Gtk.ToolButton()
+        self.__toolbutton_previous = Gtk.ToggleButton()
         self.__toolbutton_previous.set_icon_name(ThemeButtons.previous)
         self.__toolbutton_previous.connect('clicked', self.__on_toolbutton_restart_clicked)
-        self.__buttons_box.pack_start(self.__toolbutton_previous, expand=False, fill=False, padding=3)
+        self.__buttons_box.append(self.__toolbutton_previous)
 
-        self.__toolbutton_play = Gtk.ToolButton()
+        self.__toolbutton_play = Gtk.ToggleButton()
         self.__toolbutton_play.set_icon_name(ThemeButtons.play)
         self.__toolbutton_play.connect('clicked', self.__on_toolbutton_play_clicked)
-        self.__buttons_box.pack_start(self.__toolbutton_play, expand=False, fill=False, padding=3)
+        self.__buttons_box.append(self.__toolbutton_play)
 
-        self.__toolbutton_next = Gtk.ToolButton()
+        self.__toolbutton_next = Gtk.ToggleButton()
         self.__toolbutton_next.set_icon_name(ThemeButtons.next)
         self.__toolbutton_next.connect('clicked', self.__on_toolbutton_end_clicked)
-        self.__buttons_box.pack_start(self.__toolbutton_next, expand=False, fill=False, padding=3)
+        self.__buttons_box.append(self.__toolbutton_next)
 
         self.__scale_progress = Gtk.Scale()
         self.__scale_progress.set_range(0, 1)
         self.__scale_progress.set_draw_value(False)
         self.__scale_progress.set_hexpand(True)
-        self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
-        self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
+        #self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
+        #self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
         self.__scale_progress.connect('value_changed', self.__on_scale_progress_changed)
-        self.__buttons_box.pack_start(child=self.__scale_progress, expand=True, fill=True, padding=3)
+        self.__buttons_box.append(child=self.__scale_progress)
 
         self.__label_progress = Gtk.Label()
         self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
         self.__label_progress.set_margin_end(5)
-        self.__buttons_box.pack_start(self.__label_progress, expand=False, fill=False, padding=3)
+        self.__buttons_box.append(self.__label_progress)
 
         if keep_playing_button:
             self.__toggletoolbutton_keep_playing = Gtk.ToggleToolButton()
@@ -268,10 +267,10 @@ scale, label, box {
             self.__toggletoolbutton_random = None
 
         self.__menubutton_settings = Gtk.MenuButton()
-        self.__menubutton_settings.set_relief(Gtk.ReliefStyle.NONE)
-        self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons.settings, Gtk.IconSize.BUTTON))
+        #self.__menubutton_settings.set_relief(Gtk.ReliefStyle.NONE)
+        #self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons.settings, Gtk.IconSize.BUTTON))
         self.__menubutton_settings.set_direction(Gtk.ArrowType.UP)
-        self.__buttons_box.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
+        self.__buttons_box.append(self.__menubutton_settings)
 
         self.__volumebutton = Gtk.VolumeButton()
         self.__volumebutton.set_icons(ThemeButtons.volume)
@@ -279,12 +278,12 @@ scale, label, box {
         # this is being called when the button is pressed, not the scale...
         # self.__volumebutton.connect('button-press-event', self.__on_scale_volume_press)
         # self.__volumebutton.connect('button-release-event', self.__on_scale_volume_release)
-        self.__buttons_box.pack_start(self.__volumebutton, expand=False, fill=False, padding=3)
+        self.__buttons_box.append(self.__volumebutton)
 
-        self.__toolbutton_fullscreen = Gtk.ToolButton()
+        self.__toolbutton_fullscreen = Gtk.ToggleButton()
         self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
         self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
-        self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
+        self.__buttons_box.append(self.__toolbutton_fullscreen)
 
         set_css(self.__buttons_box, css_style)
 
@@ -427,7 +426,7 @@ scale, label, box {
         GLib.idle_add(self.__root_window.set_title, media_title)
         GLib.idle_add(self.play)
 
-        GLib.timeout_add_seconds(.5, self.__populate_settings_menubutton)
+        #GLib.timeout_add_seconds(.5, self.__populate_settings_menubutton)
         if audio_track != 0:
             GLib.timeout_add_seconds(.5, self.__vlc_widget.player.audio_set_track, audio_track)
 
@@ -585,12 +584,6 @@ scale, label, box {
 
         menu.show_all()
 
-    def __set_cursor_empty(self):
-        self.get_window().set_cursor(self.__empty_cursor)
-
-    def __set_cursor_default(self):
-        self.get_window().set_cursor(self.__default_cursor)
-
     def __set_fullscreen(self, fullscreen):
 
         if self.__un_maximized_fixed_toolbar:
@@ -607,7 +600,7 @@ scale, label, box {
             self.__root_window.unfullscreen()
             self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
             if self.__un_maximized_fixed_toolbar:
-                self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
+                self.append(self.__buttons_box)
 
     def __on_thread_scan(self):
         """
@@ -690,7 +683,7 @@ scale, label, box {
                      (self.__hidden_controls is False and self.get_media()))):
 
                 GLib.idle_add(self.__label_volume.hide)
-                GLib.idle_add(self.__set_cursor_empty)
+                GLib.idle_add(self.set_cursor, Gdk.Cursor.new_from_name('none'))
 
                 if fullscreen in (True, None):
                     self.__widgets_shown = WidgetsShown.none
@@ -734,7 +727,7 @@ scale, label, box {
             self.__hidden_controls = False
             self.__widgets_shown = WidgetsShown.toolbox
             self.__buttons_box.show()
-            self.__set_cursor_default()
+            self.set_cursor(Gdk.Cursor.new_from_name('default'))
 
     def __on_mouse_scroll(self, _, event):
 
@@ -805,6 +798,8 @@ scale, label, box {
 
     def __window_is_fullscreen(self):
 
+        return False
+
         window = self.__root_window.get_window()
 
         if window is None:
@@ -855,15 +850,21 @@ scale, label, box {
 class MediaPlayer(Gtk.Window):
     """ This class creates a media player built in a Gtk.Window """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, app):
+        super().__init__(application=app)
 
-        self.__media_player_widget = MediaPlayerWidget(self)
-        self.add(self.__media_player_widget)
-        self.connect('delete-event', self.quit)
+        #self.__media_player_widget = MediaPlayerWidget(self, application=app)
+        #self.set_child(self.__media_player_widget)
+        #self.connect('delete-event', self.quit)
 
         self.set_size_request(600, 300)
-        self.show_all()
+        self.show()
+
+        GdkX11.
+
+        #xid = GdkX11.X11Window.get_xid(self)
+
+
 
     def quit(self, *_):
         self.__media_player_widget.quit()
@@ -875,8 +876,13 @@ class MediaPlayer(Gtk.Window):
                                              play=True)
 
 
+def on_activate(app):
+    player = MediaPlayer(app)
+    player.play_video('/media/cadweb/media/Ink Master/Ink.Master.S15E10.1080p.WEB.h264-EDITH[EZTVx.to].mkv')
+    player.present()
+
 if __name__ == '__main__':
-    player = MediaPlayer()
-    player.play_video('/home/cadweb/Downloads/Torrents/InkMaster/Ink.Master.S15E03.1080p.HEVC.x265-MeGusta[eztv.re].mkv')
-    Gtk.main()
+    app = Gtk.Application(application_id='MediaPlayerApplication')
+    app.connect('activate', on_activate)
+    app.run(None)
     VLC_INSTANCE.release()

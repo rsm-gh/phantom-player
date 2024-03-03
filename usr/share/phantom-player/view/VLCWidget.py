@@ -28,8 +28,9 @@ import ctypes
 
 os.environ["GDK_BACKEND"] = "x11"
 
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+gi.require_version('Gtk', '4.0')
+gi.require_version('GdkX11', '4.0')
+from gi.repository import Gtk, Gdk
 
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 _PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
@@ -45,11 +46,12 @@ else:
 class VLCWidget(Gtk.DrawingArea):
     __gtype_name__ = 'VLCWidget'
 
-    def __init__(self):
+    def __init__(self, application):
         super().__init__()
+        self.__app = application
         self.player = VLC_INSTANCE.media_player_new()
         self.connect('realize', self.__on_realize)
-        self.connect("draw", self.__on_draw)
+        #self.connect("draw", self.__on_draw)
 
     def __on_realize(self, *_):
 
@@ -67,7 +69,17 @@ class VLCWidget(Gtk.DrawingArea):
             self.player.set_nsobject(get_nsview(self.get_window_pointer(self.get_window())))
 
         else:
-            self.player.set_xwindow(self.get_window().get_xid())
+
+
+
+            window = self.__app.get_active_window()
+            print(window)
+
+            window_id = window.get_xid()
+
+            print(window, window_id)
+
+            self.player.set_xwindow(window_id)
 
         return True
 

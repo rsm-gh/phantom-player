@@ -20,9 +20,9 @@
 import gi
 import os
 
-gi.require_version('Gtk', '3.0')
-gi.require_version('GdkX11', '3.0')
-from gi.repository import Gtk, GObject, Gdk
+gi.require_version('Gtk', '4.0')
+gi.require_version('GdkX11', '4.0')
+from gi.repository import Gtk, Gdk
 
 from Texts import Texts
 from Paths import _ICON_LOGO_SMALL
