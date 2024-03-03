@@ -187,7 +187,7 @@ class MediaPlayerWidget(Gtk.Box):
         self.__overlay = Gtk.Overlay()
         self.append(self.__overlay)
 
-        self.__vlc_widget = VLCWidget(application)
+        self.__vlc_widget = VLCWidget(self.__root_window)
         self.__overlay.set_child(self.__vlc_widget)
 
         if un_max_fixed_toolbar:
@@ -853,17 +853,12 @@ class MediaPlayer(Gtk.Window):
     def __init__(self, app):
         super().__init__(application=app)
 
-        #self.__media_player_widget = MediaPlayerWidget(self, application=app)
-        #self.set_child(self.__media_player_widget)
+        self.__media_player_widget = MediaPlayerWidget(self, application=app)
+        self.set_child(self.__media_player_widget)
         #self.connect('delete-event', self.quit)
 
         self.set_size_request(600, 300)
         self.show()
-
-        GdkX11.
-
-        #xid = GdkX11.X11Window.get_xid(self)
-
 
 
     def quit(self, *_):

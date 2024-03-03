@@ -46,9 +46,9 @@ else:
 class VLCWidget(Gtk.DrawingArea):
     __gtype_name__ = 'VLCWidget'
 
-    def __init__(self, application):
+    def __init__(self, parent):
         super().__init__()
-        self.__app = application
+        self.parent = parent
         self.player = VLC_INSTANCE.media_player_new()
         self.connect('realize', self.__on_realize)
         #self.connect("draw", self.__on_draw)
@@ -69,17 +69,9 @@ class VLCWidget(Gtk.DrawingArea):
             self.player.set_nsobject(get_nsview(self.get_window_pointer(self.get_window())))
 
         else:
-
-
-
-            window = self.__app.get_active_window()
-            print(window)
-
-            window_id = window.get_xid()
-
-            print(window, window_id)
-
-            self.player.set_xwindow(window_id)
+            surface = Gtk.Native.get_surface(self.parent)
+            print(surface.get_xid())
+            self.player.set_xwindow(surface.get_xid())
 
         return True
 
