@@ -90,9 +90,9 @@ class GlobalConfigTags:
     checkbox_hide_missing_playlist = "hide-missing-playlist"
 
 
-class MainWindow:
+class PhantomPlayer:
 
-    def __init__(self, dark_mode=False):
+    def __init__(self, application=None, dark_mode=False):
 
         self.__playlist_new = None
         self.__playlist_selected = None
@@ -211,6 +211,8 @@ class MainWindow:
         #
         #    Configuration
         #
+        if application is not None:
+            self.__window_root.set_application(application)
 
         self.__settings_dialog = SettingsDialog(self.__window_root)
 
@@ -252,6 +254,10 @@ class MainWindow:
         th.start()
         self.__threads.append(th)
 
+    def present(self):
+        self.__window_root.present()
+
+
     def join(self):
         for th in self.__threads:
             th.join()
@@ -265,7 +271,7 @@ class MainWindow:
 
     def quit(self, *_):
         self.__media_player.quit()
-        Gtk.main_quit()
+        VLC_INSTANCE.release()
 
     def __get_video_color(self, video):
         if video.get_ignore():
@@ -943,11 +949,3 @@ class MainWindow:
         state = checkbox.get_active()
         self.__column_progress.set_visible(not state)
         self.__configuration.write('hide_video_progress', state)
-
-
-def run():
-    player = MainWindow()
-    Gtk.main()
-    player.join()
-    player.save()
-    VLC_INSTANCE.release()
