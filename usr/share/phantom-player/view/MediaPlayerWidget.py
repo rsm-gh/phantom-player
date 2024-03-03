@@ -37,23 +37,14 @@
 """
 
 import os
-import gi
 import vlc
 import sys
 from time import time, sleep
 from datetime import timedelta
 from threading import Thread, current_thread
+from gi.repository import Gtk, GObject, Gdk, GLib
 
-os.environ["GDK_BACKEND"] = "x11"
-
-gi.require_version('Gtk', '4.0')
-gi.require_version('GdkX11', '4.0')
-from gi.repository import Gtk, GObject, Gdk, GLib, GdkX11
-
-_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-_PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
-sys.path.insert(0, _PROJECT_DIR)
-
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from view.gtk_utils import set_css
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from Paths import _ICON_LOGO_SMALL, _HOME_DIR
@@ -845,39 +836,3 @@ scale, label, box {
             video_time = widget.get_value() * self.__media.get_duration()
             video_time = format_milliseconds_to_time(video_time)
             self.__label_progress.set_text(video_time + " / " + self.__video_length)
-
-
-class MediaPlayer(Gtk.Window):
-    """ This class creates a media player built in a Gtk.Window """
-
-    def __init__(self, app):
-        super().__init__(application=app)
-
-        self.__media_player_widget = MediaPlayerWidget(self, application=app)
-        self.set_child(self.__media_player_widget)
-        #self.connect('delete-event', self.quit)
-
-        self.set_size_request(600, 300)
-        self.show()
-
-
-    def quit(self, *_):
-        self.__media_player_widget.quit()
-        Gtk.main_quit()
-
-    def play_video(self, path):
-        self.__media_player_widget.set_video(path,
-                                             position=.1,
-                                             play=True)
-
-
-def on_activate(app):
-    player = MediaPlayer(app)
-    player.play_video('/home/cadweb/Documents/Backup/VHS  EVENTOS ARETE 1998 1999  PARTE 2.mpg')
-    player.present()
-
-if __name__ == '__main__':
-    APP = Gtk.Application(application_id='com.senties-martinelli.MediaPlayer')
-    APP.connect('activate', on_activate)
-    APP.run(None)
-    VLC_INSTANCE.release()

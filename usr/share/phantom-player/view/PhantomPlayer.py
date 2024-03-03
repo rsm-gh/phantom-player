@@ -32,11 +32,6 @@ import os
 import gi
 import sys
 from threading import Thread
-
-os.environ["GDK_BACKEND"] = "x11"
-
-gi.require_version('Gtk', '3.0')
-gi.require_version('WebKit2', '4.0')
 from gi.repository import Gtk, Gdk, GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
@@ -55,7 +50,7 @@ from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
 from view.SettingsDialog import SettingsDialog
 from view.SettingsDialog import ResponseType as SettingsDialogResponse
-from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
+from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
 
 _DARK_CSS = """
 @define-color theme_text_color white;
