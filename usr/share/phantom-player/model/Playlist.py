@@ -22,6 +22,7 @@ import shutil
 import random
 
 from Paths import _ICON_LOGO_MEDIUM, _SERIES_DIR
+from model.Video import VideoPosition
 
 class Playlist(object):
 
@@ -85,7 +86,7 @@ class Playlist(object):
 
     def restart(self):
         for video in self.__videos_instances:
-            video.set_position(0)
+            video.set_position(VideoPosition.start)
 
         self.save()
 
