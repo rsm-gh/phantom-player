@@ -32,7 +32,7 @@ sys.path.insert(0, _PROJECT_DIR)
 from Paths import *
 from Texts import Texts
 from view import gtk_utils
-from controller import factory
+from controller import factory_video
 
 
 class ResponseType:
@@ -242,7 +242,7 @@ class SettingsDialog:
         self.__button_path_reload_all.set_sensitive(True)
 
         self.__playlist.set_data_path(path)
-        factory.load_videos(self.__playlist)
+        factory_video.load(self.__playlist)
 
     def __on_button_path_remove_clicked(self, *_):
         pass
@@ -257,10 +257,10 @@ class SettingsDialog:
         self.__liststore_paths.append([path, False])
 
         self.__playlist.set_data_path(path)
-        factory.load_videos(self.__playlist)
+        factory_video.load(self.__playlist)
 
     def __on_button_path_reload_all_clicked(self, *_):
-        factory.load_videos(self.__playlist)
+        factory_video.load(self.__playlist)
 
     def __on_cellrenderertoggle_recursive_toggled(self, _, row):
         state = not self.__liststore_paths[row][1]

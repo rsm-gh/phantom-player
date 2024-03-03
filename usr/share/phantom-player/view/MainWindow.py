@@ -47,9 +47,9 @@ sys.path.insert(0, _PROJECT_DIR)
 from Paths import _SERIES_DIR, _CONF_FILE
 from Texts import Texts
 from view import gtk_utils
-from controller import factory
 from controller.CCParser import CCParser
-from controller.factory import str_to_boolean
+from controller import factory_video
+from controller import factory_playlist
 from model.Playlist import Playlist
 from model.CurrentMedia import CurrentMedia
 from system_utils import EventCodes, open_directory
@@ -105,7 +105,6 @@ class MainWindow:
 
         self.__configuration = CCParser(_CONF_FILE, 'phantom-player')
 
-
         #
         #   GTK style
         #
@@ -126,7 +125,6 @@ class MainWindow:
 
         _, self.__font_new_color = gtk_utils.get_default_color('success_color',
                                                                on_error="#009933")
-
 
         #
         #   GTK objects
@@ -176,7 +174,8 @@ class MainWindow:
         self.__menuitem_playlist_new.connect("activate", self.__on_menuitem_playlist_new_activate)
         self.__menuitem_playlist_settings.connect("activate", self.__on_menuitem_playlist_settings_activate)
         self.__menuitem_about.connect("activate", self.__on_menuitem_about_activate)
-        self.__checkbox_hide_warning_missing_playlist.connect('toggled', self.__on_checkbox_hide_warning_missing_playlist_toggled)
+        self.__checkbox_hide_warning_missing_playlist.connect('toggled',
+                                                              self.__on_checkbox_hide_warning_missing_playlist_toggled)
         self.__checkbox_hide_missing_playlist.connect('toggled', self.__on_checkbox_hide_missing_playlist_toggled)
         self.__checkbox_hidden_items.connect('toggled', self.__on_checkbox_hidden_items_toggled)
         self.__checkbox_hide_number.connect('toggled', self.__on_checkbox_hide_number_toggled)
@@ -188,7 +187,6 @@ class MainWindow:
         self.__treeview_videos.connect('drag-end', self.__on_treeview_videos_drag_end)
         self.__treeview_videos.connect('button-press-event', self.__on_treeview_videos_press_event)
         self.__treeselection_playlist.connect('changed', self.__on_treeselection_playlist_changed)
-
 
         #
         #    Media Player
@@ -216,7 +214,6 @@ class MainWindow:
 
         self.__settings_dialog = SettingsDialog(self.__window_root)
 
-
         self.__checkbox_hide_warning_missing_playlist.set_active(
             self.__configuration.get_bool(GlobalConfigTags.checkbox_missing_playlist_warning))
         self.__checkbox_hidden_items.set_active(
@@ -229,7 +226,6 @@ class MainWindow:
         self.__checkbox_hide_name.set_active(self.__configuration.get_bool('hide_video_name'))
         self.__checkbox_hide_extension.set_active(self.__configuration.get_bool('hide_video_extension'))
         self.__checkbox_hide_progress.set_active(self.__configuration.get_bool('hide_video_progress'))
-
 
         #
         #    Display the window
@@ -427,7 +423,7 @@ class MainWindow:
 
         menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemPlaylist.settings)
         menu.append(menuitem)
-        menuitem.connect('activate', self.on_menuitem_playlist_settings_activate)
+        menuitem.connect('activate', self.__on_menuitem_playlist_settings_activate)
 
         menu.show_all()
         menu.popup(None, None, None, None, event.button, event.time)
@@ -441,35 +437,7 @@ class MainWindow:
                 if not file_name.lower().endswith('.csv'):
                     continue
 
-                file_path = os.path.join(_SERIES_DIR, file_name)
-
-                with open(file_path, mode='rt', encoding='utf-8') as f:
-                    playlist_header = f.readline().split('|')
-                    playlist_path = f.readline().split('|')
-
-                data_path = playlist_path[0].strip()
-                recursive = str_to_boolean(playlist_path[1])
-
-                random = str_to_boolean(playlist_header[0])
-                keep_playing = str_to_boolean(playlist_header[1])
-                start_at = float(playlist_header[2])
-                audio_track = int(playlist_header[3])
-                subtitles_track = int(playlist_header[4])
-
-                try:
-                    icon_extension = playlist_header[5].strip()
-                except Exception:
-                    icon_extension = ""
-
-                new_playlist = Playlist(file_name,
-                                        data_path,
-                                        icon_extension,
-                                        recursive,
-                                        random,
-                                        keep_playing,
-                                        start_at,
-                                        audio_track,
-                                        subtitles_track)
+                new_playlist = factory_playlist.load_from_file(os.path.join(_SERIES_DIR, file_name))
 
                 self.__playlists[new_playlist.get_name()] = new_playlist
 
@@ -477,7 +445,9 @@ class MainWindow:
                         new_playlist.get_data_path()) or not self.__checkbox_hide_missing_playlist.get_active():
                     pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
                     GLib.idle_add(self.__liststore_playlist_append,
-                                  (pixbuf, new_playlist.get_name(), new_playlist.get_progress()))
+                                  (pixbuf,
+                                   new_playlist.get_name(),
+                                   new_playlist.get_progress()))
 
         #
         #   Select & Load the last playlist that was played
@@ -489,7 +459,7 @@ class MainWindow:
         except KeyError:
             playlist_data = None
         else:
-            factory.load_videos(playlist_data)
+            factory_video.load(playlist_data)
             self.__current_media = CurrentMedia(playlist_data)
 
         playlist_found = False
@@ -509,7 +479,7 @@ class MainWindow:
             if playlist_data is not None and playlist.get_name() == playlist_data.get_name():
                 continue
 
-            factory.load_videos(playlist)
+            factory_video.load(playlist)
 
             GLib.idle_add(self.__liststore_playlist_set_progress,
                           playlist.get_name(),
@@ -530,7 +500,6 @@ class MainWindow:
         GLib.idle_add(self.__treeview_playlist.set_sensitive, True)
         GLib.idle_add(self.__menubar.set_sensitive, True)
         self.__playlists_loaded = True
-
 
     def __on_window_root_notify_event(self, *_):
         # Resize the VLC widget
@@ -553,7 +522,6 @@ class MainWindow:
             else:
                 self.__menubar.show()
                 self.__main_paned.show()
-
 
     def __on_media_player_btn_random_toggled(self, _, state):
         self.__current_media.playlist.set_random(state)
@@ -842,19 +810,19 @@ class MainWindow:
         # Update the icon
         pixbuf = Pixbuf.new_from_file_at_size(self.__playlist_selected.get_icon_path(), -1, 30)
         gtk_utils.treeselection_set_first_cell(self.__treeselection_playlist,
-                                                    PlaylistListstoreColumnsIndex.icon,
-                                                    pixbuf)
+                                               PlaylistListstoreColumnsIndex.icon,
+                                               pixbuf)
 
         # Update the name
         old_name = gtk_utils.treeselection_get_first_cell(self.__treeselection_playlist,
-                                                               PlaylistListstoreColumnsIndex.name)
+                                                          PlaylistListstoreColumnsIndex.name)
 
         if self.__playlist_selected.get_name() != old_name:
             self.__playlists.pop(old_name)
             self.__playlists[self.__playlist_selected.get_name()] = self.__playlist_selected
             gtk_utils.treeselection_set_first_cell(self.__treeselection_playlist,
-                                                        PlaylistListstoreColumnsIndex.name,
-                                                        self.__playlist_selected.get_name())
+                                                   PlaylistListstoreColumnsIndex.name,
+                                                   self.__playlist_selected.get_name())
 
         # Update the media player
         if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
@@ -876,7 +844,6 @@ class MainWindow:
                 self.__set_video()
 
         self.__liststore_videos_populate()
-
 
     def __on_menuitem_set_progress(self, _, progress):
 
@@ -940,7 +907,6 @@ class MainWindow:
         if os.path.exists(path):
             open_directory(path)
 
-
     def __on_checkbox_hide_warning_missing_playlist_toggled(self, *_):
         self.__configuration.write(GlobalConfigTags.checkbox_missing_playlist_warning,
                                    self.__checkbox_hide_warning_missing_playlist.get_active())
@@ -977,6 +943,7 @@ class MainWindow:
         state = checkbox.get_active()
         self.__column_progress.set_visible(not state)
         self.__configuration.write('hide_video_progress', state)
+
 
 def run():
     player = MainWindow()

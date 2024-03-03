@@ -19,14 +19,12 @@ import os
 import magic
 
 from model.Video import Video, VideoPosition
+from controller.utils import str_to_boolean
 
 _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
 
-def str_to_boolean(value):
-    return value.lower().strip() == "true"
-
-def load_videos(playlist):
+def load(playlist):
 
     playlist_path = playlist.get_save_path()
 
