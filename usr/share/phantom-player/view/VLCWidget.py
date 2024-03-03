@@ -32,10 +32,6 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('GdkX11', '4.0')
 from gi.repository import Gtk, Gdk
 
-_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-_PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
-sys.path.insert(0, _PROJECT_DIR)
-
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
 if 'linux' in sys.platform:
     # Inform libvlc that Xlib is not initialized for threads
