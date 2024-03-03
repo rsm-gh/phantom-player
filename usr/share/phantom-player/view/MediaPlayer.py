@@ -187,8 +187,8 @@ class MediaPlayerWidget(Gtk.Box):
         self.__overlay = Gtk.Overlay()
         self.append(self.__overlay)
 
-        self.__vlc_widget = VLCWidget(self.__root_window)
-        self.__overlay.set_child(self.__vlc_widget)
+        self.__vlc_widget = VLCWidget()
+        self.__overlay.add_overlay(self.__vlc_widget)
 
         if un_max_fixed_toolbar:
             # It is important to add the motion_notify to the root_window,
@@ -873,11 +873,11 @@ class MediaPlayer(Gtk.Window):
 
 def on_activate(app):
     player = MediaPlayer(app)
-    player.play_video('/media/cadweb/media/Ink Master/Ink.Master.S15E10.1080p.WEB.h264-EDITH[EZTVx.to].mkv')
+    player.play_video('/home/cadweb/Documents/Backup/VHS  EVENTOS ARETE 1998 1999  PARTE 2.mpg')
     player.present()
 
 if __name__ == '__main__':
-    app = Gtk.Application(application_id='MediaPlayerApplication')
-    app.connect('activate', on_activate)
-    app.run(None)
+    APP = Gtk.Application(application_id='com.senties-martinelli.MediaPlayer')
+    APP.connect('activate', on_activate)
+    APP.run(None)
     VLC_INSTANCE.release()
