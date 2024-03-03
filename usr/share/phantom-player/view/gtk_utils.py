@@ -51,7 +51,7 @@ def get_default_color(text_type='theme_text_color', widget=None, on_error='#0000
 
     return found, color
 
-def treeview_selection_get_first_cell(gtk_selection, column=0):
+def treeselection_get_first_cell(gtk_selection, column=0):
     model, treepaths = gtk_selection.get_selected_rows()
 
     if not treepaths:
@@ -60,14 +60,14 @@ def treeview_selection_get_first_cell(gtk_selection, column=0):
     return model[treepaths[0]][column]
 
 
-def treeview_selection_set_first_cell(gtk_selection, column, value):
+def treeselection_set_first_cell(gtk_selection, column, value):
     model, treepaths = gtk_selection.get_selected_rows()
 
     if len(treepaths) > 0:
         model[treepaths[0]][column] = value
 
 
-def treeview_selection_remove_first_row(gtk_selection):
+def treeselection_remove_first_row(gtk_selection):
     model, treepaths = gtk_selection.get_selected_rows()
 
     if len(treepaths) > 0:

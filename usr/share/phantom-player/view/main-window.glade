@@ -87,24 +87,22 @@ Author: Rafael Senties Martinelli
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <child>
-              <object class="GtkMenuItem">
+              <object class="GtkMenuItem" id="menuitem_playlist">
                 <property name="use-action-appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">Playlist</property>
                 <property name="use-underline">True</property>
-                <signal name="activate" handler="on_menuitem_playlist_activate" swapped="no"/>
                 <child type="submenu">
                   <object class="GtkMenu">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkMenuItem">
+                      <object class="GtkMenuItem" id="menuitem_playlist_new">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">_New</property>
                         <property name="use-underline">True</property>
-                        <signal name="activate" handler="on_menuitem_playlist_new_activate" swapped="no"/>
                         <accelerator key="n" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                     </child>
@@ -114,7 +112,6 @@ Author: Rafael Senties Martinelli
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">_Settings</property>
                         <property name="use-underline">True</property>
-                        <signal name="activate" handler="on_menuitem_playlist_settings_activate" swapped="no"/>
                         <accelerator key="s" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                     </child>
@@ -127,7 +124,7 @@ Author: Rafael Senties Martinelli
                 <property name="use-action-appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Configuration</property>
+                <property name="label" translatable="yes">Settings</property>
                 <child type="submenu">
                   <object class="GtkMenu">
                     <property name="visible">True</property>
@@ -147,7 +144,6 @@ Author: Rafael Senties Martinelli
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Missing playlist warning</property>
-                                <signal name="toggled" handler="on_checkbox_hide_warning_missing_playlist_toggled" swapped="no"/>
                               </object>
                             </child>
                           </object>
@@ -169,7 +165,6 @@ Author: Rafael Senties Martinelli
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Missing Playlist</property>
-                                <signal name="toggled" handler="on_checkbox_hide_missing_playlist_toggled" swapped="no"/>
                               </object>
                             </child>
                             <child>
@@ -178,7 +173,6 @@ Author: Rafael Senties Martinelli
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Ignored Videos</property>
                                 <property name="active">True</property>
-                                <signal name="toggled" handler="on_checkbox_hidden_items_toggled" swapped="no"/>
                               </object>
                             </child>
                           </object>
@@ -200,7 +194,6 @@ Author: Rafael Senties Martinelli
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Videos Number</property>
-                                <signal name="toggled" handler="on_checkbox_hide_number_toggled" swapped="no"/>
                               </object>
                             </child>
                             <child>
@@ -209,7 +202,6 @@ Author: Rafael Senties Martinelli
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Videos Path</property>
                                 <property name="use-underline">True</property>
-                                <signal name="toggled" handler="on_checkbox_hide_path_toggled" swapped="no"/>
                               </object>
                             </child>
                             <child>
@@ -217,7 +209,6 @@ Author: Rafael Senties Martinelli
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Videos Name</property>
-                                <signal name="toggled" handler="on_checkbox_hide_name_toggled" swapped="no"/>
                               </object>
                             </child>
                             <child>
@@ -225,7 +216,6 @@ Author: Rafael Senties Martinelli
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Videos Extension</property>
-                                <signal name="toggled" handler="on_checkbox_hide_extension_toggled" swapped="no"/>
                               </object>
                             </child>
                             <child>
@@ -234,7 +224,6 @@ Author: Rafael Senties Martinelli
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Videos Progress</property>
                                 <property name="use-underline">True</property>
-                                <signal name="toggled" handler="on_checkbox_hide_progress_toggled" swapped="no"/>
                               </object>
                             </child>
                           </object>
@@ -257,11 +246,10 @@ Author: Rafael Senties Martinelli
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkMenuItem">
+                      <object class="GtkMenuItem" id="menuitem_about">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">About</property>
-                        <signal name="activate" handler="on_menuitem_about_activate" swapped="no"/>
                       </object>
                     </child>
                   </object>
@@ -299,11 +287,8 @@ Author: Rafael Senties Martinelli
                     <property name="can-focus">True</property>
                     <property name="model">liststore_playlist</property>
                     <property name="search-column">1</property>
-                    <signal name="button-press-event" handler="on_treeview_playlist_press_event" swapped="no"/>
                     <child internal-child="selection">
-                      <object class="GtkTreeSelection" id="treeview_selection_playlist">
-                        <signal name="changed" handler="on_treeview_selection_playlist_changed" swapped="no"/>
-                      </object>
+                      <object class="GtkTreeSelection" id="treeselection_playlist"/>
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn">
@@ -373,10 +358,8 @@ Author: Rafael Senties Martinelli
                     <property name="model">liststore_videos</property>
                     <property name="reorderable">True</property>
                     <property name="search-column">1</property>
-                    <signal name="button-press-event" handler="on_treeview_videos_press_event" swapped="no"/>
-                    <signal name="drag-end" handler="on_treeview_videos_drag_end" swapped="no"/>
                     <child internal-child="selection">
-                      <object class="GtkTreeSelection" id="treeview_selection_videos">
+                      <object class="GtkTreeSelection" id="treeselection_videos">
                         <property name="mode">multiple</property>
                       </object>
                     </child>
