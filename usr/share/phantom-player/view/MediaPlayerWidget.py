@@ -157,13 +157,12 @@ class MediaPlayerWidget(Gtk.Box):
     def __init__(self,
                  root_window,
                  application,
-                 random_button=False,
-                 keep_playing_button=False,
+                 random_button=True,
+                 keep_playing_button=True,
                  un_max_fixed_toolbar=True,
                  css_style=None):  # Automatically hide the toolbar when the window is un-maximized
 
         super().__init__()
-
         self.__app = application
         self.__root_window = root_window
         self.__motion_time = time()
@@ -179,7 +178,7 @@ class MediaPlayerWidget(Gtk.Box):
         self.append(self.__overlay)
 
         self.__vlc_widget = VLCWidget()
-        self.__overlay.add_overlay(self.__vlc_widget)
+        #self.__overlay.add_overlay(self.__vlc_widget)
 
         if un_max_fixed_toolbar:
             # It is important to add the motion_notify to the root_window,
@@ -212,20 +211,23 @@ scale, label, box {
         self.__buttons_box.set_halign(Gtk.Align.FILL)
         self.__buttons_box.set_sensitive(False)
 
-        self.__toolbutton_previous = Gtk.ToggleButton()
-        self.__toolbutton_previous.set_icon_name(ThemeButtons.previous)
-        self.__toolbutton_previous.connect('clicked', self.__on_toolbutton_restart_clicked)
-        self.__buttons_box.append(self.__toolbutton_previous)
+        self.__togglebutton_previous = Gtk.ToggleButton()
+        self.__togglebutton_previous.set_icon_name(ThemeButtons.previous)
+        self.__togglebutton_previous.set_has_frame(False)
+        self.__togglebutton_previous.connect('clicked', self.__on_togglebutton_restart_clicked)
+        self.__buttons_box.append(self.__togglebutton_previous)
 
-        self.__toolbutton_play = Gtk.ToggleButton()
-        self.__toolbutton_play.set_icon_name(ThemeButtons.play)
-        self.__toolbutton_play.connect('clicked', self.__on_toolbutton_play_clicked)
-        self.__buttons_box.append(self.__toolbutton_play)
+        self.__togglebutton_play = Gtk.ToggleButton()
+        self.__togglebutton_play.set_icon_name(ThemeButtons.play)
+        self.__togglebutton_play.set_has_frame(False)
+        self.__togglebutton_play.connect('clicked', self.__on_togglebutton_play_clicked)
+        self.__buttons_box.append(self.__togglebutton_play)
 
-        self.__toolbutton_next = Gtk.ToggleButton()
-        self.__toolbutton_next.set_icon_name(ThemeButtons.next)
-        self.__toolbutton_next.connect('clicked', self.__on_toolbutton_end_clicked)
-        self.__buttons_box.append(self.__toolbutton_next)
+        self.__togglebutton_next = Gtk.ToggleButton()
+        self.__togglebutton_next.set_icon_name(ThemeButtons.next)
+        self.__togglebutton_next.set_has_frame(False)
+        self.__togglebutton_next.connect('clicked', self.__on_togglebutton_end_clicked)
+        self.__buttons_box.append(self.__togglebutton_next)
 
         self.__scale_progress = Gtk.Scale()
         self.__scale_progress.set_range(0, 1)
@@ -242,23 +244,25 @@ scale, label, box {
         self.__buttons_box.append(self.__label_progress)
 
         if keep_playing_button:
-            self.__toggletoolbutton_keep_playing = Gtk.ToggleToolButton()
-            self.__toggletoolbutton_keep_playing.set_icon_name(ThemeButtons.keep_playing)
-            self.__toggletoolbutton_keep_playing.connect('toggled', self.__on_togglebutton_keep_playing_toggled)
-            self.__buttons_box.pack_start(self.__toggletoolbutton_keep_playing, expand=False, fill=False, padding=3)
+            self.__togglebutton_keep_playing = Gtk.ToggleButton()
+            self.__togglebutton_keep_playing.set_icon_name(ThemeButtons.keep_playing)
+            self.__togglebutton_keep_playing.set_has_frame(False)
+            self.__togglebutton_keep_playing.connect('toggled', self.__on_togglebutton_keep_playing_toggled)
+            self.__buttons_box.append(self.__togglebutton_keep_playing)
         else:
-            self.__toggletoolbutton_keep_playing = None
+            self.__togglebutton_keep_playing = None
 
         if random_button:
-            self.__toggletoolbutton_random = Gtk.ToggleToolButton()
-            self.__toggletoolbutton_random.set_icon_name(ThemeButtons.random)
-            self.__toggletoolbutton_random.connect('toggled', self.__on_togglebutton_random_toggled)
-            self.__buttons_box.pack_start(self.__toggletoolbutton_random, expand=False, fill=False, padding=3)
+            self.__togglebutton_random = Gtk.ToggleButton()
+            self.__togglebutton_random.set_icon_name(ThemeButtons.random)
+            self.__togglebutton_random.set_has_frame(False)
+            self.__togglebutton_random.connect('toggled', self.__on_togglebutton_random_toggled)
+            self.__buttons_box.append(self.__togglebutton_random)
         else:
-            self.__toggletoolbutton_random = None
+            self.__togglebutton_random = None
 
         self.__menubutton_settings = Gtk.MenuButton()
-        #self.__menubutton_settings.set_relief(Gtk.ReliefStyle.NONE)
+        self.__menubutton_settings.set_has_frame(False)
         #self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons.settings, Gtk.IconSize.BUTTON))
         self.__menubutton_settings.set_direction(Gtk.ArrowType.UP)
         self.__buttons_box.append(self.__menubutton_settings)
@@ -271,10 +275,11 @@ scale, label, box {
         # self.__volumebutton.connect('button-release-event', self.__on_scale_volume_release)
         self.__buttons_box.append(self.__volumebutton)
 
-        self.__toolbutton_fullscreen = Gtk.ToggleButton()
-        self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
-        self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
-        self.__buttons_box.append(self.__toolbutton_fullscreen)
+        self.__togglebutton_fullscreen = Gtk.ToggleButton()
+        self.__togglebutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
+        self.__togglebutton_fullscreen.set_has_frame(False)
+        self.__togglebutton_fullscreen.connect('clicked', self.__on_togglebutton_fullscreen_clicked)
+        self.__buttons_box.append(self.__togglebutton_fullscreen)
 
         set_css(self.__buttons_box, css_style)
 
@@ -320,13 +325,13 @@ scale, label, box {
         self.__thread_scan_motion.start()
 
     def play(self):
-        self.__toolbutton_play.set_icon_name(ThemeButtons.pause)
+        self.__togglebutton_play.set_icon_name(ThemeButtons.pause)
         self.__vlc_widget.player.play()
         turn_off_screensaver(True)
         self.emit(CustomSignals.play)
 
     def pause(self):
-        self.__toolbutton_play.set_icon_name(ThemeButtons.play)
+        self.__togglebutton_play.set_icon_name(ThemeButtons.play)
         self.__vlc_widget.player.pause()
         turn_off_screensaver(False)
         self.emit(CustomSignals.paused)
@@ -471,10 +476,10 @@ scale, label, box {
         return True
 
     def set_random(self, state):
-        self.__toggletoolbutton_random.set_active(state)
+        self.__togglebutton_random.set_active(state)
 
     def set_keep_playing(self, state):
-        self.__toggletoolbutton_keep_playing.set_active(state)
+        self.__togglebutton_keep_playing.set_active(state)
 
     def get_position(self):
         return self.__vlc_widget.player.get_position()
@@ -483,16 +488,16 @@ scale, label, box {
         return self.__vlc_widget.player.get_state()
 
     def get_random(self):
-        if self.__toggletoolbutton_random is None:
+        if self.__togglebutton_random is None:
             return False
 
-        return self.__toggletoolbutton_random.get_active()
+        return self.__togglebutton_random.get_active()
 
     def get_keep_playing(self):
-        if self.__toggletoolbutton_keep_playing is None:
+        if self.__togglebutton_keep_playing is None:
             return False
 
-        return self.__toggletoolbutton_keep_playing.get_active()
+        return self.__togglebutton_keep_playing.get_active()
 
     def get_media(self):
         #self.__vlc_widget.player.get_media()
@@ -584,12 +589,12 @@ scale, label, box {
 
         if fullscreen:
             self.__root_window.fullscreen()
-            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.un_fullscreen)
+            self.__togglebutton_fullscreen.set_icon_name(ThemeButtons.un_fullscreen)
             if self.__un_maximized_fixed_toolbar:
                 self.__overlay.add_overlay(self.__buttons_box)
         else:
             self.__root_window.unfullscreen()
-            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
+            self.__togglebutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
             if self.__un_maximized_fixed_toolbar:
                 self.append(self.__buttons_box)
 
@@ -611,11 +616,11 @@ scale, label, box {
                 """
                     Update the play-pause button
                 """
-                if vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.pause:
-                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.pause)
+                if vlc_is_playing and self.__togglebutton_play.get_icon_name() != ThemeButtons.pause:
+                    GLib.idle_add(self.__togglebutton_play.set_icon_name, ThemeButtons.pause)
 
-                elif not vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.play:
-                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.play)
+                elif not vlc_is_playing and self.__togglebutton_play.get_icon_name() != ThemeButtons.play:
+                    GLib.idle_add(self.__togglebutton_play.set_icon_name, ThemeButtons.play)
 
                 """
                     Update the volume. Is this necessary?
@@ -664,7 +669,7 @@ scale, label, box {
             time_delta = time() - self.__motion_time
 
             if self.__un_maximized_fixed_toolbar:
-                fullscreen = self.__window_is_fullscreen()
+                fullscreen = self.__root_window.is_fullscreen()
             else:
                 fullscreen = None
 
@@ -703,7 +708,7 @@ scale, label, box {
                 self.__set_fullscreen(False)
 
             elif key in (EventCodes.Keyboard.space_bar, EventCodes.Keyboard.enter):
-                self.__on_toolbutton_play_clicked(None, None)
+                self.__on_togglebutton_play_clicked(None, None)
 
             elif key == EventCodes.Keyboard.arrow_up:
                 self.volume_up()
@@ -770,36 +775,22 @@ scale, label, box {
     def __on_togglebutton_random_toggled(self, widget):
         self.emit(CustomSignals.btn_random_toggled, widget.get_active())
 
-    def __on_toolbutton_play_clicked(self, *_):
+    def __on_togglebutton_play_clicked(self, *_):
         if self.is_playing():
             self.pause()
         else:
             self.play()
 
-    def __on_toolbutton_restart_clicked(self, *_):
+    def __on_togglebutton_restart_clicked(self, *_):
         self.__vlc_widget.player.set_position(0)
         self.emit(CustomSignals.video_restart)
 
-    def __on_toolbutton_end_clicked(self, *_):
+    def __on_togglebutton_end_clicked(self, *_):
         self.__vlc_widget.player.set_position(.9999999) # position = 1 will not work
         #self.emit(CustomSignals.video_end) the thread will emit This signal
 
-    def __on_toolbutton_fullscreen_clicked(self, *_):
-        self.__set_fullscreen(not self.__window_is_fullscreen())
-
-    def __window_is_fullscreen(self):
-
-        return False
-
-        window = self.__root_window.get_window()
-
-        if window is None:
-            return False
-
-        elif Gdk.WindowState.FULLSCREEN & window.get_state():
-            return True
-
-        return False
+    def __on_togglebutton_fullscreen_clicked(self, *_):
+        self.__set_fullscreen(not self.__root_window.is_fullscreen())
 
     def __on_scale_volume_changed(self, _, value):
         value = int(value * 100)
