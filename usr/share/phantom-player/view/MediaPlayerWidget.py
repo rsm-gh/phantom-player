@@ -178,7 +178,7 @@ class MediaPlayerWidget(Gtk.Box):
         self.append(self.__overlay)
 
         self.__vlc_widget = VLCWidget()
-        #self.__overlay.add_overlay(self.__vlc_widget)
+        self.__overlay.add_overlay(self.__vlc_widget)
 
         if un_max_fixed_toolbar:
             # It is important to add the motion_notify to the root_window,
@@ -187,16 +187,20 @@ class MediaPlayerWidget(Gtk.Box):
         else:
             event_widget = self.__vlc_widget
 
-        #event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
-        #event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
+        motion_controller = Gtk.EventControllerMotion.new()
+        motion_controller.connect("motion", self.__on_motion_notify_event)
+        event_widget.add_controller(motion_controller)
 
         #self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         #self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
 
-        #self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
-        #self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
+        scroll_controller = Gtk.EventControllerScroll.new(Gtk.EventControllerScrollFlags.VERTICAL)
+        scroll_controller.connect("scroll", self.__on_mouse_scroll)
+        self.add_controller(scroll_controller) # The signal is not working in self.__vlc_widget
 
-        #self.__root_window.connect('key-press-event', self.__on_key_pressed)
+        key_controller = Gtk.EventControllerKey.new()
+        key_controller.connect("key-pressed", self.__on_key_pressed)
+        self.__root_window.add_controller(key_controller)  # add to window
 
         # Style
         if css_style is None:
@@ -691,49 +695,50 @@ scale, label, box {
 
             sleep(.5)
 
-    def __on_key_pressed(self, _, event):
+    def __on_key_pressed(self, event, keyval, keycode, state):
 
-        key = event.keyval
+        print(self.__root_window.is_fullscreen(), keyval)
 
-        if key == EventCodes.Keyboard.f11 and self.get_media() is not None:
+        if keyval == EventCodes.Keyboard.f11 and self.get_media() is not None:
             self.__set_fullscreen(True)
 
-        elif Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
+        elif self.__root_window.is_fullscreen():
+
+            print("HERE")
 
             # display the toolbox if the arrows are shown
-            if key in (EventCodes.Keyboard.arrow_left, EventCodes.Keyboard.arrow_right):
+            if keyval in (EventCodes.Keyboard.arrow_left, EventCodes.Keyboard.arrow_right):
                 self.__motion_time = time()
 
-            if key == EventCodes.Keyboard.esc:
+            if keyval == EventCodes.Keyboard.esc:
                 self.__set_fullscreen(False)
 
-            elif key in (EventCodes.Keyboard.space_bar, EventCodes.Keyboard.enter):
+            elif keyval in (EventCodes.Keyboard.space_bar, EventCodes.Keyboard.enter):
                 self.__on_togglebutton_play_clicked(None, None)
 
-            elif key == EventCodes.Keyboard.arrow_up:
+            elif keyval == EventCodes.Keyboard.arrow_up:
                 self.volume_up()
 
-            elif key == EventCodes.Keyboard.arrow_down:
+            elif keyval == EventCodes.Keyboard.arrow_down:
                 self.volume_down()
 
     def __on_motion_notify_event(self, *_):
         self.__motion_time = time()
-
         if self.__hidden_controls:
             self.__hidden_controls = False
             self.__widgets_shown = WidgetsShown.toolbox
             self.__buttons_box.show()
             self.set_cursor(Gdk.Cursor.new_from_name('default'))
 
-    def __on_mouse_scroll(self, _, event):
+    def __on_mouse_scroll(self, controller, dx, dy):
 
         if self.get_media() is None:
             return
 
-        elif event.direction == Gdk.ScrollDirection.UP:
+        elif dy > 0:
             self.volume_up()
 
-        elif event.direction == Gdk.ScrollDirection.DOWN:
+        elif dy < 0:
             self.volume_down()
 
     def __on_mouse_button_press(self, _, event):
