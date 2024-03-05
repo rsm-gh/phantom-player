@@ -41,21 +41,21 @@ from gi.repository import Gtk, Gdk, GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-_PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
-sys.path.insert(0, _PROJECT_DIR)
+sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
-from Paths import _SERIES_DIR, _CONF_FILE
-from Texts import Texts
-from view import gtk_utils
+
 from controller.CCParser import CCParser
 from controller import factory_video
 from controller import factory_playlist
 from model.Playlist import Playlist
 from model.CurrentMedia import CurrentMedia
-from system_utils import EventCodes, open_directory
 from view.SettingsDialog import SettingsDialog
 from view.SettingsDialog import ResponseType as SettingsDialogResponse
-from view.MediaPlayer import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
+from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
+from Texts import Texts
+from view import gtk_utils
+from Paths import _SERIES_DIR, _CONF_FILE
+from system_utils import EventCodes, open_directory
 
 _DARK_CSS = """
 @define-color theme_text_color white;
@@ -92,7 +92,7 @@ class GlobalConfigTags:
 
 class PhantomPlayer:
 
-    def __init__(self, application=None, dark_mode=False):
+    def __init__(self, application, dark_mode=False):
 
         self.__playlist_new = None
         self.__playlist_selected = None
@@ -191,19 +191,19 @@ class PhantomPlayer:
         #
         #    Media Player
         #
-        self.__media_player = MediaPlayerWidget(self.__window_root,
-                                                random_button=True,
-                                                keep_playing_button=True,
-                                                css_style=css_style)
+        self.__mp_widget = MediaPlayerWidget(root_window=self.__window_root,
+                                             random_button=True,
+                                             keep_playing_button=True,
+                                             css_style=css_style)
 
-        self.__media_player.connect(CustomSignals.position_changed, self.__on_media_player_position_changed)
-        self.__media_player.connect(CustomSignals.btn_keep_playing_toggled,
-                                    self.__on_media_player_btn_keep_playing_toggled)
-        self.__media_player.connect(CustomSignals.btn_random_toggled, self.__on_media_player_btn_random_toggled)
-        self.__media_player.connect(CustomSignals.video_end, self.__on_media_player_video_end)
+        self.__mp_widget.connect(CustomSignals.position_changed, self.__on_media_player_position_changed)
+        self.__mp_widget.connect(CustomSignals.btn_keep_playing_toggled,
+                                 self.__on_media_player_btn_keep_playing_toggled)
+        self.__mp_widget.connect(CustomSignals.btn_random_toggled, self.__on_media_player_btn_random_toggled)
+        self.__mp_widget.connect(CustomSignals.video_end, self.__on_media_player_video_end)
 
         self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
-        self.__paned.add1(self.__media_player)
+        self.__paned.add1(self.__mp_widget)
         box_window.remove(self.__main_paned)
         self.__paned.add2(self.__main_paned)
         box_window.pack_start(self.__paned, True, True, 0)
@@ -245,7 +245,7 @@ class PhantomPlayer:
 
         self.__window_root.maximize()
         self.__window_root.show_all()
-        self.__media_player.hide_volume_label()
+        self.__mp_widget.hide_volume_label()
 
         #
         #    Load the existent playlist
@@ -257,12 +257,11 @@ class PhantomPlayer:
     def present(self):
         self.__window_root.present()
 
-
     def join(self):
         for th in self.__threads:
             th.join()
 
-        self.__media_player.join()
+        self.__mp_widget.join()
 
     def save(self):
         if self.__playlists_loaded:
@@ -270,7 +269,7 @@ class PhantomPlayer:
                 playlist.save()
 
     def quit(self, *_):
-        self.__media_player.quit()
+        self.__mp_widget.quit()
         VLC_INSTANCE.release()
 
     def __get_video_color(self, video):
@@ -314,18 +313,18 @@ class PhantomPlayer:
         if position >= .9999 and replay:
             position = 0
 
-        self.__media_player.set_video(video.get_path(),
-                                      position,
-                                      self.__current_media.playlist.get_subtitles_track(),
-                                      self.__current_media.playlist.get_audio_track(),
-                                      self.__current_media.playlist.get_start_at(),
-                                      play)
+        self.__mp_widget.set_video(video.get_path(),
+                                   position,
+                                   self.__current_media.playlist.get_subtitles_track(),
+                                   self.__current_media.playlist.get_audio_track(),
+                                   self.__current_media.playlist.get_start_at(),
+                                   play)
 
-        if self.__media_player.get_random() != self.__current_media.playlist.get_random():
-            self.__media_player.set_random(self.__current_media.playlist.get_random())
+        if self.__mp_widget.get_random() != self.__current_media.playlist.get_random():
+            self.__mp_widget.set_random(self.__current_media.playlist.get_random())
 
-        if self.__media_player.get_keep_playing() != self.__current_media.playlist.get_keep_playing():
-            self.__media_player.set_keep_playing(self.__current_media.playlist.get_keep_playing())
+        if self.__mp_widget.get_keep_playing() != self.__current_media.playlist.get_keep_playing():
+            self.__mp_widget.set_keep_playing(self.__current_media.playlist.get_keep_playing())
 
         self.__liststore_videos_select_current()
 
@@ -562,7 +561,7 @@ class PhantomPlayer:
 
     def __on_media_player_video_end(self, *_):
         if not self.__current_media.playlist.get_keep_playing():
-            self.__media_player.pause()
+            self.__mp_widget.pause()
             self.__window_root.unfullscreen()
             return
 
@@ -590,7 +589,7 @@ class PhantomPlayer:
 
             if event.button == EventCodes.Cursor.left_click:
 
-                if self.__media_player.is_nothing():
+                if self.__mp_widget.is_nothing():
                     self.__set_video(play=False, ignore_none=True)
 
             elif event.button == EventCodes.Cursor.right_click:
@@ -624,9 +623,9 @@ class PhantomPlayer:
                     Check if the playlist is already selected and if a video is playing
                 """
                 if self.__current_media.is_playlist_name(selected_playlist_name):
-                    if not self.__media_player.is_nothing():
-                        if self.__media_player.is_paused():
-                            self.__media_player.play()
+                    if not self.__mp_widget.is_nothing():
+                        if self.__mp_widget.is_paused():
+                            self.__mp_widget.play()
 
                         return
 
@@ -789,7 +788,7 @@ class PhantomPlayer:
 
             # Remove from the player (if necessary)
             if self.__current_media.is_playlist_name(playlist_name):
-                self.__media_player.stop()
+                self.__mp_widget.stop()
                 self.__current_media = CurrentMedia()
 
             # Delete the image (if saved)
@@ -832,17 +831,17 @@ class PhantomPlayer:
 
         # Update the media player
         if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
-            self.__media_player.set_keep_playing(self.__playlist_selected.get_keep_playing())
-            self.__media_player.set_random(self.__playlist_selected.get_random())
+            self.__mp_widget.set_keep_playing(self.__playlist_selected.get_keep_playing())
+            self.__mp_widget.set_random(self.__playlist_selected.get_random())
 
         if response == SettingsDialogResponse.restart:
 
             # This is done before to avoid updating the playlist data
             was_playing = False
             if self.__current_media.is_playlist_name(playlist_name):
-                if self.__media_player.is_playing():
+                if self.__mp_widget.is_playing():
                     was_playing = True
-                    self.__media_player.pause()
+                    self.__mp_widget.pause()
 
             self.__playlist_selected.restart()
 

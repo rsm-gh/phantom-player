@@ -18,46 +18,38 @@
 #
 
 """
-    Open Points:
-        + Sometimes when clicking very fast the progress scale, the video position is not modified.
-            Despite multiple ways of trying to fix this, I haven't found a solution.
 
-        + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
-            I haven't found a solution for this, because the press signals connect to the button and not the scale.
+    + Add the option to choose the subtitles' file...
 
-        + Fixes to the menu of the subtitles & audio tracks?
+    + Sometimes when clicking very fast the progress scale, the video position is not modified.
+        Despite multiple ways of trying to fix this, I haven't found a solution.
 
-        + Fix to the VolumeButton: it should get hidden when clicking out of the button.
+    + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
+        I haven't found a solution for this, because the press signals connect to the button and not the scale.
 
-        + Start/Stop __on_thread_scan when paused, stopped? ?
+    + Fixes to the menu of the subtitles & audio tracks?
 
-    Hacks:
-        + It seems that: self.__vlc_widget.player.get_media() is always returning None. Why?
-            To fix it, I created self.__media
+    + Fix to the VolumeButton: it should get hidden when clicking out of the button.
+
+    + Start/Stop __on_thread_scan when paused, stopped? ?
+
+    + It seems that: self.__vlc_widget.player.get_media() is always returning None. Why?
+        To fix it, I created self.__media
 """
 
 import os
-import gi
 import vlc
 import sys
 from time import time, sleep
 from datetime import timedelta
 from threading import Thread, current_thread
-
-os.environ["GDK_BACKEND"] = "x11"
-
-gi.require_version('Gtk', '3.0')
-gi.require_version('GdkX11', '3.0')
 from gi.repository import Gtk, GObject, Gdk, GLib
 
-_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-_PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
-sys.path.insert(0, _PROJECT_DIR)
-
-from Paths import *
-from view.VLCWidget import VLCWidget, VLC_INSTANCE
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from view.gtk_utils import set_css
+from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
+from Paths import _ICON_LOGO_SMALL, _HOME_DIR
 
 _EMPTY__VIDEO_LENGTH = "00:00"
 _DEFAULT_PROGRESS_LABEL = "{0} / {0}".format(_EMPTY__VIDEO_LENGTH)
@@ -850,33 +842,3 @@ scale, label, box {
             video_time = widget.get_value() * self.__media.get_duration()
             video_time = format_milliseconds_to_time(video_time)
             self.__label_progress.set_text(video_time + " / " + self.__video_length)
-
-
-class MediaPlayer(Gtk.Window):
-    """ This class creates a media player built in a Gtk.Window """
-
-    def __init__(self):
-        super().__init__()
-
-        self.__media_player_widget = MediaPlayerWidget(self)
-        self.add(self.__media_player_widget)
-        self.connect('delete-event', self.quit)
-
-        self.set_size_request(600, 300)
-        self.show_all()
-
-    def quit(self, *_):
-        self.__media_player_widget.quit()
-        Gtk.main_quit()
-
-    def play_video(self, path):
-        self.__media_player_widget.set_video(path,
-                                             position=.1,
-                                             play=True)
-
-
-if __name__ == '__main__':
-    player = MediaPlayer()
-    player.play_video('/home/cadweb/Downloads/Torrents/InkMaster/Ink.Master.S15E03.1080p.HEVC.x265-MeGusta[eztv.re].mkv')
-    Gtk.main()
-    VLC_INSTANCE.release()
