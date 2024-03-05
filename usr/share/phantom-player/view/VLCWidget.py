@@ -20,15 +20,9 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-import gi
-import os
 import sys
 import vlc
 import ctypes
-
-os.environ["GDK_BACKEND"] = "x11"
-
-gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
