@@ -192,17 +192,22 @@ class MediaPlayerWidget(Gtk.VBox):
             event_widget = self.__vlc_widget
 
         #event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
+        #event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
         motion_controller = Gtk.EventControllerMotion.new(event_widget)
         motion_controller.connect("motion", self.__on_motion_notify_event)
-        #event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
         self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
 
-        self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
-        self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
+        #self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
+        #self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
+        scroll_controller = Gtk.EventControllerScroll.new(self, Gtk.EventControllerScrollFlags.VERTICAL)
+        scroll_controller.connect("scroll", self.__on_mouse_scroll)
 
-        self.__root_window.connect('key-press-event', self.__on_key_pressed)
+        #self.__root_window.connect('key-press-event', self.__on_key_pressed)
+        key_controller = Gtk.EventControllerKey.new(self.__root_window)
+        key_controller.connect("key-pressed", self.__on_key_pressed)
+
 
         # Style
         if css_style is None:
@@ -735,6 +740,8 @@ scale, label, box {
             self.__set_cursor_default()
 
     def __on_mouse_scroll(self, _, event):
+
+        print("__on_mouse_scroll")
 
         if self.get_media() is None:
             return
