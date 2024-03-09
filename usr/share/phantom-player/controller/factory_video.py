@@ -24,7 +24,7 @@ from controller.utils import str_to_boolean
 _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
 
-def load(playlist):
+def load(playlist, is_startup):
 
     playlist_path = playlist.get_save_path()
 
@@ -117,12 +117,14 @@ def load(playlist):
     #
     #    Get the videos from the folder. This will find new videos.
     #
-    playlist_paths = [video.get_path() for video in playlist.get_videos()]
-    for video_path in __generate_videos_list_from_directory(playlist.get_data_path(), playlist.get_recursive()):
-        if video_path not in playlist_paths:
-            new_video = Video(video_path)
-            new_video.set_is_new(True)
-            playlist.add_video(new_video)
+    if not is_startup or (is_startup and playlist.get_r_startup()):
+        print("\tSearching new videos...")
+        playlist_paths = [video.get_path() for video in playlist.get_videos()]
+        for video_path in __generate_videos_list_from_directory(playlist.get_data_path(), playlist.get_recursive()):
+            if video_path not in playlist_paths:
+                new_video = Video(video_path)
+                new_video.set_is_new(True)
+                playlist.add_video(new_video)
 
 def __file_is_video(path, forgive_broken_links=False):
     if os.path.islink(path):

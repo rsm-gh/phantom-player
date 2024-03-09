@@ -24,6 +24,7 @@ import random
 from Paths import _ICON_LOGO_MEDIUM, _SERIES_DIR
 from model.Video import VideoPosition
 
+
 class Playlist(object):
 
     def __init__(self,
@@ -31,6 +32,7 @@ class Playlist(object):
                  data_path="",
                  icon_extension="",
                  recursive=False,
+                 r_startup=False,
                  is_random=False,
                  keep_playing=True,
                  start_at=0.0,
@@ -40,8 +42,11 @@ class Playlist(object):
         self.__name = ""
         self.__icon_extension = icon_extension
         self.__data_path = data_path
+
         self.__recursive = False
         self.__random = False
+        self.__r_startup = False
+
         self.__keep_playing = False
         self.__start_at = 0.0
         self.__audio_track = 0
@@ -49,6 +54,8 @@ class Playlist(object):
 
         self.set_name(name)
         self.set_recursive(recursive)
+        self.set_r_startup(r_startup)
+
         self.set_random(is_random)
         self.set_keep_playing(keep_playing)
         self.set_audio_track(audio_track)
@@ -74,7 +81,7 @@ class Playlist(object):
                                self.__subtitles_track,
                                self.__icon_extension])
 
-            csv_list.writerow([self.__data_path, self.__recursive])
+            csv_list.writerow([self.__data_path, self.__recursive, self.__r_startup])
 
             for video in self.__videos_instances:
                 csv_list.writerow([video.get_id(),
@@ -82,7 +89,6 @@ class Playlist(object):
                                    video.get_name(),
                                    video.get_position(),
                                    video.get_ignore()])
-
 
     def restart(self):
         for video in self.__videos_instances:
@@ -166,7 +172,6 @@ class Playlist(object):
                 return video
 
         return None
-
 
     def find_playlist(self, path):
         self.__data_path = path
@@ -285,7 +290,7 @@ class Playlist(object):
 
         if self.__name != "":
 
-            icon_path = os.path.join(_SERIES_DIR, self.__name+"."+self.__icon_extension)
+            icon_path = os.path.join(_SERIES_DIR, self.__name + "." + self.__icon_extension)
 
             if not allow_default:
                 return icon_path
@@ -320,7 +325,6 @@ class Playlist(object):
             return 0
 
         return int(round(total_percent / total_of_videos))
-
 
     def get_next_organized_video(self, after=None):
         """
@@ -383,6 +387,9 @@ class Playlist(object):
 
     def get_recursive(self):
         return self.__recursive
+
+    def get_r_startup(self):
+        return self.__r_startup
 
     def get_video(self, video_id):
         for video in self.__videos_instances:
@@ -448,6 +455,9 @@ class Playlist(object):
     def set_random(self, is_random):
         self.__random = is_random
 
+    def set_r_startup(self, r_startup):
+        self.__r_startup = r_startup
+
     def set_video_position(self, video_to_find, position):
         for video in self.__videos_instances:
             if video_to_find.get_id() == video.get_id():
@@ -459,7 +469,7 @@ class Playlist(object):
             Set a new name, or rename.
         """
         if new_name.lower().endswith(".csv"):
-            new_name = new_name.rsplit(".",1)[0]
+            new_name = new_name.rsplit(".", 1)[0]
 
         if new_name == self.__name and not force:
             return
@@ -479,7 +489,6 @@ class Playlist(object):
         if os.path.exists(old_icon_path):
             os.rename(old_icon_path, self.get_icon_path(allow_default=False))
 
-
     def set_icon_path(self, path):
 
         #
@@ -488,7 +497,6 @@ class Playlist(object):
         current_icon_path = self.get_icon_path(allow_default=False)
         if current_icon_path is not None and os.path.exists(current_icon_path):
             os.remove(self.get_icon_path(allow_default=False))
-
 
         #
         # Set the new image
@@ -503,7 +511,6 @@ class Playlist(object):
 
         if os.path.exists(path):
             shutil.copy2(path, self.get_icon_path(allow_default=False))
-
 
     def set_data_path(self, path):
         self.__data_path = path
