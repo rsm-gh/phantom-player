@@ -190,8 +190,11 @@ class MediaPlayerWidget(Gtk.VBox):
             event_widget = self.__root_window
         else:
             event_widget = self.__vlc_widget
-        event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
-        event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
+
+        #event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
+        motion_controller = Gtk.EventControllerMotion.new(event_widget)
+        motion_controller.connect("motion", self.__on_motion_notify_event)
+        #event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
         self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
@@ -720,6 +723,9 @@ scale, label, box {
                 self.volume_down()
 
     def __on_motion_notify_event(self, *_):
+
+        print("CALLED")
+
         self.__motion_time = time()
 
         if self.__hidden_controls:
