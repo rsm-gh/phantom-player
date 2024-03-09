@@ -26,13 +26,14 @@ _MAGIC_MIMETYPE.load()
 
 def load(playlist, is_startup):
 
-    playlist_path = playlist.get_save_path()
+    print("Loading videos of '{}':".format(playlist.get_name()))
 
-    print("Reading playlist:", playlist_path)
+    if not os.path.exists(playlist.get_save_path()):
+        print("\tCached videos... SKIP, the configuration file does not exist.")
+    else:
+        print("\tCached videos...")
 
-    if os.path.exists(playlist_path):
-
-        with open(playlist_path, mode='rt', encoding='utf-8') as f:
+        with open(playlist.get_save_path(), mode='rt', encoding='utf-8') as f:
             rows = list(f.readlines())
 
         for i, row in enumerate(rows):
@@ -50,42 +51,42 @@ def load(playlist, is_startup):
             try:
                 video_id = int(columns[0])
             except Exception:
-                print("\terror getting the id", columns)
+                print("\t\terror getting the id", columns)
                 video_id = -1
 
             try:
                 path = columns[1].strip()
             except Exception:
-                print("\terror getting the path", columns)
+                print("\t\terror getting the path", columns)
                 path = None
 
             try:
                 name = columns[2].strip()
             except Exception:
-                print("\terror getting the name", columns)
+                print("\t\terror getting the name", columns)
                 name = ""
 
             try:
                 position = float(columns[3])
             except Exception:
                 position = VideoPosition.start
-                print("\terror getting the position", columns)
+                print("\t\terror getting the position", columns)
 
             try:
                 ignore = str_to_boolean(columns[4])
             except Exception:
                 ignore = False
-                print("\terror getting the ignore state", columns)
+                print("\t\terror getting the ignore state", columns)
 
             #
             # Check for valid lines
             #
             if path is None:
-                print("\tExit line because empty path.", columns)
+                print("\t\tExit line because empty path.", columns)
                 continue
 
             elif os.path.exists(path) and not __file_is_video(path,True):
-                print("\tExit line because not video.", columns)
+                print("\t\tExit line because not video.", columns)
                 continue
 
             duplicated = False
@@ -95,7 +96,7 @@ def load(playlist, is_startup):
                     break
 
             if duplicated:
-                print("\tExit line because duplicated path.", columns)
+                print("\t\tExit line because duplicated path.", columns)
                 continue
 
             video = Video(path, name)
@@ -110,7 +111,7 @@ def load(playlist, is_startup):
         #
         ids = [video.get_id() for video in playlist.get_videos()]
         if len(ids) != len(set(ids)):
-            print("\tThe id's will be updated since there are errors.")
+            print("\t\tThe id's will be updated since there are errors.")
             playlist.update_ids()
 
 
@@ -118,13 +119,18 @@ def load(playlist, is_startup):
     #    Get the videos from the folder. This will find new videos.
     #
     if not is_startup or (is_startup and playlist.get_r_startup()):
-        print("\tSearching new videos...")
-        playlist_paths = [video.get_path() for video in playlist.get_videos()]
-        for video_path in __generate_videos_list_from_directory(playlist.get_data_path(), playlist.get_recursive()):
-            if video_path not in playlist_paths:
-                new_video = Video(video_path)
-                new_video.set_is_new(True)
-                playlist.add_video(new_video)
+        if not os.path.exists(playlist.get_data_path()):
+            print("\tDiscovering new videos... SKIP, the data path does not exist.")
+        else:
+            print("\tDiscovering new videos...")
+            playlist_paths = [video.get_path() for video in playlist.get_videos()]
+            for video_path in __generate_videos_list_from_directory(playlist.get_data_path(), playlist.get_recursive()):
+                if video_path not in playlist_paths:
+                    new_video = Video(video_path)
+                    new_video.set_is_new(True)
+                    playlist.add_video(new_video)
+    else:
+        print("\tDiscovering new videos... SKIP requested.")
 
 def __file_is_video(path, forgive_broken_links=False):
     if os.path.islink(path):
