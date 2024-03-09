@@ -464,7 +464,7 @@ class PhantomPlayer:
         except KeyError:
             playlist_data = None
         else:
-            factory_video.load(playlist_data)
+            factory_video.load(playlist_data, is_startup=True)
             self.__current_media = CurrentMedia(playlist_data)
 
         playlist_found = False
@@ -484,7 +484,7 @@ class PhantomPlayer:
             if playlist_data is not None and playlist.get_name() == playlist_data.get_name():
                 continue
 
-            factory_video.load(playlist)
+            factory_video.load(playlist, is_startup=True)
 
             GLib.idle_add(self.__liststore_playlist_set_progress,
                           playlist.get_name(),

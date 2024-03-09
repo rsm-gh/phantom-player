@@ -76,6 +76,11 @@ def load_from_file(file_path):
     except Exception:
         recursive = False
 
+    try:
+        r_startup = str_to_boolean(playlist_path[2])
+    except Exception:
+        r_startup = False
+
 
     #
     # Create the playlist (without loading the videos)
@@ -84,6 +89,7 @@ def load_from_file(file_path):
                             data_path=data_path,
                             icon_extension=icon_extension,
                             recursive=recursive,
+                            r_startup=r_startup,
                             is_random=random,
                             keep_playing=keep_playing,
                             start_at=start_at,

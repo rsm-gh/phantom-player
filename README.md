@@ -103,7 +103,7 @@ Random | Keep Playing | Start At | Audio Track | Subtitles Track | Icon Name
 ```
 Then, the playlist paths will be listed as:
 ```
-Path | Recursive
+Path | Recursive | R. Startup
 ```
 And finally, there will be one line per video:
 ```
