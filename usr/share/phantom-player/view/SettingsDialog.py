@@ -41,6 +41,10 @@ class ResponseType:
     close = 2
     add = 3
 
+class PathsListstoreColumns:
+    path = 0
+    recursive = 1
+    r_startup = 2
 
 class SettingsDialog:
 
@@ -74,6 +78,7 @@ class SettingsDialog:
         self.__button_path_edit = builder.get_object('button_path_edit')
         self.__button_path_reload_all = builder.get_object('button_path_reload_all')
         self.__cellrenderertoggle_recursive = builder.get_object('cellrenderertoggle_recursive')
+        self.__cellrenderertoggle_r_startup = builder.get_object('cellrenderertoggle_r_startup')
 
         self.__button_delete = builder.get_object('button_delete')
         self.__button_restart = builder.get_object('button_restart')
@@ -96,6 +101,7 @@ class SettingsDialog:
         self.__button_path_edit.connect('clicked', self.__on_button_path_edit_clicked)
         self.__button_path_reload_all.connect('clicked', self.__on_button_path_reload_all_clicked)
         self.__cellrenderertoggle_recursive.connect('toggled', self.__on_cellrenderertoggle_recursive_toggled)
+        self.__cellrenderertoggle_r_startup.connect('toggled', self.__on_cellrenderertoggle_r_startup_toggled)
 
         self.__button_delete.connect('clicked', self.__on_button_delete_clicked)
         self.__button_restart.connect('clicked', self.__on_button_restart_clicked)
@@ -130,7 +136,9 @@ class SettingsDialog:
             data_path = playlist.get_data_path()
             if data_path != "":
                 self.__button_path_add.set_sensitive(False)
-                self.__liststore_paths.append([playlist.get_data_path(), playlist.get_recursive()])
+                self.__liststore_paths.append([playlist.get_data_path(),
+                                               playlist.get_recursive(),
+                                               playlist.get_r_startup()])
 
         self.__settings_dialog.set_title(window_title)
 
@@ -235,14 +243,14 @@ class SettingsDialog:
             return
 
         self.__liststore_paths.clear()
-        self.__liststore_paths.append([path, False])
+        self.__liststore_paths.append([path, False, False])
 
         self.__button_path_add.set_sensitive(False)
         self.__button_path_edit.set_sensitive(True)
         self.__button_path_reload_all.set_sensitive(True)
 
         self.__playlist.set_data_path(path)
-        factory_video.load(self.__playlist)
+        factory_video.load(self.__playlist, is_startup=False)
 
     def __on_button_path_remove_clicked(self, *_):
         pass
@@ -254,18 +262,23 @@ class SettingsDialog:
             return
 
         self.__liststore_paths.clear()
-        self.__liststore_paths.append([path, False])
+        self.__liststore_paths.append([path, False, False])
 
         self.__playlist.set_data_path(path)
-        factory_video.load(self.__playlist)
+        factory_video.load(self.__playlist, is_startup=False)
 
     def __on_button_path_reload_all_clicked(self, *_):
-        factory_video.load(self.__playlist)
+        factory_video.load(self.__playlist, is_startup=False)
 
     def __on_cellrenderertoggle_recursive_toggled(self, _, row):
-        state = not self.__liststore_paths[row][1]
-        self.__liststore_paths[row][1] = state
+        state = not self.__liststore_paths[row][PathsListstoreColumns.recursive]
+        self.__liststore_paths[row][PathsListstoreColumns.recursive] = state
         self.__playlist.set_recursive(state)
+
+    def __on_cellrenderertoggle_r_startup_toggled(self, _, row):
+        state = not self.__liststore_paths[row][PathsListstoreColumns.r_startup]
+        self.__liststore_paths[row][PathsListstoreColumns.r_startup] = state
+        self.__playlist.set_r_startup(state)
 
     def __on_button_delete_clicked(self, *_):
         if gtk_utils.dialog_yes_no(self.__settings_dialog,
