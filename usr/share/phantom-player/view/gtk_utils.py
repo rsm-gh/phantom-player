@@ -17,15 +17,11 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-import gi
 import os
-
-gi.require_version('Gtk', '3.0')
-gi.require_version('GdkX11', '3.0')
-from gi.repository import Gtk, GObject, Gdk
+from gi.repository import Gtk, Gdk
 
 from Texts import Texts
-from Paths import _ICON_LOGO_SMALL
+from Paths import _ICON_LOGO_SMALL, _HOME_DIR
 
 def set_css(widget, css):
     provider = Gtk.CssProvider()
@@ -116,7 +112,10 @@ def dialog_select_file(parent, file_filter=None, start_path=None):
     if file_filter is not None:
         dialog.add_filter(file_filter)
 
-    if start_path is not None and os.path.exists(start_path):
+
+    if start_path is None or not os.path.exists(start_path):
+        dialog.set_current_folder(_HOME_DIR)
+    else:
         dialog.set_current_folder(start_path)
 
     response = dialog.run()
