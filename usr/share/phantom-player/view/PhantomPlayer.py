@@ -311,7 +311,7 @@ class PhantomPlayer:
         #
 
         position = video.get_position()
-        if position >= VideoPosition.end_almost and replay:
+        if position >= VideoPosition.end_numeric and replay:
             position = 0
 
         self.__mp_widget.set_video(video.get_path(),
