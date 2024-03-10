@@ -35,6 +35,10 @@
 
     + It seems that: self.__vlc_widget.player.get_media() is always returning None. Why?
         To fix it, I created self.__media
+
+    + self.__vlc_widget.player.XXX_set_track returns a status.
+       It would be good to read the status and display a message in case of problem.
+
 """
 
 import os
@@ -48,11 +52,13 @@ from gi.repository import Gtk, GObject, Gdk, GLib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from view.gtk_utils import set_css
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
+from model.Video import VideoPosition
 from system_utils import EventCodes, turn_off_screensaver
 from Paths import _ICON_LOGO_SMALL, _HOME_DIR
 
 _EMPTY__VIDEO_LENGTH = "00:00"
 _DEFAULT_PROGRESS_LABEL = "{0} / {0}".format(_EMPTY__VIDEO_LENGTH)
+
 
 def format_milliseconds_to_time(number):
     if number <= 0:
@@ -140,6 +146,7 @@ class ThemeButtons:
     random = "media-playlist-shuffle"
     keep_playing = "media-playlist-repeat"
     settings = "preferences-desktop"
+
 
 class CustomSignals:
     paused = 'paused'
@@ -298,7 +305,6 @@ scale, label, box {
         else:
             self.__overlay.add_overlay(self.__buttons_box)
 
-
         #
         # Create the custom signals
         #
@@ -307,10 +313,12 @@ scale, label, box {
         GObject.signal_new(CustomSignals.stop, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
         GObject.signal_new(CustomSignals.video_end, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
         GObject.signal_new(CustomSignals.video_restart, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
-        GObject.signal_new(CustomSignals.position_changed, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, (float,))
-        GObject.signal_new(CustomSignals.btn_random_toggled, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, (bool,))
-        GObject.signal_new(CustomSignals.btn_keep_playing_toggled, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, (bool,))
-
+        GObject.signal_new(CustomSignals.position_changed, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE,
+                           (float,))
+        GObject.signal_new(CustomSignals.btn_random_toggled, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE,
+                           (bool,))
+        GObject.signal_new(CustomSignals.btn_keep_playing_toggled, self, GObject.SignalFlags.RUN_LAST,
+                           GObject.TYPE_NONE, (bool,))
 
         #
         #    Init the threads
@@ -338,7 +346,7 @@ scale, label, box {
         self.__buttons_box.set_sensitive(False)
         self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
         self.__label_volume.hide()
-        self.__scale_progress.set_value(0)
+        self.__scale_progress.set_value(VideoPosition.start)
         self.__media = None
         self.emit(CustomSignals.stop)
 
@@ -497,9 +505,8 @@ scale, label, box {
         return self.__toggletoolbutton_keep_playing.get_active()
 
     def get_media(self):
-        #self.__vlc_widget.player.get_media()
+        # self.__vlc_widget.player.get_media()
         return self.__media
-
 
     def __populate_settings_menubutton(self):
 
@@ -759,10 +766,6 @@ scale, label, box {
                     turn_off_screensaver(True)
 
     def __on_menu_video_subs_audio(self, _, player_type, track):
-        """
-            Todo: self.__vlc_widget.player.XXX_set_track returns a status.
-            It would be good to read the status and display a message in case of problem.
-        """
         if player_type == 0:
             self.__vlc_widget.player.audio_set_track(track)
 
@@ -772,11 +775,9 @@ scale, label, box {
         elif player_type == 2:
             self.__vlc_widget.player.video_set_spu(track)
 
-    def __on_togglebutton_keep_playing_toggled(self, widget):
-        self.emit(CustomSignals.btn_keep_playing_toggled, widget.get_active())
-
-    def __on_togglebutton_random_toggled(self, widget):
-        self.emit(CustomSignals.btn_random_toggled, widget.get_active())
+    def __on_toolbutton_restart_clicked(self, *_):
+        self.__vlc_widget.player.set_position(VideoPosition.start)
+        self.emit(CustomSignals.video_restart)
 
     def __on_toolbutton_play_clicked(self, *_):
         if self.is_playing():
@@ -784,13 +785,15 @@ scale, label, box {
         else:
             self.play()
 
-    def __on_toolbutton_restart_clicked(self, *_):
-        self.__vlc_widget.player.set_position(0)
-        self.emit(CustomSignals.video_restart)
-
     def __on_toolbutton_end_clicked(self, *_):
-        self.__vlc_widget.player.set_position(.9999999) # position = 1 will not work
-        #self.emit(CustomSignals.video_end) the thread will emit This signal
+        self.__vlc_widget.player.set_position(VideoPosition.end_almost)  # position = 1 will not work
+        # self.emit(CustomSignals.video_end) the thread will emit This signal
+
+    def __on_togglebutton_keep_playing_toggled(self, widget):
+        self.emit(CustomSignals.btn_keep_playing_toggled, widget.get_active())
+
+    def __on_togglebutton_random_toggled(self, widget):
+        self.emit(CustomSignals.btn_random_toggled, widget.get_active())
 
     def __on_toolbutton_fullscreen_clicked(self, *_):
         self.__set_fullscreen(not self.__window_is_fullscreen())
