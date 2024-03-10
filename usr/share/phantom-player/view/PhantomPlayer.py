@@ -48,6 +48,7 @@ from controller.CCParser import CCParser
 from controller import factory_video
 from controller import factory_playlist
 from model.Playlist import Playlist
+from model.Video import VideoPosition
 from model.CurrentMedia import CurrentMedia
 from view.SettingsDialog import SettingsDialog
 from view.SettingsDialog import ResponseType as SettingsDialogResponse
@@ -310,7 +311,7 @@ class PhantomPlayer:
         #
 
         position = video.get_position()
-        if position >= .9999 and replay:
+        if position >= VideoPosition.end_almost and replay:
             position = 0
 
         self.__mp_widget.set_video(video.get_path(),
