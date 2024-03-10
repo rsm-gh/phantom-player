@@ -18,8 +18,9 @@
 #
 
 """
+    + Fix the option to choose the subtitles' file...
 
-    + Add the option to choose the subtitles' file...
+    + Fixes to the menu of the subtitles & audio tracks?
 
     + Sometimes when clicking very fast the progress scale, the video position is not modified.
         Despite multiple ways of trying to fix this, I haven't found a solution.
@@ -27,17 +28,18 @@
     + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
         I haven't found a solution for this, because the press signals connect to the button and not the scale.
 
-    + Fixes to the menu of the subtitles & audio tracks?
 
     + Fix to the VolumeButton: it should get hidden when clicking out of the button.
 
-    + Start/Stop __on_thread_scan when paused, stopped? ?
-
-    + It seems that: self.__vlc_widget.player.get_media() is always returning None. Why?
-        To fix it, I created self.__media
+    + Start/Stop __on_thread_player_activity when paused, stopped? ?
 
     + self.__vlc_widget.player.XXX_set_track returns a status.
        It would be good to read the status and display a message in case of problem.
+
+    + Patch 001: The media length is not correctly parsed if the video is not being played?
+
+    + Patch 002: self.__vlc_widget.player.get_media() is always returning None. Why?
+        To fix it, I created self.__media
 
 """
 
@@ -52,12 +54,17 @@ from gi.repository import Gtk, GObject, Gdk, GLib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from model.Playlist import Track
 from model.Video import VideoPosition
-from view.gtk_utils import set_css, dialog_select_file
+from view import gtk_utils
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
 
 _EMPTY__VIDEO_LENGTH = "00:00"
 _DEFAULT_PROGRESS_LABEL = "{0} / {0}".format(_EMPTY__VIDEO_LENGTH)
+_DEFAULT_CSS = """
+scale, label, box {
+    background-color: @theme_bg_color;
+}
+"""
 
 
 def format_milliseconds_to_time(number):
@@ -180,11 +187,8 @@ class MediaPlayerWidget(Gtk.VBox):
 
         # Style
         if css_style is None:
-            css_style = """
-scale, label, box {
-    background-color: @theme_bg_color;
-}
-"""
+            css_style = _DEFAULT_CSS
+
         # Buttons Box
         self.__buttons_box = Gtk.Box()
         self.__buttons_box.set_valign(Gtk.Align.END)
@@ -207,7 +211,7 @@ scale, label, box {
         self.__buttons_box.pack_start(self.__toolbutton_next, expand=False, fill=False, padding=3)
 
         self.__scale_progress = Gtk.Scale()
-        self.__scale_progress.set_range(0, 1)
+        self.__scale_progress.set_range(VideoPosition.start, VideoPosition.end)
         self.__scale_progress.set_draw_value(False)
         self.__scale_progress.set_hexpand(True)
         self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
@@ -255,7 +259,7 @@ scale, label, box {
         self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
 
-        set_css(self.__buttons_box, css_style)
+        gtk_utils.set_css(self.__buttons_box, css_style)
 
         #   Extra volume label
         self.__label_volume = Gtk.Label()
@@ -264,7 +268,7 @@ scale, label, box {
         self.__label_volume.set_halign(Gtk.Align.END)
         self.__label_volume.set_margin_start(5)
         self.__label_volume.set_margin_end(5)
-        set_css(self.__label_volume, css_style)
+        gtk_utils.set_css(self.__label_volume, css_style)
         self.__overlay.add_overlay(self.__label_volume)
 
         #
@@ -278,22 +282,48 @@ scale, label, box {
         #
         # Create the custom signals
         #
-        GObject.signal_new(CustomSignals.paused, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
-        GObject.signal_new(CustomSignals.play, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
-        GObject.signal_new(CustomSignals.stop, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
-        GObject.signal_new(CustomSignals.video_end, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
-        GObject.signal_new(CustomSignals.video_restart, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE, ())
-        GObject.signal_new(CustomSignals.position_changed, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE,
+        GObject.signal_new(CustomSignals.paused,
+                           self, GObject.SignalFlags.RUN_LAST,
+                           GObject.TYPE_NONE,
+                           ())
+        GObject.signal_new(CustomSignals.play,
+                           self,
+                           GObject.SignalFlags.RUN_LAST,
+                           GObject.TYPE_NONE,
+                           ())
+        GObject.signal_new(CustomSignals.stop,
+                           self,
+                           GObject.SignalFlags.RUN_LAST,
+                           GObject.TYPE_NONE,
+                           ())
+        GObject.signal_new(CustomSignals.video_end,
+                           self,
+                           GObject.SignalFlags.RUN_LAST,
+                           GObject.TYPE_NONE,
+                           ())
+        GObject.signal_new(CustomSignals.video_restart,
+                           self, GObject.SignalFlags.RUN_LAST,
+                           GObject.TYPE_NONE,
+                           ())
+        GObject.signal_new(CustomSignals.position_changed,
+                           self,
+                           GObject.SignalFlags.RUN_LAST,
+                           GObject.TYPE_NONE,
                            (float,))
-        GObject.signal_new(CustomSignals.btn_random_toggled, self, GObject.SignalFlags.RUN_LAST, GObject.TYPE_NONE,
+        GObject.signal_new(CustomSignals.btn_random_toggled,
+                           self,
+                           GObject.SignalFlags.RUN_LAST,
+                           GObject.TYPE_NONE,
                            (bool,))
-        GObject.signal_new(CustomSignals.btn_keep_playing_toggled, self, GObject.SignalFlags.RUN_LAST,
+        GObject.signal_new(CustomSignals.btn_keep_playing_toggled,
+                           self,
+                           GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE, (bool,))
 
         #
         #    Init the threads
         #
-        self.__thread_player_activity = Thread(target=self.__on_thread_scan)
+        self.__thread_player_activity = Thread(target=self.__on_thread_player_activity)
         self.__thread_player_activity.start()
 
         self.__thread_scan_motion = Thread(target=self.__on_thread_motion_activity)
@@ -387,7 +417,7 @@ scale, label, box {
         media = VLC_INSTANCE.media_new(file_path)
         media.parse()
         media_title = media.get_meta(0)
-        self.__video_length = format_milliseconds_to_time(media.get_duration())
+        self.__video_length = media.get_duration()
         self.__media = media
 
         turn_off_screensaver(True)
@@ -585,7 +615,7 @@ scale, label, box {
             if self.__un_maximized_fixed_toolbar:
                 self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
 
-    def __on_thread_scan(self):
+    def __on_thread_player_activity(self):
         """
             This method scans the state of the player to update the tool buttons, volume, play-stop etc
         """
@@ -597,6 +627,10 @@ scale, label, box {
         while getattr(this_thread, "do_run", True):
 
             vlc_is_playing = self.is_playing()
+
+
+            if self.__media is not None and self.__video_length == 0: # Patch 001
+                self.__video_length = self.__media.get_duration()
 
             if not self.__scale_progress_pressed:
 
@@ -777,13 +811,13 @@ scale, label, box {
 
     def __on_menuitem_file_subs_activate(self, *_):
 
-        path =  dialog_select_file(self.__root_window)
+        path = gtk_utils.dialog_select_file(self.__root_window)
 
         if path is not None:
             self.__vlc_widget.player.video_set_subtitle_file(path)
-            self.__menuitem_file_subs.set_active(True)
+            return True
 
-        return True
+        return False
 
     def __on_scale_volume_changed(self, _, value):
         value = int(value * 100)
@@ -819,4 +853,4 @@ scale, label, box {
         if self.__media is not None:
             video_time = widget.get_value() * self.__media.get_duration()
             video_time = format_milliseconds_to_time(video_time)
-            self.__label_progress.set_text(video_time + " / " + self.__video_length)
+            self.__label_progress.set_text(video_time + " / " + format_milliseconds_to_time(self.__video_length))
