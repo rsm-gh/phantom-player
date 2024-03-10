@@ -50,11 +50,11 @@ from threading import Thread, current_thread
 from gi.repository import Gtk, GObject, Gdk, GLib
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+from model.Playlist import Track
+from model.Video import VideoPosition
 from view.gtk_utils import set_css
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
-from model.Video import VideoPosition
 from system_utils import EventCodes, turn_off_screensaver
-from Paths import _ICON_LOGO_SMALL, _HOME_DIR
 
 _EMPTY__VIDEO_LENGTH = "00:00"
 _DEFAULT_PROGRESS_LABEL = "{0} / {0}".format(_EMPTY__VIDEO_LENGTH)
@@ -96,40 +96,10 @@ def format_track(track):
 
     return '{}:   {}'.format(numb, content)
 
-
-def dialog_select_file(parent, start_path=''):
-    window_choose_file = Gtk.FileChooserDialog('Phantom Player',
-                                               parent,
-                                               Gtk.FileChooserAction.OPEN,
-                                               (Gtk.STOCK_CANCEL,
-                                                Gtk.ResponseType.CANCEL,
-                                                Gtk.STOCK_OPEN,
-                                                Gtk.ResponseType.OK))
-
-    window_choose_file.set_default_response(Gtk.ResponseType.NONE)
-    window_choose_file.set_icon_from_file(_ICON_LOGO_SMALL)
-    window_choose_file.set_transient_for(parent)
-
-    if start_path == '':
-        window_choose_file.set_current_folder(_HOME_DIR)
-    else:
-        window_choose_file.set_current_folder(start_path)
-
-    response = window_choose_file.run()
-    if response == Gtk.ResponseType.OK:
-        file_path = window_choose_file.get_filename()
-    else:
-        file_path = None
-
-    window_choose_file.destroy()
-    return file_path
-
-
 class WidgetsShown:
     none = 0
     volume = 1
     toolbox = 2
-
 
 class ThemeButtons:
     """
@@ -533,7 +503,7 @@ scale, label, box {
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
             default_item.set_active(True)
-        default_item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
+        default_item.connect('activate', self.__on_menu_video_subs_audio, Track.Type.audio, -1)
         submenu.append(default_item)
 
         for track in tracks:
@@ -541,7 +511,7 @@ scale, label, box {
                 continue
 
             item = Gtk.RadioMenuItem(label=format_track(track))
-            item.connect('activate', self.__on_menu_video_subs_audio, 0, track[0])
+            item.connect('activate', self.__on_menu_video_subs_audio, Track.Type.audio, track[0])
             item.join_group(default_item)
 
             if selected_track == track[0]:
@@ -561,7 +531,7 @@ scale, label, box {
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
             default_item.set_active(True)
-        default_item.connect('activate', self.__on_menu_video_subs_audio, 2, -1)
+        default_item.connect('activate', self.__on_menu_video_subs_audio, Track.Type.subtitles, -1)
         submenu.append(default_item)
 
         try:
@@ -579,10 +549,22 @@ scale, label, box {
             item.join_group(default_item)
             if selected_track == track[0]:
                 item.set_active(True)
-            item.connect('activate', self.__on_menu_video_subs_audio, 2, track[0])
+            item.connect('activate', self.__on_menu_video_subs_audio, Track.Type.subtitles, track[0])
             submenu.append(item)
 
         menu.show_all()
+
+    def __get_window_is_fullscreen(self):
+
+        window = self.__root_window.get_window()
+
+        if window is None:
+            return False
+
+        elif Gdk.WindowState.FULLSCREEN & window.get_state():
+            return True
+
+        return False
 
     def __set_cursor_empty(self):
         self.get_window().set_cursor(self.__empty_cursor)
@@ -679,7 +661,7 @@ scale, label, box {
             time_delta = time() - self.__motion_time
 
             if self.__un_maximized_fixed_toolbar:
-                fullscreen = self.__window_is_fullscreen()
+                fullscreen = self.__get_window_is_fullscreen()
             else:
                 fullscreen = None
 
@@ -708,7 +690,7 @@ scale, label, box {
         if key == EventCodes.Keyboard.f11 and self.get_media() is not None:
             self.__set_fullscreen(True)
 
-        elif Gdk.WindowState.FULLSCREEN & self.__root_window.get_window().get_state():
+        elif self.__get_window_is_fullscreen():
 
             # display the toolbox if the arrows are shown
             if key in (EventCodes.Keyboard.arrow_left, EventCodes.Keyboard.arrow_right):
@@ -765,16 +747,6 @@ scale, label, box {
                     self.__vlc_widget.player.play()
                     turn_off_screensaver(True)
 
-    def __on_menu_video_subs_audio(self, _, player_type, track):
-        if player_type == 0:
-            self.__vlc_widget.player.audio_set_track(track)
-
-        elif player_type == 1:
-            self.__vlc_widget.player.video_set_track(track)
-
-        elif player_type == 2:
-            self.__vlc_widget.player.video_set_spu(track)
-
     def __on_toolbutton_restart_clicked(self, *_):
         self.__vlc_widget.player.set_position(VideoPosition.start)
         self.emit(CustomSignals.video_restart)
@@ -796,19 +768,17 @@ scale, label, box {
         self.emit(CustomSignals.btn_random_toggled, widget.get_active())
 
     def __on_toolbutton_fullscreen_clicked(self, *_):
-        self.__set_fullscreen(not self.__window_is_fullscreen())
+        self.__set_fullscreen(not self.__get_window_is_fullscreen())
 
-    def __window_is_fullscreen(self):
+    def __on_menu_video_subs_audio(self, _, track_type, track):
+        if track_type == Track.Type.audio:
+            self.__vlc_widget.player.audio_set_track(track)
 
-        window = self.__root_window.get_window()
+        elif track_type == Track.Type.subtitles:
+            self.__vlc_widget.player.video_set_track(track)
 
-        if window is None:
-            return False
-
-        elif Gdk.WindowState.FULLSCREEN & window.get_state():
-            return True
-
-        return False
+        elif track_type == Track.Type.spu:
+            self.__vlc_widget.player.video_set_spu(track)
 
     def __on_scale_volume_changed(self, _, value):
         value = int(value * 100)

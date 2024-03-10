@@ -24,6 +24,15 @@ import random
 from Paths import _ICON_LOGO_MEDIUM, _SERIES_DIR
 from model.Video import VideoPosition
 
+class Track:
+    class Value:
+        disabled = -1
+        undefined = 0
+
+    class Type:
+        audio = 0
+        subtitles = 1
+        spu = 2
 
 class Playlist(object):
 
@@ -36,8 +45,8 @@ class Playlist(object):
                  is_random=False,
                  keep_playing=True,
                  start_at=0.0,
-                 audio_track=0,
-                 subtitles_track=0):
+                 audio_track=Track.Value.undefined,
+                 subtitles_track=Track.Value.undefined):
 
         self.__name = ""
         self.__icon_extension = icon_extension
@@ -49,8 +58,8 @@ class Playlist(object):
 
         self.__keep_playing = False
         self.__start_at = 0.0
-        self.__audio_track = 0
-        self.__subtitles_track = 0
+        self.__audio_track = Track.Value.undefined
+        self.__subtitles_track = Track.Value.undefined
 
         self.set_name(name)
         self.set_recursive(recursive)
@@ -431,12 +440,9 @@ class Playlist(object):
             print(self.__name)
             print("set_audio_track error:")
             print(str(e))
-            value = 0
+            value = Track.Value.undefined
 
-        if value == -1 or value >= 0:
-            self.__audio_track = value
-        else:
-            self.__audio_track = 0
+        self.__audio_track = value
 
     def set_subtitles_track(self, value):
         try:
@@ -445,12 +451,9 @@ class Playlist(object):
             print(self.__name)
             print("set_subtitles_track error:")
             print(str(e))
-            value = 0
+            value = Track.Value.undefined
 
-        if value == -1 or value >= 0:
-            self.__subtitles_track = value
-        else:
-            self.__subtitles_track = 0
+        self.__subtitles_track = value
 
     def set_random(self, is_random):
         self.__random = is_random
