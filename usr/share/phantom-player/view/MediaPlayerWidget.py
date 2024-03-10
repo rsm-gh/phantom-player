@@ -52,7 +52,7 @@ from gi.repository import Gtk, GObject, Gdk, GLib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from model.Playlist import Track
 from model.Video import VideoPosition
-from view.gtk_utils import set_css
+from view.gtk_utils import set_css, dialog_select_file
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
 
@@ -438,18 +438,6 @@ scale, label, box {
 
         GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
 
-    def set_subtitles_from_file(self, *_):
-        """
-            Todo: read the result of player.video_set_subtitle_file(path) and display a message
-            in case of problem.
-        """
-        path = dialog_select_file(self.__root_window)
-
-        if path is not None:
-            self.__vlc_widget.player.video_set_subtitle_file(path)
-
-        return True
-
     def set_random(self, state):
         self.__toggletoolbutton_random.set_active(state)
 
@@ -503,7 +491,7 @@ scale, label, box {
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
             default_item.set_active(True)
-        default_item.connect('activate', self.__on_menu_video_subs_audio, Track.Type.audio, -1)
+        default_item.connect('activate', self.__on_menuitem_track_activate, Track.Type.audio, -1)
         submenu.append(default_item)
 
         for track in tracks:
@@ -511,7 +499,7 @@ scale, label, box {
                 continue
 
             item = Gtk.RadioMenuItem(label=format_track(track))
-            item.connect('activate', self.__on_menu_video_subs_audio, Track.Type.audio, track[0])
+            item.connect('activate', self.__on_menuitem_track_activate, Track.Type.audio, track[0])
             item.join_group(default_item)
 
             if selected_track == track[0]:
@@ -531,7 +519,7 @@ scale, label, box {
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
             default_item.set_active(True)
-        default_item.connect('activate', self.__on_menu_video_subs_audio, Track.Type.subtitles, -1)
+        default_item.connect('activate', self.__on_menuitem_track_activate, Track.Type.subtitles, -1)
         submenu.append(default_item)
 
         try:
@@ -549,8 +537,15 @@ scale, label, box {
             item.join_group(default_item)
             if selected_track == track[0]:
                 item.set_active(True)
-            item.connect('activate', self.__on_menu_video_subs_audio, Track.Type.subtitles, track[0])
+            item.connect('activate', self.__on_menuitem_track_activate, Track.Type.subtitles, track[0])
             submenu.append(item)
+
+
+        item = Gtk.RadioMenuItem(label="From file...")
+        item.join_group(default_item)
+        item.connect('activate', self.__on_menuitem_file_subs_activate)
+        submenu.append(item)
+
 
         menu.show_all()
 
@@ -758,7 +753,7 @@ scale, label, box {
             self.play()
 
     def __on_toolbutton_end_clicked(self, *_):
-        self.__vlc_widget.player.set_position(VideoPosition.end_almost)  # position = 1 will not work
+        self.__vlc_widget.player.set_position(VideoPosition.end_numeric)  # position = 1 will not work
         # self.emit(CustomSignals.video_end) the thread will emit This signal
 
     def __on_togglebutton_keep_playing_toggled(self, widget):
@@ -770,7 +765,7 @@ scale, label, box {
     def __on_toolbutton_fullscreen_clicked(self, *_):
         self.__set_fullscreen(not self.__get_window_is_fullscreen())
 
-    def __on_menu_video_subs_audio(self, _, track_type, track):
+    def __on_menuitem_track_activate(self, _, track_type, track):
         if track_type == Track.Type.audio:
             self.__vlc_widget.player.audio_set_track(track)
 
@@ -779,6 +774,16 @@ scale, label, box {
 
         elif track_type == Track.Type.spu:
             self.__vlc_widget.player.video_set_spu(track)
+
+    def __on_menuitem_file_subs_activate(self, *_):
+
+        path =  dialog_select_file(self.__root_window)
+
+        if path is not None:
+            self.__vlc_widget.player.video_set_subtitle_file(path)
+            self.__menuitem_file_subs.set_active(True)
+
+        return True
 
     def __on_scale_volume_changed(self, _, value):
         value = int(value * 100)
