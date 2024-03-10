@@ -22,8 +22,7 @@ from gi.repository import Gtk
 from gi.repository.GdkPixbuf import Pixbuf
 
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-_PROJECT_DIR = os.path.dirname(_SCRIPT_DIR)
-sys.path.insert(0, _PROJECT_DIR)
+sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
 from Paths import *
 from Texts import Texts
