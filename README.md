@@ -1,9 +1,12 @@
 
+> **NOTE: THE PLAYER IS CURRENTLY UNDER DEVELOPMENT. The first stable version is not yet released**
+
+
 ![Player Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview.png)  
 <sub><sup>*The Desktop theme defines the look and the icons of the player.</sup></sub>
 
-**Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive.
-Particularly useful for users who still downloading torrents.
+**Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive,
+and it will be particularly useful if you're still downloading torrents.
 
 Some of its major features are:
 
@@ -31,7 +34,7 @@ any of the hard-drive content.*
 3. Execute the setup file.
 
 **If the dependencies are satisfied, the software can be directly executed, the installation is not mandatory.*  
-**When the version 2 be released, I will create some packages for popular distributions & windows.* 
+***When the stable version is released, there will be some packages for popular distributions & windows.* 
 
 ## Controls
 
@@ -53,8 +56,8 @@ any of the hard-drive content.*
 + Change the subtitles or the audio track with the button from the media player.
 + Resize the player by grabbing the separator with and moving it up or down.
 
-***Only in fullscreen mode.*  
 **The media player controls only work if a video is loaded.*  
+***Only in fullscreen mode.*  
 
 ## Extra
 ### Searching missing Videos
@@ -99,13 +102,13 @@ Each playlist is stored in a CSV file that uses a "|" as separator.
 
 The first line will contain the playlist properties:
 ```
-Random | Keep Playing | Start At | Audio Track | Subtitles Track | Icon Name
+Random (Boolean) | Keep Playing (Boolean) | Start At (Time) | Audio Track (Integer) | Subtitles Track (Integer) | Icon Extension (String)
 ```
 Then, the playlist paths will be listed as:
 ```
-Path | Recursive | R. Startup
+Path (System Path) | Recursive (Boolean) | R. Startup (Boolean)
 ```
 And finally, there will be one line per video:
 ```
-Number | Absolute Path | Name | Position | Ignore
+Number (Integer) | Absolute Path (System Path) | Name (String) | Position (Double) | Ignore (Boolean)
 ```
