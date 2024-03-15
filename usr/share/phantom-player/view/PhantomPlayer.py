@@ -309,17 +309,13 @@ class PhantomPlayer:
         #
         # Play the video
         #
-
-        position = video.get_position()
-        if position >= VideoPosition.end_numeric and replay:
-            position = 0
-
         self.__mp_widget.set_video(video.get_path(),
-                                   position,
-                                   self.__current_media.playlist.get_subtitles_track(),
-                                   self.__current_media.playlist.get_audio_track(),
-                                   self.__current_media.playlist.get_start_at(),
-                                   play)
+                                   position=video.get_position(),
+                                   start_at=self.__current_media.playlist.get_start_at(),
+                                   subtitles_track=self.__current_media.playlist.get_subtitles_track(),
+                                   audio_track=self.__current_media.playlist.get_audio_track(),
+                                   play=play,
+                                   replay=replay)
 
         if self.__mp_widget.get_random() != self.__current_media.playlist.get_random():
             self.__mp_widget.set_random(self.__current_media.playlist.get_random())
