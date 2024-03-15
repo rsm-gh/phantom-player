@@ -70,6 +70,31 @@ scale, label, box {
 }
 """
 
+
+def calculate_end_position(video_length):
+    """
+        Calculate a position and the round digits
+        that are necessary to track 1 second.
+    """
+
+    seconds = video_length // 1000
+
+    if seconds <= 1:
+        return .6, 1
+
+    digits = 0
+    while True:
+        digits += 1
+        end_pos = float("." + ("9" * digits))
+        delta = 1 - end_pos
+        quantity = 1 / delta
+        step = seconds / quantity
+        if step <= 1 or digits > 9:
+            break
+
+    return end_pos, digits
+
+
 def calculate_start_position(position, start_at, video_length):
     """
         Calculate the player start position.
@@ -103,6 +128,7 @@ def calculate_start_position(position, start_at, video_length):
         start_position = 0
 
     return start_position
+
 
 def format_milliseconds_to_time(number):
     if number <= 0:
@@ -140,10 +166,12 @@ def format_track(track):
 
     return '{}:   {}'.format(numb, content)
 
+
 class WidgetsShown:
     none = 0
     volume = 1
     toolbox = 2
+
 
 class ThemeButtons:
     """
@@ -174,11 +202,12 @@ class CustomSignals:
 
 
 class DelayedMediaData:
-    def __init__(self, position, start_at, sub_track, audio_track):
+    def __init__(self, position, start_at, sub_track, audio_track, replay):
         self._position = position
         self._start_at = start_at
         self._sub_track = sub_track
         self._audio_track = audio_track
+        self._replay = replay
 
 
 class MediaPlayerWidget(Gtk.VBox):
@@ -200,7 +229,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__video_length = _EMPTY__VIDEO_LENGTH
         self.__hidden_controls = False
         self.__media = None
-        self.__video_changed = False # Patch 001
+        self.__video_changed = False  # Patch 001
 
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
         self.__widgets_shown = WidgetsShown.toolbox
@@ -451,7 +480,8 @@ class MediaPlayerWidget(Gtk.VBox):
                   start_at=0.0,
                   subtitles_track=Track.Value.undefined,
                   audio_track=Track.Value.undefined,
-                  play=True):
+                  play=True,
+                  replay=False):
 
         if play is False:
             return  # todo: fix this
@@ -479,8 +509,8 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__delayed_media_data = DelayedMediaData(position=position,
                                                      start_at=start_at,
                                                      sub_track=subtitles_track,
-                                                     audio_track=audio_track)
-
+                                                     audio_track=audio_track,
+                                                     replay=replay)
 
     def set_random(self, state):
         self.__toggletoolbutton_random.set_active(state)
@@ -584,12 +614,10 @@ class MediaPlayerWidget(Gtk.VBox):
             item.connect('activate', self.__on_menuitem_track_activate, Track.Type.subtitles, track[0])
             submenu.append(item)
 
-
         item = Gtk.RadioMenuItem(label="From file...")
         item.join_group(default_item)
         item.connect('activate', self.__on_menuitem_file_subs_activate)
         submenu.append(item)
-
 
         menu.show_all()
 
@@ -636,7 +664,10 @@ class MediaPlayerWidget(Gtk.VBox):
 
         this_thread = current_thread()
 
-        cached_position = 0
+        cached_emitted_position = 0
+        cached_vlc_position = 0
+        end_position = -1
+        position_precision = -1
 
         while getattr(this_thread, "do_run", True):
 
@@ -646,16 +677,23 @@ class MediaPlayerWidget(Gtk.VBox):
                 # can be correctly parsed to apply all the settings that depend on it.
                 #
                 self.__video_length = self.__media.get_duration()
+                cached_emitted_position = 0
+                cached_vlc_position = 0
+                end_position = -1
+                position_precision = -1
 
                 if self.__video_length > 0:
 
                     self.__video_changed = False
 
+                    end_position, position_precision = calculate_end_position(self.__video_length)
+
                     if self.__delayed_media_data._audio_track != Track.Value.undefined:
                         GLib.idle_add(self.__vlc_widget.player.audio_set_track, self.__delayed_media_data._audio_track)
 
                     if self.__delayed_media_data._sub_track != Track.Value.undefined:
-                        GLib.timeout_add_seconds(self.__vlc_widget.player.video_set_spu, self.__delayed_media_data._sub_track)
+                        GLib.timeout_add_seconds(self.__vlc_widget.player.video_set_spu,
+                                                 self.__delayed_media_data._sub_track)
 
                     if self.__delayed_media_data._position > 0 or self.__delayed_media_data._start_at > 0:
                         start_position = calculate_start_position(self.__delayed_media_data._position,
@@ -700,19 +738,20 @@ class MediaPlayerWidget(Gtk.VBox):
                 #    Update the time of the scale and the time
                 #
                 vlc_position = self.__vlc_widget.player.get_position()
-                print("VLC POSITION", vlc_position, self.__video_length)
-                round_position = round(vlc_position, 4)
-                if round_position > 1.0:
-                    round_position = 1.0
+                if vlc_position > VideoPosition.end:
+                    vlc_position = VideoPosition.end
 
-                if round_position != cached_position and round_position >= 0:
-                    cached_position = round_position
-                    GLib.idle_add(self.__scale_progress.set_value, cached_position)
-                    self.emit(CustomSignals.position_changed, cached_position)
+                cached_emitted_position = self.__on_player_position_changed(vlc_position,
+                                                                            position_precision,
+                                                                            end_position,
+                                                                            cached_emitted_position)
 
-                    if round_position >= VideoPosition.end_numeric:
-                        print("CALLED")
-                        self.emit(CustomSignals.video_end)
+                if cached_emitted_position > vlc_position:
+                    vlc_position = cached_emitted_position
+
+                if vlc_position != cached_vlc_position:
+                    cached_vlc_position = vlc_position
+                    GLib.idle_add(self.__scale_progress.set_value, vlc_position)
 
             #
             #    Wait
@@ -775,6 +814,28 @@ class MediaPlayerWidget(Gtk.VBox):
             elif key == EventCodes.Keyboard.arrow_down:
                 self.volume_down()
 
+    def __on_player_position_changed(self, vlc_position, position_precision, end_position, cached_position):
+
+        if vlc_position < VideoPosition.start:
+            return cached_position
+
+        elif vlc_position > VideoPosition.end:
+            vlc_position = VideoPosition.end
+
+        else:
+            vlc_position = round(vlc_position, position_precision)
+
+        if vlc_position == cached_position or cached_position >= end_position:
+            return cached_position
+
+        if vlc_position >= end_position:
+            vlc_position = VideoPosition.end
+            self.emit(CustomSignals.video_end)
+        else:
+            self.emit(CustomSignals.position_changed, vlc_position)
+
+        return vlc_position
+
     def __on_motion_notify_event(self, *_):
         self.__motion_time = time()
 
@@ -825,7 +886,7 @@ class MediaPlayerWidget(Gtk.VBox):
             self.play()
 
     def __on_toolbutton_end_clicked(self, *_):
-        self.__vlc_widget.player.set_position(VideoPosition.end_numeric)  # position = 1 will not work
+        self.__vlc_widget.player.set_position(VideoPosition.end - 0.001)  # position = 1 will not work
         # self.emit(CustomSignals.video_end) the thread will emit This signal
 
     def __on_togglebutton_keep_playing_toggled(self, widget):

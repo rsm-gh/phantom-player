@@ -532,9 +532,7 @@ class PhantomPlayer:
         self.__current_media.playlist.set_keep_playing(state)
 
     def __on_media_player_position_changed(self, _, position):
-        """
-            Only update the liststore if the progress is different
-        """
+
         self.__current_media.set_video_position(position)
         selected_series_name = self.__playlist_selected.get_name()
 
@@ -551,12 +549,13 @@ class PhantomPlayer:
         video_id = self.__current_media.get_video_id()
         for i, row in enumerate(self.__liststore_videos):
             if row[VideosListstoreColumnsIndex.id] == video_id:
-                if row[VideosListstoreColumnsIndex.progress] != self.__current_media.get_video_progress():
-                    self.__liststore_videos[i][
-                        VideosListstoreColumnsIndex.progress] = self.__current_media.get_video_progress()
+                self.__liststore_videos[i][VideosListstoreColumnsIndex.progress] = self.__current_media.get_video_progress()
                 break
 
     def __on_media_player_video_end(self, *_):
+
+        self.__on_media_player_position_changed(None, VideoPosition.end)
+
         if not self.__current_media.playlist.get_keep_playing():
             self.__mp_widget.pause()
             self.__window_root.unfullscreen()
