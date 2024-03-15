@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 from Paths import *
 from Texts import Texts
 from view import gtk_utils
+from model.Playlist import TimeValue
 from controller import factory_video
 
 
@@ -64,7 +65,9 @@ class SettingsDialog:
         self.__switch_random_playing = builder.get_object('switch_random_playing')
         self.__spinbutton_audio = builder.get_object('spinbutton_audio')
         self.__spinbutton_subtitles = builder.get_object('spinbutton_subtitles')
-        self.__spinbutton_start_at = builder.get_object('spinbutton_start_at')
+        self.__spinbutton_start_at_min = builder.get_object('spinbutton_start_at_min')
+        self.__spinbutton_start_at_sec = builder.get_object('spinbutton_start_at_sec')
+
         self.__liststore_paths = builder.get_object('liststore_paths')
         self.__button_set_image = builder.get_object('button_set_image')
 
@@ -89,7 +92,8 @@ class SettingsDialog:
         self.__switch_random_playing.connect('button-press-event', self.__on_switch_random_playing_press_event)
         self.__spinbutton_audio.connect('value-changed', self.__on_spinbutton_audio_value_changed)
         self.__spinbutton_subtitles.connect('value-changed', self.__on_spinbutton_subtitles_value_changed)
-        self.__spinbutton_start_at.connect('value-changed', self.__on_spinbutton_start_at_value_changed)
+        self.__spinbutton_start_at_min.connect('value-changed', self.__on_spinbutton_start_at_value_changed)
+        self.__spinbutton_start_at_sec.connect('value-changed', self.__on_spinbutton_start_at_value_changed)
 
         self.__button_path_add.connect('clicked', self.__on_button_path_add_clicked)
         self.__button_path_remove.connect('clicked', self.__on_button_path_remove_clicked)
@@ -153,7 +157,8 @@ class SettingsDialog:
         self.__populating_settings = True
         self.__spinbutton_audio.set_value(playlist.get_audio_track())
         self.__spinbutton_subtitles.set_value(playlist.get_subtitles_track())
-        self.__spinbutton_start_at.set_value(playlist.get_start_at())
+        self.__spinbutton_start_at_min.set_value(playlist.get_start_at() // 60)
+        self.__spinbutton_start_at_sec.set_value(playlist.get_start_at() % 60)
         self.__populating_settings = False
 
         self.__playlist = playlist
@@ -215,21 +220,15 @@ class SettingsDialog:
         value = spinbutton.get_value_as_int()
         self.__playlist.set_subtitles_track(value)
 
-    def __on_spinbutton_start_at_value_changed(self, spinbutton):
+    def __on_spinbutton_start_at_value_changed(self, *_):
 
         if self.__populating_settings:
             return
 
-        value = float(spinbutton.get_value())
+        minutes = self.__spinbutton_start_at_min.get_value()
+        seconds = self.__spinbutton_start_at_sec.get_value()
 
-        str_value = str(value).split('.')
-        minutes = int(str_value[0])
-        seconds = int(str_value[1])
-        if seconds > 60:
-            minutes += 1
-            spinbutton.set_value(minutes + 0.00)
-
-        self.__playlist.set_start_at(value)
+        self.__playlist.set_start_at(minutes * 60 + seconds)
 
     def __on_button_path_add_clicked(self, *_):
 

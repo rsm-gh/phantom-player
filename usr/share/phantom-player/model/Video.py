@@ -20,7 +20,6 @@ import os
 
 class VideoPosition:
     start = 0
-    end_numeric = .99999
     end = 1
 
 class Video(object):

@@ -24,6 +24,10 @@ import random
 from Paths import _ICON_LOGO_MEDIUM, _SERIES_DIR
 from model.Video import VideoPosition
 
+class TimeValue:
+    _minium = 0
+    _maximum = 59 * 60 + 59
+
 class Track:
     class Value:
         disabled = -1
@@ -44,7 +48,7 @@ class Playlist(object):
                  r_startup=False,
                  is_random=False,
                  keep_playing=True,
-                 start_at=0.0,
+                 start_at=0,
                  audio_track=Track.Value.undefined,
                  subtitles_track=Track.Value.undefined):
 
@@ -418,17 +422,20 @@ class Playlist(object):
 
     def set_start_at(self, value):
         try:
-            value = float(value)
+            value = int(value)
         except Exception as e:
             print(self.__name)
             print("set_start_at error:")
             print(str(e))
-            value = 0.0
+            value = 0
 
-        if value > 0:
-            self.__start_at = value
+        if value > TimeValue._minium:
+            if value > TimeValue._maximum:
+                self.__start_at = TimeValue._maximum
+            else:
+                self.__start_at = value
         else:
-            self.__start_at = 0.0
+            self.__start_at = TimeValue._minium
 
     def set_recursive(self, recursive):
         self.__recursive = recursive
