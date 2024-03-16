@@ -7,6 +7,7 @@
 + Apply the "load video/discover" methods of the settings dialog into a thread.
 + Finish the option "end at"
 + Discover videos in the background, once all the series are loaded? To speed up the startup.
++ Settings dialog, paths, display how may valid videos, how many missing videos in the liststore.
 
 ### Bugs:
 + When searching in the playlist liststore, empty the videos if no playlist is selected.
@@ -18,6 +19,7 @@
 + Create a dialog to rename videos.
 + Create a dialog to find videos?
 + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
++ Hash videos to simplify the finding?
 
 ## MediaPlayerWidget
 

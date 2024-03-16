@@ -17,6 +17,7 @@
 
 import os
 import magic
+import hashlib
 
 from model.Video import Video, VideoPosition
 from controller.utils import str_to_boolean
@@ -24,106 +25,157 @@ from controller.utils import str_to_boolean
 _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
 
+def __hash_of_file(file_path):
+
+    with open(file_path, "rb") as f:
+        file_hash = hashlib.sha256()
+        while chunk := f.read(8192):
+            file_hash.update(chunk)
+
+    return file_hash.hexdigest()
+
+
 def load(playlist, is_startup):
 
     print("Loading videos of '{}':".format(playlist.get_name()))
+    load_cached(playlist)
+
+    # discover new videos
+    if not is_startup or (is_startup and playlist.get_r_startup()):
+        discover(playlist)
+    else:
+        print("\tDiscovering new videos... SKIP requested.")
+
+def load_cached(playlist):
 
     if not os.path.exists(playlist.get_save_path()):
         print("\tCached videos... SKIP, the configuration file does not exist.")
-    else:
-        print("\tCached videos...")
-
-        with open(playlist.get_save_path(), mode='rt', encoding='utf-8') as f:
-            rows = list(f.readlines())
-
-        for i, row in enumerate(rows):
-            # 0: is the series header
-            # 1: is the series path
-            # 2: start of the videos
-            if i <= 1:
-                continue
-
-            #
-            # Read the data
-            #
-            columns = row.split('|')
+        return
 
 
-            # The ID is no longer read.
-            try:
-                video_id = int(columns[0])
-            except Exception:
-                start = 0
-            else:
-                start = 1
+    print("\tCached videos...")
 
-            try:
-                path = columns[start].strip()
-            except Exception:
-                print("\t\terror getting the path", columns)
-                path = None
+    with open(playlist.get_save_path(), mode='rt', encoding='utf-8') as f:
+        rows = list(f.readlines())
 
-            try:
-                name = columns[start+1].strip()
-            except Exception:
-                print("\t\terror getting the name", columns)
-                name = ""
+    existent_video_hashes = []
+    existent_video_paths = []
 
-            try:
-                position = float(columns[start+2])
-            except Exception:
-                position = VideoPosition._start
-                print("\t\terror getting the position", columns)
+    for i, row in enumerate(rows):
+        # 0: is the series header
+        # 1: is the series path
+        # 2: start of the videos
+        if i <= 1:
+            continue
 
-            try:
-                ignore = str_to_boolean(columns[start+3])
-            except Exception:
-                ignore = False
-                print("\t\terror getting the ignore state", columns)
-
-            #
-            # Check for valid lines
-            #
-            if path is None:
-                print("\t\tExit line because empty path.", columns)
-                continue
-
-            elif os.path.exists(path) and not __file_is_video(path,True):
-                print("\t\tExit line because not video.", columns)
-                continue
-
-            duplicated = False
-            for video in playlist.get_videos():
-                if video.get_path() == path:
-                    duplicated = True
-                    break
-
-            if duplicated:
-                print("\t\tExit line because duplicated path.", columns)
-                continue
-
-            video = Video(path, name)
-            video.set_position(position)
-            video.set_ignore(ignore)
-            playlist.add_video(video)
+        #
+        # Read the data
+        #
+        columns = row.split('|')
 
 
-    #
-    #    Get the videos from the folder. This will find new videos.
-    #
-    if not is_startup or (is_startup and playlist.get_r_startup()):
-        if not os.path.exists(playlist.get_data_path()):
-            print("\tDiscovering new videos... SKIP, the data path does not exist.")
+        # The ID is no longer read. This is for compatibility
+        # for the old files.
+        try:
+            int(columns[0])
+        except Exception:
+            start = 0
         else:
-            print("\tDiscovering new videos...")
-            playlist_paths = [video.get_path() for video in playlist.get_videos()]
-            for video_path in __generate_videos_list_from_directory(playlist.get_data_path(), playlist.get_recursive()):
-                if video_path not in playlist_paths:
-                    new_video = Video(video_path)
-                    new_video.set_is_new(True)
-                    playlist.add_video(new_video)
-    else:
-        print("\tDiscovering new videos... SKIP requested.")
+            start = 1
+
+        try:
+            path = columns[start].strip()
+        except Exception:
+            print("\t\terror getting the path", columns)
+            path = None
+
+        try:
+            name = columns[start+1].strip()
+        except Exception:
+            print("\t\terror getting the name", columns)
+            name = ""
+
+        try:
+            position = float(columns[start+2])
+        except Exception:
+            position = VideoPosition._start
+            print("\t\terror getting the position", columns)
+
+        try:
+            ignore = str_to_boolean(columns[start+3])
+        except Exception:
+            ignore = False
+            print("\t\terror getting the ignore state", columns)
+
+        try:
+            hash_file = columns[start+4].strip()
+        except Exception:
+            hash_file = ""
+        else:
+            # Check if it is a hash, because when the hash is empty, the value is exported as False.
+            # Why? Because if the CSV module?
+            if len(hash_file) < 10:
+                hash_file = ""
+
+        if hash_file == "" and os.path.exists(path):
+            print("\t\trecalculating video hash...", path)
+            hash_file = __hash_of_file(path)
+
+        #
+        # Check for valid lines
+        #
+        if path is None:
+            print("\t\tExit line because empty path.", columns)
+            continue
+
+        elif os.path.exists(path) and not __file_is_video(path,True):
+            print("\t\tExit line because not video.", columns)
+            continue
+
+
+        if path in existent_video_paths:
+            print("\t\tExit line because duplicated path.", path)
+            continue
+        else:
+            existent_video_paths.append(path)
+
+        if hash_file in existent_video_hashes:
+            print("\t\tExit line because duplicated hash", hash_file, path)
+            continue
+
+        if os.path.exists(path):
+            existent_video_hashes.append(hash_file)
+
+        video = Video(path, name)
+        video.set_position(position)
+        video.set_ignore(ignore)
+        video.set_hash(hash_file)
+        playlist.add_video(video)
+
+
+def discover(playlist):
+
+    if not os.path.exists(playlist.get_data_path()):
+        print("\tDiscovering new videos... SKIP, the data path does not exist.")
+        return
+
+    print("\tDiscovering new videos...")
+    playlist_paths = [video.get_path() for video in playlist.get_videos()]
+    playlist_hashes = [video.get_hash() for video in playlist.get_videos()]
+    for video_path in __generate_videos_list_from_directory(playlist.get_data_path(), playlist.get_recursive()):
+        if video_path in playlist_paths:
+            continue
+
+        video_hash = __hash_of_file(video_path)
+        if video_hash in playlist_hashes:
+            print("\tSkipping video because hash exist...", video_path)
+            continue
+
+        new_video = Video(video_path)
+        new_video.set_is_new(True)
+        new_video.set_hash(video_hash)
+        playlist.add_video(new_video)
+
 
 def __file_is_video(path, forgive_broken_links=False):
     if os.path.islink(path):

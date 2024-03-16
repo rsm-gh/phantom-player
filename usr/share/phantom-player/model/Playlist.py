@@ -100,7 +100,8 @@ class Playlist(object):
                 csv_list.writerow([video.get_path(),
                                    video.get_name(),
                                    video.get_position(),
-                                   video.get_ignore()])
+                                   video.get_ignore(),
+                                   video.get_hash()])
 
     def restart(self):
         for video in self.__videos_instances:
@@ -128,11 +129,12 @@ class Playlist(object):
         self.__active_videos_nb += 1
 
     def clean_videos(self):
+        """Delete the hidden and un-existing videos"""
 
         videos = []
         for video in self.__videos_instances:
             if not os.path.exists(video.get_path()) and video.get_ignore():
-                '''Delete the hidden and un-existing videos'''
+                pass
             else:
                 videos.append(video)
 
