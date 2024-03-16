@@ -16,17 +16,6 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-"""
-    + Fix: when searching in the playlist liststore, the videos shall be emptied.
-    + Manage multiple paths into the playlist settings menu.
-    + Apply the "load video" methods of the settings dialog into a thread.
-    + Create the option "end at"
-    + Create the "delete video" option (instead of clean)
-    + Create a dialog to rename videos.
-    + Create a dialog to find videos?
-    + Discover videos, once all the series are loaded?
-"""
-
 import os
 import gi
 import sys
