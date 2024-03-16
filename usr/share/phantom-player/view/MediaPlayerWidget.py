@@ -17,36 +17,6 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-"""
-    + Fix the option to choose the subtitles' file...
-
-    + Fixes to the menu of the subtitles & audio tracks?
-
-    + Sometimes when clicking very fast the progress scale, the video position is not modified.
-        Despite multiple ways of trying to fix this, I haven't found a solution.
-
-    + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
-        I haven't found a solution for this, because the press signals connect to the button and not the scale.
-
-    + Fix to the VolumeButton: it should get hidden when clicking out of the button. Is this a problem of GTK?
-
-    + Start/Stop __on_thread_player_activity when paused, stopped? ?
-
-    + self.__vlc_widget.player.XXX_set_track returns a status.
-       It would be good to read the status and display a message in case of problem.
-
-    + Patch 001: The media length is not correctly parsed if the video is not being played?
-
-    + Patch 002: self.__vlc_widget.player.get_media() is always returning None. Why?
-        To fix it, I created self.__media
-
-
-    Remarks:
-        + player.set_time() is not used because it seems that it is not supported for all formats,
-          instead, the time is converted to a position.
-
-"""
-
 import os
 import vlc
 import sys
@@ -225,7 +195,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__root_window = root_window
         self.__motion_time = time()
         self.__scale_progress_pressed = False
-        self.__video_length = _EMPTY__VIDEO_LENGTH
+        self.__video_duration = _EMPTY__VIDEO_LENGTH
         self.__hidden_controls = False
         self.__media = None
         self.__video_change_status = VideoChangeStatus._none  # Patch 001
@@ -476,7 +446,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__video_change_status = VideoChangeStatus._changing
         self.__media = None
-        self.__video_length = 0
+        self.__video_duration = 0
 
         # Patch 001: Some actions will be performed when the video length be properly parsed
         self.__delayed_media_data = DelayedMediaData(position=position,
@@ -491,17 +461,17 @@ class MediaPlayerWidget(Gtk.VBox):
         GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
         GLib.idle_add(self.__scale_progress.set_value, VideoPosition._start)
 
-        GLib.idle_add(self.__vlc_widget.player.stop)
-
+        GLib.idle_add(self.__vlc_widget.player.stop) # To remove any previous video
 
         if play is False:
-            return  # todo: fix this
+            return
 
         if not os.path.exists(file_path):
             return
 
-        self.__media = VLC_INSTANCE.media_new(file_path)
-        self.__media.parse()
+        media = VLC_INSTANCE.media_new(file_path)
+        media.parse()
+        self.__media = media # assigned only after `parse()` has finished.
 
         GLib.idle_add(self.__root_window.set_title, self.__media.get_meta(0))
 
@@ -684,17 +654,17 @@ class MediaPlayerWidget(Gtk.VBox):
                 # Patch 001: In case of a new video, wait until the media duration
                 # can be correctly parsed to apply all the settings that depend on it.
                 #
-                self.__video_length = self.__media.get_duration()
+                self.__video_duration = self.__media.get_duration()
                 cached_emitted_position = 0
                 cached_vlc_position = 0
                 end_position = -1
                 position_precision = -1
 
-                if self.__video_length <= 0 < end_position:
+                if self.__video_duration <= 0 < end_position:
                     continue
 
                 self.__video_change_status = VideoChangeStatus._changed
-                end_position, position_precision = calculate_end_position(self.__video_length)
+                end_position, position_precision = calculate_end_position(self.__video_duration)
 
                 #
                 # Set the audio track
@@ -717,7 +687,7 @@ class MediaPlayerWidget(Gtk.VBox):
                 start_position = calculate_start_position(saved_position=self.__delayed_media_data._position,
                                                           start_at=self.__delayed_media_data._start_at,
                                                           end_position=end_position,
-                                                          video_length=self.__video_length,
+                                                          video_length=self.__video_duration,
                                                           replay=self.__delayed_media_data._replay)
                 if start_position > VideoPosition._start:
                     GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
@@ -974,4 +944,4 @@ class MediaPlayerWidget(Gtk.VBox):
         if self.__media is not None:
             video_time = widget.get_value() * self.__media.get_duration()
             video_time = format_milliseconds_to_time(video_time)
-            self.__label_progress.set_text(video_time + " / " + format_milliseconds_to_time(self.__video_length))
+            self.__label_progress.set_text(video_time + " / " + format_milliseconds_to_time(self.__video_duration))
