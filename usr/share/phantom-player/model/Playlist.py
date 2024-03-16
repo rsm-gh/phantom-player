@@ -97,8 +97,7 @@ class Playlist(object):
             csv_list.writerow([self.__data_path, self.__recursive, self.__r_startup])
 
             for video in self.__videos_instances:
-                csv_list.writerow([video.get_id(),
-                                   video.get_path(),
+                csv_list.writerow([video.get_path(),
                                    video.get_name(),
                                    video.get_position(),
                                    video.get_ignore()])
@@ -124,10 +123,7 @@ class Playlist(object):
             video.set_id(i)
 
     def add_video(self, video):
-
-        if video.get_id() == -1:
-            video.set_id(len(self.__videos_instances) + 1)
-
+        video.set_id(len(self.__videos_instances) + 1)
         self.__videos_instances.append(video)
         self.__active_videos_nb += 1
 
