@@ -664,7 +664,7 @@ class PhantomPlayer:
             self.__configuration.write('current_playlist', self.__playlist_selected.get_name())
             video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
             self.__current_media = CurrentMedia(self.__playlist_selected)
-            self.__set_video(video_id)
+            self.__set_video(video_id, replay=True)
 
 
         elif event.button == EventCodes.Cursor.right_click:
@@ -684,18 +684,29 @@ class PhantomPlayer:
 
             menu = Gtk.Menu()
 
-            # Fill progress
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_fill)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_set_progress, 100)
+            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id] for treepath in treepaths]
 
-            # Reset Progress
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_reset)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_set_progress, 0)
+            # If only 1 video is selected, and it is loaded in the player.
+            # the progress buttons shall not be displayed.
+            can_change_progress = True
+            if len(selected_ids) == 1:
+                if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
+                    if self.__current_media.get_video_id() == selected_ids[0]:
+                        can_change_progress = False
+
+
+            if can_change_progress:
+                # Fill progress
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_fill)
+                menu.append(menuitem)
+                menuitem.connect('activate', self.__on_menuitem_set_progress, 100)
+
+                # Reset Progress
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_reset)
+                menu.append(menuitem)
+                menuitem.connect('activate', self.__on_menuitem_set_progress, 0)
 
             # Find videos
-            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id] for treepath in treepaths]
             if self.__playlist_selected.missing_videos(selected_ids):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.search)
                 menuitem.connect('activate', self.__playlist_find_videos, selected_ids)
@@ -853,18 +864,22 @@ class PhantomPlayer:
         if len(treepaths) == 0:
             return
 
-        for treepath in treepaths:
-            self.__liststore_videos[treepath][VideosListstoreColumnsIndex.progress] = progress
-            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id]
-            video = self.__playlist_selected.get_video(video_id)
-            if progress == 0:
-                video.set_position(0)
-            else:
-                video.set_position(progress / 100)
+        id_to_skip = None
+        if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
+            id_to_skip = self.__current_media.get_video_id()
 
-        GLib.idle_add(self.__liststore_playlist_set_progress,
-                      self.__playlist_selected.get_name(),
-                      self.__playlist_selected.get_progress())
+        for treepath in treepaths:
+            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            if video_id != id_to_skip:
+                self.__liststore_videos[treepath][VideosListstoreColumnsIndex.progress] = progress
+                video = self.__playlist_selected.get_video(video_id)
+                if progress == 0:
+                    video.set_position(0)
+                else:
+                    video.set_position(progress / 100)
+
+        self.__liststore_playlist_set_progress(self.__playlist_selected.get_name(),
+                                               self.__playlist_selected.get_progress())
 
     def __on_menuitem_playlist_ignore_video(self, _):
 
