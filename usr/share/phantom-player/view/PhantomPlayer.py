@@ -657,13 +657,28 @@ class PhantomPlayer:
                 selection_length == 1 and \
                 event.type == Gdk.EventType._2BUTTON_PRESS:
 
-            """
-                Play the video of the playlist
-            """
-
-            self.__configuration.write('current_playlist', self.__playlist_selected.get_name())
             video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
-            self.__current_media = CurrentMedia(self.__playlist_selected)
+
+            #
+            #   Quit if the video is already playing
+            #
+            same_video = False
+            if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
+                if video_id == self.__current_media.get_video_id():
+                    same_video = True
+                    if self.__mp_widget.is_playing():
+                        return
+
+            #
+            #   Update
+            #
+            if not same_video:
+                self.__configuration.write('current_playlist', self.__playlist_selected.get_name())
+                self.__current_media = CurrentMedia(self.__playlist_selected)
+
+            #
+            #    Play the video
+            #
             self.__set_video(video_id, replay=True)
 
 
