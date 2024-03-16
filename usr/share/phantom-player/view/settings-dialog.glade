@@ -641,6 +641,9 @@ Author: Rafael Senties Martinelli
                         <property name="can-focus">True</property>
                         <property name="model">liststore_paths</property>
                         <property name="search-column">1</property>
+                        <child internal-child="selection">
+                          <object class="GtkTreeSelection"/>
+                        </child>
                         <child>
                           <object class="GtkTreeViewColumn">
                             <property name="resizable">True</property>

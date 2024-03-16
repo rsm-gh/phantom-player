@@ -490,6 +490,7 @@ class PhantomPlayer:
         GLib.idle_add(self.__treeview_playlist.set_sensitive, True)
         GLib.idle_add(self.__menubar.set_sensitive, True)
         self.__playlists_loaded = True
+        print("Load playlist ended.")
 
     def __on_window_root_notify_event(self, *_):
         # Resize the VLC widget
