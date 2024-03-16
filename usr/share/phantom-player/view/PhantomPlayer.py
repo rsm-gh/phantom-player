@@ -18,8 +18,6 @@
 
 """
     + Fix: when searching in the playlist liststore, the videos shall be emptied.
-    + Fix start at
-    + Make the signals private
     + Manage multiple paths into the playlist settings menu.
     + Apply the "load video" methods of the settings dialog into a thread.
     + Create the option "end at"
