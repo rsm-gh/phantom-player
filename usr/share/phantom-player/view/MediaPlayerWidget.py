@@ -28,7 +28,7 @@
     + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
         I haven't found a solution for this, because the press signals connect to the button and not the scale.
 
-    + Fix to the VolumeButton: it should get hidden when clicking out of the button.
+    + Fix to the VolumeButton: it should get hidden when clicking out of the button. Is this a problem of GTK?
 
     + Start/Stop __on_thread_player_activity when paused, stopped? ?
 
@@ -95,27 +95,50 @@ def calculate_end_position(video_length):
     return end_pos, digits
 
 
-def calculate_start_position(position, start_at, video_length):
+def calculate_start_position(saved_position, start_at, end_position, video_length, replay):
     """
-        Calculate the start position and compare it with the saved position.
+        Calculate the position where the player should start.
     """
 
+    #
     # Convert the start_at in seconds, to a position.
+    #
     if video_length > 0 and start_at > 0:
         seconds = video_length / 1000
         start_at_position = start_at / seconds
-    else:
-        start_at_position = 0
 
-    # Define the start_position
-    if start_at_position > position:
-        start_position = start_at_position
-    elif position > 0:
-        start_position = position
+        # Verify that the start_at_position is before end_position.
+        # Videos cannot start at the end.
+        if start_at_position >= end_position:
+            print("Warning, start_at_position >= end_position", start_at_position, end_position)
+            start_at_position = VideoPosition.start
     else:
-        start_position = 0
+        start_at_position = VideoPosition.start
 
-    return start_position
+    #
+    # Check if the saved_position should be restarted
+    #
+    if saved_position >= end_position and replay:
+        saved_position = VideoPosition.start
+
+    #
+    # Select the preferred position
+    #
+    if start_at_position > saved_position:
+        preferred_position = start_at_position
+
+    elif saved_position > VideoPosition.end:
+        preferred_position = VideoPosition.end
+
+    elif saved_position < VideoPosition.start:
+        preferred_position = VideoPosition.start
+
+    else:
+        preferred_position = saved_position
+
+
+    return preferred_position
+
 
 
 def format_milliseconds_to_time(number):
@@ -411,7 +434,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.emit(CustomSignals.paused)
 
     def stop(self):
-        self.__video_change_status._none
+        self.__video_change_status = VideoChangeStatus._none
         self.__vlc_widget.player.stop()
         self.__buttons_box.set_sensitive(False)
         self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
@@ -421,22 +444,13 @@ class MediaPlayerWidget(Gtk.VBox):
         self.emit(CustomSignals.stop)
 
     def is_playing(self):
-        if self.get_state() == vlc.State.Playing:
-            return True
-
-        return False
+        return self.get_state() == vlc.State.Playing
 
     def is_paused(self):
-        if self.get_state() == vlc.State.Paused:
-            return True
-
-        return False
+        return self.get_state() == vlc.State.Paused
 
     def is_nothing(self):
-        if self.get_state() == vlc.State.NothingSpecial:
-            return True
-
-        return False
+        return self.get_state() == vlc.State.NothingSpecial
 
     def volume_up(self):
         actual_volume = self.__vlc_widget.player.audio_get_volume()
@@ -661,7 +675,10 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_thread_player_activity(self):
         """
-            This method scans the state of the player to update the tool buttons, volume, play-stop etc
+            This method scans the state of the player to:
+                + Emit a signal if the video position changes
+                + Emit a signal when the video ends
+                + Update the tool buttons (volume, play-stop, etc...)
         """
 
         this_thread = current_thread()
@@ -690,7 +707,7 @@ class MediaPlayerWidget(Gtk.VBox):
                 end_position = -1
                 position_precision = -1
 
-                if self.__video_length <= 0:
+                if self.__video_length <= 0 < end_position:
                     continue
 
                 self.__video_change_status = VideoChangeStatus._changed
@@ -712,30 +729,15 @@ class MediaPlayerWidget(Gtk.VBox):
 
 
                 #
-                # Set the start position
+                # Start the video at some position (if necessary)
                 #
-                if self.__delayed_media_data._position > 0 or self.__delayed_media_data._start_at > 0:
-                    # Retrieve the saved position, or start from the 'start at'
-                    start_position = calculate_start_position(self.__delayed_media_data._position,
-                                                              self.__delayed_media_data._start_at,
-                                                              self.__video_length)
-
-                    # Restart the video if necessary from the 'start at'
-                    if start_position > end_position and self.__delayed_media_data._start_at > 0:
-                        start_at_position = calculate_start_position(VideoPosition.start,
-                                                                     self.__delayed_media_data._start_at,
-                                                                     self.__video_length)
-
-                        if start_at_position > end_position:
-                            start_at_position = VideoPosition.start
-
-                    # Restart the video if necessary from the beginning.
-                    if start_position >= end_position and self.__delayed_media_data._replay:
-                        start_position = start_at_position
-
-                    # Set the start position.
-                    if start_position > VideoPosition.start:
-                        GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
+                start_position = calculate_start_position(saved_position=self.__delayed_media_data._position,
+                                                          start_at=self.__delayed_media_data._start_at,
+                                                          end_position=end_position,
+                                                          video_length=self.__video_length,
+                                                          replay=self.__delayed_media_data._replay)
+                if start_position > VideoPosition.start:
+                    GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
 
                 #
                 # Re-Activate the GUI
