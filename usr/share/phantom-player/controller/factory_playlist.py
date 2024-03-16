@@ -49,7 +49,7 @@ def load_from_file(file_path):
         start_at = float(playlist_header[2])
     except Exception:
         print("\tError getting 'start_at'")
-        start_at = VideoPosition.start
+        start_at = VideoPosition._start
 
     try:
         audio_track = int(playlist_header[3])
