@@ -30,13 +30,13 @@ class TimeValue:
 
 class Track:
     class Value:
-        disabled = -1
-        undefined = 0
+        _disabled = -1
+        _undefined = 0
 
     class Type:
-        audio = 0
-        subtitles = 1
-        spu = 2
+        _audio = 0
+        _subtitles = 1
+        _spu = 2
 
 class Playlist(object):
 
@@ -49,8 +49,8 @@ class Playlist(object):
                  is_random=False,
                  keep_playing=True,
                  start_at=0,
-                 audio_track=Track.Value.undefined,
-                 subtitles_track=Track.Value.undefined):
+                 audio_track=Track.Value._undefined,
+                 subtitles_track=Track.Value._undefined):
 
         self.__name = ""
         self.__icon_extension = icon_extension
@@ -62,8 +62,8 @@ class Playlist(object):
 
         self.__keep_playing = False
         self.__start_at = 0.0
-        self.__audio_track = Track.Value.undefined
-        self.__subtitles_track = Track.Value.undefined
+        self.__audio_track = Track.Value._undefined
+        self.__subtitles_track = Track.Value._undefined
 
         self.set_name(name)
         self.set_recursive(recursive)
@@ -105,7 +105,7 @@ class Playlist(object):
 
     def restart(self):
         for video in self.__videos_instances:
-            video.set_position(VideoPosition.start)
+            video.set_position(VideoPosition._start)
 
         self.save()
 
@@ -447,7 +447,7 @@ class Playlist(object):
             print(self.__name)
             print("set_audio_track error:")
             print(str(e))
-            value = Track.Value.undefined
+            value = Track.Value._undefined
 
         self.__audio_track = value
 
@@ -458,7 +458,7 @@ class Playlist(object):
             print(self.__name)
             print("set_subtitles_track error:")
             print(str(e))
-            value = Track.Value.undefined
+            value = Track.Value._undefined
 
         self.__subtitles_track = value
 

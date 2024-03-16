@@ -24,6 +24,7 @@
     + Create the "delete video" option (instead of clean)
     + Create a dialog to rename videos.
     + Create a dialog to find videos?
+    + Discover videos, once all the series are loaded?
 """
 
 import os
@@ -69,24 +70,24 @@ window, treeview, box, menu {
 
 
 class PlaylistListstoreColumnsIndex:
-    icon = 0
-    name = 1
-    percent = 2
+    _icon = 0
+    _name = 1
+    _percent = 2
 
 
 class VideosListstoreColumnsIndex:
-    color = 0
-    id = 1
-    path = 2
-    name = 3
-    ext = 4
-    progress = 5
+    _color = 0
+    _id = 1
+    _path = 2
+    _name = 3
+    _ext = 4
+    _progress = 5
 
 
 class GlobalConfigTags:
-    checkbox_missing_playlist_warning = "missing-playlist-warning"
-    checkbox_hidden_videos = "hidden-videos"
-    checkbox_hide_missing_playlist = "hide-missing-playlist"
+    _checkbox_missing_playlist_warning = "missing-playlist-warning"
+    _checkbox_hidden_videos = "hidden-videos"
+    _checkbox_hide_missing_playlist = "hide-missing-playlist"
 
 
 class PhantomPlayer:
@@ -195,11 +196,11 @@ class PhantomPlayer:
                                              keep_playing_button=True,
                                              css_style=css_style)
 
-        self.__mp_widget.connect(CustomSignals.position_changed, self.__on_media_player_position_changed)
-        self.__mp_widget.connect(CustomSignals.btn_keep_playing_toggled,
+        self.__mp_widget.connect(CustomSignals._position_changed, self.__on_media_player_position_changed)
+        self.__mp_widget.connect(CustomSignals._btn_keep_playing_toggled,
                                  self.__on_media_player_btn_keep_playing_toggled)
-        self.__mp_widget.connect(CustomSignals.btn_random_toggled, self.__on_media_player_btn_random_toggled)
-        self.__mp_widget.connect(CustomSignals.video_end, self.__on_media_player_video_end)
+        self.__mp_widget.connect(CustomSignals._btn_random_toggled, self.__on_media_player_btn_random_toggled)
+        self.__mp_widget.connect(CustomSignals._video_end, self.__on_media_player_video_end)
 
         self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
         self.__paned.add1(self.__mp_widget)
@@ -216,11 +217,11 @@ class PhantomPlayer:
         self.__settings_dialog = SettingsDialog(self.__window_root)
 
         self.__checkbox_hide_warning_missing_playlist.set_active(
-            self.__configuration.get_bool(GlobalConfigTags.checkbox_missing_playlist_warning))
+            self.__configuration.get_bool(GlobalConfigTags._checkbox_missing_playlist_warning))
         self.__checkbox_hidden_items.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags.checkbox_hidden_videos, False))
+            self.__configuration.get_bool_defval(GlobalConfigTags._checkbox_hidden_videos, False))
         self.__checkbox_hide_missing_playlist.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags.checkbox_hide_missing_playlist, False))
+            self.__configuration.get_bool_defval(GlobalConfigTags._checkbox_hide_missing_playlist, False))
 
         self.__checkbox_hide_number.set_active(self.__configuration.get_bool('hide_video_number'))
         self.__checkbox_hide_path.set_active(self.__configuration.get_bool('hide_video_path'))
@@ -285,7 +286,7 @@ class PhantomPlayer:
 
     def __set_video(self, video_id=None, play=True, replay=False, ignore_none=False):
 
-        if self.__current_media.playlist is None:
+        if self.__current_media._playlist is None:
             return
 
         if video_id is None:
@@ -309,17 +310,17 @@ class PhantomPlayer:
         #
         self.__mp_widget.set_video(video.get_path(),
                                    position=video.get_position(),
-                                   start_at=self.__current_media.playlist.get_start_at(),
-                                   subtitles_track=self.__current_media.playlist.get_subtitles_track(),
-                                   audio_track=self.__current_media.playlist.get_audio_track(),
+                                   start_at=self.__current_media._playlist.get_start_at(),
+                                   subtitles_track=self.__current_media._playlist.get_subtitles_track(),
+                                   audio_track=self.__current_media._playlist.get_audio_track(),
                                    play=play,
                                    replay=replay)
 
-        if self.__mp_widget.get_random() != self.__current_media.playlist.get_random():
-            self.__mp_widget.set_random(self.__current_media.playlist.get_random())
+        if self.__mp_widget.get_random() != self.__current_media._playlist.get_random():
+            self.__mp_widget.set_random(self.__current_media._playlist.get_random())
 
-        if self.__mp_widget.get_keep_playing() != self.__current_media.playlist.get_keep_playing():
-            self.__mp_widget.set_keep_playing(self.__current_media.playlist.get_keep_playing())
+        if self.__mp_widget.get_keep_playing() != self.__current_media._playlist.get_keep_playing():
+            self.__mp_widget.set_keep_playing(self.__current_media._playlist.get_keep_playing())
 
         self.__liststore_videos_select_current()
 
@@ -350,9 +351,9 @@ class PhantomPlayer:
 
     def __liststore_playlist_set_progress(self, playlist_name, value):
         for i, row in enumerate(self.__liststore_playlist):
-            if row[PlaylistListstoreColumnsIndex.name] == playlist_name:
-                if row[PlaylistListstoreColumnsIndex.percent] != value:
-                    self.__liststore_playlist[i][PlaylistListstoreColumnsIndex.percent] = value
+            if row[PlaylistListstoreColumnsIndex._name] == playlist_name:
+                if row[PlaylistListstoreColumnsIndex._percent] != value:
+                    self.__liststore_playlist[i][PlaylistListstoreColumnsIndex._percent] = value
                 break
 
     def __liststore_playlist_append(self, data):
@@ -413,7 +414,7 @@ class PhantomPlayer:
         video_id = self.__current_media.get_video_id()
 
         for i, row in enumerate(self.__liststore_videos):
-            if row[VideosListstoreColumnsIndex.id] == video_id:
+            if row[VideosListstoreColumnsIndex._id] == video_id:
                 self.__treeview_videos.set_cursor(i)
                 break
 
@@ -464,7 +465,7 @@ class PhantomPlayer:
 
         playlist_found = False
         for i, row in enumerate(self.__liststore_playlist):
-            if row[PlaylistListstoreColumnsIndex.name] == current_playlist_name:
+            if row[PlaylistListstoreColumnsIndex._name] == current_playlist_name:
                 GLib.idle_add(self.__treeview_playlist.set_cursor, i)
                 GLib.idle_add(self.__liststore_playlist_set_progress,
                               current_playlist_name,
@@ -524,10 +525,10 @@ class PhantomPlayer:
                 self.__main_paned.show()
 
     def __on_media_player_btn_random_toggled(self, _, state):
-        self.__current_media.playlist.set_random(state)
+        self.__current_media._playlist.set_random(state)
 
     def __on_media_player_btn_keep_playing_toggled(self, _, state):
-        self.__current_media.playlist.set_keep_playing(state)
+        self.__current_media._playlist.set_keep_playing(state)
 
     def __on_media_player_position_changed(self, _, position):
 
@@ -542,19 +543,19 @@ class PhantomPlayer:
 
         GLib.idle_add(self.__liststore_playlist_set_progress,
                       selected_series_name,
-                      self.__current_media.playlist.get_progress())
+                      self.__current_media._playlist.get_progress())
 
         video_id = self.__current_media.get_video_id()
         for i, row in enumerate(self.__liststore_videos):
-            if row[VideosListstoreColumnsIndex.id] == video_id:
-                self.__liststore_videos[i][VideosListstoreColumnsIndex.progress] = self.__current_media.get_video_progress()
+            if row[VideosListstoreColumnsIndex._id] == video_id:
+                self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = self.__current_media.get_video_progress()
                 break
 
     def __on_media_player_video_end(self, *_):
 
-        self.__on_media_player_position_changed(None, VideoPosition.end)
+        self.__on_media_player_position_changed(None, VideoPosition._end)
 
-        if not self.__current_media.playlist.get_keep_playing():
+        if not self.__current_media._playlist.get_keep_playing():
             self.__mp_widget.pause()
             self.__window_root.unfullscreen()
             return
@@ -633,11 +634,11 @@ class PhantomPlayer:
     def __on_treeview_videos_drag_end(self, *_):
 
         # Get the new order
-        new_order = [row[VideosListstoreColumnsIndex.id] for row in self.__liststore_videos]
+        new_order = [row[VideosListstoreColumnsIndex._id] for row in self.__liststore_videos]
 
         # Update the treeview
         for i, row in enumerate(self.__liststore_videos, 1):
-            row[VideosListstoreColumnsIndex.id] = i
+            row[VideosListstoreColumnsIndex._id] = i
 
         # Update the CSV file
         self.__playlist_selected.reorder(new_order)
@@ -655,7 +656,7 @@ class PhantomPlayer:
                 selection_length == 1 and \
                 event.type == Gdk.EventType._2BUTTON_PRESS:
 
-            video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
+            video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
 
             #
             #   Quit if the video is already playing
@@ -697,7 +698,7 @@ class PhantomPlayer:
 
             menu = Gtk.Menu()
 
-            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id] for treepath in treepaths]
+            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in treepaths]
 
             # If only 1 video is selected, and it is loaded in the player.
             # the progress buttons shall not be displayed.
@@ -737,7 +738,7 @@ class PhantomPlayer:
 
             # Open the containing folder (only if the user selected one video)
             if selection_length == 1:
-                video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex.id]
+                video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
                 video = self.__playlist_selected.get_video(video_id)
 
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.open_dir)
@@ -835,18 +836,18 @@ class PhantomPlayer:
         # Update the icon
         pixbuf = Pixbuf.new_from_file_at_size(self.__playlist_selected.get_icon_path(), -1, 30)
         gtk_utils.treeselection_set_first_cell(self.__treeselection_playlist,
-                                               PlaylistListstoreColumnsIndex.icon,
+                                               PlaylistListstoreColumnsIndex._icon,
                                                pixbuf)
 
         # Update the name
         old_name = gtk_utils.treeselection_get_first_cell(self.__treeselection_playlist,
-                                                          PlaylistListstoreColumnsIndex.name)
+                                                          PlaylistListstoreColumnsIndex._name)
 
         if self.__playlist_selected.get_name() != old_name:
             self.__playlists.pop(old_name)
             self.__playlists[self.__playlist_selected.get_name()] = self.__playlist_selected
             gtk_utils.treeselection_set_first_cell(self.__treeselection_playlist,
-                                                   PlaylistListstoreColumnsIndex.name,
+                                                   PlaylistListstoreColumnsIndex._name,
                                                    self.__playlist_selected.get_name())
 
         # Update the media player
@@ -882,9 +883,9 @@ class PhantomPlayer:
             id_to_skip = self.__current_media.get_video_id()
 
         for treepath in treepaths:
-            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
             if video_id != id_to_skip:
-                self.__liststore_videos[treepath][VideosListstoreColumnsIndex.progress] = progress
+                self.__liststore_videos[treepath][VideosListstoreColumnsIndex._progress] = progress
                 video = self.__playlist_selected.get_video(video_id)
                 if progress == 0:
                     video.set_position(0)
@@ -904,7 +905,7 @@ class PhantomPlayer:
         hide_row = self.__checkbox_hidden_items.get_active()
 
         for treepath in reversed(treepaths):
-            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
             video = self.__playlist_selected.get_video(video_id)
             video.set_ignore(True)
 
@@ -912,7 +913,7 @@ class PhantomPlayer:
                 row_iter = model.get_iter(treepath)
                 model.remove(row_iter)
             else:
-                self.__liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__font_hide_color
+                self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = self.__font_hide_color
 
         self.__treeselection_videos.unselect_all()
 
@@ -924,10 +925,10 @@ class PhantomPlayer:
             return
 
         for treepath in treepaths:
-            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex.id]
+            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
             video = self.__playlist_selected.get_video(video_id)
             video.set_ignore(False)
-            self.__liststore_videos[treepath][VideosListstoreColumnsIndex.color] = self.__get_video_color(video)
+            self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = self.__get_video_color(video)
 
         self.__treeselection_videos.unselect_all()
 
@@ -937,15 +938,15 @@ class PhantomPlayer:
             open_directory(path)
 
     def __on_checkbox_hide_warning_missing_playlist_toggled(self, *_):
-        self.__configuration.write(GlobalConfigTags.checkbox_missing_playlist_warning,
+        self.__configuration.write(GlobalConfigTags._checkbox_missing_playlist_warning,
                                    self.__checkbox_hide_warning_missing_playlist.get_active())
 
     def __on_checkbox_hide_missing_playlist_toggled(self, checkbox, *_):
         self.__liststore_playlist_populate()
-        self.__configuration.write(GlobalConfigTags.checkbox_hide_missing_playlist, checkbox.get_active())
+        self.__configuration.write(GlobalConfigTags._checkbox_hide_missing_playlist, checkbox.get_active())
 
     def __on_checkbox_hidden_items_toggled(self, *_):
-        self.__configuration.write(GlobalConfigTags.checkbox_hidden_videos, self.__checkbox_hidden_items.get_active())
+        self.__configuration.write(GlobalConfigTags._checkbox_hidden_videos, self.__checkbox_hidden_items.get_active())
         self.__liststore_videos_populate()
 
     def __on_checkbox_hide_number_toggled(self, checkbox, *_):

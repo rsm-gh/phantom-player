@@ -69,7 +69,7 @@ def load(playlist, is_startup):
             try:
                 position = float(columns[3])
             except Exception:
-                position = VideoPosition.start
+                position = VideoPosition._start
                 print("\t\terror getting the position", columns)
 
             try:

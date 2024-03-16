@@ -52,6 +52,6 @@ class MediaPlayer(Gtk.Window):
 
 if __name__ == '__main__':
     player = MediaPlayer()
-    player.play_video('/home/cadweb/Documents/Backup/VHS  EVENTOS ARETE 1998 1999  PARTE 2.mpg')
+    player.play_video('/home/cadweb/Videos/vid.avi')
     Gtk.main()
     VLC_INSTANCE.release()
