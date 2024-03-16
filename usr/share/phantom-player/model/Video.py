@@ -24,7 +24,7 @@ class VideoPosition:
 
 class Video(object):
 
-    def __init__(self, path, name=""):
+    def __init__(self, path, name="", hash=""):
 
         self.__path = path
         self.__name = name
@@ -33,6 +33,7 @@ class Video(object):
         self.__is_new = False
         self.__position = VideoPosition._start
         self.__ignore = False
+        self.__hash = hash
 
         #
         # Initialize the attributes
@@ -67,6 +68,9 @@ class Video(object):
     def get_path(self):
         return self.__path
 
+    def get_hash(self):
+        return self.__hash
+
     def get_position(self):
         return self.__position
 
@@ -86,6 +90,9 @@ class Video(object):
 
     def exists(self):
         return os.path.exists(self.__path)
+
+    def set_hash(self, value):
+        self.__hash = value
 
     def set_is_new(self, value):
         self.__is_new = value
