@@ -19,8 +19,8 @@
 import os
 
 class VideoPosition:
-    start = 0
-    end = 1
+    _start = 0
+    _end = 1
 
 class Video(object):
 
@@ -31,7 +31,7 @@ class Video(object):
         self.__extension = ""
         self.__id = -1
         self.__is_new = False
-        self.__position = VideoPosition.start
+        self.__position = VideoPosition._start
         self.__ignore = False
 
         #
@@ -77,7 +77,7 @@ class Video(object):
         return self.__is_new
 
     def get_was_played(self):
-        return self.__position >= VideoPosition.end
+        return self.__position >= VideoPosition._end
 
     def set_path(self, path):
         self.__path = path
@@ -91,7 +91,7 @@ class Video(object):
         self.__is_new = value
 
     def set_position(self, pos):
-        if VideoPosition.end >= pos >= VideoPosition.start:
+        if VideoPosition._end >= pos >= VideoPosition._start:
             self.__position = pos
         else:
             print(self.__name, "wrong set_position", pos)

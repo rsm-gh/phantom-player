@@ -61,6 +61,7 @@ from model.Video import VideoPosition
 from view import gtk_utils
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
 from system_utils import EventCodes, turn_off_screensaver
+from settings import ThemeButtons
 
 _EMPTY__VIDEO_LENGTH = "00:00"
 _DEFAULT_PROGRESS_LABEL = "{0} / {0}".format(_EMPTY__VIDEO_LENGTH)
@@ -111,15 +112,15 @@ def calculate_start_position(saved_position, start_at, end_position, video_lengt
         # Videos cannot start at the end.
         if start_at_position >= end_position:
             print("Warning, start_at_position >= end_position", start_at_position, end_position)
-            start_at_position = VideoPosition.start
+            start_at_position = VideoPosition._start
     else:
-        start_at_position = VideoPosition.start
+        start_at_position = VideoPosition._start
 
     #
     # Check if the saved_position should be restarted
     #
     if saved_position >= end_position and replay:
-        saved_position = VideoPosition.start
+        saved_position = VideoPosition._start
 
     #
     # Select the preferred position
@@ -127,11 +128,11 @@ def calculate_start_position(saved_position, start_at, end_position, video_lengt
     if start_at_position > saved_position:
         preferred_position = start_at_position
 
-    elif saved_position > VideoPosition.end:
-        preferred_position = VideoPosition.end
+    elif saved_position > VideoPosition._end:
+        preferred_position = VideoPosition._end
 
-    elif saved_position < VideoPosition.start:
-        preferred_position = VideoPosition.start
+    elif saved_position < VideoPosition._start:
+        preferred_position = VideoPosition._start
 
     else:
         preferred_position = saved_position
@@ -179,37 +180,19 @@ def format_track(track):
 
 
 class WidgetsShown:
-    none = 0
-    volume = 1
-    toolbox = 2
-
-
-class ThemeButtons:
-    """
-        This class is not into settings.py because I want MediaPlayer.py
-        to be a standalone (beside VLCWidget.py).
-    """
-    play = "media-playback-start"
-    pause = "media-playback-pause"
-    next = "go-next"
-    previous = "go-previous"
-    volume = ["audio-volume-muted", "audio-volume-high", "audio-volume-medium"]
-    fullscreen = "view-fullscreen"
-    un_fullscreen = "view-restore"
-    random = "media-playlist-shuffle"
-    keep_playing = "media-playlist-repeat"
-    settings = "preferences-desktop"
-
+    _none = 0
+    _volume = 1
+    _toolbox = 2
 
 class CustomSignals:
-    paused = 'paused'
-    play = 'play'
-    stop = 'stop'
-    position_changed = 'position-changed'
-    video_restart = 'video-restart'
-    video_end = 'video-end'
-    btn_random_toggled = 'btn-random-clicked'
-    btn_keep_playing_toggled = 'btn-keep-playing-clicked'
+    _paused = 'paused'
+    _play = 'play'
+    _stop = 'stop'
+    _position_changed = 'position-changed'
+    _video_restart = 'video-restart'
+    _video_end = 'video-end'
+    _btn_random_toggled = 'btn-random-clicked'
+    _btn_keep_playing_toggled = 'btn-keep-playing-clicked'
 
 
 class DelayedMediaData:
@@ -248,7 +231,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__video_change_status = VideoChangeStatus._none  # Patch 001
 
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
-        self.__widgets_shown = WidgetsShown.toolbox
+        self.__widgets_shown = WidgetsShown._toolbox
 
         display = self.get_display()
         self.__empty_cursor = Gdk.Cursor.new_from_name(display, 'none')
@@ -288,22 +271,22 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__buttons_box.set_sensitive(False)
 
         self.__toolbutton_previous = Gtk.ToolButton()
-        self.__toolbutton_previous.set_icon_name(ThemeButtons.previous)
+        self.__toolbutton_previous.set_icon_name(ThemeButtons._previous)
         self.__toolbutton_previous.connect('clicked', self.__on_toolbutton_restart_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_previous, expand=False, fill=False, padding=3)
 
         self.__toolbutton_play = Gtk.ToolButton()
-        self.__toolbutton_play.set_icon_name(ThemeButtons.play)
+        self.__toolbutton_play.set_icon_name(ThemeButtons._play)
         self.__toolbutton_play.connect('clicked', self.__on_toolbutton_play_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_play, expand=False, fill=False, padding=3)
 
         self.__toolbutton_next = Gtk.ToolButton()
-        self.__toolbutton_next.set_icon_name(ThemeButtons.next)
+        self.__toolbutton_next.set_icon_name(ThemeButtons._next)
         self.__toolbutton_next.connect('clicked', self.__on_toolbutton_end_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_next, expand=False, fill=False, padding=3)
 
         self.__scale_progress = Gtk.Scale()
-        self.__scale_progress.set_range(VideoPosition.start, VideoPosition.end)
+        self.__scale_progress.set_range(VideoPosition._start, VideoPosition._end)
         self.__scale_progress.set_draw_value(False)
         self.__scale_progress.set_hexpand(True)
         self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
@@ -318,7 +301,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         if keep_playing_button:
             self.__toggletoolbutton_keep_playing = Gtk.ToggleToolButton()
-            self.__toggletoolbutton_keep_playing.set_icon_name(ThemeButtons.keep_playing)
+            self.__toggletoolbutton_keep_playing.set_icon_name(ThemeButtons._keep_playing)
             self.__toggletoolbutton_keep_playing.connect('toggled', self.__on_togglebutton_keep_playing_toggled)
             self.__buttons_box.pack_start(self.__toggletoolbutton_keep_playing, expand=False, fill=False, padding=3)
         else:
@@ -326,7 +309,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         if random_button:
             self.__toggletoolbutton_random = Gtk.ToggleToolButton()
-            self.__toggletoolbutton_random.set_icon_name(ThemeButtons.random)
+            self.__toggletoolbutton_random.set_icon_name(ThemeButtons._random)
             self.__toggletoolbutton_random.connect('toggled', self.__on_togglebutton_random_toggled)
             self.__buttons_box.pack_start(self.__toggletoolbutton_random, expand=False, fill=False, padding=3)
         else:
@@ -334,12 +317,12 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__menubutton_settings = Gtk.MenuButton()
         self.__menubutton_settings.set_relief(Gtk.ReliefStyle.NONE)
-        self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons.settings, Gtk.IconSize.BUTTON))
+        self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._settings, Gtk.IconSize.BUTTON))
         self.__menubutton_settings.set_direction(Gtk.ArrowType.UP)
         self.__buttons_box.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
 
         self.__volumebutton = Gtk.VolumeButton()
-        self.__volumebutton.set_icons(ThemeButtons.volume)
+        self.__volumebutton.set_icons(ThemeButtons._volume)
         self.__volumebutton.connect('value_changed', self.__on_scale_volume_changed)
         # this is being called when the button is pressed, not the scale...
         # self.__volumebutton.connect('button-press-event', self.__on_scale_volume_press)
@@ -347,7 +330,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__buttons_box.pack_start(self.__volumebutton, expand=False, fill=False, padding=3)
 
         self.__toolbutton_fullscreen = Gtk.ToolButton()
-        self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
+        self.__toolbutton_fullscreen.set_icon_name(ThemeButtons._fullscreen)
         self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
 
@@ -374,40 +357,40 @@ class MediaPlayerWidget(Gtk.VBox):
         #
         # Create the custom signals
         #
-        GObject.signal_new(CustomSignals.paused,
+        GObject.signal_new(CustomSignals._paused,
                            self, GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
                            ())
-        GObject.signal_new(CustomSignals.play,
+        GObject.signal_new(CustomSignals._play,
                            self,
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
                            ())
-        GObject.signal_new(CustomSignals.stop,
+        GObject.signal_new(CustomSignals._stop,
                            self,
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
                            ())
-        GObject.signal_new(CustomSignals.video_end,
+        GObject.signal_new(CustomSignals._video_end,
                            self,
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
                            ())
-        GObject.signal_new(CustomSignals.video_restart,
+        GObject.signal_new(CustomSignals._video_restart,
                            self, GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
                            ())
-        GObject.signal_new(CustomSignals.position_changed,
+        GObject.signal_new(CustomSignals._position_changed,
                            self,
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
                            (float,))
-        GObject.signal_new(CustomSignals.btn_random_toggled,
+        GObject.signal_new(CustomSignals._btn_random_toggled,
                            self,
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
                            (bool,))
-        GObject.signal_new(CustomSignals.btn_keep_playing_toggled,
+        GObject.signal_new(CustomSignals._btn_keep_playing_toggled,
                            self,
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE, (bool,))
@@ -422,16 +405,16 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__thread_scan_motion.start()
 
     def play(self):
-        self.__toolbutton_play.set_icon_name(ThemeButtons.pause)
+        self.__toolbutton_play.set_icon_name(ThemeButtons._pause)
         self.__vlc_widget.player.play()
         turn_off_screensaver(True)
-        self.emit(CustomSignals.play)
+        self.emit(CustomSignals._play)
 
     def pause(self):
-        self.__toolbutton_play.set_icon_name(ThemeButtons.play)
+        self.__toolbutton_play.set_icon_name(ThemeButtons._play)
         self.__vlc_widget.player.pause()
         turn_off_screensaver(False)
-        self.emit(CustomSignals.paused)
+        self.emit(CustomSignals._paused)
 
     def stop(self):
         self.__video_change_status = VideoChangeStatus._none
@@ -439,9 +422,9 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__buttons_box.set_sensitive(False)
         self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
         self.__label_volume.hide()
-        self.__scale_progress.set_value(VideoPosition.start)
+        self.__scale_progress.set_value(VideoPosition._start)
         self.__media = None
-        self.emit(CustomSignals.stop)
+        self.emit(CustomSignals._stop)
 
     def is_playing(self):
         return self.get_state() == vlc.State.Playing
@@ -466,7 +449,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__buttons_box.hide()
         self.__buttons_box.hide()
         self.__label_volume.hide()
-        self.__widgets_shown = WidgetsShown.none
+        self.__widgets_shown = WidgetsShown._none
 
     def hide_volume_label(self):
         self.__label_volume.hide()
@@ -484,10 +467,10 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def set_video(self,
                   file_path,
-                  position=VideoPosition.start,
+                  position=VideoPosition._start,
                   start_at=TimeValue._minium,
-                  subtitles_track=Track.Value.undefined,
-                  audio_track=Track.Value.undefined,
+                  subtitles_track=Track.Value._undefined,
+                  audio_track=Track.Value._undefined,
                   play=True,
                   replay=False):
 
@@ -506,7 +489,7 @@ class MediaPlayerWidget(Gtk.VBox):
         GLib.idle_add(self.__buttons_box.set_sensitive, False)
         GLib.idle_add(self.__menubutton_settings.set_sensitive, False)
         GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
-        GLib.idle_add(self.__scale_progress.set_value, VideoPosition.start)
+        GLib.idle_add(self.__scale_progress.set_value, VideoPosition._start)
 
         GLib.idle_add(self.__vlc_widget.player.stop)
 
@@ -581,7 +564,7 @@ class MediaPlayerWidget(Gtk.VBox):
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
             default_item.set_active(True)
-        default_item.connect('activate', self.__on_menuitem_track_activate, Track.Type.audio, -1)
+        default_item.connect('activate', self.__on_menuitem_track_activate, Track.Type._audio, -1)
         submenu.append(default_item)
 
         for track in tracks:
@@ -589,7 +572,7 @@ class MediaPlayerWidget(Gtk.VBox):
                 continue
 
             item = Gtk.RadioMenuItem(label=format_track(track))
-            item.connect('activate', self.__on_menuitem_track_activate, Track.Type.audio, track[0])
+            item.connect('activate', self.__on_menuitem_track_activate, Track.Type._audio, track[0])
             item.join_group(default_item)
 
             if selected_track == track[0]:
@@ -609,7 +592,7 @@ class MediaPlayerWidget(Gtk.VBox):
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
             default_item.set_active(True)
-        default_item.connect('activate', self.__on_menuitem_track_activate, Track.Type.subtitles, -1)
+        default_item.connect('activate', self.__on_menuitem_track_activate, Track.Type._subtitles, -1)
         submenu.append(default_item)
 
         try:
@@ -627,7 +610,7 @@ class MediaPlayerWidget(Gtk.VBox):
             item.join_group(default_item)
             if selected_track == track[0]:
                 item.set_active(True)
-            item.connect('activate', self.__on_menuitem_track_activate, Track.Type.subtitles, track[0])
+            item.connect('activate', self.__on_menuitem_track_activate, Track.Type._subtitles, track[0])
             submenu.append(item)
 
         item = Gtk.RadioMenuItem(label="From file...")
@@ -664,12 +647,12 @@ class MediaPlayerWidget(Gtk.VBox):
 
         if fullscreen:
             self.__root_window.fullscreen()
-            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.un_fullscreen)
+            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons._un_fullscreen)
             if self.__un_maximized_fixed_toolbar:
                 self.__overlay.add_overlay(self.__buttons_box)
         else:
             self.__root_window.unfullscreen()
-            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons.fullscreen)
+            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons._fullscreen)
             if self.__un_maximized_fixed_toolbar:
                 self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
 
@@ -716,14 +699,14 @@ class MediaPlayerWidget(Gtk.VBox):
                 #
                 # Set the audio track
                 #
-                if self.__delayed_media_data._audio_track != Track.Value.undefined:
+                if self.__delayed_media_data._audio_track != Track.Value._undefined:
                     GLib.idle_add(self.__vlc_widget.player.audio_set_track,
                                   self.__delayed_media_data._audio_track)
 
                 #
                 # Set the subtitles' track
                 #
-                if self.__delayed_media_data._sub_track != Track.Value.undefined:
+                if self.__delayed_media_data._sub_track != Track.Value._undefined:
                     GLib.timeout_add_seconds(self.__vlc_widget.player.video_set_spu,
                                              self.__delayed_media_data._sub_track)
 
@@ -736,7 +719,7 @@ class MediaPlayerWidget(Gtk.VBox):
                                                           end_position=end_position,
                                                           video_length=self.__video_length,
                                                           replay=self.__delayed_media_data._replay)
-                if start_position > VideoPosition.start:
+                if start_position > VideoPosition._start:
                     GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
 
                 #
@@ -757,11 +740,11 @@ class MediaPlayerWidget(Gtk.VBox):
                 #
                 #    Update the play-pause button
                 #
-                if vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.pause:
-                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.pause)
+                if vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons._pause:
+                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons._pause)
 
-                elif not vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons.play:
-                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons.play)
+                elif not vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons._play:
+                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons._play)
 
                 #
                 #    Update the volume. Is this necessary?
@@ -774,14 +757,14 @@ class MediaPlayerWidget(Gtk.VBox):
                     GLib.idle_add(self.__label_volume.show)
 
                     self.__motion_time = time()
-                    self.__widgets_shown = WidgetsShown.volume
+                    self.__widgets_shown = WidgetsShown._volume
 
                 #
                 #    Update the time of the scale and the time
                 #
                 vlc_position = self.__vlc_widget.player.get_position()
-                if vlc_position > VideoPosition.end:
-                    vlc_position = VideoPosition.end
+                if vlc_position > VideoPosition._end:
+                    vlc_position = VideoPosition._end
 
                 cached_emitted_position = self.__on_player_position_changed(vlc_position,
                                                                             position_precision,
@@ -810,18 +793,18 @@ class MediaPlayerWidget(Gtk.VBox):
                 fullscreen = None
 
             if (time_delta > 3 and not self.__scale_progress_pressed and
-                    ((not self.__un_maximized_fixed_toolbar and self.__widgets_shown > WidgetsShown.none) or
-                     (self.__widgets_shown != WidgetsShown.toolbox and fullscreen is not None) or
+                    ((not self.__un_maximized_fixed_toolbar and self.__widgets_shown > WidgetsShown._none) or
+                     (self.__widgets_shown != WidgetsShown._toolbox and fullscreen is not None) or
                      (self.__hidden_controls is False and self.get_media()))):
 
                 GLib.idle_add(self.__label_volume.hide)
                 GLib.idle_add(self.__set_cursor_empty)
 
                 if fullscreen in (True, None):
-                    self.__widgets_shown = WidgetsShown.none
+                    self.__widgets_shown = WidgetsShown._none
                     GLib.idle_add(self.__buttons_box.hide)
                 else:
-                    self.__widgets_shown = WidgetsShown.toolbox
+                    self.__widgets_shown = WidgetsShown._toolbox
 
                 self.__hidden_controls = True
 
@@ -854,11 +837,11 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_player_position_changed(self, vlc_position, position_precision, end_position, cached_position):
 
-        if vlc_position < VideoPosition.start:
+        if vlc_position < VideoPosition._start:
             return cached_position
 
-        elif vlc_position > VideoPosition.end:
-            vlc_position = VideoPosition.end
+        elif vlc_position > VideoPosition._end:
+            vlc_position = VideoPosition._end
 
         else:
             vlc_position = round(vlc_position, position_precision)
@@ -867,10 +850,10 @@ class MediaPlayerWidget(Gtk.VBox):
             return cached_position
 
         if vlc_position >= end_position:
-            vlc_position = VideoPosition.end
-            self.emit(CustomSignals.video_end)
+            vlc_position = VideoPosition._end
+            self.emit(CustomSignals._video_end)
         else:
-            self.emit(CustomSignals.position_changed, vlc_position)
+            self.emit(CustomSignals._position_changed, vlc_position)
 
         return vlc_position
 
@@ -879,7 +862,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         if self.__hidden_controls:
             self.__hidden_controls = False
-            self.__widgets_shown = WidgetsShown.toolbox
+            self.__widgets_shown = WidgetsShown._toolbox
             self.__buttons_box.show()
             self.__set_cursor_default()
 
@@ -914,8 +897,8 @@ class MediaPlayerWidget(Gtk.VBox):
                     turn_off_screensaver(True)
 
     def __on_toolbutton_restart_clicked(self, *_):
-        self.__vlc_widget.player.set_position(VideoPosition.start)
-        self.emit(CustomSignals.video_restart)
+        self.__vlc_widget.player.set_position(VideoPosition._start)
+        self.emit(CustomSignals._video_restart)
 
     def __on_toolbutton_play_clicked(self, *_):
         if self.is_playing():
@@ -924,27 +907,27 @@ class MediaPlayerWidget(Gtk.VBox):
             self.play()
 
     def __on_toolbutton_end_clicked(self, *_):
-        self.__vlc_widget.player.set_position(VideoPosition.end - 0.001)  # position = 1 will not work
-        # self.emit(CustomSignals.video_end) the thread will emit This signal
+        self.__vlc_widget.player.set_position(VideoPosition._end - 0.001)  # position = 1 will not work
+        # self.emit(CustomSignals._video_end) the thread will emit This signal
 
     def __on_togglebutton_keep_playing_toggled(self, widget):
-        self.emit(CustomSignals.btn_keep_playing_toggled, widget.get_active())
+        self.emit(CustomSignals._btn_keep_playing_toggled, widget.get_active())
 
     def __on_togglebutton_random_toggled(self, widget):
-        self.emit(CustomSignals.btn_random_toggled, widget.get_active())
+        self.emit(CustomSignals._btn_random_toggled, widget.get_active())
 
     def __on_toolbutton_fullscreen_clicked(self, *_):
         self.__set_fullscreen(not self.__get_window_is_fullscreen())
 
     def __on_menuitem_track_activate(self, _, track_type, track):
 
-        if track_type == Track.Type.audio:
+        if track_type == Track.Type._audio:
             self.__vlc_widget.player.audio_set_track(track)
 
-        elif track_type == Track.Type.subtitles:
+        elif track_type == Track.Type._subtitles:
             self.__vlc_widget.player.video_set_track(track)
 
-        elif track_type == Track.Type.spu:
+        elif track_type == Track.Type._spu:
             self.__vlc_widget.player.video_set_spu(track)
 
     def __on_menuitem_file_subs_activate(self, *_):

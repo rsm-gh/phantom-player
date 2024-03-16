@@ -18,21 +18,21 @@
 
 class CurrentMedia:
     def __init__(self, playlist=None):
-        self.playlist = playlist
+        self._playlist = playlist
         self.__video = None
 
     def is_playlist_name(self, playlist_name):
-        if self.playlist is not None:
-            return self.playlist.get_name() == playlist_name
+        if self._playlist is not None:
+            return self._playlist.get_name() == playlist_name
 
         return False
 
     def get_next_video(self):
 
-        if self.playlist.get_random():
-            video = self.playlist.get_next_random_video()
+        if self._playlist.get_random():
+            video = self._playlist.get_next_random_video()
         else:
-            video = self.playlist.get_next_organized_video(self.__video)
+            video = self._playlist.get_next_organized_video(self.__video)
 
         self.__video = video
 
@@ -43,10 +43,10 @@ class CurrentMedia:
 
     def get_video(self, video_name):
 
-        if self.playlist is None:
+        if self._playlist is None:
             return None
 
-        self.__video = self.playlist.get_video(video_name)
+        self.__video = self._playlist.get_video(video_name)
         return self.__video
 
     def get_video_id(self):
