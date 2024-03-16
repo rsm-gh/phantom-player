@@ -17,5 +17,5 @@ Path (System Path) | Recursive (Boolean) | R. Startup (Boolean)
 ```
 And finally, there will be one line per video:
 ```
-Number (Integer) | Absolute Path (System Path) | Name (String) | Position (Double) | Ignore (Boolean)
+Absolute Path (System Path) | Name (String) | Position (Double) | Ignore (Boolean)
 ```
