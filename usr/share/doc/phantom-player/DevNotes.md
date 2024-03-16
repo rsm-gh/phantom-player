@@ -11,11 +11,13 @@
 ### Bugs:
 + When searching in the playlist liststore, empty the videos if no playlist is selected.
 + Problems saving the Path settings?
++ When selecting multiple videos to re-order with drag-and-drop, only the fist one is moved.
 
 ### Features to add:
 + Create the "delete video" option (instead of clean)
 + Create a dialog to rename videos.
 + Create a dialog to find videos?
++ Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
 
 ## MediaPlayerWidget
 
@@ -23,6 +25,10 @@
 + `set_video(play=False)` currently does nothing, but it should set a video and load a frame image without starting to play it.
 + `player.set_track()` returns a status. It would be good to read the status and display a message in case of error.
 + Start/Stop the thread `__on_thread_player_activity` depending on the VLC status?
+
+### Features to add:
++ When the media changes, display a label. I think it can be done with the VLC API.
++ When using the +/- signs of the volume button, only change of 1.
 
 ### Bugs:
 + Test/Fix (when cancel) the option to choose the subtitles' file...

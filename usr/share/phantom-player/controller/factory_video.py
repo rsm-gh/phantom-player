@@ -48,32 +48,35 @@ def load(playlist, is_startup):
             #
             columns = row.split('|')
 
+
+            # The ID is no longer read.
             try:
                 video_id = int(columns[0])
             except Exception:
-                print("\t\terror getting the id", columns)
-                video_id = -1
+                start = 0
+            else:
+                start = 1
 
             try:
-                path = columns[1].strip()
+                path = columns[start].strip()
             except Exception:
                 print("\t\terror getting the path", columns)
                 path = None
 
             try:
-                name = columns[2].strip()
+                name = columns[start+1].strip()
             except Exception:
                 print("\t\terror getting the name", columns)
                 name = ""
 
             try:
-                position = float(columns[3])
+                position = float(columns[start+2])
             except Exception:
                 position = VideoPosition._start
                 print("\t\terror getting the position", columns)
 
             try:
-                ignore = str_to_boolean(columns[4])
+                ignore = str_to_boolean(columns[start+3])
             except Exception:
                 ignore = False
                 print("\t\terror getting the ignore state", columns)
@@ -102,17 +105,7 @@ def load(playlist, is_startup):
             video = Video(path, name)
             video.set_position(position)
             video.set_ignore(ignore)
-            video.set_id(video_id)
-
             playlist.add_video(video)
-
-        #
-        # Check for ID errors
-        #
-        ids = [video.get_id() for video in playlist.get_videos()]
-        if len(ids) != len(set(ids)):
-            print("\t\tThe id's will be updated since there are errors.")
-            playlist.update_ids()
 
 
     #
