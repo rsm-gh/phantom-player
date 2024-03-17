@@ -24,9 +24,11 @@ import random
 from Paths import _ICON_LOGO_MEDIUM, _SERIES_DIR
 from model.Video import VideoPosition
 
+
 class TimeValue:
     _minium = 0
     _maximum = 59 * 60 + 59
+
 
 class Track:
     class Value:
@@ -38,14 +40,12 @@ class Track:
         _subtitles = 1
         _spu = 2
 
+
 class Playlist(object):
 
     def __init__(self,
                  name="",
-                 data_path="",
                  icon_extension="",
-                 recursive=False,
-                 r_startup=False,
                  is_random=False,
                  keep_playing=True,
                  start_at=0,
@@ -54,20 +54,15 @@ class Playlist(object):
 
         self.__name = ""
         self.__icon_extension = icon_extension
-        self.__data_path = data_path
 
-        self.__recursive = False
+        self.__playlist_paths = {}
         self.__random = False
-        self.__r_startup = False
-
         self.__keep_playing = False
         self.__start_at = 0.0
         self.__audio_track = Track.Value._undefined
         self.__subtitles_track = Track.Value._undefined
 
         self.set_name(name)
-        self.set_recursive(recursive)
-        self.set_r_startup(r_startup)
 
         self.set_random(is_random)
         self.set_keep_playing(keep_playing)
@@ -94,7 +89,10 @@ class Playlist(object):
                                self.__subtitles_track,
                                self.__icon_extension])
 
-            csv_list.writerow([self.__data_path, self.__recursive, self.__r_startup])
+            for playlist_path in self.get_playlist_paths():
+                csv_list.writerow([playlist_path.get_path(),
+                                   playlist_path.get_recursive(),
+                                   playlist_path.get_startup_discover()])
 
             for video in self.__videos_instances:
                 csv_list.writerow([video.get_path(),
@@ -123,6 +121,14 @@ class Playlist(object):
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_id(i)
 
+    def add_playlist_path(self, playlist_path):
+        if playlist_path.get_path() in self.__playlist_paths.keys():
+            return False
+
+        self.__playlist_paths[playlist_path.get_path()] = playlist_path
+
+        return True
+
     def add_video(self, video):
         video.set_id(len(self.__videos_instances) + 1)
         self.__videos_instances.append(video)
@@ -142,6 +148,14 @@ class Playlist(object):
 
     def update_not_hidden_videos(self):
         self.__active_videos_nb = len([0 for video in self.__videos_instances if video.get_ignore()])
+
+    def has_existent_paths(self):
+        for path in self.__playlist_paths.keys():
+            if os.path.exists(path):
+                return True
+
+        return False
+
 
     def missing_videos(self, videos_id):
         """Return if from the selected videos there is someone missing"""
@@ -183,12 +197,6 @@ class Playlist(object):
                 return video
 
         return None
-
-    def find_playlist(self, path):
-        self.__data_path = path
-        self.find_videos(path)
-        self.update_not_hidden_videos()
-        self.save()
 
     def find_video(self, video_id, new_path):
         """
@@ -287,6 +295,10 @@ class Playlist(object):
 
         return video_counter
 
+    def get_playlist_paths(self):
+        return [playlist_path for path, playlist_path in
+                sorted(self.__playlist_paths.items(), key=lambda item: item[0])]
+
     def get_save_path(self):
         path = os.path.join(_SERIES_DIR, self.__name)
         if not path.lower().endswith(".csv"):
@@ -384,9 +396,6 @@ class Playlist(object):
     def get_nb_videos(self):
         return self.__active_videos_nb
 
-    def get_data_path(self):
-        return self.__data_path
-
     def get_audio_track(self):
         return self.__audio_track
 
@@ -395,12 +404,6 @@ class Playlist(object):
 
     def get_random(self):
         return self.__random
-
-    def get_recursive(self):
-        return self.__recursive
-
-    def get_r_startup(self):
-        return self.__r_startup
 
     def get_video(self, video_id):
         for video in self.__videos_instances:
@@ -435,9 +438,6 @@ class Playlist(object):
         else:
             self.__start_at = TimeValue._minium
 
-    def set_recursive(self, recursive):
-        self.__recursive = recursive
-
     def set_audio_track(self, value):
         try:
             value = int(value)
@@ -462,9 +462,6 @@ class Playlist(object):
 
     def set_random(self, is_random):
         self.__random = is_random
-
-    def set_r_startup(self, r_startup):
-        self.__r_startup = r_startup
 
     def set_video_position(self, video_to_find, position):
         for video in self.__videos_instances:
@@ -519,6 +516,3 @@ class Playlist(object):
 
         if os.path.exists(path):
             shutil.copy2(path, self.get_icon_path(allow_default=False))
-
-    def set_data_path(self, path):
-        self.__data_path = path

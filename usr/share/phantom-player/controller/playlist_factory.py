@@ -18,6 +18,7 @@ import os.path
 
 import os
 from model.Playlist import Playlist
+from model.PlaylistPath import PlaylistPath
 from model.Video import VideoPosition
 from controller.utils import str_to_boolean
 
@@ -91,19 +92,23 @@ def load_from_file(file_path):
         print("\tError getting 'r_startup'")
         r_startup = False
 
+    playlist_paths = []
+    if data_path != "":
+        playlist_paths.append(PlaylistPath(data_path, recursive, r_startup))
 
     #
     # Create the playlist (without loading the videos)
     #
     new_playlist = Playlist(name=os.path.basename(file_path),
-                            data_path=data_path,
                             icon_extension=icon_extension,
-                            recursive=recursive,
-                            r_startup=r_startup,
                             is_random=random,
                             keep_playing=keep_playing,
                             start_at=start_at,
                             audio_track=audio_track,
                             subtitles_track=subtitles_track)
+
+
+    for playlist_path in playlist_paths:
+        new_playlist.add_playlist_path(playlist_path)
 
     return new_playlist
