@@ -17,7 +17,6 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
-import csv
 import shutil
 import random
 
@@ -74,38 +73,9 @@ class Playlist(object):
         self.__videos_instances = []
         self.__active_videos_nb = 0
 
-    def save(self):
-
-        if not os.path.exists(_SERIES_DIR):
-            os.mkdir(_SERIES_DIR)
-
-        with open(self.get_save_path(), mode='wt', encoding='utf-8') as f:
-            csv_list = csv.writer(f, delimiter='|')
-
-            csv_list.writerow([self.__random,
-                               self.__keep_playing,
-                               self.__start_at,
-                               self.__audio_track,
-                               self.__subtitles_track,
-                               self.__icon_extension])
-
-            for playlist_path in self.get_playlist_paths():
-                csv_list.writerow([playlist_path.get_path(),
-                                   playlist_path.get_recursive(),
-                                   playlist_path.get_startup_discover()])
-
-            for video in self.__videos_instances:
-                csv_list.writerow([video.get_path(),
-                                   video.get_name(),
-                                   video.get_position(),
-                                   video.get_ignore(),
-                                   video.get_hash()])
-
     def restart(self):
         for video in self.__videos_instances:
             video.set_position(VideoPosition._start)
-
-        self.save()
 
     def reorder(self, new_order_indexes):
         """ Choices are "up" or "down" """
@@ -114,8 +84,6 @@ class Playlist(object):
 
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_id(i)
-
-        self.save()
 
     def update_ids(self):
         for i, video in enumerate(self.__videos_instances, 1):
@@ -179,8 +147,6 @@ class Playlist(object):
 
                 self.__active_videos_nb -= 1
                 self.update_ids()
-                self.save()
-
                 self.update_not_hidden_videos()
 
                 break
@@ -273,8 +239,6 @@ class Playlist(object):
                             video.set_path(possible_path)
                             found_videos += 1
 
-            self.save()
-
             if found_videos > 0:
                 return found_videos
             else:
@@ -289,9 +253,6 @@ class Playlist(object):
                 if os.path.exists(full_path):
                     video_counter += 1
                     video.set_path(full_path)
-
-        if video_counter > 0:
-            self.save()
 
         return video_counter
 
