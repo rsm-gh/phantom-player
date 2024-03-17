@@ -283,7 +283,11 @@ class PhantomPlayer:
 
         elif not os.path.exists(video.get_path()):
             gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.missing)
-            self.__mp_widget.stop()
+
+            # If the player is reproducing another video, do not stop it.
+            if not self.__mp_widget.is_playing():
+                self.__mp_widget.stop()
+
             return
 
         #

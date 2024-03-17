@@ -18,6 +18,18 @@
 
 
 class Texts:
+    class MediaPlayer:
+        class Tooltip:
+            _start = "Restart"
+            _end = "End"
+            _play = "Play"
+            _pause = "Pause"
+            _tracks = "Audio & Subtitles"
+            _fullscreen = "Fullscreen"
+            _unfullscreen = "Un-Fullscreen"
+            _keep_playing = "Keep Playing"
+            _random = "Random Mode"
+
     class GUI:
         title = "Phantom Player"
 
