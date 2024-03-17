@@ -22,6 +22,10 @@ class VideoPosition:
     _start = 0
     _end = 1
 
+class VideoProgress:
+    _start = 0
+    _end = 100
+
 class Video(object):
 
     def __init__(self, path, name="", hash=""):
@@ -75,13 +79,15 @@ class Video(object):
         return self.__position
 
     def get_progress(self):
-        return round(self.__position*100)
+        return round(self.__position*VideoProgress._end)
 
     def get_is_new(self):
         return self.__is_new
 
-    def get_was_played(self):
-        return self.__position >= VideoPosition._end
+    def get_played(self):
+        # It is better to use the progress here to avoid having approximation
+        # issues with the position.
+        return self.get_progress() >= VideoProgress._end
 
     def set_path(self, path):
         self.__path = path
