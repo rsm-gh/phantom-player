@@ -181,7 +181,7 @@ def discover(playlist):
 
             video_hash = __hash_of_file(video_path)
             if video_hash in playlist_hashes:
-                print("\t\tSkipping video because hash exist...", video_path)
+                print("\t\t\tSkipping video because hash exist...", video_path)
                 continue
 
             new_video = Video(video_path)

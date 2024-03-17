@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-import os.path
-
 #  Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli.
 #
 #  This program is free software; you can redistribute it and/or modify
@@ -17,10 +14,13 @@ import os.path
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
+import csv
+
 from model.Playlist import Playlist
 from model.PlaylistPath import PlaylistPath
 from model.Video import VideoPosition
 from controller.utils import str_to_boolean
+from Paths import _SERIES_DIR
 
 def load_from_file(file_path):
 
@@ -112,3 +112,31 @@ def load_from_file(file_path):
         new_playlist.add_playlist_path(playlist_path)
 
     return new_playlist
+
+
+def save(playlist):
+
+    if not os.path.exists(_SERIES_DIR):
+        os.mkdir(_SERIES_DIR)
+
+    with open(playlist.get_save_path(), mode='wt', encoding='utf-8') as f:
+        csv_list = csv.writer(f, delimiter='|')
+
+        csv_list.writerow([playlist.__random,
+                           playlist.__keep_playing,
+                           playlist.__start_at,
+                           playlist.__audio_track,
+                           playlist.__subtitles_track,
+                           playlist.__icon_extension])
+
+        for playlist_path in playlist.get_playlist_paths():
+            csv_list.writerow([playlist_path.get_path(),
+                               playlist_path.get_recursive(),
+                               playlist_path.get_startup_discover()])
+
+        for video in playlist.get_videos():
+            csv_list.writerow([video.get_path(),
+                               video.get_name(),
+                               video.get_position(),
+                               video.get_ignore(),
+                               video.get_hash()])
