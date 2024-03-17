@@ -361,7 +361,7 @@ class Playlist(object):
                 elif not after_found:
                     continue
 
-            if video.exists() and not video.get_was_played() and not video.get_ignore():
+            if video.exists() and not video.get_played() and not video.get_ignore():
                 return video
 
         # Try to return a video from the beginning
@@ -374,7 +374,7 @@ class Playlist(object):
 
         videos = []
         for video in self.__videos_instances:
-            if not video.get_was_played() and video.exists() and not video.get_ignore():
+            if not video.get_played() and video.exists() and not video.get_ignore():
                 videos.append(video)
 
         if not videos:

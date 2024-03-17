@@ -36,7 +36,7 @@ from controller.CCParser import CCParser
 from controller import video_factory
 from controller import playlist_factory
 from model.Playlist import Playlist
-from model.Video import VideoPosition
+from model.Video import VideoPosition, VideoProgress
 from model.CurrentMedia import CurrentMedia
 from view.SettingsDialog import SettingsDialog
 from view.SettingsDialog import ResponseType as SettingsDialogResponse
@@ -278,10 +278,12 @@ class PhantomPlayer:
                 gtk_utils.dialog_info(self.__window_root, Texts.DialogPlaylist.all_videos_played)
 
             self.__window_root.unfullscreen()
+            self.__mp_widget.stop()
             return
 
         elif not os.path.exists(video.get_path()):
             gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.missing)
+            self.__mp_widget.stop()
             return
 
         #
@@ -511,6 +513,11 @@ class PhantomPlayer:
 
     def __on_media_player_position_changed(self, _, position):
 
+        if self.__current_media.get_video_progress() == VideoProgress._end:
+            # This is to avoid updating the progress on videos that was
+            # already played.
+            return
+
         self.__current_media.set_video_position(position)
         selected_series_name = self.__playlist_selected.get_name()
 
@@ -626,7 +633,7 @@ class PhantomPlayer:
     def __on_treeview_videos_press_event(self, _, event):
         model, treepaths = self.__treeselection_videos.get_selected_rows()
 
-        if len(treepaths) == 0:
+        if not treepaths:
             return
 
         selection_length = len(treepaths)
@@ -681,23 +688,26 @@ class PhantomPlayer:
 
             # If only 1 video is selected, and it is loaded in the player.
             # the progress buttons shall not be displayed.
-            can_change_progress = True
+            can_fill_progress = True
+            can_reset_progress = True
             if len(selected_ids) == 1:
                 if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
                     if self.__current_media.get_video_id() == selected_ids[0]:
-                        can_change_progress = False
+                        can_fill_progress = False
+                        can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
 
-
-            if can_change_progress:
-                # Fill progress
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_fill)
-                menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_set_progress, 100)
-
+            if can_reset_progress:
                 # Reset Progress
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_reset)
                 menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_set_progress, 0)
+                menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._start)
+
+
+            if can_fill_progress:
+                # Fill progress
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_fill)
+                menu.append(menuitem)
+                menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._end)
 
             # Find videos
             if self.__playlist_selected.missing_videos(selected_ids):
@@ -854,22 +864,28 @@ class PhantomPlayer:
 
         model, treepaths = self.__treeselection_videos.get_selected_rows()
 
-        if len(treepaths) == 0:
+        if not treepaths:
             return
 
         id_to_skip = None
         if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
-            id_to_skip = self.__current_media.get_video_id()
+            if progress == VideoProgress._start and self.__current_media.get_video_progress() == VideoProgress._end:
+                pass
+            else:
+                id_to_skip = self.__current_media.get_video_id()
 
         for treepath in treepaths:
+
             video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
-            if video_id != id_to_skip:
-                self.__liststore_videos[treepath][VideosListstoreColumnsIndex._progress] = progress
-                video = self.__playlist_selected.get_video(video_id)
-                if progress == 0:
-                    video.set_position(0)
-                else:
-                    video.set_position(progress / 100)
+            if video_id == id_to_skip:
+                continue
+
+            self.__liststore_videos[treepath][VideosListstoreColumnsIndex._progress] = progress
+            video = self.__playlist_selected.get_video(video_id)
+            if progress == VideoProgress._start:
+                video.set_position(VideoPosition._start)
+            else:
+                video.set_position(progress / VideoProgress._end)
 
         self.__liststore_playlist_set_progress(self.__playlist_selected.get_name(),
                                                self.__playlist_selected.get_progress())
