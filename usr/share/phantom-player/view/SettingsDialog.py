@@ -26,8 +26,8 @@ sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
 from Paths import *
 from Texts import Texts
+from model.PlaylistPath import PlaylistPath
 from view import gtk_utils
-from model.Playlist import TimeValue
 from controller import video_factory
 
 
@@ -118,12 +118,12 @@ class SettingsDialog:
         self.__liststore_paths.clear()
         self.__icon_path = None
 
+        self.__button_path_edit.set_sensitive(False)
+
         if playlist_names is None:
             self.__playlist_names = []
         else:
             self.__playlist_names = playlist_names
-
-        self.__button_path_add.set_sensitive(True)
 
         if is_new:
             window_title = Texts.WindowSettings.new_title
@@ -132,17 +132,15 @@ class SettingsDialog:
             window_title = playlist.get_name() + " " + Texts.WindowSettings.edit_title
             self.__button_add.hide()
 
-            data_path = playlist.get_data_path()
-            if data_path != "":
-                self.__button_path_add.set_sensitive(False)
-                self.__liststore_paths.append([playlist.get_data_path(),
-                                               playlist.get_recursive(),
-                                               playlist.get_r_startup()])
+            for playlist_path in playlist.get_playlist_paths():
+                self.__liststore_paths.append([playlist_path.get_path(),
+                                               playlist_path.get_recursive(),
+                                               playlist_path.get_startup_discover()])
 
         self.__settings_dialog.set_title(window_title)
 
         self.__button_path_remove.set_sensitive(False)
-        self.__button_path_edit.set_sensitive(not is_new)
+        #self.__button_path_edit.set_sensitive(not is_new)
         self.__button_path_reload_all.set_sensitive(not is_new)
 
         self.__entry_playlist_name.set_text(playlist.get_name())
@@ -241,15 +239,14 @@ class SettingsDialog:
         if path is None:
             return
 
-        self.__liststore_paths.clear()
-        self.__liststore_paths.append([path, False, False])
+        playlist_path = PlaylistPath(path, False, False)
+        added = self.__playlist.add_playlist_path(playlist_path)
 
-        self.__button_path_add.set_sensitive(False)
-        self.__button_path_edit.set_sensitive(True)
-        self.__button_path_reload_all.set_sensitive(True)
-
-        self.__playlist.set_data_path(path)
-        video_factory.load(self.__playlist, is_startup=False)
+        if added:
+            self.__liststore_paths.append([path, False, False])
+            #self.__button_path_edit.set_sensitive(False)
+            self.__button_path_reload_all.set_sensitive(True)
+            video_factory.load(self.__playlist, is_startup=False)
 
     def __on_button_path_remove_clicked(self, *_):
         pass
@@ -263,7 +260,7 @@ class SettingsDialog:
         self.__liststore_paths.clear()
         self.__liststore_paths.append([path, False, False])
 
-        self.__playlist.set_data_path(path)
+        #self.__playlist.set_data_path(path)
         video_factory.load(self.__playlist, is_startup=False)
 
     def __on_button_path_reload_all_clicked(self, *_):
@@ -277,7 +274,7 @@ class SettingsDialog:
     def __on_cellrenderertoggle_r_startup_toggled(self, _, row):
         state = not self.__liststore_paths[row][PathsListstoreColumns.r_startup]
         self.__liststore_paths[row][PathsListstoreColumns.r_startup] = state
-        self.__playlist.set_r_startup(state)
+        #self.__playlist.set_r_startup(state)
 
     def __on_button_delete_clicked(self, *_):
         if gtk_utils.dialog_yes_no(self.__settings_dialog,

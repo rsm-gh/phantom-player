@@ -361,7 +361,7 @@ class PhantomPlayer:
         for name in sorted(self.__playlists.keys()):
             playlist = self.__playlists[name]
 
-            if os.path.exists(playlist.get_data_path()) or not self.__checkbox_hide_missing_playlist.get_active():
+            if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
                 pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(), -1, 30)
                 self.__liststore_playlist.append([pixbuf, playlist.get_name(), playlist.get_progress()])
 
@@ -431,8 +431,7 @@ class PhantomPlayer:
 
                 self.__playlists[new_playlist.get_name()] = new_playlist
 
-                if os.path.exists(
-                        new_playlist.get_data_path()) or not self.__checkbox_hide_missing_playlist.get_active():
+                if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
                     pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
                     GLib.idle_add(self.__liststore_playlist_append,
                                   (pixbuf,
@@ -779,7 +778,7 @@ class PhantomPlayer:
             playlist_name = new_playlist.get_name()
             self.__playlists[playlist_name] = new_playlist
 
-            if os.path.exists(new_playlist.get_data_path()) or not self.__checkbox_hide_missing_playlist.get_active():
+            if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
                 pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
                 self.__liststore_playlist.append([pixbuf, playlist_name, new_playlist.get_progress()])
 
