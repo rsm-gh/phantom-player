@@ -13,7 +13,7 @@ Random (Boolean) | Keep Playing (Boolean) | Start At (Integer) | Audio Track (In
 ```
 Then, the playlist paths will be listed as:
 ```
-Path (System Path) | Recursive (Boolean) | R. Startup (Boolean)
+Path (System Path) | Recursive (Boolean) | Startup Discover (Boolean)
 ```
 And finally, there will be one line per video:
 ```

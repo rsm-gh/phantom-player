@@ -256,6 +256,34 @@ class Playlist(object):
 
         return video_counter
 
+
+    def get_linked_videos(self, path):
+
+        try:
+            playlist_path = self.__playlist_paths[path]
+        except KeyError:
+            return []
+
+        recursive = playlist_path.get_recursive()
+        media_path = playlist_path.get_path()
+
+        linked_videos = []
+        for video in self.__videos_instances:
+
+            if recursive and video.get_path().startswith(media_path):
+                linked_videos.append(video)
+
+            elif os.path.dirname(video.get_path()) == media_path:
+                linked_videos.append(video)
+
+        return linked_videos
+
+    def get_playlist_path(self, path):
+        try:
+            return self.__playlist_paths[path]
+        except KeyError:
+            return None
+
     def get_playlist_paths(self):
         return [playlist_path for path, playlist_path in
                 sorted(self.__playlist_paths.items(), key=lambda item: item[0])]
@@ -478,5 +506,6 @@ class Playlist(object):
         else:
             self.__icon_extension = ""
 
-        if os.path.exists(path):
-            shutil.copy2(path, self.get_icon_path(allow_default=False))
+        paste_path = self.get_icon_path(allow_default=False)
+        if os.path.exists(path) and path != paste_path:
+            shutil.copy2(path, paste_path)
