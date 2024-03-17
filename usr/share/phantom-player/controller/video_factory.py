@@ -113,6 +113,27 @@ def load_cached(playlist):
             print("\t\terror getting the ignore state", columns)
             ignore = False
 
+        #
+        # Check for valid lines
+        #
+        if path is None:
+            print("\t\tExit line because empty path.", columns)
+            continue
+
+        if os.path.exists(path) and not __file_is_video(path,True):
+            print("\t\tExit line because not video.", columns)
+            continue
+
+
+        if path in existent_video_paths:
+            print("\t\tExit line because duplicated path.", path)
+            continue
+        else:
+            existent_video_paths.append(path)
+
+        #
+        # This must be calculated after all the previous tests,
+        # to avoid doing unuseful calculations.
         try:
             hash_file = columns[start+4].strip()
         except Exception:
@@ -126,24 +147,6 @@ def load_cached(playlist):
         if hash_file == "" and os.path.exists(path):
             print("\t\trecalculating video hash...", path)
             hash_file = __hash_of_file(path)
-
-        #
-        # Check for valid lines
-        #
-        if path is None:
-            print("\t\tExit line because empty path.", columns)
-            continue
-
-        elif os.path.exists(path) and not __file_is_video(path,True):
-            print("\t\tExit line because not video.", columns)
-            continue
-
-
-        if path in existent_video_paths:
-            print("\t\tExit line because duplicated path.", path)
-            continue
-        else:
-            existent_video_paths.append(path)
 
         if hash_file in existent_video_hashes:
             print("\t\tExit line because duplicated hash", hash_file, path)
