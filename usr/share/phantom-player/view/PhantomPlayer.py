@@ -41,6 +41,7 @@ from model.CurrentMedia import CurrentMedia
 from view.SettingsDialog import SettingsDialog
 from view.SettingsDialog import ResponseType as SettingsDialogResponse
 from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
+from view.common import _FONT_NEW_COLOR, _FONT_ERROR_COLOR, _FONT_DEFAULT_COLOR, _FONT_HIDE_COLOR
 from Texts import Texts
 from view import gtk_utils
 from Paths import _SERIES_DIR, _CONF_FILE
@@ -102,18 +103,6 @@ class PhantomPlayer:
             css_style = _DARK_CSS
         else:
             css_style = None
-
-        _, self.__font_default_color = gtk_utils.get_default_color('theme_text_color',
-                                                                   on_error="#000000")
-
-        _, self.__font_hide_color = gtk_utils.get_default_color('warning_color',
-                                                                on_error="#ff9900")
-
-        _, self.__font_error_color = gtk_utils.get_default_color('error_color',
-                                                                 on_error="#ff0000")
-
-        _, self.__font_new_color = gtk_utils.get_default_color('success_color',
-                                                               on_error="#009933")
 
         #
         #   GTK objects
@@ -261,17 +250,18 @@ class PhantomPlayer:
         self.__mp_widget.quit()
         VLC_INSTANCE.release()
 
-    def __get_video_color(self, video):
+    @staticmethod
+    def __get_video_color(video):
         if video.get_ignore():
-            return self.__font_hide_color
+            return _FONT_HIDE_COLOR
 
         elif video.get_is_new():
-            return self.__font_new_color
+            return _FONT_NEW_COLOR
 
         elif not video.exists():
-            return self.__font_error_color
+            return _FONT_ERROR_COLOR
 
-        return self.__font_default_color
+        return _FONT_DEFAULT_COLOR
 
     def __set_video(self, video_id=None, play=True, replay=False, ignore_none=False):
 
@@ -902,7 +892,7 @@ class PhantomPlayer:
                 row_iter = model.get_iter(treepath)
                 model.remove(row_iter)
             else:
-                self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = self.__font_hide_color
+                self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = _FONT_HIDE_COLOR
 
         self.__treeselection_videos.unselect_all()
 

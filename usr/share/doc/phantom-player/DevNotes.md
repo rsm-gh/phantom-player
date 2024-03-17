@@ -11,7 +11,6 @@
 
 ### Bugs:
 + When searching in the playlist liststore, empty the videos if no playlist is selected.
-+ Problems saving the Path settings?
 + When selecting multiple videos to re-order with drag-and-drop, only the fist one is moved.
 
 ### Features to add:
