@@ -32,15 +32,15 @@ from controller import video_factory
 
 
 class ResponseType:
-    delete = 0
-    restart = 1
-    close = 2
-    add = 3
+    _delete = 0
+    _restart = 1
+    _close = 2
+    _add = 3
 
 class PathsListstoreColumns:
-    path = 0
-    recursive = 1
-    r_startup = 2
+    _path = 0
+    _recursive = 1
+    _r_startup = 2
 
 class SettingsDialog:
 
@@ -164,10 +164,10 @@ class SettingsDialog:
 
         response = self.__settings_dialog.run()
 
-        if response != ResponseType.delete:
+        if response != ResponseType._delete:
             playlist.set_name(self.__entry_playlist_name.get_text())
 
-            if is_new and response == ResponseType.close:
+            if is_new and response == ResponseType._close:
                 pass
 
             elif self.__icon_path is not None:
@@ -267,19 +267,19 @@ class SettingsDialog:
         video_factory.load(self.__playlist, is_startup=False)
 
     def __on_cellrenderertoggle_recursive_toggled(self, _, row):
-        state = not self.__liststore_paths[row][PathsListstoreColumns.recursive]
-        self.__liststore_paths[row][PathsListstoreColumns.recursive] = state
+        state = not self.__liststore_paths[row][PathsListstoreColumns._recursive]
+        self.__liststore_paths[row][PathsListstoreColumns._recursive] = state
         self.__playlist.set_recursive(state)
 
     def __on_cellrenderertoggle_r_startup_toggled(self, _, row):
-        state = not self.__liststore_paths[row][PathsListstoreColumns.r_startup]
-        self.__liststore_paths[row][PathsListstoreColumns.r_startup] = state
+        state = not self.__liststore_paths[row][PathsListstoreColumns._r_startup]
+        self.__liststore_paths[row][PathsListstoreColumns._r_startup] = state
         #self.__playlist.set_r_startup(state)
 
     def __on_button_delete_clicked(self, *_):
         if gtk_utils.dialog_yes_no(self.__settings_dialog,
                                    Texts.DialogPlaylist.confirm_delete.format(self.__playlist.get_name())):
-            self.__settings_dialog.response(ResponseType.delete)
+            self.__settings_dialog.response(ResponseType._delete)
 
     def __on_button_close_clicked(self, *_):
 
@@ -302,7 +302,7 @@ class SettingsDialog:
             else:
                 self.__playlist.set_name(new_name)
 
-        self.__settings_dialog.response(ResponseType.close)
+        self.__settings_dialog.response(ResponseType._close)
 
     def __on_button_restart_clicked(self, *_):
 
@@ -310,7 +310,7 @@ class SettingsDialog:
 
         if gtk_utils.dialog_yes_no(self.__settings_dialog,
                                    Texts.DialogPlaylist.confirm_reset.format(selected_playlist_name)):
-            self.__settings_dialog.response(ResponseType.restart)
+            self.__settings_dialog.response(ResponseType._restart)
 
     def __on_button_add_clicked(self, *_):
 
@@ -327,4 +327,4 @@ class SettingsDialog:
 
         self.__playlist.set_name(playlist_name)
 
-        self.__settings_dialog.response(ResponseType.add)
+        self.__settings_dialog.response(ResponseType._add)

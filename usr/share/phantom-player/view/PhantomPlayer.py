@@ -768,13 +768,13 @@ class PhantomPlayer:
                                               is_new=True,
                                               playlist_names=self.__playlists.keys())
 
-        if response == SettingsDialogResponse.close:
+        if response == SettingsDialogResponse._close:
             # Delete the image (if saved)
             icon_path = new_playlist.get_icon_path(allow_default=False)
             if icon_path is not None and os.path.exists(icon_path):
                 os.remove(icon_path)
 
-        elif response == SettingsDialogResponse.add:
+        elif response == SettingsDialogResponse._add:
             playlist_name = new_playlist.get_name()
             self.__playlists[playlist_name] = new_playlist
 
@@ -792,7 +792,7 @@ class PhantomPlayer:
         response = self.__settings_dialog.run(self.__playlist_selected, is_new=False)
         playlist_name = self.__playlist_selected.get_name()
 
-        if response == SettingsDialogResponse.delete:
+        if response == SettingsDialogResponse._delete:
 
             self.__playlists.pop(self.__playlist_selected.get_name())
 
@@ -844,7 +844,7 @@ class PhantomPlayer:
             self.__mp_widget.set_keep_playing(self.__playlist_selected.get_keep_playing())
             self.__mp_widget.set_random(self.__playlist_selected.get_random())
 
-        if response == SettingsDialogResponse.restart:
+        if response == SettingsDialogResponse._restart:
 
             # This is done before to avoid updating the playlist data
             was_playing = False
