@@ -33,8 +33,8 @@ sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
 
 from controller.CCParser import CCParser
-from controller import factory_video
-from controller import factory_playlist
+from controller import video_factory
+from controller import playlist_factory
 from model.Playlist import Playlist
 from model.Video import VideoPosition
 from model.CurrentMedia import CurrentMedia
@@ -427,7 +427,7 @@ class PhantomPlayer:
                 if not file_name.lower().endswith('.csv'):
                     continue
 
-                new_playlist = factory_playlist.load_from_file(os.path.join(_SERIES_DIR, file_name))
+                new_playlist = playlist_factory.load_from_file(os.path.join(_SERIES_DIR, file_name))
 
                 self.__playlists[new_playlist.get_name()] = new_playlist
 
@@ -449,7 +449,7 @@ class PhantomPlayer:
         except KeyError:
             playlist_data = None
         else:
-            factory_video.load(playlist_data, is_startup=True)
+            video_factory.load(playlist_data, is_startup=True)
             self.__current_media = CurrentMedia(playlist_data)
 
         playlist_found = False
@@ -469,7 +469,7 @@ class PhantomPlayer:
             if playlist_data is not None and playlist.get_name() == playlist_data.get_name():
                 continue
 
-            factory_video.load(playlist, is_startup=True)
+            video_factory.load(playlist, is_startup=True)
 
             GLib.idle_add(self.__liststore_playlist_set_progress,
                           playlist.get_name(),

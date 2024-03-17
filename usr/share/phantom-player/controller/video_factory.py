@@ -98,14 +98,14 @@ def load_cached(playlist):
         try:
             position = float(columns[start+2])
         except Exception:
-            position = VideoPosition._start
             print("\t\terror getting the position", columns)
+            position = VideoPosition._start
 
         try:
             ignore = str_to_boolean(columns[start+3])
         except Exception:
-            ignore = False
             print("\t\terror getting the ignore state", columns)
+            ignore = False
 
         try:
             hash_file = columns[start+4].strip()
