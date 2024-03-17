@@ -159,14 +159,17 @@ def load_cached(playlist):
         playlist.add_video(video)
 
 
-def discover(playlist):
+def discover(playlist, playlist_paths=None):
 
     print("\tDiscovering new videos...")
 
-    playlist_paths = [video.get_path() for video in playlist.get_videos()]
-    playlist_hashes = [video.get_hash() for video in playlist.get_videos()]
+    playlist_path_values = [video.get_path() for video in playlist.get_videos()]
+    playlist_hash_values = [video.get_hash() for video in playlist.get_videos()]
 
-    for playlist_path in playlist.get_playlist_paths():
+    if playlist_paths is None:
+        playlist_paths = playlist.get_playlist_paths()
+
+    for playlist_path in playlist_paths:
 
         if os.path.exists(playlist_path.get_path()):
             print("\t\tLoading...", playlist_path.get_path())
@@ -176,11 +179,11 @@ def discover(playlist):
 
         for video_path in __generate_videos_list_from_directory(playlist_path.get_path(), playlist_path.get_recursive()):
 
-            if video_path in playlist_paths:
+            if video_path in playlist_path_values:
                 continue
 
             video_hash = __hash_of_file(video_path)
-            if video_hash in playlist_hashes:
+            if video_hash in playlist_hash_values:
                 print("\t\t\tSkipping video because hash exist...", video_path)
                 continue
 
@@ -188,6 +191,7 @@ def discover(playlist):
             new_video.set_is_new(True)
             new_video.set_hash(video_hash)
             playlist.add_video(new_video)
+            print("\t\t\tAdding...", video_path)
 
 
 def __file_is_video(path, forgive_broken_links=False):
