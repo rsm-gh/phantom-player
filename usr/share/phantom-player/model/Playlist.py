@@ -270,6 +270,9 @@ class Playlist(object):
     def get_start_at(self):
         return self.__start_at
 
+    def get_icon_extension(self):
+        return self.__icon_extension
+
     def get_icon_path(self, allow_default=True):
 
         if self.__name != "":
