@@ -41,7 +41,13 @@ def load(playlist, is_startup):
     load_cached(playlist)
 
     # discover new videos
-    if not is_startup or (is_startup and playlist.get_r_startup()):
+    auto_discover = False
+    for playlist_path in playlist.get_playlist_paths():
+        if playlist_path.get_startup_discover():
+            auto_discover = True
+            break
+
+    if not is_startup or (is_startup and auto_discover):
         discover(playlist)
     else:
         print("\tDiscovering new videos... SKIP requested.")
@@ -155,26 +161,33 @@ def load_cached(playlist):
 
 def discover(playlist):
 
-    if not os.path.exists(playlist.get_data_path()):
-        print("\tDiscovering new videos... SKIP, the data path does not exist.")
-        return
-
     print("\tDiscovering new videos...")
+
     playlist_paths = [video.get_path() for video in playlist.get_videos()]
     playlist_hashes = [video.get_hash() for video in playlist.get_videos()]
-    for video_path in __generate_videos_list_from_directory(playlist.get_data_path(), playlist.get_recursive()):
-        if video_path in playlist_paths:
+
+    for playlist_path in playlist.get_playlist_paths():
+
+        if os.path.exists(playlist_path.get_path()):
+            print("\t\tLoading...", playlist_path.get_path())
+        else:
+            print("\t\tSkipping...", playlist_path.get_path())
             continue
 
-        video_hash = __hash_of_file(video_path)
-        if video_hash in playlist_hashes:
-            print("\tSkipping video because hash exist...", video_path)
-            continue
+        for video_path in __generate_videos_list_from_directory(playlist_path.get_path(), playlist_path.get_recursive()):
 
-        new_video = Video(video_path)
-        new_video.set_is_new(True)
-        new_video.set_hash(video_hash)
-        playlist.add_video(new_video)
+            if video_path in playlist_paths:
+                continue
+
+            video_hash = __hash_of_file(video_path)
+            if video_hash in playlist_hashes:
+                print("\t\tSkipping video because hash exist...", video_path)
+                continue
+
+            new_video = Video(video_path)
+            new_video.set_is_new(True)
+            new_video.set_hash(video_hash)
+            playlist.add_video(new_video)
 
 
 def __file_is_video(path, forgive_broken_links=False):
