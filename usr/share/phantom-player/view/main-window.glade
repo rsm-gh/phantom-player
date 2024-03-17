@@ -393,6 +393,7 @@ Author: Rafael Senties Martinelli
                           <object class="GtkCellRendererText"/>
                           <attributes>
                             <attribute name="text">2</attribute>
+                            <attribute name="foreground-rgba">0</attribute>
                           </attributes>
                         </child>
                       </object>
