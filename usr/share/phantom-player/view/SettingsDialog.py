@@ -28,7 +28,7 @@ from Paths import *
 from Texts import Texts
 from view import gtk_utils
 from model.Playlist import TimeValue
-from controller import factory_video
+from controller import video_factory
 
 
 class ResponseType:
@@ -178,6 +178,11 @@ class SettingsDialog:
         self.__settings_dialog.hide()
         return response
 
+
+    def __thread_load_videos(self):
+        video_factory.load(self.__playlist, is_startup=False)
+
+
     def __on_button_set_image_clicked(self, *_):
         """
             Add a picture to a playlist.
@@ -244,7 +249,7 @@ class SettingsDialog:
         self.__button_path_reload_all.set_sensitive(True)
 
         self.__playlist.set_data_path(path)
-        factory_video.load(self.__playlist, is_startup=False)
+        video_factory.load(self.__playlist, is_startup=False)
 
     def __on_button_path_remove_clicked(self, *_):
         pass
@@ -259,10 +264,10 @@ class SettingsDialog:
         self.__liststore_paths.append([path, False, False])
 
         self.__playlist.set_data_path(path)
-        factory_video.load(self.__playlist, is_startup=False)
+        video_factory.load(self.__playlist, is_startup=False)
 
     def __on_button_path_reload_all_clicked(self, *_):
-        factory_video.load(self.__playlist, is_startup=False)
+        video_factory.load(self.__playlist, is_startup=False)
 
     def __on_cellrenderertoggle_recursive_toggled(self, _, row):
         state = not self.__liststore_paths[row][PathsListstoreColumns.recursive]
