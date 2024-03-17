@@ -122,12 +122,12 @@ def save(playlist):
     with open(playlist.get_save_path(), mode='wt', encoding='utf-8') as f:
         csv_list = csv.writer(f, delimiter='|')
 
-        csv_list.writerow([playlist.__random,
-                           playlist.__keep_playing,
-                           playlist.__start_at,
-                           playlist.__audio_track,
-                           playlist.__subtitles_track,
-                           playlist.__icon_extension])
+        csv_list.writerow([playlist.get_random(),
+                           playlist.get_keep_playing(),
+                           playlist.get_start_at(),
+                           playlist.get_audio_track(),
+                           playlist.get_subtitles_track(),
+                           playlist.get_icon_extension()])
 
         for playlist_path in playlist.get_playlist_paths():
             csv_list.writerow([playlist_path.get_path(),
