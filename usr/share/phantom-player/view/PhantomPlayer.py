@@ -255,7 +255,7 @@ class PhantomPlayer:
     def save(self):
         if self.__playlists_loaded:
             for playlist in self.__playlists.values():
-                playlist.save()
+                playlist_factory.save(playlist)
 
     def quit(self, *_):
         self.__mp_widget.quit()
