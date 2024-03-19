@@ -162,7 +162,7 @@ def load_cached(playlist):
         playlist.add_video(video)
 
 
-def discover(playlist, playlist_paths=None):
+def discover(playlist, playlist_paths=None, add_func=None):
 
     print("\tDiscovering new videos...")
 
@@ -195,6 +195,8 @@ def discover(playlist, playlist_paths=None):
             new_video.set_hash(video_hash)
             playlist.add_video(new_video)
             print("\t\t\tAdding...", video_path)
+            if add_func is not None:
+                add_func(video_path)
 
 
 def __file_is_video(path, forgive_broken_links=False):

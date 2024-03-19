@@ -286,6 +286,8 @@ Author: Rafael Senties Martinelli
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="model">liststore_playlist</property>
+                    <property name="headers-visible">False</property>
+                    <property name="headers-clickable">False</property>
                     <property name="search-column">1</property>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="treeselection_playlist"/>

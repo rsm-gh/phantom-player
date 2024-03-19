@@ -50,6 +50,7 @@ class Texts:
         new_title = "New Playlist"
         edit_title = "Settings"
         playlist_name_empty = "The playlist name can not be empty."
+        importing_videos = "Importing videos... This may take long time, the software will generate a hash for each video."
 
     class MenuItemVideos:
         open_dir = "Open Directory"
