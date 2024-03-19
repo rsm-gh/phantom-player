@@ -97,6 +97,12 @@ class SettingsDialog:
         self.__on_button_edit_path_apply = builder.get_object('button_edit_path_apply')
         self.__on_button_edit_path_cancel = builder.get_object('button_edit_path_cancel')
 
+        # Dialog paths
+        self.__dialog_paths = builder.get_object('dialog_paths')
+        self.__liststore_videos_path = builder.get_object('liststore_videos_path')
+        self.__button_path_close = builder.get_object('button_path_close')
+        self.__label_dialog_paths = builder.get_object('label_dialog_paths')
+
         #
         # Connect the signals (not done trough glade because they are private methods)
         #
@@ -125,6 +131,9 @@ class SettingsDialog:
         # Edit path
         self.__on_button_edit_path_cancel.connect('clicked', self.__on_button_edit_path_cancel_clicked)
         self.__on_button_edit_path_apply.connect('clicked', self.__on_button_edit_path_apply_clicked)
+
+        # Paths
+        self.__button_path_close.connect('clicked', self.__on_button_path_close)
 
         #
         # Extra
@@ -191,9 +200,18 @@ class SettingsDialog:
         self.__settings_dialog.hide()
         return response
 
+    def __liststore_videos_path_glib_add(self, path):
+        self.__liststore_videos_path.append([path])
+
+    def __liststore_videos_path_add(self, path):
+        GLib.idle_add(self.__liststore_videos_path_glib_add, path)
+
     def __thread_discover_paths(self, playlist_path):
-        video_factory.discover(self.__playlist, [playlist_path])
+        video_factory.discover(self.__playlist,
+                               [playlist_path],
+                               add_func=self.__liststore_videos_path_add)
         self.__un_freeze_dialog()
+        GLib.idle_add(self.__button_path_close.set_sensitive, True)
 
     def __thread_reload_paths(self):
         video_factory.load(self.__playlist, is_startup=False)
@@ -276,6 +294,10 @@ class SettingsDialog:
         self.__button_path_remove.set_sensitive(selection)
         self.__button_path_edit.set_sensitive(selection)
 
+    def __on_button_path_close(self, *_):
+        self.__liststore_videos_path.clear() # to free memory
+        self.__dialog_paths.hide()
+
     def __on_button_path_add_clicked(self, *_):
 
         path = gtk_utils.dialog_select_directory(self.__settings_dialog)
@@ -294,6 +316,11 @@ class SettingsDialog:
         self.__liststore_paths.append([playlist_path.get_path(),
                                        playlist_path.get_recursive(),
                                        playlist_path.get_startup_discover()])
+
+        self.__label_dialog_paths.set_text(Texts.WindowSettings.importing_videos)
+        self.__liststore_videos_path.clear()
+        self.__dialog_paths.show()
+        self.__button_path_close.set_sensitive(False)
 
         Thread(target=self.__thread_discover_paths, args=[playlist_path]).start()
 
