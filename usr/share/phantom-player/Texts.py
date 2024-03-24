@@ -66,3 +66,9 @@ class Texts:
         missing = 'The video can not be reproduced because the file is missing. Use the search button to find it.'
         found_x = '{0} videos have been found.'
         other_found = '{0} other videos have been found.'
+
+    class StatusBar:
+
+        _load_playlist_headers = "Loading playlists headers..."
+        _load_playlist_cached = "Loading cached videos of '{}'..."
+        _load_playlists_ended = "All the playlists are loaded."
