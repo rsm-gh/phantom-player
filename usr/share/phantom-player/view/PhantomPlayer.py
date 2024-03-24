@@ -113,6 +113,7 @@ class PhantomPlayer:
         self.__window_root = builder.get_object('window_root')
         self.__window_about = builder.get_object('window_about')
         self.__menubar = builder.get_object('menubar')
+        self.__statusbar = builder.get_object('statusbar')
         self.__menuitem_playlist = builder.get_object('menuitem_playlist')
         self.__menuitem_playlist_new = builder.get_object('menuitem_playlist_new')
         self.__menuitem_playlist_settings = builder.get_object('menuitem_playlist_settings')
@@ -249,6 +250,9 @@ class PhantomPlayer:
     def quit(self, *_):
         self.__mp_widget.quit()
         VLC_INSTANCE.release()
+
+    def __push_status(self, status):
+        self.__statusbar.push(0, status)
 
     @staticmethod
     def __get_video_color(video):
@@ -417,6 +421,9 @@ class PhantomPlayer:
         return True
 
     def __on_thread_load_playlists(self):
+
+        GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_headers)
+
         if os.path.exists(_SERIES_DIR):
             for file_name in sorted(os.listdir(_SERIES_DIR)):
 
@@ -440,12 +447,13 @@ class PhantomPlayer:
         current_playlist_name = self.__configuration.get_str('current_playlist')
 
         try:
-            playlist_data = self.__playlists[current_playlist_name]
+            current_playlist = self.__playlists[current_playlist_name]
         except KeyError:
-            playlist_data = None
+            current_playlist = None
         else:
-            video_factory.load(playlist_data, is_startup=True)
-            self.__current_media = CurrentMedia(playlist_data)
+            GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(current_playlist.get_name()))
+            video_factory.load(current_playlist, is_startup=True)
+            self.__current_media = CurrentMedia(current_playlist)
 
         playlist_found = False
         for i, row in enumerate(self.__liststore_playlist):
@@ -453,7 +461,7 @@ class PhantomPlayer:
                 GLib.idle_add(self.__treeview_playlist.set_cursor, i)
                 GLib.idle_add(self.__liststore_playlist_set_progress,
                               current_playlist_name,
-                              playlist_data.get_progress())
+                              current_playlist.get_progress())
                 playlist_found = True
                 break
 
@@ -461,9 +469,10 @@ class PhantomPlayer:
         #   Load the rest of the videos
         #
         for playlist in self.__playlists.values():
-            if playlist_data is not None and playlist.get_name() == playlist_data.get_name():
+            if current_playlist is not None and playlist.get_name() == current_playlist.get_name():
                 continue
 
+            GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
             video_factory.load(playlist, is_startup=True)
 
             GLib.idle_add(self.__liststore_playlist_set_progress,
@@ -485,6 +494,7 @@ class PhantomPlayer:
         GLib.idle_add(self.__treeview_playlist.set_sensitive, True)
         GLib.idle_add(self.__menubar.set_sensitive, True)
         self.__playlists_loaded = True
+        GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlists_ended)
         print("Load playlist ended.")
 
     def __on_window_root_notify_event(self, *_):
