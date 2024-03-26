@@ -48,7 +48,6 @@ class Texts:
 
     class WindowSettings:
         new_title = "New Playlist"
-        edit_title = "Settings"
         playlist_name_empty = "The playlist name can not be empty."
         importing_videos = "Importing videos... This may take long time, the software will generate a hash for each video."
 
@@ -70,5 +69,5 @@ class Texts:
     class StatusBar:
 
         _load_playlist_headers = "Loading playlists headers..."
-        _load_playlist_cached = "Loading cached videos of '{}'..."
+        _load_playlist_cached = "Loading videos of '{}'..."
         _load_playlists_ended = "All the playlists are loaded."
