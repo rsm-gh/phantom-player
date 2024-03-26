@@ -20,6 +20,7 @@ import os
 import gi
 import sys
 from threading import Thread
+from collections import OrderedDict
 
 os.environ["GDK_BACKEND"] = "x11"
 
@@ -31,15 +32,13 @@ from gi.repository.GdkPixbuf import Pixbuf
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
-
 from controller.CCParser import CCParser
 from controller import video_factory
 from controller import playlist_factory
 from model.Playlist import Playlist
 from model.Video import VideoPosition, VideoProgress
 from model.CurrentMedia import CurrentMedia
-from view.SettingsDialog import SettingsDialog
-from view.SettingsDialog import ResponseType as SettingsDialogResponse
+from view.SettingsWindow import SettingsWindow
 from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
 from view.common import _FONT_NEW_COLOR, _FONT_ERROR_COLOR, _FONT_DEFAULT_COLOR, _FONT_HIDE_COLOR
 from Texts import Texts
@@ -86,7 +85,7 @@ class PhantomPlayer:
 
         self.__playlist_new = None
         self.__playlist_selected = None
-        self.__playlists = {}
+        self.__playlists = OrderedDict()
         self.__playlists_loaded = False
 
         self.__current_media = CurrentMedia()
@@ -193,7 +192,11 @@ class PhantomPlayer:
         if application is not None:
             self.__window_root.set_application(application)
 
-        self.__settings_dialog = SettingsDialog(self.__window_root)
+        self.__settings_window = SettingsWindow(parent=self.__window_root,
+                                                add_function=self.__on_settings_playlist_add,
+                                                delete_function=self.__on_settings_playlist_delete,
+                                                restart_function=self.__on_settings_playlist_restart,
+                                                close_function=self.__on_settings_playlist_close)
 
         self.__checkbox_hide_warning_missing_playlist.set_active(
             self.__configuration.get_bool(GlobalConfigTags._checkbox_missing_playlist_warning))
@@ -548,7 +551,8 @@ class PhantomPlayer:
         video_id = self.__current_media.get_video_id()
         for i, row in enumerate(self.__liststore_videos):
             if row[VideosListstoreColumnsIndex._id] == video_id:
-                self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = self.__current_media.get_video_progress()
+                self.__liststore_videos[i][
+                    VideosListstoreColumnsIndex._progress] = self.__current_media.get_video_progress()
                 break
 
     def __on_media_player_video_end(self, *_):
@@ -698,7 +702,8 @@ class PhantomPlayer:
 
             menu = Gtk.Menu()
 
-            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in treepaths]
+            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
+                            treepaths]
 
             # If only 1 video is selected, and it is loaded in the player.
             # the progress buttons shall not be displayed.
@@ -715,7 +720,6 @@ class PhantomPlayer:
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_reset)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._start)
-
 
             if can_fill_progress:
                 # Fill progress
@@ -776,61 +780,74 @@ class PhantomPlayer:
         model, treepaths = self.__treeselection_playlist.get_selected_rows()
         self.__menuitem_playlist_settings.set_sensitive(len(treepaths) > 0)
 
+    def __on_settings_playlist_add(self, new_playlist):
+
+        playlist_name = new_playlist.get_name()
+        self.__playlists[playlist_name] = new_playlist
+
+        if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
+            pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
+            self.__liststore_playlist.append([pixbuf, playlist_name, new_playlist.get_progress()])
+
+            for i, row in enumerate(self.__liststore_playlist):
+                if row[1] == playlist_name:
+                    self.__treeview_playlist.set_cursor(i)
+                    break
+
+    def __on_settings_playlist_restart(self, playlist):
+        # This is done before to avoid updating the playlist data
+        was_playing = False
+        if self.__current_media.is_playlist_name(playlist.get_name()):
+            if self.__mp_widget.is_playing():
+                was_playing = True
+                self.__mp_widget.pause()
+
+        self.__playlist_selected.restart()
+
+        if was_playing:
+            self.__set_video()
+
+        self.__liststore_videos_populate()
+
+    def __on_settings_playlist_delete(self, playlist):
+
+        self.__playlists.pop(playlist.get_name())
+
+        # Remove from the player (if necessary)
+        if self.__current_media.is_playlist_name(playlist.get_name()):
+            self.__mp_widget.stop()
+            self.__current_media = CurrentMedia()
+
+        # Delete the image (if saved)
+        icon_path = self.__playlist_selected.get_icon_path(allow_default=False)
+        if icon_path is not None and os.path.exists(icon_path):
+            os.remove(icon_path)
+
+        if os.path.exists(self.__playlist_selected.get_save_path()):
+            os.remove(self.__playlist_selected.get_save_path())
+
+        gtk_utils.treeselection_remove_first_row(self.__treeselection_playlist)
+
+        if len(self.__liststore_playlist) > 0:
+            self.__treeview_playlist.set_cursor(0)
+        else:
+            self.__liststore_videos.clear()
+
     def __on_menuitem_playlist_new_activate(self, *_):
-        new_playlist = Playlist()
-        response = self.__settings_dialog.run(new_playlist,
-                                              is_new=True,
-                                              playlist_names=self.__playlists.keys())
-
-        if response == SettingsDialogResponse._close:
-            # Delete the image (if saved)
-            icon_path = new_playlist.get_icon_path(allow_default=False)
-            if icon_path is not None and os.path.exists(icon_path):
-                os.remove(icon_path)
-
-        elif response == SettingsDialogResponse._add:
-            playlist_name = new_playlist.get_name()
-            self.__playlists[playlist_name] = new_playlist
-
-            if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
-                pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
-                self.__liststore_playlist.append([pixbuf, playlist_name, new_playlist.get_progress()])
-
-                for i, row in enumerate(self.__liststore_playlist):
-                    if row[1] == playlist_name:
-                        self.__treeview_playlist.set_cursor(i)
-                        break
+        self.__settings_window.show(Playlist(),
+                                    is_new=True,
+                                    playlists=self.__playlists)
 
     def __on_menuitem_playlist_settings_activate(self, *_):
+        self.__settings_window.show(self.__playlist_selected,
+                                    is_new=False,
+                                    playlists=self.__playlists)
 
-        response = self.__settings_dialog.run(self.__playlist_selected, is_new=False)
+    def __on_settings_playlist_close(self, playlist):
+
+        return
+
         playlist_name = self.__playlist_selected.get_name()
-
-        if response == SettingsDialogResponse._delete:
-
-            self.__playlists.pop(self.__playlist_selected.get_name())
-
-            # Remove from the player (if necessary)
-            if self.__current_media.is_playlist_name(playlist_name):
-                self.__mp_widget.stop()
-                self.__current_media = CurrentMedia()
-
-            # Delete the image (if saved)
-            icon_path = self.__playlist_selected.get_icon_path(allow_default=False)
-            if icon_path is not None and os.path.exists(icon_path):
-                os.remove(icon_path)
-
-            if os.path.exists(self.__playlist_selected.get_save_path()):
-                os.remove(self.__playlist_selected.get_save_path())
-
-            gtk_utils.treeselection_remove_first_row(self.__treeselection_playlist)
-
-            if len(self.__liststore_playlist) > 0:
-                self.__treeview_playlist.set_cursor(0)
-            else:
-                self.__liststore_videos.clear()
-
-            return
 
         #
         # In all the other cases
@@ -857,20 +874,6 @@ class PhantomPlayer:
         if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
             self.__mp_widget.set_keep_playing(self.__playlist_selected.get_keep_playing())
             self.__mp_widget.set_random(self.__playlist_selected.get_random())
-
-        if response == SettingsDialogResponse._restart:
-
-            # This is done before to avoid updating the playlist data
-            was_playing = False
-            if self.__current_media.is_playlist_name(playlist_name):
-                if self.__mp_widget.is_playing():
-                    was_playing = True
-                    self.__mp_widget.pause()
-
-            self.__playlist_selected.restart()
-
-            if was_playing:
-                self.__set_video()
 
         self.__liststore_videos_populate()
 

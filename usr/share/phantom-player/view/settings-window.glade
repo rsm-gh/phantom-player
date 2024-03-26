@@ -90,6 +90,11 @@ Author: Rafael Senties Martinelli
     <property name="can-focus">False</property>
     <property name="icon-name">user-trash</property>
   </object>
+  <object class="GtkImage" id="image_next">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">go-next</property>
+  </object>
   <object class="GtkImage" id="image_path_add">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
@@ -109,6 +114,11 @@ Author: Rafael Senties Martinelli
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <property name="icon-name">list-remove</property>
+  </object>
+  <object class="GtkImage" id="image_previous">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">go-previous</property>
   </object>
   <object class="GtkImage" id="image_restart">
     <property name="visible">True</property>
@@ -137,70 +147,18 @@ Author: Rafael Senties Martinelli
       <column type="gboolean"/>
     </columns>
   </object>
-  <object class="GtkDialog" id="settings_dialog">
-    <property name="width-request">600</property>
-    <property name="height-request">400</property>
+  <object class="GtkWindow" id="settings_window">
     <property name="can-focus">False</property>
-    <property name="border-width">5</property>
     <property name="modal">True</property>
-    <property name="window-position">center-on-parent</property>
+    <property name="window-position">center</property>
     <property name="destroy-with-parent">True</property>
-    <property name="icon">img/movie-icon-small.png</property>
-    <property name="type-hint">dialog</property>
     <property name="deletable">False</property>
     <property name="gravity">center</property>
-    <child internal-child="vbox">
-      <object class="GtkBox" id="dialog-vbox1">
+    <child>
+      <object class="GtkBox">
+        <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="dialog-action_area1">
-            <property name="can-focus">False</property>
-            <property name="margin-top">20</property>
-            <property name="resize-mode">immediate</property>
-            <property name="baseline-position">bottom</property>
-            <property name="layout-style">end</property>
-            <child>
-              <object class="GtkButton" id="button_close">
-                <property name="label" translatable="yes">Close</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="image">image_close</property>
-                <property name="always-show-image">True</property>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">2</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="button_add">
-                <property name="label" translatable="yes">Add</property>
-                <property name="width-request">50</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <property name="image">image_add</property>
-                <property name="always-show-image">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="pack-type">end</property>
-                <property name="position">4</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
-            <property name="pack-type">end</property>
-            <property name="position">4</property>
-          </packing>
-        </child>
         <child>
           <object class="GtkNotebook">
             <property name="visible">True</property>
@@ -226,6 +184,7 @@ Author: Rafael Senties Martinelli
                         <property name="can-focus">True</property>
                         <property name="margin-bottom">3</property>
                         <property name="invisible-char">●</property>
+                        <property name="max-width-chars">20</property>
                         <property name="input-purpose">alpha</property>
                       </object>
                       <packing>
@@ -275,7 +234,6 @@ Author: Rafael Senties Martinelli
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="halign">start</property>
-                        <property name="margin-right">10</property>
                         <property name="margin-end">10</property>
                         <property name="label" translatable="yes">Random Playing</property>
                       </object>
@@ -361,6 +319,7 @@ Author: Rafael Senties Martinelli
                   <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="margin-top">10</property>
                     <child>
                       <object class="GtkButton" id="button_delete">
                         <property name="label" translatable="yes">Delete</property>
@@ -368,6 +327,7 @@ Author: Rafael Senties Martinelli
                         <property name="sensitive">False</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">True</property>
+                        <property name="margin-right">10</property>
                         <property name="margin-end">10</property>
                         <property name="image">image_delete</property>
                         <property name="always-show-image">True</property>
@@ -441,6 +401,8 @@ Author: Rafael Senties Martinelli
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="halign">center</property>
+                    <property name="margin-left">10</property>
+                    <property name="margin-right">10</property>
                     <property name="margin-start">10</property>
                     <property name="margin-end">10</property>
                     <property name="label" translatable="yes">Audio Track</property>
@@ -456,6 +418,8 @@ Author: Rafael Senties Martinelli
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="halign">center</property>
+                    <property name="margin-left">10</property>
+                    <property name="margin-right">10</property>
                     <property name="margin-start">10</property>
                     <property name="margin-end">10</property>
                     <property name="label" translatable="yes">Subtitles Track</property>
@@ -472,6 +436,8 @@ Author: Rafael Senties Martinelli
                     <property name="can-focus">True</property>
                     <property name="halign">center</property>
                     <property name="valign">center</property>
+                    <property name="margin-left">5</property>
+                    <property name="margin-right">5</property>
                     <property name="margin-start">5</property>
                     <property name="margin-end">5</property>
                     <property name="text" translatable="yes">0</property>
@@ -489,6 +455,8 @@ Author: Rafael Senties Martinelli
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="halign">center</property>
+                    <property name="margin-left">5</property>
+                    <property name="margin-right">5</property>
                     <property name="margin-start">5</property>
                     <property name="margin-end">5</property>
                     <property name="text" translatable="yes">0</property>
@@ -505,6 +473,8 @@ Author: Rafael Senties Martinelli
                   <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="margin-left">10</property>
+                    <property name="margin-right">10</property>
                     <property name="margin-start">10</property>
                     <property name="margin-end">10</property>
                     <child>
@@ -512,8 +482,9 @@ Author: Rafael Senties Martinelli
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="halign">start</property>
+                        <property name="margin-left">5</property>
                         <property name="margin-start">5</property>
-                        <property name="text" translatable="yes">0.00</property>
+                        <property name="text" translatable="yes">0</property>
                         <property name="input-purpose">digits</property>
                         <property name="orientation">vertical</property>
                         <property name="adjustment">adjustment_start_min</property>
@@ -529,6 +500,8 @@ Author: Rafael Senties Martinelli
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="margin-left">3</property>
+                        <property name="margin-right">3</property>
                         <property name="margin-start">3</property>
                         <property name="margin-end">3</property>
                         <property name="label" translatable="yes">:</property>
@@ -543,7 +516,9 @@ Author: Rafael Senties Martinelli
                       <object class="GtkSpinButton" id="spinbutton_start_at_sec">
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
+                        <property name="margin-right">5</property>
                         <property name="margin-end">5</property>
+                        <property name="text" translatable="yes">0</property>
                         <property name="input-purpose">digits</property>
                         <property name="orientation">vertical</property>
                         <property name="adjustment">adjustment_start_sec</property>
@@ -565,6 +540,8 @@ Author: Rafael Senties Martinelli
                   <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="margin-left">10</property>
+                    <property name="margin-right">10</property>
                     <property name="margin-start">10</property>
                     <property name="margin-end">10</property>
                     <child>
@@ -573,6 +550,7 @@ Author: Rafael Senties Martinelli
                         <property name="sensitive">False</property>
                         <property name="can-focus">True</property>
                         <property name="halign">start</property>
+                        <property name="margin-left">5</property>
                         <property name="margin-start">5</property>
                         <property name="text" translatable="yes">0</property>
                         <property name="input-purpose">digits</property>
@@ -590,6 +568,8 @@ Author: Rafael Senties Martinelli
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="margin-left">3</property>
+                        <property name="margin-right">3</property>
                         <property name="margin-start">3</property>
                         <property name="margin-end">3</property>
                         <property name="label" translatable="yes">:</property>
@@ -605,6 +585,7 @@ Author: Rafael Senties Martinelli
                         <property name="visible">True</property>
                         <property name="sensitive">False</property>
                         <property name="can-focus">True</property>
+                        <property name="margin-right">5</property>
                         <property name="margin-end">5</property>
                         <property name="text" translatable="yes">0</property>
                         <property name="input-purpose">digits</property>
@@ -721,6 +702,8 @@ Author: Rafael Senties Martinelli
                   <object class="GtkBox">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
+                    <property name="margin-left">10</property>
+                    <property name="margin-right">10</property>
                     <property name="margin-start">10</property>
                     <property name="margin-end">10</property>
                     <property name="orientation">vertical</property>
@@ -817,7 +800,96 @@ Author: Rafael Senties Martinelli
           <packing>
             <property name="expand">True</property>
             <property name="fill">True</property>
-            <property name="position">7</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="margin-start">5</property>
+            <property name="margin-end">5</property>
+            <property name="margin-top">10</property>
+            <property name="margin-bottom">5</property>
+            <child>
+              <object class="GtkButton" id="button_previous_playlist">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Previous Playlist</property>
+                <property name="image">image_previous</property>
+                <property name="always-show-image">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="button_next_playlist">
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Next Playlist</property>
+                <property name="image">image_next</property>
+                <property name="always-show-image">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+              </object>
+              <packing>
+                <property name="expand">True</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="button_add">
+                <property name="label" translatable="yes">Add</property>
+                <property name="width-request">50</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="image">image_add</property>
+                <property name="always-show-image">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="pack-type">end</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="button_close">
+                <property name="label" translatable="yes">Close</property>
+                <property name="visible">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="image">image_close</property>
+                <property name="always-show-image">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="pack-type">end</property>
+                <property name="position">4</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
           </packing>
         </child>
       </object>
@@ -832,7 +904,7 @@ Author: Rafael Senties Martinelli
     <property name="icon">img/movie-icon-small.png</property>
     <property name="type-hint">dialog</property>
     <property name="deletable">False</property>
-    <property name="transient-for">settings_dialog</property>
+    <property name="transient-for">settings_window</property>
     <child internal-child="vbox">
       <object class="GtkBox">
         <property name="can-focus">False</property>
@@ -994,7 +1066,7 @@ will perform the following modifications:</property>
     <property name="icon">img/movie-icon-small.png</property>
     <property name="type-hint">dialog</property>
     <property name="deletable">False</property>
-    <property name="transient-for">settings_dialog</property>
+    <property name="transient-for">settings_window</property>
     <child internal-child="vbox">
       <object class="GtkBox">
         <property name="can-focus">False</property>
