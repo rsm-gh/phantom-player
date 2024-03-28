@@ -405,7 +405,7 @@ class PhantomPlayer:
         """
             Select the current video from the videos liststore.
         """
-        if not self.__current_media.is_playlist(self.__playlist_selected.get_id()):
+        if not self.__current_media.is_playlist(self.__playlist_selected):
             return
 
         video_id = self.__current_media.get_video_id()
@@ -546,7 +546,7 @@ class PhantomPlayer:
         #
         # Update the GUI
         #
-        if not self.__current_media.is_playlist(self.__playlist_selected.get_id()):
+        if not self.__current_media.is_playlist(self.__playlist_selected):
             return
 
         GLib.idle_add(self.__liststore_playlists_set_progress,
