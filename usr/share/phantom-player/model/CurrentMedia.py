@@ -21,9 +21,9 @@ class CurrentMedia:
         self._playlist = playlist
         self.__video = None
 
-    def is_playlist_name(self, playlist_name):
+    def is_playlist(self, playlist):
         if self._playlist is not None:
-            return self._playlist.get_name() == playlist_name
+            return self._playlist.get_id() == playlist.get_id()
 
         return False
 

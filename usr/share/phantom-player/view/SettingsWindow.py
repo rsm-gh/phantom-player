@@ -42,6 +42,7 @@ class SettingsWindow:
 
     def __init__(self,
                  parent,
+                 playlists,
                  add_function,
                  delete_function,
                  restart_function,
@@ -50,7 +51,7 @@ class SettingsWindow:
         self.__parent = parent
         self.__is_new_playlist = False
         self.__populating_settings = False
-        self.__current_playlists = None
+        self.__playlists = playlists
         self.__current_playlist = None
         self.__icon_path = None
         self.__selected_path = None
@@ -149,9 +150,8 @@ class SettingsWindow:
 
         self.__settings_window.set_transient_for(parent)
 
-    def show(self, playlist, is_new, playlists):
+    def show(self, playlist, is_new):
 
-        self.__current_playlists = playlists
         self.__current_playlist = playlist
         self.__is_new_playlist = is_new
         self.__load_playlist()
@@ -161,9 +161,30 @@ class SettingsWindow:
 
         self.__settings_window.show()
 
+    def __save_playlist_changes(self):
+        new_name = self.__entry_playlist_name.get_text().strip()
+
+        if self.__current_playlist.get_name() == new_name:
+            pass
+
+        elif new_name == "":
+            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings.playlist_name_empty)
+            return
+
+        elif new_name in [playlist.get_name().lower() for playlist in self.__playlists.values()]:
+            gtk_utils.dialog_info(self.__settings_window,
+                                  Texts.DialogPlaylist.name_exist.format(new_name))
+            return
+
+        else:
+            self.__current_playlist.set_name(new_name)
+
+        if self.__icon_path is not None:
+            self.__current_playlist.set_icon_path(self.__icon_path)
+
     def __get_previous_playlist(self):
-        keys = list(self.__current_playlists.keys())
-        prev_index = keys.index(self.__current_playlist.get_name()) - 1
+        keys = list(self.__playlists.keys())
+        prev_index = keys.index(self.__current_playlist.get_id()) - 1
 
         if prev_index < 0:
             return None
@@ -173,18 +194,18 @@ class SettingsWindow:
         except IndexError:
             return None
         else:
-            return self.__current_playlists[prev_playlist_name]
+            return self.__playlists[prev_playlist_name]
 
     def __get_next_playlist(self):
-        keys = list(self.__current_playlists.keys())
-        next_index = keys.index(self.__current_playlist.get_name()) + 1
+        keys = list(self.__playlists.keys())
+        next_index = keys.index(self.__current_playlist.get_id()) + 1
 
         try:
             next_playlist_name = keys[next_index]
         except IndexError:
             return None
         else:
-            return self.__current_playlists[next_playlist_name]
+            return self.__playlists[next_playlist_name]
 
     def __load_playlist(self):
 
@@ -255,10 +276,14 @@ class SettingsWindow:
             Gdk.Cursor.new_from_name(self.__parent.get_display(), 'wait'))
 
     def __on_button_previous_playlist(self, *_):
+        self.__save_playlist_changes()
+        self.__close_function(self.__current_playlist)
         self.__current_playlist = self.__get_previous_playlist()
         self.__load_playlist()
 
     def __on_button_next_playlist(self, *_):
+        self.__save_playlist_changes()
+        self.__close_function(self.__current_playlist)
         self.__current_playlist = self.__get_next_playlist()
         self.__load_playlist()
 
@@ -475,25 +500,7 @@ class SettingsWindow:
                 os.remove(icon_path)
 
         else:
-            new_name = self.__entry_playlist_name.get_text().strip()
-
-            if self.__current_playlist.get_name() == new_name:
-                pass
-
-            elif new_name == "":
-                gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings.playlist_name_empty)
-                return
-
-            elif new_name in self.__current_playlists.keys():
-                gtk_utils.dialog_info(self.__settings_window,
-                                      Texts.DialogPlaylist.name_exist.format(new_name))
-                return
-
-            else:
-                self.__current_playlist.set_name(new_name)
-
-            if self.__icon_path is not None:
-                self.__current_playlist.set_icon_path(self.__icon_path)
+            self.__save_playlist_changes()
 
         self.__settings_window.hide()
 
@@ -515,7 +522,7 @@ class SettingsWindow:
             gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings.playlist_name_empty)
             return
 
-        elif playlist_name in self.__current_playlists.keys():
+        elif playlist_name.lower() in [playlist.get_name().lower() for playlist in self.__playlists.values()]:
             gtk_utils.dialog_info(self.__settings_window,
                                   Texts.DialogPlaylist.name_exist.format(playlist_name))
             return

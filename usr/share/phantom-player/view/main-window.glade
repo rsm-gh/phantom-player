@@ -46,8 +46,10 @@ Author: Rafael Senties Martinelli
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
   </object>
-  <object class="GtkListStore" id="liststore_playlist">
+  <object class="GtkListStore" id="liststore_playlists">
     <columns>
+      <!-- column-name id -->
+      <column type="gint"/>
       <!-- column-name image -->
       <column type="GdkPixbuf"/>
       <!-- column-name string -->
@@ -285,7 +287,7 @@ Author: Rafael Senties Martinelli
                   <object class="GtkTreeView" id="treeview_playlist">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
-                    <property name="model">liststore_playlist</property>
+                    <property name="model">liststore_playlists</property>
                     <property name="headers-visible">False</property>
                     <property name="headers-clickable">False</property>
                     <property name="search-column">1</property>
@@ -304,7 +306,7 @@ Author: Rafael Senties Martinelli
                             <property name="inverted">True</property>
                           </object>
                           <attributes>
-                            <attribute name="value">2</attribute>
+                            <attribute name="value">3</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -314,7 +316,7 @@ Author: Rafael Senties Martinelli
                         <child>
                           <object class="GtkCellRendererPixbuf" id="cellrendererpixbuf2"/>
                           <attributes>
-                            <attribute name="pixbuf">0</attribute>
+                            <attribute name="pixbuf">1</attribute>
                           </attributes>
                         </child>
                       </object>
@@ -331,7 +333,7 @@ Author: Rafael Senties Martinelli
                         <child>
                           <object class="GtkCellRendererText"/>
                           <attributes>
-                            <attribute name="text">1</attribute>
+                            <attribute name="text">2</attribute>
                           </attributes>
                         </child>
                       </object>

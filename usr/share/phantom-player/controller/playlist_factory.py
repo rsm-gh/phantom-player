@@ -22,7 +22,7 @@ from model.Video import VideoPosition
 from controller.utils import str_to_boolean
 from Paths import _SERIES_DIR
 
-def load_from_file(file_path):
+def load_from_file(file_path, pid):
 
     print("Loading playlist file '{}'".format(file_path))
 
@@ -99,7 +99,8 @@ def load_from_file(file_path):
     #
     # Create the playlist (without loading the videos)
     #
-    new_playlist = Playlist(name=os.path.basename(file_path),
+    new_playlist = Playlist(pid=pid,
+                            name=os.path.basename(file_path),
                             icon_extension=icon_extension,
                             is_random=random,
                             keep_playing=keep_playing,
