@@ -59,9 +59,10 @@ window, treeview, box, menu {
 
 
 class PlaylistListstoreColumnsIndex:
-    _icon = 0
-    _name = 1
-    _percent = 2
+    _id = 0
+    _icon = 1
+    _name = 2
+    _percent = 3
 
 
 class VideosListstoreColumnsIndex:
@@ -136,7 +137,7 @@ class PhantomPlayer:
         self.__column_name = builder.get_object('column_name')
         self.__column_extension = builder.get_object('column_extension')
         self.__column_progress = builder.get_object('column_progress')
-        self.__liststore_playlist = builder.get_object('liststore_playlist')
+        self.__liststore_playlists = builder.get_object('liststore_playlists')
         self.__liststore_videos = builder.get_object('liststore_videos')
         box_window = builder.get_object('box_window')
 
@@ -193,6 +194,7 @@ class PhantomPlayer:
             self.__window_root.set_application(application)
 
         self.__settings_window = SettingsWindow(parent=self.__window_root,
+                                                playlists=self.__playlists,
                                                 add_function=self.__on_settings_playlist_add,
                                                 delete_function=self.__on_settings_playlist_delete,
                                                 restart_function=self.__on_settings_playlist_restart,
@@ -341,41 +343,44 @@ class PhantomPlayer:
         if found_videos > 0:
             self.__liststore_videos_populate()
 
-    def __liststore_playlist_set_progress(self, playlist_name, value):
-        for i, row in enumerate(self.__liststore_playlist):
-            if row[PlaylistListstoreColumnsIndex._name] == playlist_name:
+    def __liststore_playlists_set_progress(self, playlist_id, value):
+        for i, row in enumerate(self.__liststore_playlists):
+            if row[PlaylistListstoreColumnsIndex._id] == playlist_id:
                 if row[PlaylistListstoreColumnsIndex._percent] != value:
-                    self.__liststore_playlist[i][PlaylistListstoreColumnsIndex._percent] = value
-                break
+                    self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = value
+                return
 
-    def __liststore_playlist_append(self, data):
+    def __liststore_playlists_append(self, pixbuf, playlist):
         """
             I do not understand why this must be a separate method.
-            It is not possible to call directly: GLib.idle_add(self.__liststore_playlist.append, data)
+            It is not possible to call directly: GLib.idle_add(self.__liststore_playlists.append, data)
         """
-        self.__liststore_playlist.append(data)
+        self.__liststore_playlists.append([playlist.get_id(),
+                                           pixbuf,
+                                           playlist.get_name(),
+                                           playlist.get_progress()])
 
-    def __liststore_playlist_populate(self):
+    def __liststore_playlists_populate(self):
 
-        # Populate
-        #
-        self.__liststore_playlist.clear()
+        current_playlist_name = self.__configuration.get_str('current_playlist')
+        current_playlist = None
 
-        for name in sorted(self.__playlists.keys()):
-            playlist = self.__playlists[name]
+        self.__liststore_playlists.clear()
+
+        for playlist in sorted(self.__playlists.values(), key=lambda x: x.get_name()):
+
+            if playlist.get_name() == current_playlist_name:
+                current_playlist = playlist
 
             if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
                 pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(), -1, 30)
-                self.__liststore_playlist.append([pixbuf, playlist.get_name(), playlist.get_progress()])
+                self.__liststore_playlists_append(pixbuf, playlist)
 
-        # Select the current playlist
-        #
-        current_playlist_name = self.__configuration.get_str('current_playlist')
-
-        for i, row in enumerate(self.__liststore_playlist):
-            if row[1] == current_playlist_name:
-                self.__treeview_playlist.set_cursor(i)
-                return
+        if current_playlist is not None:
+            for i, row in enumerate(self.__liststore_playlists):
+                if row[PlaylistListstoreColumnsIndex._id] == current_playlist.get_id():
+                    self.__treeview_playlist.set_cursor(i)
+                    return
 
         self.__treeview_playlist.set_cursor(0)
 
@@ -400,7 +405,7 @@ class PhantomPlayer:
         """
             Select the current video from the videos liststore.
         """
-        if not self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
+        if not self.__current_media.is_playlist(self.__playlist_selected.get_id()):
             return
 
         video_id = self.__current_media.get_video_id()
@@ -425,6 +430,13 @@ class PhantomPlayer:
 
     def __on_thread_load_playlists(self):
 
+        current_playlist_name = self.__configuration.get_str('current_playlist')
+        current_playlist = None
+
+        #
+        # Load the playlists
+        #
+
         GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_headers)
 
         if os.path.exists(_SERIES_DIR):
@@ -433,53 +445,48 @@ class PhantomPlayer:
                 if not file_name.lower().endswith('.csv'):
                     continue
 
-                new_playlist = playlist_factory.load_from_file(os.path.join(_SERIES_DIR, file_name))
+                new_playlist = playlist_factory.load_from_file(file_path=os.path.join(_SERIES_DIR, file_name),
+                                                               pid=len(self.__playlists))
 
-                self.__playlists[new_playlist.get_name()] = new_playlist
+                if new_playlist.get_name() == current_playlist_name:
+                    current_playlist = new_playlist
+
+                self.__playlists[new_playlist.get_id()] = new_playlist
 
                 if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
                     pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
-                    GLib.idle_add(self.__liststore_playlist_append,
-                                  (pixbuf,
-                                   new_playlist.get_name(),
-                                   new_playlist.get_progress()))
+                    GLib.idle_add(self.__liststore_playlists_append, pixbuf, new_playlist)
 
         #
         #   Select & Load the last playlist that was played
         #
-        current_playlist_name = self.__configuration.get_str('current_playlist')
-
-        try:
-            current_playlist = self.__playlists[current_playlist_name]
-        except KeyError:
-            current_playlist = None
-        else:
+        playlist_found = False
+        if current_playlist is not None:
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(current_playlist.get_name()))
             video_factory.load(current_playlist, is_startup=True)
             self.__current_media = CurrentMedia(current_playlist)
 
-        playlist_found = False
-        for i, row in enumerate(self.__liststore_playlist):
-            if row[PlaylistListstoreColumnsIndex._name] == current_playlist_name:
-                GLib.idle_add(self.__treeview_playlist.set_cursor, i)
-                GLib.idle_add(self.__liststore_playlist_set_progress,
-                              current_playlist_name,
-                              current_playlist.get_progress())
-                playlist_found = True
-                break
+            for i, row in enumerate(self.__liststore_playlists):
+                if row[PlaylistListstoreColumnsIndex._id] == current_playlist.get_id():
+                    GLib.idle_add(self.__treeview_playlist.set_cursor, i)
+                    GLib.idle_add(self.__liststore_playlists_set_progress,
+                                  current_playlist.get_id(),
+                                  current_playlist.get_progress())
+                    playlist_found = True
+                    break
 
         #
         #   Load the rest of the videos
         #
         for playlist in self.__playlists.values():
-            if current_playlist is not None and playlist.get_name() == current_playlist.get_name():
+            if current_playlist is not None and playlist.get_id() == current_playlist.get_id():
                 continue
 
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
             video_factory.load(playlist, is_startup=True)
 
-            GLib.idle_add(self.__liststore_playlist_set_progress,
-                          playlist.get_name(),
+            GLib.idle_add(self.__liststore_playlists_set_progress,
+                          playlist.get_id(),
                           playlist.get_progress())
 
         #
@@ -536,16 +543,14 @@ class PhantomPlayer:
             return
 
         self.__current_media.set_video_position(position)
-        selected_series_name = self.__playlist_selected.get_name()
-
         #
         # Update the GUI
         #
-        if not self.__current_media.is_playlist_name(selected_series_name):
+        if not self.__current_media.is_playlist(self.__playlist_selected.get_id()):
             return
 
-        GLib.idle_add(self.__liststore_playlist_set_progress,
-                      selected_series_name,
+        GLib.idle_add(self.__liststore_playlists_set_progress,
+                      self.__current_media._playlist.get_id(),
                       self.__current_media._playlist.get_progress())
 
         video_id = self.__current_media.get_video_id()
@@ -578,8 +583,9 @@ class PhantomPlayer:
             self.__playlist_selected = None
             return
 
-        selected_playlist_name = gtk_utils.treeselection_get_first_cell(self.__treeselection_playlist, 1)
-        self.__playlist_selected = self.__playlists[selected_playlist_name]
+        selected_playlist_id = gtk_utils.treeselection_get_first_cell(self.__treeselection_playlist,
+                                                                      PlaylistListstoreColumnsIndex._id)
+        self.__playlist_selected = self.__playlists[selected_playlist_id]
 
         #
         # Process the events
@@ -621,7 +627,7 @@ class PhantomPlayer:
                 """
                     Check if the playlist is already selected and if a video is playing
                 """
-                if self.__current_media.is_playlist_name(selected_playlist_name):
+                if self.__current_media.is_playlist(self.__playlist_selected):
                     if not self.__mp_widget.is_nothing():
                         if self.__mp_widget.is_paused():
                             self.__mp_widget.play()
@@ -631,7 +637,7 @@ class PhantomPlayer:
                 """
                     Play a video of the playlist
                 """
-                self.__configuration.write('current_playlist', selected_playlist_name)
+                self.__configuration.write('current_playlist', self.__playlist_selected.get_name())
                 self.__current_media = CurrentMedia(self.__playlist_selected)
                 self.__set_video()
 
@@ -666,7 +672,7 @@ class PhantomPlayer:
             #   Quit if the video is already playing
             #
             same_video = False
-            if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
+            if self.__current_media.is_playlist(self.__playlist_selected):
                 if video_id == self.__current_media.get_video_id():
                     same_video = True
                     if self.__mp_widget.is_playing():
@@ -710,7 +716,7 @@ class PhantomPlayer:
             can_fill_progress = True
             can_reset_progress = True
             if len(selected_ids) == 1:
-                if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
+                if self.__current_media.is_playlist(self.__playlist_selected):
                     if self.__current_media.get_video_id() == selected_ids[0]:
                         can_fill_progress = False
                         can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
@@ -763,11 +769,11 @@ class PhantomPlayer:
             self.__playlist_selected = None
             return
 
-        selected_playlist_name = gtk_utils.treeselection_get_first_cell(treeselection, 1)
+        selected_playlist_id = gtk_utils.treeselection_get_first_cell(treeselection, PlaylistListstoreColumnsIndex._id)
 
         # This is because "press event" is executed before, so it is not necessary to re-define this
-        if self.__playlist_selected is None or selected_playlist_name != self.__playlist_selected.get_name():
-            self.__playlist_selected = self.__playlists[selected_playlist_name]
+        if self.__playlist_selected is None or selected_playlist_id != self.__playlist_selected.get_id():
+            self.__playlist_selected = self.__playlists[selected_playlist_id]
 
         self.__liststore_videos_populate()
         self.__liststore_videos_select_current()
@@ -782,22 +788,21 @@ class PhantomPlayer:
 
     def __on_settings_playlist_add(self, new_playlist):
 
-        playlist_name = new_playlist.get_name()
-        self.__playlists[playlist_name] = new_playlist
+        self.__playlists[new_playlist.get_id()] = new_playlist
 
         if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
             pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
-            self.__liststore_playlist.append([pixbuf, playlist_name, new_playlist.get_progress()])
+            self.__liststore_playlists_append(pixbuf, new_playlist)
 
-            for i, row in enumerate(self.__liststore_playlist):
-                if row[1] == playlist_name:
+            for i, row in enumerate(self.__liststore_playlists):
+                if row[PlaylistListstoreColumnsIndex._id] == new_playlist.get_id():
                     self.__treeview_playlist.set_cursor(i)
                     break
 
     def __on_settings_playlist_restart(self, playlist):
         # This is done before to avoid updating the playlist data
         was_playing = False
-        if self.__current_media.is_playlist_name(playlist.get_name()):
+        if self.__current_media.is_playlist(playlist):
             if self.__mp_widget.is_playing():
                 was_playing = True
                 self.__mp_widget.pause()
@@ -807,14 +812,19 @@ class PhantomPlayer:
         if was_playing:
             self.__set_video()
 
-        self.__liststore_videos_populate()
+        # Update the liststores
+        self.__liststore_playlists_set_progress(self.__playlist_selected.get_id(),
+                                                self.__playlist_selected.get_progress())
+
+        if self.__playlist_selected.get_id() == playlist.get_id():
+            self.__liststore_videos_populate()
 
     def __on_settings_playlist_delete(self, playlist):
 
-        self.__playlists.pop(playlist.get_name())
+        self.__playlists.pop(playlist.get_id())
 
         # Remove from the player (if necessary)
-        if self.__current_media.is_playlist_name(playlist.get_name()):
+        if self.__current_media.is_playlist(playlist):
             self.__mp_widget.stop()
             self.__current_media = CurrentMedia()
 
@@ -828,54 +838,39 @@ class PhantomPlayer:
 
         gtk_utils.treeselection_remove_first_row(self.__treeselection_playlist)
 
-        if len(self.__liststore_playlist) > 0:
+        if len(self.__liststore_playlists) > 0:
             self.__treeview_playlist.set_cursor(0)
         else:
             self.__liststore_videos.clear()
 
-    def __on_menuitem_playlist_new_activate(self, *_):
-        self.__settings_window.show(Playlist(),
-                                    is_new=True,
-                                    playlists=self.__playlists)
+    def __on_settings_playlist_close(self, closed_playlist):
 
-    def __on_menuitem_playlist_settings_activate(self, *_):
-        self.__settings_window.show(self.__playlist_selected,
-                                    is_new=False,
-                                    playlists=self.__playlists)
+        # Update the playlists liststore
+        for i, row in enumerate(self.__liststore_playlists):
+            if row[PlaylistListstoreColumnsIndex._id] == closed_playlist.get_id():
 
-    def __on_settings_playlist_close(self, playlist):
+                # Update the icon
+                pixbuf = Pixbuf.new_from_file_at_size(closed_playlist.get_icon_path(), -1, 30)
+                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._icon] = pixbuf
 
-        return
+                # Update the name
+                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._name] = closed_playlist.get_name()
+                break
 
-        playlist_name = self.__playlist_selected.get_name()
-
-        #
-        # In all the other cases
-        #
-
-        # Update the icon
-        pixbuf = Pixbuf.new_from_file_at_size(self.__playlist_selected.get_icon_path(), -1, 30)
-        gtk_utils.treeselection_set_first_cell(self.__treeselection_playlist,
-                                               PlaylistListstoreColumnsIndex._icon,
-                                               pixbuf)
-
-        # Update the name
-        old_name = gtk_utils.treeselection_get_first_cell(self.__treeselection_playlist,
-                                                          PlaylistListstoreColumnsIndex._name)
-
-        if self.__playlist_selected.get_name() != old_name:
-            self.__playlists.pop(old_name)
-            self.__playlists[self.__playlist_selected.get_name()] = self.__playlist_selected
-            gtk_utils.treeselection_set_first_cell(self.__treeselection_playlist,
-                                                   PlaylistListstoreColumnsIndex._name,
-                                                   self.__playlist_selected.get_name())
 
         # Update the media player
-        if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
-            self.__mp_widget.set_keep_playing(self.__playlist_selected.get_keep_playing())
-            self.__mp_widget.set_random(self.__playlist_selected.get_random())
+        if self.__current_media.is_playlist(closed_playlist):
+            self.__mp_widget.set_keep_playing(closed_playlist.get_keep_playing())
+            self.__mp_widget.set_random(closed_playlist.get_random())
 
-        self.__liststore_videos_populate()
+        if self.__playlist_selected.get_id() == closed_playlist.get_id():
+            self.__liststore_videos_populate()
+
+    def __on_menuitem_playlist_new_activate(self, *_):
+        self.__settings_window.show(Playlist(pid=len(self.__playlists)), is_new=True)
+
+    def __on_menuitem_playlist_settings_activate(self, *_):
+        self.__settings_window.show(self.__playlist_selected, is_new=False)
 
     def __on_menuitem_set_progress(self, _, progress):
 
@@ -885,7 +880,7 @@ class PhantomPlayer:
             return
 
         id_to_skip = None
-        if self.__current_media.is_playlist_name(self.__playlist_selected.get_name()):
+        if self.__current_media.is_playlist(self.__playlist_selected):
             if progress == VideoProgress._start and self.__current_media.get_video_progress() == VideoProgress._end:
                 pass
             else:
@@ -904,8 +899,8 @@ class PhantomPlayer:
             else:
                 video.set_position(progress / VideoProgress._end)
 
-        self.__liststore_playlist_set_progress(self.__playlist_selected.get_name(),
-                                               self.__playlist_selected.get_progress())
+        self.__liststore_playlists_set_progress(self.__playlist_selected.get_id(),
+                                                self.__playlist_selected.get_progress())
 
     def __on_menuitem_playlist_ignore_video(self, _):
 
@@ -954,7 +949,7 @@ class PhantomPlayer:
                                    self.__checkbox_hide_warning_missing_playlist.get_active())
 
     def __on_checkbox_hide_missing_playlist_toggled(self, checkbox, *_):
-        self.__liststore_playlist_populate()
+        self.__liststore_playlists_populate()
         self.__configuration.write(GlobalConfigTags._checkbox_hide_missing_playlist, checkbox.get_active())
 
     def __on_checkbox_hidden_items_toggled(self, *_):
