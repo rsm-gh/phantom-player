@@ -43,6 +43,7 @@ class Track:
 class Playlist(object):
 
     def __init__(self,
+                 pid,
                  name="",
                  icon_extension="",
                  is_random=False,
@@ -51,6 +52,7 @@ class Playlist(object):
                  audio_track=Track.Value._undefined,
                  subtitles_track=Track.Value._undefined):
 
+        self.__id = pid
         self.__name = ""
         self.__icon_extension = icon_extension
 
@@ -256,6 +258,8 @@ class Playlist(object):
 
         return video_counter
 
+    def get_id(self):
+        return self.__id
 
     def get_linked_videos(self, path):
 
