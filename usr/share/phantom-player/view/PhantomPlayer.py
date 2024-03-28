@@ -475,6 +475,9 @@ class PhantomPlayer:
                     playlist_found = True
                     break
 
+            if playlist_found:
+                self.__set_video(play=False)
+
         #
         #   Load the rest of the videos
         #

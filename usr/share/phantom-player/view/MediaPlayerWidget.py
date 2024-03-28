@@ -167,12 +167,13 @@ class CustomSignals:
 
 
 class DelayedMediaData:
-    def __init__(self, position, start_at, sub_track, audio_track, replay):
+    def __init__(self, position, start_at, sub_track, audio_track, replay, play):
         self._position = position
         self._start_at = start_at
         self._sub_track = sub_track
         self._audio_track = audio_track
         self._replay = replay
+        self._play = play
 
 class VideoChangeStatus:
     _none = 0
@@ -458,23 +459,12 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__media = None
         self.__video_duration = 0
 
-        # Patch 001: Some actions will be performed when the video length be properly parsed
-        self.__delayed_media_data = DelayedMediaData(position=position,
-                                                     start_at=start_at,
-                                                     sub_track=subtitles_track,
-                                                     audio_track=audio_track,
-                                                     replay=replay)
-
-
-        GLib.idle_add(self.__buttons_box.set_sensitive, False)
+        GLib.idle_add(self.__buttons_box.set_sensitive, False),
         GLib.idle_add(self.__menubutton_settings.set_sensitive, False)
         GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
         GLib.idle_add(self.__scale_progress.set_value, VideoPosition._start)
 
         GLib.idle_add(self.__vlc_widget.player.stop) # To remove any previous video
-
-        if play is False:
-            return
 
         if not os.path.exists(file_path):
             return
@@ -485,10 +475,19 @@ class MediaPlayerWidget(Gtk.VBox):
 
         GLib.idle_add(self.__root_window.set_title, self.__media.get_meta(0))
 
-        turn_off_screensaver(True)
+        if play:
+            turn_off_screensaver(True)
 
         GLib.idle_add(self.__vlc_widget.player.set_media, self.__media)
         GLib.idle_add(self.play)
+
+        # Patch 001: Some actions will be performed when the video length be properly parsed
+        self.__delayed_media_data = DelayedMediaData(position=position,
+                                                     start_at=start_at,
+                                                     sub_track=subtitles_track,
+                                                     audio_track=audio_track,
+                                                     replay=replay,
+                                                     play=play)
 
 
     def set_random(self, state):
@@ -659,7 +658,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
             if self.__video_change_status == VideoChangeStatus._changing:
 
-                if self.__media is None:
+                if self.__media is None or self.__delayed_media_data is None:
                     continue
 
                 #
@@ -703,6 +702,13 @@ class MediaPlayerWidget(Gtk.VBox):
                                                           replay=self.__delayed_media_data._replay)
                 if start_position > VideoPosition._start:
                     GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
+
+
+                #
+                # Pause the video if requested
+                #
+                if not self.__delayed_media_data._play:
+                    GLib.idle_add(self.__vlc_widget.player.pause)
 
                 #
                 # Re-Activate the GUI
