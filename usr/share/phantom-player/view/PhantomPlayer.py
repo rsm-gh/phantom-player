@@ -393,13 +393,29 @@ class PhantomPlayer:
         self.__column_name.set_spacing(0)
 
         for video in self.__playlist_selected.get_videos():
-            if not video.get_ignore() or not self.__checkbox_hidden_items.get_active():
-                self.__liststore_videos.append([self.__get_video_color(video),
-                                                video.get_id(),
-                                                video.get_path(),
-                                                video.get_name(),
-                                                video.get_extension(),
-                                                video.get_progress()])
+            self.__liststore_videos_add(video)
+
+    def __liststore_videos_add_glib(self, playlist, video):
+        """To be called from a thread"""
+        GLib.idle_add(self.__liststore_videos_add, playlist, video)
+
+    def __liststore_videos_add(self, playlist, video):
+
+        if self.__playlist_selected is None or self.__playlist_selected.get_id() != playlist.get_id():
+            return
+
+        if not video.get_ignore() or not self.__checkbox_hidden_items.get_active():
+            self.__liststore_videos.append([self.__get_video_color(video),
+                                            video.get_id(),
+                                            video.get_path(),
+                                            video.get_name(),
+                                            video.get_extension(),
+                                            video.get_progress()])
+
+
+
+
+
 
     def __liststore_videos_select_current(self):
         """
@@ -463,20 +479,24 @@ class PhantomPlayer:
         playlist_found = False
         if current_playlist is not None:
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(current_playlist.get_name()))
-            video_factory.load(current_playlist, is_startup=True)
+
             self.__current_media = CurrentMedia(current_playlist)
 
             for i, row in enumerate(self.__liststore_playlists):
                 if row[PlaylistListstoreColumnsIndex._id] == current_playlist.get_id():
                     GLib.idle_add(self.__treeview_playlist.set_cursor, i)
-                    GLib.idle_add(self.__liststore_playlists_set_progress,
-                                  current_playlist.get_id(),
-                                  current_playlist.get_progress())
                     playlist_found = True
                     break
 
+            video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
+
             if playlist_found:
-                self.__set_video(play=False)
+                GLib.idle_add(self.__liststore_playlists_set_progress,
+                              current_playlist.get_id(),
+                              current_playlist.get_progress())
+
+                if not self.__mp_widget.is_playing():
+                    self.__set_video(play=False)
 
         #
         #   Load the rest of the videos
@@ -486,7 +506,7 @@ class PhantomPlayer:
                 continue
 
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
-            video_factory.load(playlist, is_startup=True)
+            video_factory.load(playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
 
             GLib.idle_add(self.__liststore_playlists_set_progress,
                           playlist.get_id(),
