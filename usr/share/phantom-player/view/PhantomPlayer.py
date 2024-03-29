@@ -397,13 +397,13 @@ class PhantomPlayer:
 
     def __liststore_videos_add_glib(self, playlist, video):
         """To be called from a thread"""
-        GLib.idle_add(self.__liststore_videos_add, playlist, video)
-
-    def __liststore_videos_add(self, playlist, video):
 
         if self.__playlist_selected is None or self.__playlist_selected.get_id() != playlist.get_id():
             return
 
+        GLib.idle_add(self.__liststore_videos_add, video)
+
+    def __liststore_videos_add(self, video):
         if not video.get_ignore() or not self.__checkbox_hidden_items.get_active():
             self.__liststore_videos.append([self.__get_video_color(video),
                                             video.get_id(),
