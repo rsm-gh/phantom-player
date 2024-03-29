@@ -70,6 +70,15 @@ def load_from_file(file_path, pid):
         print("\tError getting 'icon_extension'")
         icon_extension = ""
 
+    try:
+        current_video_hash = playlist_header[6].strip()
+    except Exception:
+        print("\tError getting 'current_video_hash'")
+        current_video_hash = ""
+    else:
+        if len(current_video_hash) < 10: # in case the CSV parser saves "false" as value
+            current_video_hash = ""
+
     #
     # Read the path
     #
@@ -106,7 +115,8 @@ def load_from_file(file_path, pid):
                             keep_playing=keep_playing,
                             start_at=start_at,
                             audio_track=audio_track,
-                            subtitles_track=subtitles_track)
+                            subtitles_track=subtitles_track,
+                            current_video_hash=current_video_hash)
 
 
     for playlist_path in playlist_paths:
@@ -128,7 +138,8 @@ def save(playlist):
                            playlist.get_start_at(),
                            playlist.get_audio_track(),
                            playlist.get_subtitles_track(),
-                           playlist.get_icon_extension()])
+                           playlist.get_icon_extension(),
+                           playlist.get_current_video_hash()])
 
         for playlist_path in playlist.get_playlist_paths():
             csv_list.writerow([playlist_path.get_path(),

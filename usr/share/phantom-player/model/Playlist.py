@@ -50,7 +50,8 @@ class Playlist(object):
                  keep_playing=True,
                  start_at=0,
                  audio_track=Track.Value._undefined,
-                 subtitles_track=Track.Value._undefined):
+                 subtitles_track=Track.Value._undefined,
+                 current_video_hash=""):
 
         self.__id = pid
         self.__name = ""
@@ -62,6 +63,8 @@ class Playlist(object):
         self.__start_at = 0.0
         self.__audio_track = Track.Value._undefined
         self.__subtitles_track = Track.Value._undefined
+
+        self.__current_video_hash = current_video_hash
 
         self.set_name(name)
 
@@ -125,7 +128,6 @@ class Playlist(object):
                 return True
 
         return False
-
 
     def missing_videos(self, videos_id):
         """Return if from the selected videos there is someone missing"""
@@ -408,14 +410,31 @@ class Playlist(object):
 
         return None
 
+    def get_last_played_video_id(self):
+
+        if self.__current_video_hash == "":
+            return None
+
+        for video in self.__videos_instances:
+            if video.get_hash() == self.__current_video_hash:
+                return video.get_id()
+
+        return None
+
     def get_videos(self):
         return self.__videos_instances
 
     def get_keep_playing(self):
         return self.__keep_playing
 
+    def get_current_video_hash(self):
+        return self.__current_video_hash
+
     def set_keep_playing(self, value):
         self.__keep_playing = value
+
+    def set_current_video_hash(self, value):
+        self.__current_video_hash = value
 
     def set_start_at(self, value):
         try:
