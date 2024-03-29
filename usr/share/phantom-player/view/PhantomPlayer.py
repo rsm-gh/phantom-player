@@ -19,6 +19,7 @@
 import os
 import gi
 import sys
+from time import sleep
 from threading import Thread
 from collections import OrderedDict
 
@@ -300,6 +301,11 @@ class PhantomPlayer:
             return
 
         #
+        # Update the playlist current video
+        #
+        self.__current_media._playlist.set_current_video_hash(video.get_hash())
+
+        #
         # Play the video
         #
         self.__mp_widget.set_video(video.get_path(),
@@ -403,6 +409,10 @@ class PhantomPlayer:
 
         GLib.idle_add(self.__liststore_videos_add, video)
 
+        if video.get_hash() == playlist.get_current_video_hash() and not self.__mp_widget.has_media():
+            GLib.idle_add(self.__set_video, video.get_id(), False)
+
+
     def __liststore_videos_add(self, video):
         if not video.get_ignore() or not self.__checkbox_hidden_items.get_active():
             self.__liststore_videos.append([self.__get_video_color(video),
@@ -481,6 +491,7 @@ class PhantomPlayer:
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(current_playlist.get_name()))
 
             self.__current_media = CurrentMedia(current_playlist)
+            self.__playlist_selected = current_playlist
 
             for i, row in enumerate(self.__liststore_playlists):
                 if row[PlaylistListstoreColumnsIndex._id] == current_playlist.get_id():
@@ -495,9 +506,6 @@ class PhantomPlayer:
                               current_playlist.get_id(),
                               current_playlist.get_progress())
 
-                if not self.__mp_widget.is_playing():
-                    self.__set_video(play=False)
-
         #
         #   Load the rest of the videos
         #
@@ -506,7 +514,7 @@ class PhantomPlayer:
                 continue
 
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
-            video_factory.load(playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
+            video_factory.load(playlist, is_startup=True) # No add_func because the GUI is frozen on the first playlist
 
             GLib.idle_add(self.__liststore_playlists_set_progress,
                           playlist.get_id(),
@@ -618,7 +626,9 @@ class PhantomPlayer:
             if event.button == EventCodes.Cursor.left_click:
 
                 if self.__mp_widget.is_nothing():
-                    self.__set_video(play=False, ignore_none=True)
+                    self.__set_video(video_id=self.__playlist_selected.get_last_played_video_id(),
+                                     play=False,
+                                     ignore_none=True)
 
             elif event.button == EventCodes.Cursor.right_click:
 
@@ -662,7 +672,7 @@ class PhantomPlayer:
                 """
                 self.__configuration.write('current_playlist', self.__playlist_selected.get_name())
                 self.__current_media = CurrentMedia(self.__playlist_selected)
-                self.__set_video()
+                self.__set_video(video_id=self.__playlist_selected.get_last_played_video_id())
 
     def __on_treeview_videos_drag_end(self, *_):
 
@@ -798,8 +808,8 @@ class PhantomPlayer:
         if self.__playlist_selected is None or selected_playlist_id != self.__playlist_selected.get_id():
             self.__playlist_selected = self.__playlists[selected_playlist_id]
 
-        self.__liststore_videos_populate()
-        self.__liststore_videos_select_current()
+            self.__liststore_videos_populate()
+            self.__liststore_videos_select_current()
 
     def __on_menuitem_about_activate(self, *_):
         _ = self.__window_about.run()

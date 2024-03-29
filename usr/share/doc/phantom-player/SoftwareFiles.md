@@ -9,7 +9,7 @@ Each playlist is stored in a CSV file that uses a "|" as separator.
 
 The first line will contain the playlist properties:
 ```
-Random (Boolean) | Keep Playing (Boolean) | Start At (Integer) | Audio Track (Integer) | Subtitles Track (Integer) | Icon Extension (String)
+Random (Boolean) | Keep Playing (Boolean) | Start At (Integer) | Audio Track (Integer) | Subtitles Track (Integer) | Icon Extension (String) | Last Played Video Hash (String)
 ```
 Then, the playlist paths will be listed as:
 ```
