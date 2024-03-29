@@ -90,6 +90,11 @@ Author: Rafael Senties Martinelli
     <property name="can-focus">False</property>
     <property name="icon-name">user-trash</property>
   </object>
+  <object class="GtkImage" id="image_edit_name">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">accessories-text-editor</property>
+  </object>
   <object class="GtkImage" id="image_next">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
@@ -173,7 +178,7 @@ Author: Rafael Senties Martinelli
                 <property name="margin-bottom">10</property>
                 <property name="orientation">vertical</property>
                 <child>
-                  <!-- n-columns=2 n-rows=4 -->
+                  <!-- n-columns=3 n-rows=4 -->
                   <object class="GtkGrid">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
@@ -307,6 +312,30 @@ Author: Rafael Senties Martinelli
                         <property name="left-attach">1</property>
                         <property name="top-attach">3</property>
                       </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="togglebutton_edit_name">
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="halign">start</property>
+                        <property name="margin-start">5</property>
+                        <property name="image">image_edit_name</property>
+                        <property name="always-show-image">True</property>
+                      </object>
+                      <packing>
+                        <property name="left-attach">2</property>
+                        <property name="top-attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                   </object>
                   <packing>

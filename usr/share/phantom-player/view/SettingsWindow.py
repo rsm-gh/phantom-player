@@ -70,9 +70,9 @@ class SettingsWindow:
 
         self.__button_previous_playlist = builder.get_object('button_previous_playlist')
         self.__button_next_playlist = builder.get_object('button_next_playlist')
-
         self.__settings_window = builder.get_object('settings_window')
         self.__entry_playlist_name = builder.get_object('entry_playlist_name')
+        self.__togglebutton_edit_name = builder.get_object('togglebutton_edit_name')
         self.__image_playlist = builder.get_object('image_playlist')
         self.__switch_keep_playing = builder.get_object('switch_keep_playing')
         self.__switch_random_playing = builder.get_object('switch_random_playing')
@@ -116,6 +116,7 @@ class SettingsWindow:
         self.__button_next_playlist.connect('clicked', self.__on_button_next_playlist)
 
         self.__entry_playlist_name.connect('changed', self.__on_entry_playlist_name_changed)
+        self.__togglebutton_edit_name.connect('button-press-event', self.__on_togglebutton_edit_name_press_event)
         self.__button_set_image.connect('clicked', self.__on_button_set_image_clicked)
         self.__switch_keep_playing.connect('button-press-event', self.__on_switch_random_playing_press_event)
         self.__switch_random_playing.connect('button-press-event', self.__on_switch_random_playing_press_event)
@@ -222,14 +223,20 @@ class SettingsWindow:
 
         if self.__is_new_playlist:
             self.__button_add.show()
+            self.__togglebutton_edit_name.hide()
         else:
             self.__button_add.hide()
+            self.__togglebutton_edit_name.show()
 
             for playlist_path in self.__current_playlist.get_playlist_paths():
                 self.__liststore_paths.append([playlist_path.get_path(),
                                                playlist_path.get_recursive(),
                                                playlist_path.get_startup_discover()])
 
+
+        self.__togglebutton_edit_name.set_active(self.__is_new_playlist)
+
+        self.__entry_playlist_name.set_sensitive(self.__is_new_playlist)
         self.__button_path_reload_all.set_sensitive(not self.__is_new_playlist)
 
         self.__entry_playlist_name.set_text(self.__current_playlist.get_name())
@@ -316,6 +323,10 @@ class SettingsWindow:
             self.__icon_path = file
             pixbuf = Pixbuf.new_from_file_at_size(file, -1, 30)
             self.__image_playlist.set_from_pixbuf(pixbuf)
+
+    def __on_togglebutton_edit_name_press_event(self, widget, *_):
+        status = not widget.get_active()
+        self.__entry_playlist_name.set_sensitive(status)
 
     def __on_switch_random_playing_press_event(self, widget, *_):
         status = not widget.get_active()
