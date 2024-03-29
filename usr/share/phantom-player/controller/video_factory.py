@@ -35,10 +35,10 @@ def __hash_of_file(file_path):
     return file_hash.hexdigest()
 
 
-def load(playlist, is_startup):
+def load(playlist, is_startup, add_func=None):
 
     print("Loading videos of '{}':".format(playlist.get_name()))
-    load_cached(playlist)
+    load_cached(playlist, add_func=add_func)
 
     # discover new videos
     auto_discover = False
@@ -48,11 +48,11 @@ def load(playlist, is_startup):
             break
 
     if not is_startup or (is_startup and auto_discover):
-        discover(playlist)
+        discover(playlist, add_func=add_func)
     else:
         print("\tDiscovering new videos... SKIP requested.")
 
-def load_cached(playlist):
+def load_cached(playlist, add_func=None):
 
     if not os.path.exists(playlist.get_save_path()):
         print("\tCached videos... SKIP, the configuration file does not exist.")
@@ -160,6 +160,9 @@ def load_cached(playlist):
         video.set_ignore(ignore)
         video.set_hash(hash_file)
         playlist.add_video(video)
+
+        if add_func is not None:
+            add_func(playlist, video)
 
 
 def discover(playlist, playlist_paths=None, add_func=None):
