@@ -383,6 +383,9 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__thread_scan_motion = Thread(target=self.__on_thread_motion_activity)
         self.__thread_scan_motion.start()
 
+    def has_media(self):
+        return self.__media is not None
+
     def play(self):
         self.__toolbutton_play.set_icon_name(ThemeButtons._pause)
         self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._pause)
