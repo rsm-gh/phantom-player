@@ -876,6 +876,9 @@ class MediaPlayerWidget(Gtk.VBox):
         elif self.__scale_progress_pressed:
             return
 
+        elif not self.__get_window_is_fullscreen():
+            return
+
         elif event.type == Gdk.EventType.BUTTON_PRESS:
 
             if event.button == EventCodes.Cursor.left_click:
