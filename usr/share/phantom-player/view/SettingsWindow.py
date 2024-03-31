@@ -258,13 +258,13 @@ class SettingsWindow:
     def __liststore_videos_path_glib_add(self, path):
         self.__liststore_videos_path.append([path])
 
-    def __liststore_videos_path_add(self, path):
-        GLib.idle_add(self.__liststore_videos_path_glib_add, path)
+    def __liststore_videos_path_add_glib(self, _, video):
+        GLib.idle_add(self.__liststore_videos_path_glib_add, video.get_path())
 
     def __thread_discover_paths(self, playlist_path):
         video_factory.discover(self.__current_playlist,
                                [playlist_path],
-                               add_func=self.__liststore_videos_path_add)
+                               add_func=self.__liststore_videos_path_add_glib)
         self.__un_freeze_dialog()
         GLib.idle_add(self.__button_path_close.set_sensitive, True)
 
@@ -484,6 +484,7 @@ class SettingsWindow:
         playlist_path = self.__current_playlist.get_playlist_path(path)
         if playlist_path is not None:
             playlist_path.set_recursive(state)
+
 
     def __on_cellrenderertoggle_r_startup_toggled(self, _, row):
         """
