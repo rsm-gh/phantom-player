@@ -260,6 +260,34 @@ class Playlist(object):
 
         return video_counter
 
+    def get_path_stats(self, playlist_path):
+
+        active = 0
+        ignored = 0
+        missing = 0
+
+        path = playlist_path.get_path()
+
+        for video in self.__videos_instances:
+
+            if playlist_path.get_recursive():
+                if not video.get_path().startswith(path):
+                    continue
+
+            elif video.get_path() != path:
+                continue
+
+            if video.get_ignore():
+                ignored += 1
+
+            elif not video.exists():
+                missing += 1
+
+            else:
+                active += 1
+
+        return active, ignored, missing
+
     def get_id(self):
         return self.__id
 

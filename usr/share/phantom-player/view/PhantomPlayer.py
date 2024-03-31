@@ -657,9 +657,9 @@ class PhantomPlayer:
 
                     return
 
-                """
-                    Check if the playlist is already selected and if a video is playing
-                """
+                #
+                #    Check if the playlist is already selected and if a video is playing
+                #
                 if self.__current_media.is_playlist(self.__playlist_selected):
                     if not self.__mp_widget.is_nothing():
                         if self.__mp_widget.is_paused():
@@ -667,9 +667,9 @@ class PhantomPlayer:
 
                         return
 
-                """
-                    Play a video of the playlist
-                """
+                #
+                #    Play a video of the playlist
+                #
                 self.__configuration.write('current_playlist', self.__playlist_selected.get_name())
                 self.__current_media = CurrentMedia(self.__playlist_selected)
                 self.__set_video(video_id=self.__playlist_selected.get_last_played_video_id())

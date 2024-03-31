@@ -36,6 +36,9 @@ class PathsListstoreColumns:
     _path = 0
     _recursive = 1
     _r_startup = 2
+    _active = 3
+    _ignored = 4
+    _missing = 5
 
 
 class SettingsWindow:
@@ -68,6 +71,7 @@ class SettingsWindow:
         builder = Gtk.Builder()
         builder.add_from_file(os.path.join(_SCRIPT_DIR, "settings-window.glade"))
 
+        self.__notebook = builder.get_object('notebook')
         self.__button_previous_playlist = builder.get_object('button_previous_playlist')
         self.__button_next_playlist = builder.get_object('button_next_playlist')
         self.__settings_window = builder.get_object('settings_window')
@@ -100,8 +104,8 @@ class SettingsWindow:
         # Edit path
         self.__dialog_edit = builder.get_object('dialog_edit')
         self.__liststore_edit_path = builder.get_object('liststore_edit_path')
-        self.__on_button_edit_path_apply = builder.get_object('button_edit_path_apply')
-        self.__on_button_edit_path_cancel = builder.get_object('button_edit_path_cancel')
+        self.__button_edit_path_apply = builder.get_object('button_edit_path_apply')
+        self.__button_edit_path_cancel = builder.get_object('button_edit_path_cancel')
 
         # Dialog paths
         self.__dialog_paths = builder.get_object('dialog_paths')
@@ -139,8 +143,8 @@ class SettingsWindow:
         self.__button_add.connect('clicked', self.__on_button_add_clicked)
 
         # Edit path
-        self.__on_button_edit_path_cancel.connect('clicked', self.__on_button_edit_path_cancel_clicked)
-        self.__on_button_edit_path_apply.connect('clicked', self.__on_button_edit_path_apply_clicked)
+        self.__button_edit_path_cancel.connect('clicked', self.__on_button_edit_path_cancel_clicked)
+        self.__button_edit_path_apply.connect('clicked', self.__on_button_edit_path_apply_clicked)
 
         # Paths
         self.__button_path_close.connect('clicked', self.__on_button_path_close)
@@ -213,6 +217,7 @@ class SettingsWindow:
         if self.__is_new_playlist:
             self.__button_previous_playlist.set_sensitive(False)
             self.__button_next_playlist.set_sensitive(False)
+            self.__notebook.set_current_page(0)
         else:
             self.__button_previous_playlist.set_sensitive(self.__get_previous_playlist() is not None)
             self.__button_next_playlist.set_sensitive(self.__get_next_playlist() is not None)
@@ -229,9 +234,7 @@ class SettingsWindow:
             self.__togglebutton_edit_name.show()
 
             for playlist_path in self.__current_playlist.get_playlist_paths():
-                self.__liststore_paths.append([playlist_path.get_path(),
-                                               playlist_path.get_recursive(),
-                                               playlist_path.get_startup_discover()])
+                self.__liststore_paths_update_or_add(playlist_path)
 
 
         self.__togglebutton_edit_name.set_active(self.__is_new_playlist)
@@ -255,32 +258,87 @@ class SettingsWindow:
         self.__spinbutton_start_at_sec.set_value(self.__current_playlist.get_start_at() % 60)
         self.__populating_settings = False
 
+
+    def __liststore_paths_update_or_add(self, playlist_path, liststore_path=None):
+
+        if liststore_path is None:
+            liststore_path = playlist_path.get_path()
+
+        active, ignored, missing = self.__current_playlist.get_path_stats(playlist_path)
+
+        for i, row in enumerate(self.__liststore_paths):
+            if row[PathsListstoreColumns._path] == liststore_path:
+                self.__liststore_paths[i][PathsListstoreColumns._path] = playlist_path.get_path(),
+                self.__liststore_paths[i][PathsListstoreColumns._recursive] = playlist_path.get_recursive()
+                self.__liststore_paths[i][PathsListstoreColumns._r_startup] = playlist_path.get_startup_discover()
+                self.__liststore_paths[i][PathsListstoreColumns._active] = active
+                self.__liststore_paths[i][PathsListstoreColumns._ignored] = ignored
+                self.__liststore_paths[i][PathsListstoreColumns._missing] = missing
+                return
+
+        self.__liststore_paths.append([playlist_path.get_path(),
+                                       playlist_path.get_recursive(),
+                                       playlist_path.get_startup_discover(),
+                                       active,
+                                       ignored,
+                                       missing])
+
+
+
     def __liststore_videos_path_glib_add(self, path):
         self.__liststore_videos_path.append([path])
 
     def __liststore_videos_path_add_glib(self, _, video):
         GLib.idle_add(self.__liststore_videos_path_glib_add, video.get_path())
 
-    def __thread_discover_paths(self, playlist_path):
+    def __thread_discover_paths(self, playlist_path, end_label, end_text):
         video_factory.discover(self.__current_playlist,
                                [playlist_path],
                                add_func=self.__liststore_videos_path_add_glib)
-        self.__un_freeze_dialog()
-        GLib.idle_add(self.__button_path_close.set_sensitive, True)
+        GLib.idle_add(end_label.set_text, end_text)
+        GLib.idle_add(self.__liststore_paths_update_or_add, playlist_path)
+        self.__unfreeze_all()
 
     def __thread_reload_paths(self):
         video_factory.load(self.__current_playlist, is_startup=False)
-        self.__un_freeze_dialog()
+        self.__unfreeze_all()
 
-    def __un_freeze_dialog(self):
-        cursor = Gdk.Cursor.new_from_name(self.__parent.get_display(), 'default')
-        GLib.idle_add(self.__parent.get_root_window().set_cursor, cursor)
+    def __unfreeze_all(self):
+        """This method will be called inside a thread"""
+
+        # Dialog paths
+        GLib.idle_add(self.__button_path_close.set_sensitive, True)
+
+        # Dialog edit
+        GLib.idle_add(self.__button_edit_path_apply.set_sensitive, True)
+        GLib.idle_add(self.__button_edit_path_cancel.set_sensitive, True)
+
+        # Settings window
         GLib.idle_add(self.__settings_window.set_sensitive, True)
 
-    def __freeze_dialog(self):
+        # Root Window
+        cursor = Gdk.Cursor.new_from_name(self.__parent.get_display(), 'default')
+        GLib.idle_add(self.__parent.get_root_window().set_cursor, cursor)
+
+
+
+    def __freeze_all(self):
+
+        # Dialog paths
+        self.__liststore_videos_path.clear()
+        self.__button_path_close.set_sensitive(False)
+
+        # Dialog edit
+        self.__liststore_edit_path.clear()
+        self.__button_edit_path_apply.set_sensitive(False)
+        self.__button_edit_path_cancel.set_sensitive(False)
+
+        # Settings window
         self.__settings_window.set_sensitive(False)
-        self.__parent.get_root_window().set_cursor(
-            Gdk.Cursor.new_from_name(self.__parent.get_display(), 'wait'))
+
+        # Root window
+        cursor = Gdk.Cursor.new_from_name(self.__parent.get_display(), 'wait')
+        self.__parent.get_root_window().set_cursor(cursor)
 
     def __on_button_previous_playlist(self, *_):
         self.__save_playlist_changes()
@@ -303,8 +361,6 @@ class SettingsWindow:
             playlist_name = "Playlist Settings"
 
         self.__settings_window.set_title(playlist_name)
-
-
 
     def __on_button_set_image_clicked(self, *_):
         """
@@ -387,25 +443,23 @@ class SettingsWindow:
         if path is None:
             return
 
-        playlist_path = PlaylistPath(path, recursive=False, startup_discover=False)
+        playlist_path = PlaylistPath(path=path,
+                                     recursive=False,
+                                     startup_discover=False)
         added = self.__current_playlist.add_playlist_path(playlist_path)
-
         if not added:
             return
 
         self.__button_path_reload_all.set_sensitive(True)
-        self.__freeze_dialog()
 
-        self.__liststore_paths.append([playlist_path.get_path(),
-                                       playlist_path.get_recursive(),
-                                       playlist_path.get_startup_discover()])
-
-        self.__label_dialog_paths.set_text(Texts.WindowSettings.importing_videos)
-        self.__liststore_videos_path.clear()
+        self.__dialog_paths.set_title(Texts.WindowSettings._add_path_title)
+        self.__label_dialog_paths.set_text(Texts.WindowSettings._add_path_videos)
+        self.__freeze_all()
         self.__dialog_paths.show()
-        self.__button_path_close.set_sensitive(False)
 
-        Thread(target=self.__thread_discover_paths, args=[playlist_path]).start()
+        Thread(target=self.__thread_discover_paths, args=[playlist_path,
+                                                          self.__label_dialog_paths,
+                                                          Texts.WindowSettings._add_path_videos_done]).start()
 
     def __on_button_path_remove_clicked(self, *_):
         pass
@@ -445,7 +499,7 @@ class SettingsWindow:
         self.__dialog_edit.show()
 
     def __on_button_path_reload_all_clicked(self, *_):
-        self.__freeze_dialog()
+        self.__freeze_all()
         Thread(target=self.__thread_reload_paths).start()
 
     def __on_button_edit_path_apply_clicked(self, *_):
@@ -458,13 +512,8 @@ class SettingsWindow:
             new_path = video.get_path().replace(current_path, self.__edit_path_new_value, 1)
             video.set_path(new_path)
 
-        # Update the path liststore
-        for i, row in enumerate(self.__liststore_paths):
-            if row[PathsListstoreColumns._path] == current_path:
-                self.__liststore_paths[i][PathsListstoreColumns._path] = self.__edit_path_new_value
-                break
-
         self.__selected_path.set_path(self.__edit_path_new_value)
+        self.__liststore_paths_update_or_add(self.__selected_path, current_path)
 
         self.__dialog_edit.hide()
 
@@ -479,11 +528,26 @@ class SettingsWindow:
         """
         path = self.__liststore_paths[row][PathsListstoreColumns._path]
         state = not self.__liststore_paths[row][PathsListstoreColumns._recursive]
-        self.__liststore_paths[row][PathsListstoreColumns._recursive] = state
 
         playlist_path = self.__current_playlist.get_playlist_path(path)
-        if playlist_path is not None:
-            playlist_path.set_recursive(state)
+        playlist_path.set_recursive(state)
+
+        self.__freeze_all()
+
+        self.__dialog_paths.show()
+
+        if state:
+            self.__dialog_paths.set_title(Texts.WindowSettings._add_recursive_title)
+            self.__label_dialog_paths.set_text(Texts.WindowSettings._adding_recursive_videos)
+            Thread(target=self.__thread_discover_paths, args=[playlist_path,
+                                                              self.__label_dialog_paths,
+                                                              Texts.WindowSettings._adding_recursive_videos_done]).start()
+        else:
+            self.__dialog_paths.set_title("Removing recursive videos")
+            self.__label_dialog_paths.set_text("The following videos will be removed:")
+            self.__selected_path.set_path(playlist_path)
+            self.__unfreeze_all()
+
 
 
     def __on_cellrenderertoggle_r_startup_toggled(self, _, row):

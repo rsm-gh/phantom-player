@@ -101,10 +101,6 @@ def load_from_file(file_path, pid):
         print("\tError getting 'r_startup'")
         r_startup = False
 
-    playlist_paths = []
-    if data_path != "":
-        playlist_paths.append(PlaylistPath(data_path, recursive, r_startup))
-
     #
     # Create the playlist (without loading the videos)
     #
@@ -119,7 +115,10 @@ def load_from_file(file_path, pid):
                             current_video_hash=current_video_hash)
 
 
-    for playlist_path in playlist_paths:
+    if data_path != "":
+        playlist_path = PlaylistPath(path=data_path,
+                                     recursive=recursive,
+                                     startup_discover=r_startup)
         new_playlist.add_playlist_path(playlist_path)
 
     return new_playlist
