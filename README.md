@@ -52,7 +52,7 @@ any of the hard-drive content.*
 + Turn to fullscreen with the F11 key or with the button from the media player.
 + Turn off the fullscreen with the Esc key or with the button from the media player.
 + Change the volume with the mouse wheel or the up/down arrows**.
-+ Toggle Play/Pause with a left-click, the space bar or the enter key**.
++ Toggle Play/Pause with a left-click**, the space bar** or the enter key**.
 + Change the subtitles or the audio track with the button from the media player.
 + Resize the player by grabbing the separator with and moving it up or down.
 
