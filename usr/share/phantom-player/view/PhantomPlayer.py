@@ -556,9 +556,11 @@ class PhantomPlayer:
             if fullscreen:
                 self.__menubar.hide()
                 self.__main_paned.hide()
+                self.__statusbar.hide()
             else:
                 self.__menubar.show()
                 self.__main_paned.show()
+                self.__statusbar.show()
 
     def __on_media_player_btn_random_toggled(self, _, state):
         self.__current_media._playlist.set_random(state)
