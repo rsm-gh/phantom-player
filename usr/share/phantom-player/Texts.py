@@ -16,6 +16,7 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+_LONG_TIME_PLEASE_WAIT = "This may take long time, please wait.."
 
 class Texts:
     class MediaPlayer:
@@ -49,7 +50,14 @@ class Texts:
     class WindowSettings:
         new_title = "New Playlist"
         playlist_name_empty = "The playlist name can not be empty."
-        importing_videos = "Importing videos... This may take long time, the software will generate a hash for each video."
+
+        _add_path_title = "Discovering Videos"
+        _add_path_videos = _LONG_TIME_PLEASE_WAIT
+        _add_path_videos_done = "Inspection done, the following videos will be added:"
+
+        _add_recursive_title = "Discovering recursive videos"
+        _adding_recursive_videos = _LONG_TIME_PLEASE_WAIT
+        _adding_recursive_videos_done = "Recursive inspection done, the following videos will be added:"
 
     class MenuItemVideos:
         open_dir = "Open Directory"

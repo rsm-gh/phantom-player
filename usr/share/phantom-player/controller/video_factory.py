@@ -49,8 +49,6 @@ def load(playlist, is_startup, add_func=None):
 
     if not is_startup or (is_startup and auto_discover):
         discover(playlist, add_func=add_func)
-    else:
-        print("\tDiscovering new videos... SKIP requested.")
 
 def load_cached(playlist, add_func=None):
 
