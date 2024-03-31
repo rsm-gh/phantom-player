@@ -199,7 +199,7 @@ def discover(playlist, playlist_paths=None, add_func=None):
             playlist.add_video(new_video)
             print("\t\t\tAdding...", video_path)
             if add_func is not None:
-                add_func(video_path)
+                add_func(playlist, new_video)
 
 
 def __file_is_video(path, forgive_broken_links=False):
