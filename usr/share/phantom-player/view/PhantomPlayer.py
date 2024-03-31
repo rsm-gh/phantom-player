@@ -306,6 +306,11 @@ class PhantomPlayer:
         self.__current_media._playlist.set_current_video_hash(video.get_hash())
 
         #
+        # Update the configuration file
+        #
+        self.__configuration.write('current_playlist', self.__current_media._playlist.get_name())
+
+        #
         # Play the video
         #
         self.__mp_widget.set_video(video.get_path(),
@@ -672,7 +677,6 @@ class PhantomPlayer:
                 #
                 #    Play a video of the playlist
                 #
-                self.__configuration.write('current_playlist', self.__playlist_selected.get_name())
                 self.__current_media = CurrentMedia(self.__playlist_selected)
                 self.__set_video(video_id=self.__playlist_selected.get_last_played_video_id())
 
