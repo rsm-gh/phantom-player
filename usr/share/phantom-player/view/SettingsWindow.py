@@ -110,6 +110,7 @@ class SettingsWindow:
         # Dialog paths
         self.__dialog_paths = builder.get_object('dialog_paths')
         self.__liststore_videos_path = builder.get_object('liststore_videos_path')
+        self.__treeselection_videos_path = builder.get_object('treeselection_videos_path')
         self.__button_path_close = builder.get_object('button_path_close')
         self.__label_dialog_paths = builder.get_object('label_dialog_paths')
 
@@ -268,7 +269,7 @@ class SettingsWindow:
 
         for i, row in enumerate(self.__liststore_paths):
             if row[PathsListstoreColumns._path] == liststore_path:
-                self.__liststore_paths[i][PathsListstoreColumns._path] = playlist_path.get_path(),
+                self.__liststore_paths[i][PathsListstoreColumns._path] = playlist_path.get_path()
                 self.__liststore_paths[i][PathsListstoreColumns._recursive] = playlist_path.get_recursive()
                 self.__liststore_paths[i][PathsListstoreColumns._r_startup] = playlist_path.get_startup_discover()
                 self.__liststore_paths[i][PathsListstoreColumns._active] = active
@@ -462,7 +463,13 @@ class SettingsWindow:
                                                           Texts.WindowSettings._add_path_videos_done]).start()
 
     def __on_button_path_remove_clicked(self, *_):
-        pass
+        self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
+        self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
+        self.__dialog_paths.show()
+        removed_videos = self.__current_playlist.remove_playlist_path(self.__selected_path)
+        for video in removed_videos:
+            self.__liststore_videos_path.append([video.get_path()])
+            gtk_utils.treeselection_remove_first_row(self.__treeselection_path)
 
     def __on_button_path_edit_clicked(self, *_):
 
@@ -532,22 +539,23 @@ class SettingsWindow:
         playlist_path = self.__current_playlist.get_playlist_path(path)
         playlist_path.set_recursive(state)
 
-        self.__freeze_all()
-
         self.__dialog_paths.show()
 
         if state:
+            self.__freeze_all()
             self.__dialog_paths.set_title(Texts.WindowSettings._add_recursive_title)
             self.__label_dialog_paths.set_text(Texts.WindowSettings._adding_recursive_videos)
             Thread(target=self.__thread_discover_paths, args=[playlist_path,
                                                               self.__label_dialog_paths,
                                                               Texts.WindowSettings._adding_recursive_videos_done]).start()
         else:
-            self.__dialog_paths.set_title("Removing recursive videos")
-            self.__label_dialog_paths.set_text("The following videos will be removed:")
-            self.__selected_path.set_path(playlist_path)
-            self.__unfreeze_all()
+            self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
+            self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
+            removed_videos = self.__current_playlist.remove_playlist_path(playlist_path, only_recursive=True)
+            for video in removed_videos:
+                self.__liststore_videos_path.append([video.get_path()])
 
+            self.__liststore_paths_update_or_add(playlist_path)
 
 
     def __on_cellrenderertoggle_r_startup_toggled(self, _, row):

@@ -1178,7 +1178,7 @@ Author: Rafael Senties Martinelli
                 <property name="can-focus">True</property>
                 <property name="shadow-type">in</property>
                 <child>
-                  <object class="GtkTreeView">
+                  <object class="GtkTreeView" id="treeselection_videos_path">
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="model">liststore_videos_path</property>
