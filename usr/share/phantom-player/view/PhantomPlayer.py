@@ -19,7 +19,6 @@
 import os
 import gi
 import sys
-from time import sleep
 from threading import Thread
 from collections import OrderedDict
 
