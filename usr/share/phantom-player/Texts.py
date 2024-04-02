@@ -59,6 +59,9 @@ class Texts:
         _adding_recursive_videos = _LONG_TIME_PLEASE_WAIT
         _adding_recursive_videos_done = "Recursive inspection done, the following videos will be added:"
 
+        _remove_recursive_title = "Removing recursive videos"
+        _remove_videos = "The following videos will be removed:"
+
     class MenuItemVideos:
         open_dir = "Open Directory"
         ignore = "Ignore"
