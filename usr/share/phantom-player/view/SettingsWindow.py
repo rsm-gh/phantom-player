@@ -465,11 +465,14 @@ class SettingsWindow:
     def __on_button_path_remove_clicked(self, *_):
         self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
         self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
-        self.__dialog_paths.show()
         removed_videos = self.__current_playlist.remove_playlist_path(self.__selected_path)
-        for video in removed_videos:
-            self.__liststore_videos_path.append([video.get_path()])
-            gtk_utils.treeselection_remove_first_row(self.__treeselection_path)
+
+        if removed_videos > 0:
+            self.__dialog_paths.show()
+            for video in removed_videos:
+                self.__liststore_videos_path.append([video.get_path()])
+
+        gtk_utils.treeselection_remove_first_row(self.__treeselection_path)
 
     def __on_button_path_edit_clicked(self, *_):
 
@@ -539,9 +542,8 @@ class SettingsWindow:
         playlist_path = self.__current_playlist.get_playlist_path(path)
         playlist_path.set_recursive(state)
 
-        self.__dialog_paths.show()
-
         if state:
+            self.__dialog_paths.show()
             self.__freeze_all()
             self.__dialog_paths.set_title(Texts.WindowSettings._add_recursive_title)
             self.__label_dialog_paths.set_text(Texts.WindowSettings._adding_recursive_videos)
@@ -551,9 +553,12 @@ class SettingsWindow:
         else:
             self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
             self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
+
             removed_videos = self.__current_playlist.remove_playlist_path(playlist_path, only_recursive=True)
-            for video in removed_videos:
-                self.__liststore_videos_path.append([video.get_path()])
+            if removed_videos > 0:
+                self.__dialog_paths.show()
+                for video in removed_videos:
+                    self.__liststore_videos_path.append([video.get_path()])
 
             self.__liststore_paths_update_or_add(playlist_path)
 
