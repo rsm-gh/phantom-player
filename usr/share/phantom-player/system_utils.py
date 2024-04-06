@@ -18,6 +18,7 @@
 #
 
 import os
+from PIL import Image
 
 def open_directory(path):
     os.system('''exo-open "{0}" '''.format(os.path.dirname(path)))
@@ -37,6 +38,75 @@ def turn_off_screensaver(state):
         except Exception:
             print("It wasn't possible to turn on the screensaver")
 
+
+def format_img(read_path, write_path, width=None, height=None, max_width=None, extension=None):
+    """
+        Code taken from www.cad-viewer.org
+        Either fill width & height, or max_width
+    """
+
+    image = Image.open(read_path)
+
+    #
+    # Resize larger/smaller images
+    #
+
+    img_width, img_height = image.size
+
+    if max_width is not None and img_width > max_width:
+
+        new_height = int(max_width * img_height / img_width)
+        image = image.resize((max_width, new_height))
+
+    else:
+
+        width_resizing = False
+
+        if width is not None and img_width != width:
+
+            new_height = int(width * img_height / img_width)
+
+            if new_height >= height:
+                image = image.resize((width, new_height))
+                width_resizing = True
+
+        if not width_resizing:
+
+            img_width, img_height = image.size
+
+            if height is not None and img_height != height:
+                new_width = int(height * img_width / img_height)
+
+                image = image.resize((new_width, height))
+
+        #
+        # Crop the excess
+        #
+        if width is not None and height is not None:
+
+            img_width, img_height = image.size
+
+            if img_width > width or img_height > height:
+
+                if img_height > height:
+                    delta_h = (img_height - height) / 2
+                else:
+                    delta_h = 0
+
+                if img_width > width:
+                    delta_w = (img_width - width) / 2
+                else:
+                    delta_w = 0
+
+                image = image.crop((delta_w, delta_h, width + delta_w, height + delta_h))
+
+    # Save the image
+    if extension is None:
+        image.save(write_path, format=extension)
+    else:
+        image.save(write_path)
+
+    return image.size
 
 class EventCodes:
     class Cursor:

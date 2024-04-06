@@ -185,9 +185,6 @@ class SettingsWindow:
         else:
             self.__current_playlist.set_name(new_name)
 
-        if self.__icon_path is not None:
-            self.__current_playlist.set_icon_path(self.__icon_path)
-
     def __get_previous_playlist(self):
         keys = list(self.__playlists.keys())
         prev_index = keys.index(self.__current_playlist.get_id()) - 1
@@ -225,7 +222,6 @@ class SettingsWindow:
 
         self.__treeselection_path.unselect_all()
         self.__liststore_paths.clear()
-        self.__icon_path = None
 
         if self.__is_new_playlist:
             self.__button_add.show()
@@ -376,10 +372,14 @@ class SettingsWindow:
         file_filter.add_pattern('*.png')
 
         file = gtk_utils.dialog_select_file(self.__settings_window, file_filter)
-        if file is not None:
-            self.__icon_path = file
-            pixbuf = Pixbuf.new_from_file_at_size(file, -1, 30)
-            self.__image_playlist.set_from_pixbuf(pixbuf)
+        if file is None:
+            return
+
+        self.__current_playlist.set_icon_path(file)
+        pixbuf = Pixbuf.new_from_file_at_size(self.__current_playlist.get_icon_path(), -1, 30)
+        self.__image_playlist.set_from_pixbuf(pixbuf)
+
+
 
     def __on_togglebutton_edit_name_press_event(self, widget, *_):
         status = not widget.get_active()
