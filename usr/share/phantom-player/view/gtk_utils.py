@@ -47,27 +47,38 @@ def get_default_color(text_type='theme_text_color', widget=None, on_error='#0000
 
     return found, color
 
-def treeselection_get_first_cell(gtk_selection, column=0):
-    model, treepaths = gtk_selection.get_selected_rows()
+def iconview_get_first_icon(gtk_iconview, column=0):
+
+    treepaths = gtk_iconview.get_selected_items()
 
     if not treepaths:
         return None
 
-    return model[treepaths[0]][column]
+    liststore = gtk_iconview.get_model()
+
+    return liststore[treepaths[0]][column]
+
+def treeselection_get_first_cell(gtk_selection, column=0):
+    liststore, treepaths = gtk_selection.get_selected_rows()
+
+    if not treepaths:
+        return None
+
+    return liststore[treepaths[0]][column]
 
 
 def treeselection_set_first_cell(gtk_selection, column, value):
-    model, treepaths = gtk_selection.get_selected_rows()
+    liststore, treepaths = gtk_selection.get_selected_rows()
 
     if len(treepaths) > 0:
-        model[treepaths[0]][column] = value
+        liststore[treepaths[0]][column] = value
 
 
 def treeselection_remove_first_row(gtk_selection):
-    model, treepaths = gtk_selection.get_selected_rows()
+    liststore, treepaths = gtk_selection.get_selected_rows()
 
     if len(treepaths) > 0:
-        model.remove(model.get_iter(treepaths[0]))
+        liststore.remove(liststore.get_iter(treepaths[0]))
 
 def dialog_select_directory(parent, start_path=None):
     dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
