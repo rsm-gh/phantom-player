@@ -22,6 +22,7 @@ import random
 
 from Paths import _ICON_LOGO_MEDIUM, _SERIES_DIR
 from model.Video import VideoPosition
+from system_utils import format_img
 
 
 class TimeValue:
@@ -576,7 +577,11 @@ class Playlist(object):
         if os.path.exists(old_icon_path):
             os.rename(old_icon_path, self.get_icon_path(allow_default=False))
 
-    def set_icon_path(self, path):
+    def set_icon_path(self, src_path):
+
+        paste_path = self.get_icon_path(allow_default=False)
+        if os.path.exists(src_path) and src_path == paste_path:
+            return
 
         #
         # Remove the existent image
@@ -586,16 +591,19 @@ class Playlist(object):
             os.remove(self.get_icon_path(allow_default=False))
 
         #
-        # Set the new image
+        # Format the size & copy the new image
         #
+        format_img(read_path=src_path,
+                   write_path=paste_path,
+                   width=90,
+                   height=90,
+                   extension="png")
 
-        file_name = os.path.basename(path)
-
+        #
+        # Save the extension
+        #
+        file_name = os.path.basename(src_path)
         if '.' in file_name:
             self.__icon_extension = file_name.rsplit(".", 1)[1]
         else:
             self.__icon_extension = ""
-
-        paste_path = self.get_icon_path(allow_default=False)
-        if os.path.exists(path) and path != paste_path:
-            shutil.copy2(path, paste_path)
