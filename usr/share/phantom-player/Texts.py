@@ -34,11 +34,6 @@ class Texts:
     class GUI:
         title = "Phantom Player"
 
-    class MenuItemPlaylist:
-        search = "Search"
-        open_dir = "Open Directory"
-        settings = "Settings"
-
     class DialogPlaylist:
         confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
         confirm_reset = 'Are you sure that you want to restart "{0}"?.'
