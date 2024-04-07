@@ -446,6 +446,7 @@ Author: Rafael Senties Martinelli
                     <property name="margin">6</property>
                     <property name="selection-mode">none</property>
                     <property name="model">liststore_playlists</property>
+                    <property name="tooltip-column">2</property>
                     <child>
                       <object class="GtkCellRendererPixbuf"/>
                       <attributes>
@@ -453,7 +454,10 @@ Author: Rafael Senties Martinelli
                       </attributes>
                     </child>
                     <child>
-                      <object class="GtkCellRendererText"/>
+                      <object class="GtkCellRendererText">
+                        <property name="width">90</property>
+                        <property name="alignment">center</property>
+                      </object>
                       <attributes>
                         <attribute name="text">2</attribute>
                       </attributes>

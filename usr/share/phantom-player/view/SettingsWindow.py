@@ -25,6 +25,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
+import settings
 from Paths import *
 from Texts import Texts
 from model.PlaylistPath import PlaylistPath
@@ -367,9 +368,9 @@ class SettingsWindow:
         """
         file_filter = Gtk.FileFilter()
         file_filter.set_name('Image')
-        file_filter.add_pattern('*.jpeg')
-        file_filter.add_pattern('*.jpg')
-        file_filter.add_pattern('*.png')
+
+        for format in settings._IMAGE_FORMATS:
+            file_filter.add_pattern('*.'+format)
 
         file = gtk_utils.dialog_select_file(self.__settings_window, file_filter)
         if file is None:

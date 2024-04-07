@@ -372,8 +372,6 @@ class PhantomPlayer:
             self.__playlist_selected = current_playlist
 
             GLib.idle_add(self.__on_settings_playlist_close, current_playlist)
-            GLib.idle_add(self.__scrolledwindow_playlists.hide)
-            GLib.idle_add(self.__media_box.show)
 
             video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
 
