@@ -19,6 +19,7 @@
 
 _DEFAULT_IMG_WIDTH = 90
 _DEFAULT_IMG_HEIGHT = 120
+_IMAGE_FORMATS = ["jpeg","jpg","png","webp","svg"]
 
 class ThemeButtons:
     """
