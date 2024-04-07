@@ -17,10 +17,10 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
-import shutil
 import random
 
-from Paths import _ICON_LOGO_MEDIUM, _SERIES_DIR
+import settings
+import Paths
 from model.Video import VideoPosition
 from system_utils import format_img
 
@@ -46,7 +46,6 @@ class Playlist(object):
     def __init__(self,
                  pid,
                  name="",
-                 icon_extension="",
                  is_random=False,
                  keep_playing=True,
                  start_at=0,
@@ -56,7 +55,6 @@ class Playlist(object):
 
         self.__id = pid
         self.__name = ""
-        self.__icon_extension = icon_extension
 
         self.__playlist_paths = {}
         self.__random = False
@@ -367,7 +365,7 @@ class Playlist(object):
                 sorted(self.__playlist_paths.items(), key=lambda item: item[0])]
 
     def get_save_path(self):
-        path = os.path.join(_SERIES_DIR, self.__name)
+        path = os.path.join(Paths._SERIES_DIR, self.__name)
         if not path.lower().endswith(".csv"):
             path += ".csv"
 
@@ -376,14 +374,15 @@ class Playlist(object):
     def get_start_at(self):
         return self.__start_at
 
-    def get_icon_extension(self):
-        return self.__icon_extension
-
     def get_icon_path(self, allow_default=True):
+
+        if allow_default:
+            if not self.get_loaded():
+                return Paths._ICON_LOADING_PLAYLIST
 
         if self.__name != "":
 
-            icon_path = os.path.join(_SERIES_DIR, self.__name + "." + self.__icon_extension)
+            icon_path = os.path.join(Paths._SERIES_DIR, self.__name + ".png")
 
             if not allow_default:
                 return icon_path
@@ -392,7 +391,7 @@ class Playlist(object):
                 return icon_path
 
         if allow_default:
-            return _ICON_LOGO_MEDIUM
+            return Paths._ICON_LOGO_MEDIUM
 
         return None
 
@@ -597,20 +596,14 @@ class Playlist(object):
         if current_icon_path is not None and os.path.exists(current_icon_path):
             os.remove(self.get_icon_path(allow_default=False))
 
+
         #
         # Format the size & copy the new image
         #
         format_img(read_path=src_path,
-                   write_path=paste_path,
-                   width=90,
-                   height=90,
+                   write_path=self.get_icon_path(allow_default=False),
+                   width=settings._DEFAULT_IMG_WIDTH,
+                   height=settings._DEFAULT_IMG_HEIGHT,
                    extension="png")
 
-        #
-        # Save the extension
-        #
-        file_name = os.path.basename(src_path)
-        if '.' in file_name:
-            self.__icon_extension = file_name.rsplit(".", 1)[1]
-        else:
-            self.__icon_extension = ""
+

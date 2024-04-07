@@ -380,7 +380,6 @@ class SettingsWindow:
         self.__image_playlist.set_from_pixbuf(pixbuf)
 
 
-
     def __on_togglebutton_edit_name_press_event(self, widget, *_):
         status = not widget.get_active()
         self.__entry_playlist_name.set_sensitive(status)
