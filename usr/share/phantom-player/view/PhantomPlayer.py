@@ -88,6 +88,7 @@ class PhantomPlayer:
         self.__playlist_selected = None
         self.__playlists = OrderedDict()
         self.__playlists_loaded = False
+        self.__current_playlist_loaded = False
 
         self.__current_media = CurrentMedia()
         self.__is_full_screen = None
@@ -221,7 +222,6 @@ class PhantomPlayer:
         #    Display the window
         #
         self.__menubar.set_sensitive(False)
-        self.__iconview_playlists.set_sensitive(False)
         self.__menuitem_playlist_settings.set_sensitive(False)
 
         if dark_mode:
@@ -239,7 +239,7 @@ class PhantomPlayer:
         #
         #    Load the existent playlist
         #
-        th = Thread(target=self.__on_thread_load_playlists)
+        th = Thread(target=self.__playlists_thread_load)
         th.start()
         self.__threads.append(th)
 
@@ -333,6 +333,83 @@ class PhantomPlayer:
 
         self.__liststore_videos_select_current()
 
+
+    def __playlists_thread_load(self):
+
+        current_playlist_name = self.__configuration.get_str('current_playlist')
+        current_playlist = None
+
+        #
+        # Load the playlists
+        #
+
+        GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_headers)
+
+        if os.path.exists(_SERIES_DIR):
+            for file_name in sorted(os.listdir(_SERIES_DIR)):
+
+                if not file_name.lower().endswith('.csv'):
+                    continue
+
+                new_playlist = playlist_factory.load_from_file(file_path=os.path.join(_SERIES_DIR, file_name),
+                                                               pid=len(self.__playlists))
+
+                if new_playlist.get_name() == current_playlist_name:
+                    current_playlist = new_playlist
+
+                self.__playlists[new_playlist.get_id()] = new_playlist
+
+                if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
+                    pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
+                    GLib.idle_add(self.__liststore_playlists_append, pixbuf, new_playlist)
+
+        #
+        #   Select & Load the last playlist that was played
+        #
+        playlist_found = False
+        if current_playlist is not None:
+            GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(current_playlist.get_name()))
+
+            current_playlist.set_loaded(True)
+            self.__current_media = CurrentMedia(current_playlist)
+            self.__playlist_selected = current_playlist
+
+            GLib.idle_add(self.__scrolledwindow_playlists.hide)
+            GLib.idle_add(self.__media_box.show)
+
+            video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
+
+            if playlist_found:
+                GLib.idle_add(self.__liststore_playlists_set_progress,
+                              current_playlist.get_id(),
+                              current_playlist.get_progress())
+
+        #
+        #   Load the rest of the videos
+        #
+        for playlist in self.__playlists.values():
+            if current_playlist is not None and playlist.get_id() == current_playlist.get_id():
+                continue
+
+            playlist.set_loaded(True)
+            GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
+            video_factory.load(playlist, is_startup=True) # No add_func because the GUI is frozen on the first playlist
+
+            GLib.idle_add(self.__liststore_playlists_set_progress,
+                          playlist.get_id(),
+                          playlist.get_progress())
+
+        #
+        #   Enable the GUI
+        #
+        default_cursor = Gdk.Cursor.new_from_name(self.__window_root.get_display(), 'default')
+        GLib.idle_add(self.__window_root.get_root_window().set_cursor, default_cursor)
+        GLib.idle_add(self.__menubar.set_sensitive, True)
+        GLib.idle_add(self.__window_root.set_sensitive, True)
+        self.__playlists_loaded = True
+        GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlists_ended)
+        print("Load playlist ended.")
+
     def __playlist_find_videos(self, _, videos_id):
 
         if len(videos_id) == 1:  # if the user only selected one video to find...
@@ -384,11 +461,11 @@ class PhantomPlayer:
 
     def __liststore_videos_populate(self):
 
-        if self.__playlist_selected is None:
-            return
-
         self.__liststore_videos.clear()
         self.__column_name.set_spacing(0)
+
+        if self.__playlist_selected is None:
+            return
 
         for video in self.__playlist_selected.get_videos():
             self.__liststore_videos_add(video)
@@ -415,10 +492,6 @@ class PhantomPlayer:
                                             video.get_progress()])
 
 
-
-
-
-
     def __liststore_videos_select_current(self):
         """
             Select the current video from the videos liststore.
@@ -432,88 +505,6 @@ class PhantomPlayer:
             if row[VideosListstoreColumnsIndex._id] == video_id:
                 self.__treeview_videos.set_cursor(i)
                 break
-
-
-    def __on_thread_load_playlists(self):
-
-        current_playlist_name = self.__configuration.get_str('current_playlist')
-        current_playlist = None
-
-        #
-        # Load the playlists
-        #
-
-        GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_headers)
-
-        if os.path.exists(_SERIES_DIR):
-            for file_name in sorted(os.listdir(_SERIES_DIR)):
-
-                if not file_name.lower().endswith('.csv'):
-                    continue
-
-                new_playlist = playlist_factory.load_from_file(file_path=os.path.join(_SERIES_DIR, file_name),
-                                                               pid=len(self.__playlists))
-
-                if new_playlist.get_name() == current_playlist_name:
-                    current_playlist = new_playlist
-
-                self.__playlists[new_playlist.get_id()] = new_playlist
-
-                if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
-                    pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
-                    GLib.idle_add(self.__liststore_playlists_append, pixbuf, new_playlist)
-
-        #
-        #   Select & Load the last playlist that was played
-        #
-        playlist_found = False
-        if current_playlist is not None:
-            GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(current_playlist.get_name()))
-
-            self.__current_media = CurrentMedia(current_playlist)
-            self.__playlist_selected = current_playlist
-
-            GLib.idle_add(self.__scrolledwindow_playlists.hide)
-            GLib.idle_add(self.__media_box.show)
-
-            video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
-
-            if playlist_found:
-                GLib.idle_add(self.__liststore_playlists_set_progress,
-                              current_playlist.get_id(),
-                              current_playlist.get_progress())
-
-        #
-        #   Load the rest of the videos
-        #
-        for playlist in self.__playlists.values():
-            if current_playlist is not None and playlist.get_id() == current_playlist.get_id():
-                continue
-
-            GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
-            video_factory.load(playlist, is_startup=True) # No add_func because the GUI is frozen on the first playlist
-
-            GLib.idle_add(self.__liststore_playlists_set_progress,
-                          playlist.get_id(),
-                          playlist.get_progress())
-
-        #
-        #   Select a default playlist if none
-        #
-        if not playlist_found:
-            GLib.idle_add(self.__iconview_playlists.unselect_all)
-            GLib.idle_add(self.__window_root.set_sensitive, True)
-
-        #
-        #   Enable the GUI
-        #
-        default_cursor = Gdk.Cursor.new_from_name(self.__window_root.get_display(), 'default')
-        GLib.idle_add(self.__window_root.get_root_window().set_cursor, default_cursor)
-        GLib.idle_add(self.__iconview_playlists.set_sensitive, True)
-        GLib.idle_add(self.__menubar.set_sensitive, True)
-        self.__playlists_loaded = True
-        GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlists_ended)
-        print("Load playlist ended.")
 
     def __on_window_root_notify_event(self, *_):
         # Resize the VLC widget
@@ -586,33 +577,36 @@ class PhantomPlayer:
         self.__set_video()
 
     def __on_iconview_playlists_press_event(self, iconview, event):
-        """
-            Important: this method is triggered before "selection_changes".
-        """
+
+        if event.type != Gdk.EventType.BUTTON_PRESS or event.button != EventCodes.Cursor.left_click:
+            return
+
+        #
+        # General
+        #
 
         path = iconview.get_path_at_pos(event.x, event.y)
         if path is None:
-            self.__playlist_selected = None
             return
 
         playlist_id = self.__liststore_playlists[path][PlaylistListstoreColumnsIndex._id]
-        self.__playlist_selected = self.__playlists[playlist_id]
+        playlist = self.__playlists[playlist_id]
 
-        #
-        # Process the events
-        #
-        if event.type == Gdk.EventType.BUTTON_PRESS and event.button == EventCodes.Cursor.left_click:
+        if not playlist.get_loaded():
+            return
 
-                if self.__mp_widget.is_nothing():
-                    self.__set_video(video_id=self.__playlist_selected.get_last_played_video_id(),
-                                     play=False,
-                                     ignore_none=True)
+        self.__playlist_selected = playlist
 
-                self.__scrolledwindow_playlists.hide()
-                self.__media_box.show()
+        if self.__mp_widget.is_nothing():
+            self.__set_video(video_id=self.__playlist_selected.get_last_played_video_id(),
+                             play=False,
+                             ignore_none=True)
 
-                self.__liststore_videos_populate()
-                self.__liststore_videos_select_current()
+        self.__scrolledwindow_playlists.hide()
+        self.__media_box.show()
+
+        self.__liststore_videos_populate()
+        self.__liststore_videos_select_current()
 
     def __on_treeview_videos_drag_end(self, *_):
 
@@ -793,10 +787,9 @@ class PhantomPlayer:
 
         gtk_utils.treeselection_remove_first_row(self.__treeselection_playlist)
 
-        if len(self.__liststore_playlists) <= 0:
-            self.__iconview_playlists.unselect_all()
-        else:
-            self.__liststore_videos.clear()
+        self.__liststore_videos.clear()
+        self.__media_box.hide()
+        self.__scrolledwindow_playlists.show()
 
     def __on_settings_playlist_close(self, closed_playlist):
 
