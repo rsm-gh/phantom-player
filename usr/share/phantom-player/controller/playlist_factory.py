@@ -24,8 +24,6 @@ from Paths import _SERIES_DIR
 
 def load_from_file(file_path, pid):
 
-    print("Loading playlist file '{}'".format(file_path))
-
     with open(file_path, mode='rt', encoding='utf-8') as f:
         playlist_header = f.readline().split('|')
         playlist_path = f.readline().split('|')
@@ -65,10 +63,10 @@ def load_from_file(file_path, pid):
         subtitles_track = 0
 
     try:
-        icon_extension = playlist_header[5].strip()
+        # Deprecated icon extension
+        _ = playlist_header[5].strip()
     except Exception:
-        print("\tError getting 'icon_extension'")
-        icon_extension = ""
+        pass
 
     try:
         current_video_hash = playlist_header[6].strip()
@@ -106,7 +104,6 @@ def load_from_file(file_path, pid):
     #
     new_playlist = Playlist(pid=pid,
                             name=os.path.basename(file_path),
-                            icon_extension=icon_extension,
                             is_random=random,
                             keep_playing=keep_playing,
                             start_at=start_at,
@@ -137,7 +134,7 @@ def save(playlist):
                            playlist.get_start_at(),
                            playlist.get_audio_track(),
                            playlist.get_subtitles_track(),
-                           playlist.get_icon_extension(),
+                           "None",
                            playlist.get_current_video_hash()])
 
         for playlist_path in playlist.get_playlist_paths():
