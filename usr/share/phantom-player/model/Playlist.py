@@ -64,6 +64,7 @@ class Playlist(object):
         self.__start_at = 0.0
         self.__audio_track = Track.Value._undefined
         self.__subtitles_track = Track.Value._undefined
+        self.__loaded = False
 
         self.__current_video_hash = current_video_hash
 
@@ -328,6 +329,9 @@ class Playlist(object):
 
         return active, ignored, missing
 
+    def get_loaded(self):
+        return self.__loaded
+
     def get_id(self):
         return self.__id
 
@@ -497,6 +501,9 @@ class Playlist(object):
 
     def get_current_video_hash(self):
         return self.__current_video_hash
+
+    def set_loaded(self, value):
+        self.__loaded = value
 
     def set_keep_playing(self, value):
         self.__keep_playing = value
