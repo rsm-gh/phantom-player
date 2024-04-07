@@ -32,6 +32,7 @@ from gi.repository.GdkPixbuf import Pixbuf
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
+import settings
 from controller.CCParser import CCParser
 from controller import video_factory
 from controller import playlist_factory
@@ -228,9 +229,6 @@ class PhantomPlayer:
             gtk_utils.set_css(self.__window_root, css_style)
             gtk_utils.set_css(self.__treeview_videos, css_style)
 
-        self.__window_root.get_root_window().set_cursor(
-            Gdk.Cursor.new_from_name(self.__window_root.get_display(), 'wait'))
-
         self.__window_root.maximize()
         self.__window_root.show_all()
         self.__mp_widget.hide_volume_label()
@@ -360,8 +358,7 @@ class PhantomPlayer:
                 self.__playlists[new_playlist.get_id()] = new_playlist
 
                 if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
-                    pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
-                    GLib.idle_add(self.__liststore_playlists_append, pixbuf, new_playlist)
+                    GLib.idle_add(self.__liststore_playlists_append, new_playlist)
 
         #
         #   Select & Load the last playlist that was played
@@ -374,6 +371,7 @@ class PhantomPlayer:
             self.__current_media = CurrentMedia(current_playlist)
             self.__playlist_selected = current_playlist
 
+            GLib.idle_add(self.__on_settings_playlist_close, current_playlist)
             GLib.idle_add(self.__scrolledwindow_playlists.hide)
             GLib.idle_add(self.__media_box.show)
 
@@ -393,6 +391,7 @@ class PhantomPlayer:
 
             playlist.set_loaded(True)
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
+            GLib.idle_add(self.__on_settings_playlist_close, playlist)
             video_factory.load(playlist, is_startup=True) # No add_func because the GUI is frozen on the first playlist
 
             GLib.idle_add(self.__liststore_playlists_set_progress,
@@ -402,8 +401,6 @@ class PhantomPlayer:
         #
         #   Enable the GUI
         #
-        default_cursor = Gdk.Cursor.new_from_name(self.__window_root.get_display(), 'default')
-        GLib.idle_add(self.__window_root.get_root_window().set_cursor, default_cursor)
         GLib.idle_add(self.__menubar.set_sensitive, True)
         GLib.idle_add(self.__window_root.set_sensitive, True)
         self.__playlists_loaded = True
@@ -442,11 +439,14 @@ class PhantomPlayer:
                     self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = value
                 return
 
-    def __liststore_playlists_append(self, pixbuf, playlist):
+    def __liststore_playlists_append(self, playlist):
         """
             I do not understand why this must be a separate method.
             It is not possible to call directly: GLib.idle_add(self.__liststore_playlists.append, data)
         """
+        pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(),
+                                              settings._DEFAULT_IMG_WIDTH,
+                                              settings._DEFAULT_IMG_HEIGHT)
         self.__liststore_playlists.append([playlist.get_id(),
                                            pixbuf,
                                            playlist.get_name(),
@@ -456,8 +456,7 @@ class PhantomPlayer:
         self.__liststore_playlists.clear()
         for playlist in sorted(self.__playlists.values(), key=lambda x: x.get_name()):
             if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
-                pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(), -1, 30)
-                self.__liststore_playlists_append(pixbuf, playlist)
+                self.__liststore_playlists_append(playlist)
 
     def __liststore_videos_populate(self):
 
@@ -547,7 +546,10 @@ class PhantomPlayer:
         #
         # Update the GUI
         #
-        if not self.__current_media.is_playlist(self.__playlist_selected):
+        if self.__playlist_selected is None:
+            return
+
+        elif not self.__current_media.is_playlist(self.__playlist_selected):
             return
 
         GLib.idle_add(self.__liststore_playlists_set_progress,
@@ -737,15 +739,14 @@ class PhantomPlayer:
     def __on_menuitem_playlist_activate(self, *_):
         self.__menuitem_playlist_settings.set_sensitive(self.__playlist_selected is not None)
 
-    def __on_settings_playlist_add(self, new_playlist):
+    def __on_settings_playlist_add(self, playlist):
 
-        self.__playlists[new_playlist.get_id()] = new_playlist
+        self.__playlists[playlist.get_id()] = playlist
 
-        if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
-            pixbuf = Pixbuf.new_from_file_at_size(new_playlist.get_icon_path(), -1, 30)
-            self.__liststore_playlists_append(pixbuf, new_playlist)
+        if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
+            self.__liststore_playlists_append(playlist)
 
-        self.__playlist_selected = new_playlist
+        self.__playlist_selected = playlist
         self.__liststore_videos_populate()
 
     def __on_settings_playlist_restart(self, playlist):
@@ -785,11 +786,16 @@ class PhantomPlayer:
         if os.path.exists(self.__playlist_selected.get_save_path()):
             os.remove(self.__playlist_selected.get_save_path())
 
-        gtk_utils.treeselection_remove_first_row(self.__treeselection_playlist)
+        # remove the item from the playlist store
+        for row in self.__liststore_playlists:
+            if row[PlaylistListstoreColumnsIndex._id] == playlist.get_id():
+                self.__liststore_playlists.remove(row.iter)
+                break
 
-        self.__liststore_videos.clear()
-        self.__media_box.hide()
-        self.__scrolledwindow_playlists.show()
+        if playlist.get_id() == self.__playlist_selected.get_id():
+            self.__media_box.hide()
+            self.__scrolledwindow_playlists.show()
+            self.__playlist_selected = None
 
     def __on_settings_playlist_close(self, closed_playlist):
 
@@ -798,7 +804,9 @@ class PhantomPlayer:
             if row[PlaylistListstoreColumnsIndex._id] == closed_playlist.get_id():
 
                 # Update the icon
-                pixbuf = Pixbuf.new_from_file_at_size(closed_playlist.get_icon_path(), -1, 30)
+                pixbuf = Pixbuf.new_from_file_at_size(closed_playlist.get_icon_path(),
+                                                      settings._DEFAULT_IMG_WIDTH,
+                                                      settings._DEFAULT_IMG_HEIGHT)
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._icon] = pixbuf
 
                 # Update the name
@@ -815,7 +823,9 @@ class PhantomPlayer:
             self.__liststore_videos_populate()
 
     def __on_menuitem_playlist_new_activate(self, *_):
-        self.__settings_window.show(Playlist(pid=len(self.__playlists)), is_new=True)
+        new_playlist = Playlist(pid=len(self.__playlists))
+        new_playlist.set_loaded(True)
+        self.__settings_window.show(new_playlist, is_new=True)
 
     def __on_menuitem_playlist_settings_activate(self, *_):
         self.__settings_window.show(self.__playlist_selected, is_new=False)

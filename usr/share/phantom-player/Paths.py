@@ -26,6 +26,7 @@ __IMG_DIR = os.path.join(__SRC_DIR, "view/img")
 _ICON_LOGO_SMALL = os.path.join(__IMG_DIR, "movie-icon-small.png")
 _ICON_LOGO_MEDIUM = os.path.join(__IMG_DIR, "movie-icon-medium.png")
 _ICON_LOGO_BIG = os.path.join(__IMG_DIR, "movie-icon-big.png")
+_ICON_LOADING_PLAYLIST = os.path.join(__IMG_DIR, "loading-playlist.png")
 
 # Files
 if getpass.getuser() == "root":

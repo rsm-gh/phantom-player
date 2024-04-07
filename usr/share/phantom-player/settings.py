@@ -17,6 +17,9 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+_DEFAULT_IMG_WIDTH = 90
+_DEFAULT_IMG_HEIGHT = 120
+
 class ThemeButtons:
     """
         Name of the GTK theme buttons to be used in the player.
