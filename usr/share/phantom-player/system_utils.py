@@ -100,11 +100,8 @@ def format_img(read_path, write_path, width=None, height=None, max_width=None, e
 
                 image = image.crop((delta_w, delta_h, width + delta_w, height + delta_h))
 
-    # Save the image
-    if extension is None:
-        image.save(write_path, format=extension)
-    else:
-        image.save(write_path)
+
+    image.save(write_path, format=extension)
 
     return image.size
 
