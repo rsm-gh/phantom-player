@@ -217,6 +217,7 @@ class SettingsWindow:
             self.__button_previous_playlist.set_sensitive(False)
             self.__button_next_playlist.set_sensitive(False)
             self.__notebook.set_current_page(0)
+            self.__entry_playlist_name.grab_focus_without_selecting()
         else:
             self.__button_previous_playlist.set_sensitive(self.__get_previous_playlist() is not None)
             self.__button_next_playlist.set_sensitive(self.__get_next_playlist() is not None)
