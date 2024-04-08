@@ -79,6 +79,7 @@ class GlobalConfigTags:
     _checkbox_missing_playlist_warning = "missing-playlist-warning"
     _checkbox_hidden_videos = "hidden-videos"
     _checkbox_hide_missing_playlist = "hide-missing-playlist"
+    _current_playlist = "current_playlist"
 
 
 class PhantomPlayer:
@@ -275,7 +276,12 @@ class PhantomPlayer:
 
         return _FONT_DEFAULT_COLOR
 
-    def __set_video(self, video_id=None, play=True, replay=False, ignore_none=False):
+    def __set_video(self,
+                    video_id=None,
+                    play=True,
+                    replay=False,
+                    ignore_none=False,
+                    ignore_missing=False):
 
         if self.__current_media._playlist is None:
             return
@@ -286,19 +292,22 @@ class PhantomPlayer:
             video = self.__current_media.get_video(video_id)
 
         if video is None:
+            self.__window_root.unfullscreen()
+            self.__mp_widget.stop()
+
             if not ignore_none:
                 gtk_utils.dialog_info(self.__window_root, Texts.DialogPlaylist.all_videos_played)
 
-            self.__window_root.unfullscreen()
-            self.__mp_widget.stop()
             return
 
         elif not os.path.exists(video.get_path()):
-            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.missing)
 
             # If the player is reproducing another video, do not stop it.
             if not self.__mp_widget.is_playing():
                 self.__mp_widget.stop()
+
+            if not ignore_missing:
+                gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.missing)
 
             return
 
@@ -310,7 +319,7 @@ class PhantomPlayer:
         #
         # Update the configuration file
         #
-        self.__configuration.write('current_playlist', self.__current_media._playlist.get_name())
+        self.__configuration.write(GlobalConfigTags._current_playlist, self.__current_media._playlist.get_name())
 
         #
         # Play the video
@@ -334,7 +343,7 @@ class PhantomPlayer:
 
     def __playlists_thread_load(self):
 
-        current_playlist_name = self.__configuration.get_str('current_playlist')
+        current_playlist_name = self.__configuration.get_str(GlobalConfigTags._current_playlist)
         current_playlist = None
 
         #
@@ -361,13 +370,12 @@ class PhantomPlayer:
                     GLib.idle_add(self.__liststore_playlists_append, new_playlist)
 
         #
-        #   Select & Load the last playlist that was played
+        #    Start by loading the last playlist
         #
-        playlist_found = False
         if current_playlist is not None:
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(current_playlist.get_name()))
 
-            current_playlist.set_loaded(True)
+            current_playlist.set_waiting_load(True)
             self.__current_media = CurrentMedia(current_playlist)
             self.__playlist_selected = current_playlist
 
@@ -375,10 +383,9 @@ class PhantomPlayer:
 
             video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
 
-            if playlist_found:
-                GLib.idle_add(self.__liststore_playlists_set_progress,
-                              current_playlist.get_id(),
-                              current_playlist.get_progress())
+            GLib.idle_add(self.__liststore_playlists_set_progress,
+                          current_playlist.get_id(),
+                          current_playlist.get_progress())
 
         #
         #   Load the rest of the videos
@@ -387,7 +394,7 @@ class PhantomPlayer:
             if current_playlist is not None and playlist.get_id() == current_playlist.get_id():
                 continue
 
-            playlist.set_loaded(True)
+            playlist.set_waiting_load(True)
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
             GLib.idle_add(self.__on_settings_playlist_close, playlist)
             video_factory.load(playlist, is_startup=True) # No add_func because the GUI is frozen on the first playlist
@@ -401,8 +408,8 @@ class PhantomPlayer:
         #
         GLib.idle_add(self.__menubar.set_sensitive, True)
         GLib.idle_add(self.__window_root.set_sensitive, True)
-        self.__playlists_loaded = True
         GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlists_ended)
+        self.__playlists_loaded = True
         print("Load playlist ended.")
 
     def __playlist_find_videos(self, _, videos_id):
@@ -476,7 +483,7 @@ class PhantomPlayer:
         GLib.idle_add(self.__liststore_videos_add, video)
 
         if video.get_hash() == playlist.get_current_video_hash() and not self.__mp_widget.has_media():
-            GLib.idle_add(self.__set_video, video.get_id(), False)
+            GLib.idle_add(self.__set_video, video.get_id(), False, False, True, True)
 
 
     def __liststore_videos_add(self, video):
@@ -592,7 +599,7 @@ class PhantomPlayer:
         playlist_id = self.__liststore_playlists[path][PlaylistListstoreColumnsIndex._id]
         playlist = self.__playlists[playlist_id]
 
-        if not playlist.get_loaded():
+        if not playlist.get_waiting_load():
             return
 
         self.__playlist_selected = playlist
@@ -649,7 +656,7 @@ class PhantomPlayer:
             #   Update
             #
             if not same_video:
-                self.__configuration.write('current_playlist', self.__playlist_selected.get_name())
+                self.__configuration.write(GlobalConfigTags._current_playlist, self.__playlist_selected.get_name())
                 self.__current_media = CurrentMedia(self.__playlist_selected)
 
             #
@@ -822,7 +829,7 @@ class PhantomPlayer:
 
     def __on_menuitem_playlist_new_activate(self, *_):
         new_playlist = Playlist(pid=len(self.__playlists))
-        new_playlist.set_loaded(True)
+        new_playlist.set_waiting_load(True)
         self.__settings_window.show(new_playlist, is_new=True)
 
     def __on_menuitem_playlist_settings_activate(self, *_):
