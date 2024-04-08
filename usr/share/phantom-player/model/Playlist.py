@@ -62,7 +62,7 @@ class Playlist(object):
         self.__start_at = 0.0
         self.__audio_track = Track.Value._undefined
         self.__subtitles_track = Track.Value._undefined
-        self.__loaded = False
+        self.__waiting_load = False
 
         self.__current_video_hash = current_video_hash
 
@@ -327,8 +327,8 @@ class Playlist(object):
 
         return active, ignored, missing
 
-    def get_loaded(self):
-        return self.__loaded
+    def get_waiting_load(self):
+        return self.__waiting_load
 
     def get_id(self):
         return self.__id
@@ -377,7 +377,7 @@ class Playlist(object):
     def get_icon_path(self, allow_default=True):
 
         if allow_default:
-            if not self.get_loaded():
+            if not self.get_waiting_load():
                 return Paths._ICON_LOADING_PLAYLIST
 
         if self.__name != "":
@@ -501,8 +501,8 @@ class Playlist(object):
     def get_current_video_hash(self):
         return self.__current_video_hash
 
-    def set_loaded(self, value):
-        self.__loaded = value
+    def set_waiting_load(self, value):
+        self.__waiting_load = value
 
     def set_keep_playing(self, value):
         self.__keep_playing = value
