@@ -20,7 +20,7 @@ import magic
 import hashlib
 
 from model.Video import Video, VideoPosition
-from controller.utils import str_to_boolean
+from controller.utils import str_to_boolean, read_lines
 
 _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
@@ -59,17 +59,12 @@ def load_cached(playlist, add_func=None):
 
     print("\tCached videos...")
 
-    with open(playlist.get_save_path(), mode='rt', encoding='utf-8') as f:
-        rows = list(f.readlines())
-
     existent_video_hashes = []
     existent_video_paths = []
 
-    for i, row in enumerate(rows):
-        # 0: is the series header
-        # 1: is the series path
-        # 2: start of the videos
-        if i <= 1:
+    for i, row in enumerate(read_lines(playlist.get_save_path())):
+
+        if i < 1: # the first line is always the header
             continue
 
         #
@@ -77,39 +72,40 @@ def load_cached(playlist, add_func=None):
         #
         columns = row.split('|')
 
+        if len(columns) <= 3: # is not a video item
+            continue
 
-        # The ID is no longer read. This is for compatibility
-        # for the old files.
-        try:
-            int(columns[0])
-        except Exception:
-            start = 0
-        else:
-            start = 1
+        name = ""
+        position = VideoPosition._start
+        ignore = False
+        hash_file = ""
 
         try:
-            path = columns[start].strip()
+            path = columns[0].strip()
         except Exception:
             print("\t\terror getting the path", columns)
-            path = None
+            continue
+        else:
+            if "/" not in path and "\\" not in path:
+                print("\t\tunvalid the path=", path)
+                continue
 
         try:
-            name = columns[start+1].strip()
+            name = columns[1].strip()
         except Exception:
             print("\t\terror getting the name", columns)
-            name = ""
 
         try:
-            position = float(columns[start+2])
+            position = float(columns[2])
         except Exception:
             print("\t\terror getting the position", columns)
-            position = VideoPosition._start
+
 
         try:
-            ignore = str_to_boolean(columns[start+3])
+            ignore = str_to_boolean(columns[3])
         except Exception:
             print("\t\terror getting the ignore state", columns)
-            ignore = False
+
 
         #
         # Check for valid lines
@@ -133,9 +129,9 @@ def load_cached(playlist, add_func=None):
         # This must be calculated after all the previous tests,
         # to avoid doing unuseful calculations.
         try:
-            hash_file = columns[start+4].strip()
+            hash_file = columns[4].strip()
         except Exception:
-            hash_file = ""
+            print("\t\terror getting the hash", columns)
         else:
             # Check if it is a hash, because when the hash is empty, the value is exported as False.
             # Why? Because if the CSV module?

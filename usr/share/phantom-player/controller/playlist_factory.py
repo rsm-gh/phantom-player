@@ -19,85 +19,69 @@ import csv
 from model.Playlist import Playlist
 from model.PlaylistPath import PlaylistPath
 from model.Video import VideoPosition
-from controller.utils import str_to_boolean
 from Paths import _SERIES_DIR
+from controller.utils import str_to_boolean, read_lines
+
 
 def load_from_file(file_path, pid):
 
-    with open(file_path, mode='rt', encoding='utf-8') as f:
-        playlist_header = f.readline().split('|')
-        playlist_path = f.readline().split('|')
+    print("Loading headers & paths of ", file_path)
+    lines = read_lines(file_path)
 
     #
     # Read the header
     #
+    random = False
+    keep_playing = False
+    start_at = VideoPosition._start
+    audio_track = 0
+    current_video_hash = ""
 
     try:
-        random = str_to_boolean(playlist_header[0])
+        header = lines[0].split("|")
     except Exception:
-        print("\tError getting 'random'")
-        random = False
-
-    try:
-        keep_playing = str_to_boolean(playlist_header[1])
-    except Exception:
-        print("\tError getting 'keep_playing'")
-        keep_playing = False
-
-    try:
-        start_at = float(playlist_header[2])
-    except Exception:
-        print("\tError getting 'start_at'")
-        start_at = VideoPosition._start
-
-    try:
-        audio_track = int(playlist_header[3])
-    except Exception:
-        print("\tError getting 'audio_track'")
-        audio_track = 0
-
-    try:
-        subtitles_track = int(playlist_header[4])
-    except Exception:
-        print("\tError getting 'subtitles_track'")
-        subtitles_track = 0
-
-    try:
-        # Deprecated icon extension
-        _ = playlist_header[5].strip()
-    except Exception:
-        pass
-
-    try:
-        current_video_hash = playlist_header[6].strip()
-    except Exception:
-        print("\tError getting 'current_video_hash'")
-        current_video_hash = ""
+        print("\tError getting the header.")
     else:
-        if len(current_video_hash) < 10: # in case the CSV parser saves "false" as value
-            current_video_hash = ""
 
-    #
-    # Read the path
-    #
+        try:
+            random = str_to_boolean(header[0])
+        except Exception:
+            print("\tError getting 'random'")
 
-    try:
-        data_path = playlist_path[0].strip()
-    except Exception:
-        print("\tError getting 'data_path'")
-        data_path = ""
+        try:
+            keep_playing = str_to_boolean(header[1])
+        except Exception:
+            print("\tError getting 'keep_playing'")
 
-    try:
-        recursive = str_to_boolean(playlist_path[1])
-    except Exception:
-        print("\tError getting 'recursive'")
-        recursive = False
+        try:
+            start_at = float(header[2])
+        except Exception:
+            print("\tError getting 'start_at'")
 
-    try:
-        r_startup = str_to_boolean(playlist_path[2])
-    except Exception:
-        print("\tError getting 'r_startup'")
-        r_startup = False
+        try:
+            audio_track = int(header[3])
+        except Exception:
+            print("\tError getting 'audio_track'")
+
+        try:
+            subtitles_track = int(header[4])
+        except Exception:
+            print("\tError getting 'subtitles_track'")
+            subtitles_track = 0
+
+        try:
+            # Deprecated icon extension
+            _ = header[5].strip()
+        except Exception:
+            pass
+
+        try:
+            current_video_hash = header[6].strip()
+        except Exception:
+            print("\tError getting 'current_video_hash'")
+        else:
+            if len(current_video_hash) < 10: # in case the CSV parser saves "false" as value
+                current_video_hash = ""
 
     #
     # Create the playlist (without loading the videos)
@@ -111,12 +95,51 @@ def load_from_file(file_path, pid):
                             subtitles_track=subtitles_track,
                             current_video_hash=current_video_hash)
 
+    #
+    # Read the path
+    #
+    for i, line in enumerate(lines):
 
-    if data_path != "":
-        playlist_path = PlaylistPath(path=data_path,
-                                     recursive=recursive,
-                                     startup_discover=r_startup)
-        new_playlist.add_playlist_path(playlist_path)
+        if i == 0:
+            continue
+
+        possible_path = line.split("|")
+
+        if len(possible_path) != 3:
+            break
+
+        else:
+            recursive = False
+            r_startup = False
+
+            try:
+                data_path = possible_path[0].strip()
+            except Exception:
+                print("\tError getting 'data_path'")
+                continue
+            else:
+                if "/" not in data_path and "\\" not in data_path:
+                    print("\t\tunvalid the path=", data_path)
+                    continue
+
+            try:
+                recursive = str_to_boolean(possible_path[1])
+            except Exception:
+                print("\tError getting 'recursive'")
+
+            try:
+                r_startup = str_to_boolean(possible_path[2])
+            except Exception:
+                print("\tError getting 'r_startup'")
+
+
+            playlist_path = PlaylistPath(path=data_path,
+                                         recursive=recursive,
+                                         startup_discover=r_startup)
+            added = new_playlist.add_playlist_path(playlist_path)
+            if not added:
+                print('\tError rejected path='+data_path)
+
 
     return new_playlist
 

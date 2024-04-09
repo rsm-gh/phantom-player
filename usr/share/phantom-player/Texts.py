@@ -57,6 +57,9 @@ class Texts:
         _remove_recursive_title = "Removing recursive videos"
         _remove_videos = "The following videos will be removed:"
 
+        _playlist_path_cant_recursive = "To make this path recursive, you need first remove the other ones that will be included by this one."
+        _playlist_path_cant_add = "The path is already in the added (or recursively included)."
+
     class MenuItemVideos:
         open_dir = "Open Directory"
         ignore = "Ignore"

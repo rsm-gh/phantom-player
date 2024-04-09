@@ -18,3 +18,17 @@
 
 def str_to_boolean(value):
     return value.lower().strip() == "true"
+
+def read_lines(file_path):
+
+    with open(file_path, mode='rt', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    clean_lines = []
+    for line in lines:
+        line = line.strip()
+
+        if not line.startswith("#") and line != "":
+            clean_lines.append(line)
+
+    return clean_lines

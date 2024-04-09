@@ -450,6 +450,7 @@ class SettingsWindow:
                                      startup_discover=False)
         added = self.__current_playlist.add_playlist_path(playlist_path)
         if not added:
+            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings._playlist_path_cant_add)
             return
 
         self.__button_path_reload_all.set_sensitive(True)
@@ -466,14 +467,20 @@ class SettingsWindow:
     def __on_button_path_remove_clicked(self, *_):
         self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
         self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
+
+        print(self.__selected_path.get_path())
+
         removed_videos = self.__current_playlist.remove_playlist_path(self.__selected_path)
 
-        if removed_videos > 0:
+        if len(removed_videos) > 0:
             self.__dialog_paths.show()
             for video in removed_videos:
                 self.__liststore_videos_path.append([video.get_path()])
 
-        gtk_utils.treeselection_remove_first_row(self.__treeselection_path)
+        for row in self.__liststore_paths:
+            if row[PathsListstoreColumns._path] == self.__selected_path.get_path():
+                self.__liststore_paths.remove(row.iter)
+                break
 
     def __on_button_path_edit_clicked(self, *_):
 
@@ -537,13 +544,20 @@ class SettingsWindow:
         """
             This method can be called even if there is no item selected in the liststore.
         """
+
         path = self.__liststore_paths[row][PathsListstoreColumns._path]
-        state = not self.__liststore_paths[row][PathsListstoreColumns._recursive]
 
+        current_state = self.__liststore_paths[row][PathsListstoreColumns._recursive]
+        new_state = not current_state
         playlist_path = self.__current_playlist.get_playlist_path(path)
-        playlist_path.set_recursive(state)
 
-        if state:
+        if new_state is True and not self.__current_playlist.can_recursive(playlist_path):
+            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings._playlist_path_cant_recursive)
+            return
+
+        playlist_path.set_recursive(new_state)
+
+        if new_state:
             self.__dialog_paths.show()
             self.__freeze_all()
             self.__dialog_paths.set_title(Texts.WindowSettings._add_recursive_title)
@@ -555,7 +569,7 @@ class SettingsWindow:
             self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
             self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
 
-            removed_videos = self.__current_playlist.remove_playlist_path(playlist_path, only_recursive=True)
+            removed_videos = self.__current_playlist.remove_recursive_videos(playlist_path)
             if removed_videos > 0:
                 self.__dialog_paths.show()
                 for video in removed_videos:
