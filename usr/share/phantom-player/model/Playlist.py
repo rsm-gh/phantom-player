@@ -94,31 +94,24 @@ class Playlist(object):
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_id(i)
 
-    def remove_playlist_path(self, playlist_path, only_recursive=False):
+    def remove_playlist_path(self, playlist_path):
 
         path = playlist_path.get_path()
+        recursive = playlist_path.get_recursive()
 
         if path not in self.__playlist_paths.keys():
             return []
 
-        if not only_recursive:
-            self.__playlist_paths.pop(path)
+        self.__playlist_paths.pop(path)
 
         removed_videos = []
         for video in self.__videos_instances:
-
             video_dirname = os.path.dirname(video.get_path())
-
-            print(path, video_dirname, only_recursive, path == video_dirname)
-
-            if only_recursive:
-                if video_dirname == path:
-                    pass # only children shall be removed
-
-                elif video_dirname.startswith(video_dirname):
+            if recursive:
+                if video_dirname.startswith(path):
                     removed_videos.append(video)
 
-            elif video_dirname == video_dirname:
+            elif path == video_dirname:
                 removed_videos.append(video)
 
         for video in removed_videos:
@@ -129,12 +122,45 @@ class Playlist(object):
         return removed_videos
 
 
+    def remove_recursive_videos(self, playlist_path):
 
-    def add_playlist_path(self, playlist_path):
-        if playlist_path.get_path() in self.__playlist_paths.keys():
-            return False
+        path = playlist_path.get_path()
 
-        self.__playlist_paths[playlist_path.get_path()] = playlist_path
+        if path not in self.__playlist_paths.keys():
+            return []
+
+        removed_videos = []
+        for video in self.__videos_instances:
+
+            video_dirname = os.path.dirname(video.get_path())
+
+            if video_dirname == path:
+                pass # only children shall be removed
+
+            elif video_dirname.startswith(path):
+                removed_videos.append(video)
+
+        for video in removed_videos:
+            self.__videos_instances.remove(video)
+
+        self.update_ids()
+
+        return removed_videos
+
+
+    def add_playlist_path(self, new_playlist_path):
+
+        for playlist_path in self.__playlist_paths.values():
+
+            # if the path already exists
+            if new_playlist_path.get_path() == playlist_path.get_path():
+                return False
+
+            # if the path is already included in a recursive path
+            elif playlist_path.get_recursive() and new_playlist_path.get_path().startswith(playlist_path.get_path()):
+                return False
+
+        self.__playlist_paths[new_playlist_path.get_path()] = new_playlist_path
 
         return True
 
@@ -295,6 +321,18 @@ class Playlist(object):
                     video.set_path(full_path)
 
         return video_counter
+
+    def can_recursive(self, rec_playlist_path):
+
+        for playlist_path in self.__playlist_paths.values():
+
+            if playlist_path.get_path() == rec_playlist_path.get_path():
+                continue
+
+            elif playlist_path.get_path().startswith(rec_playlist_path.get_path()):
+                return False
+
+        return True
 
     def get_path_stats(self, playlist_path):
 
