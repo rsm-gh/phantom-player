@@ -29,7 +29,7 @@ any of the hard-drive content.*
 1. Download the [stable branch](https://github.com/rsm-gh/phantom-player/archive/master.zip).
 2. Install the dependencies:
     * Debian based distributions: `apt-get install python3 python3-vlc python3-pil libgtk-3-0 gir1.2-webkit2-3.0`.
-    * ArchLinux: `pacman -Suy python python-vlc python-pillow gtk3`.
+    * ArchLinux: `pacman -Suy python python-pillow python-magic webkit2gtk` and from AUR `python-vlc`.
 
 3. Execute the setup file.
 
