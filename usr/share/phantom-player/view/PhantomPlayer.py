@@ -212,7 +212,7 @@ class PhantomPlayer:
         #
         #    Display the window
         #
-        self.__menubar.set_sensitive(False)
+        self.__menuitem_playlist.set_sensitive(False)
         self.__menuitem_playlist_settings.set_sensitive(False)
 
         self.__window_root.maximize()
@@ -390,7 +390,7 @@ class PhantomPlayer:
         #
         #   Enable the GUI
         #
-        GLib.idle_add(self.__menubar.set_sensitive, True)
+        GLib.idle_add(self.__menuitem_playlist.set_sensitive, True)
         GLib.idle_add(self.__window_root.set_sensitive, True)
         GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlists_ended)
         self.__playlists_loaded = True
