@@ -166,7 +166,6 @@ class PhantomPlayer:
         self.__treeview_videos.connect('button-press-event', self.__on_treeview_videos_press_event)
         self.__button_display_playlists.connect('clicked', self.__on_button_display_playlists_clicked)
 
-
         #
         #    Media Player
         #
@@ -328,7 +327,6 @@ class PhantomPlayer:
 
         self.__liststore_videos_select_current()
 
-
     def __playlists_thread_load(self):
 
         current_playlist_name = self.__configuration.get_str(GlobalConfigTags._current_playlist)
@@ -385,7 +383,7 @@ class PhantomPlayer:
             playlist.set_waiting_load(True)
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
             GLib.idle_add(self.__on_settings_playlist_close, playlist)
-            video_factory.load(playlist, is_startup=True) # No add_func because the GUI is frozen on the first playlist
+            video_factory.load(playlist, is_startup=True)  # No add_func because the GUI is frozen on the first playlist
 
             GLib.idle_add(self.__liststore_playlists_set_progress,
                           playlist.get_id(),
@@ -473,7 +471,6 @@ class PhantomPlayer:
         if video.get_hash() == playlist.get_current_video_hash() and not self.__mp_widget.has_media():
             GLib.idle_add(self.__set_video, video.get_id(), False, False, True, True)
 
-
     def __liststore_videos_add(self, video):
         if not video.get_ignore() or not self.__checkbox_hidden_items.get_active():
             self.__liststore_videos.append([self.__get_video_color(video),
@@ -482,7 +479,6 @@ class PhantomPlayer:
                                             video.get_name(),
                                             video.get_extension(),
                                             video.get_progress()])
-
 
     def __liststore_videos_select_current(self):
         """
@@ -795,7 +791,6 @@ class PhantomPlayer:
         # Update the playlists liststore
         for i, row in enumerate(self.__liststore_playlists):
             if row[PlaylistListstoreColumnsIndex._id] == closed_playlist.get_id():
-
                 # Update the icon
                 pixbuf = Pixbuf.new_from_file_at_size(closed_playlist.get_icon_path(),
                                                       settings._DEFAULT_IMG_WIDTH,
@@ -806,14 +801,14 @@ class PhantomPlayer:
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._name] = closed_playlist.get_name()
                 break
 
+        # Update the videos liststore
+        if self.__playlist_selected is not None and self.__playlist_selected.get_id() == closed_playlist.get_id():
+            self.__liststore_videos_populate()
 
         # Update the media player
         if self.__current_media.is_playlist(closed_playlist):
             self.__mp_widget.set_keep_playing(closed_playlist.get_keep_playing())
             self.__mp_widget.set_random(closed_playlist.get_random())
-
-        if self.__playlist_selected.get_id() == closed_playlist.get_id():
-            self.__liststore_videos_populate()
 
     def __on_menuitem_playlist_new_activate(self, *_):
         new_playlist = Playlist(pid=len(self.__playlists))
