@@ -47,8 +47,8 @@ function install_files(){
       rm -rf "$DIR$1/__pycache__"
     fi
 
-    install -d "$1"
-    install -D "$DIR$1/"* "$1"
+    install -d "$1" |& grep -v "omitting directory"
+    install -D "$DIR$1/"* "$1" |& grep -v "omitting directory"
 
 }
 
