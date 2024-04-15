@@ -79,7 +79,7 @@ class GlobalConfigTags:
 
 class PhantomPlayer:
 
-    def __init__(self, application, dark_mode=False):
+    def __init__(self, application):
 
         self.__playlist_new = None
         self.__playlist_selected = None
@@ -97,8 +97,8 @@ class PhantomPlayer:
         #   GTK style
         #
         use_dark_theme = not self.__configuration.get_bool(GlobalConfigTags._light_theme)
-        settings = Gtk.Settings.get_default()
-        settings.set_property("gtk-application-prefer-dark-theme", use_dark_theme)
+        gtk_settings = Gtk.Settings.get_default()
+        gtk_settings.set_property("gtk-application-prefer-dark-theme", use_dark_theme)
 
         #
         #   GTK objects
@@ -647,7 +647,6 @@ class PhantomPlayer:
             #    Play the video
             #
             self.__set_video(video_id, replay=True)
-
 
         elif event.button == EventCodes.Cursor.right_click:
 

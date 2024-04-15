@@ -28,6 +28,7 @@ from gi.repository import Gtk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE
 
+
 class MediaPlayer(Gtk.Window):
 
     def __init__(self):
@@ -52,6 +53,6 @@ class MediaPlayer(Gtk.Window):
 
 if __name__ == '__main__':
     player = MediaPlayer()
-    player.play_video('/home/cadweb/Videos/vid.avi')
+    player.play_video('/home/rsm/Videos/vid.avi')
     Gtk.main()
     VLC_INSTANCE.release()

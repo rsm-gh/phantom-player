@@ -63,7 +63,6 @@ class CurrentMedia:
 
         self.__video.set_position(pos)
 
-
     def get_video_progress(self):
 
         if self.__video is None:

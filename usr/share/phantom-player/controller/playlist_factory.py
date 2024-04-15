@@ -24,7 +24,6 @@ from controller.utils import str_to_boolean, read_lines
 
 
 def load_from_file(file_path, pid):
-
     print("Loading headers & paths of ", file_path)
     lines = read_lines(file_path)
 
@@ -80,7 +79,7 @@ def load_from_file(file_path, pid):
         except Exception:
             print("\tError getting 'current_video_hash'")
         else:
-            if len(current_video_hash) < 10: # in case the CSV parser saves "false" as value
+            if len(current_video_hash) < 10:  # in case the CSV parser saves "false" as value
                 current_video_hash = ""
 
     #
@@ -119,7 +118,7 @@ def load_from_file(file_path, pid):
                 continue
             else:
                 if "/" not in data_path and "\\" not in data_path:
-                    print("\t\tunvalid the path=", data_path)
+                    print("\t\tinvalid the path=", data_path)
                     continue
 
             try:
@@ -132,20 +131,17 @@ def load_from_file(file_path, pid):
             except Exception:
                 print("\tError getting 'r_startup'")
 
-
             playlist_path = PlaylistPath(path=data_path,
                                          recursive=recursive,
                                          startup_discover=r_startup)
             added = new_playlist.add_playlist_path(playlist_path)
             if not added:
-                print('\tError rejected path='+data_path)
-
+                print('\tError rejected path=' + data_path)
 
     return new_playlist
 
 
 def save(playlist):
-
     if not os.path.exists(_SERIES_DIR):
         os.mkdir(_SERIES_DIR)
 

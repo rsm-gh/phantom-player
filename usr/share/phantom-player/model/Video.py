@@ -18,17 +18,20 @@
 
 import os
 
+
 class VideoPosition:
     _start = 0
     _end = 1
+
 
 class VideoProgress:
     _start = 0
     _end = 100
 
+
 class Video(object):
 
-    def __init__(self, path, name="", hash=""):
+    def __init__(self, path, name="", vhash=""):
 
         self.__path = path
         self.__name = name
@@ -37,7 +40,7 @@ class Video(object):
         self.__is_new = False
         self.__position = VideoPosition._start
         self.__ignore = False
-        self.__hash = hash
+        self.__hash = vhash
 
         #
         # Initialize the attributes
@@ -79,7 +82,7 @@ class Video(object):
         return self.__position
 
     def get_progress(self):
-        return round(self.__position*VideoProgress._end)
+        return round(self.__position * VideoProgress._end)
 
     def get_is_new(self):
         return self.__is_new
