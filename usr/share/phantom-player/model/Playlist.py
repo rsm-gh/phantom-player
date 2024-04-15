@@ -121,7 +121,6 @@ class Playlist(object):
 
         return removed_videos
 
-
     def remove_recursive_videos(self, playlist_path):
 
         path = playlist_path.get_path()
@@ -135,7 +134,7 @@ class Playlist(object):
             video_dirname = os.path.dirname(video.get_path())
 
             if video_dirname == path:
-                pass # only children shall be removed
+                pass  # only children shall be removed
 
             elif video_dirname.startswith(path):
                 removed_videos.append(video)
@@ -146,7 +145,6 @@ class Playlist(object):
         self.update_ids()
 
         return removed_videos
-
 
     def add_playlist_path(self, new_playlist_path):
 
@@ -290,7 +288,6 @@ class Playlist(object):
                         elif os.path.exists(video_path + patt):
                             video.set_path(video_path + patt)
                             found_videos += 1
-
 
             elif len_old_name > len_new_name:
                 patt = old_name.replace(new_name, '')
@@ -634,7 +631,6 @@ class Playlist(object):
         if current_icon_path is not None and os.path.exists(current_icon_path):
             os.remove(self.get_icon_path(allow_default=False))
 
-
         #
         # Format the size & copy the new image
         #
@@ -643,5 +639,3 @@ class Playlist(object):
                    width=settings._DEFAULT_IMG_WIDTH,
                    height=settings._DEFAULT_IMG_HEIGHT,
                    extension="png")
-
-
