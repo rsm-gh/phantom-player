@@ -18,19 +18,13 @@
 
 import os
 import gi
-import sys
 from threading import Thread
 from collections import OrderedDict
-
-os.environ["GDK_BACKEND"] = "x11"
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')
 from gi.repository import Gtk, Gdk, GLib
 from gi.repository.GdkPixbuf import Pixbuf
-
-_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
 import settings
 from controller.CCParser import CCParser
@@ -80,6 +74,7 @@ class GlobalConfigTags:
     _checkbox_hidden_videos = "hidden-videos"
     _checkbox_hide_missing_playlist = "hide-missing-playlist"
     _current_playlist = "current_playlist"
+    _light_theme = "light_theme"
 
 
 class PhantomPlayer:
@@ -101,17 +96,15 @@ class PhantomPlayer:
         #
         #   GTK style
         #
-
-        if dark_mode:
-            css_style = _DARK_CSS
-        else:
-            css_style = None
+        use_dark_theme = not self.__configuration.get_bool(GlobalConfigTags._light_theme)
+        settings = Gtk.Settings.get_default()
+        settings.set_property("gtk-application-prefer-dark-theme", use_dark_theme)
 
         #
         #   GTK objects
         #
         builder = Gtk.Builder()
-        builder.add_from_file(os.path.join(_SCRIPT_DIR, "main-window.glade"))
+        builder.add_from_file(os.path.join(os.path.dirname(os.path.realpath(__file__)), "main-window.glade"))
 
         self.__window_root = builder.get_object('window_root')
         self.__window_about = builder.get_object('window_about')
@@ -179,8 +172,7 @@ class PhantomPlayer:
         #
         self.__mp_widget = MediaPlayerWidget(root_window=self.__window_root,
                                              random_button=True,
-                                             keep_playing_button=True,
-                                             css_style=css_style)
+                                             keep_playing_button=True)
 
         self.__mp_widget.connect(CustomSignals._position_changed, self.__on_media_player_position_changed)
         self.__mp_widget.connect(CustomSignals._btn_keep_playing_toggled,
@@ -225,10 +217,6 @@ class PhantomPlayer:
         #
         self.__menubar.set_sensitive(False)
         self.__menuitem_playlist_settings.set_sensitive(False)
-
-        if dark_mode:
-            gtk_utils.set_css(self.__window_root, css_style)
-            gtk_utils.set_css(self.__treeview_videos, css_style)
 
         self.__window_root.maximize()
         self.__window_root.show_all()

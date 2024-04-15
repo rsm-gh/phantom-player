@@ -19,13 +19,11 @@
 
 import os
 import vlc
-import sys
 from time import time, sleep
 from datetime import timedelta
 from threading import Thread, current_thread
 from gi.repository import Gtk, GObject, Gdk, GLib
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from model.Playlist import Track, TimeValue
 from model.Video import VideoPosition
 from view import gtk_utils
@@ -108,9 +106,7 @@ def calculate_start_position(saved_position, start_at, end_position, video_lengt
     else:
         preferred_position = saved_position
 
-
     return preferred_position
-
 
 
 def format_milliseconds_to_time(number):
@@ -155,6 +151,7 @@ class WidgetsShown:
     _volume = 1
     _toolbox = 2
 
+
 class CustomSignals:
     _paused = 'paused'
     _play = 'play'
@@ -175,6 +172,7 @@ class DelayedMediaData:
         self._replay = replay
         self._play = play
 
+
 class VideoChangeStatus:
     _none = 0
     _changing = 1
@@ -188,8 +186,10 @@ class MediaPlayerWidget(Gtk.VBox):
                  root_window,
                  random_button=False,
                  keep_playing_button=False,
-                 un_max_fixed_toolbar=True,
-                 css_style=None):  # Automatically hide the toolbar when the window is un-maximized
+                 un_max_fixed_toolbar=True):
+        """
+             un_max_fixed_toolbar: Automatically hide the toolbar when the window is un-maximized
+        """
 
         super().__init__()
 
@@ -231,10 +231,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
 
         self.__root_window.connect('key-press-event', self.__on_key_pressed)
-
-        # Style
-        if css_style is None:
-            css_style = _DEFAULT_CSS
 
         # Buttons Box
         self.__buttons_box = Gtk.Box()
@@ -313,7 +309,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
         self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
 
-        gtk_utils.set_css(self.__buttons_box, css_style)
+        gtk_utils.set_css(self.__buttons_box, _DEFAULT_CSS)
 
         #   Extra volume label
         self.__label_volume = Gtk.Label()
@@ -322,7 +318,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_volume.set_halign(Gtk.Align.END)
         self.__label_volume.set_margin_start(5)
         self.__label_volume.set_margin_end(5)
-        gtk_utils.set_css(self.__label_volume, css_style)
+        gtk_utils.set_css(self.__label_volume, _DEFAULT_CSS)
         self.__overlay.add_overlay(self.__label_volume)
 
         #
@@ -467,14 +463,14 @@ class MediaPlayerWidget(Gtk.VBox):
         GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
         GLib.idle_add(self.__scale_progress.set_value, VideoPosition._start)
 
-        GLib.idle_add(self.__vlc_widget.player.stop) # To remove any previous video
+        GLib.idle_add(self.__vlc_widget.player.stop)  # To remove any previous video
 
         if not os.path.exists(file_path):
             return
 
         media = VLC_INSTANCE.media_new(file_path)
         media.parse()
-        self.__media = media # assigned only after `parse()` has finished.
+        self.__media = media  # assigned only after `parse()` has finished.
 
         GLib.idle_add(self.__root_window.set_title, self.__media.get_meta(0))
 
@@ -491,7 +487,6 @@ class MediaPlayerWidget(Gtk.VBox):
                                                      audio_track=audio_track,
                                                      replay=replay,
                                                      play=play)
-
 
     def set_random(self, state):
         self.__toggletoolbutton_random.set_active(state)
@@ -694,7 +689,6 @@ class MediaPlayerWidget(Gtk.VBox):
                     GLib.timeout_add_seconds(self.__vlc_widget.player.video_set_spu,
                                              self.__delayed_media_data._sub_track)
 
-
                 #
                 # Start the video at some position (if necessary)
                 #
@@ -705,7 +699,6 @@ class MediaPlayerWidget(Gtk.VBox):
                                                           replay=self.__delayed_media_data._replay)
                 if start_position > VideoPosition._start:
                     GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
-
 
                 #
                 # Pause the video if requested
@@ -768,7 +761,6 @@ class MediaPlayerWidget(Gtk.VBox):
                 if vlc_position != cached_vlc_position:
                     cached_vlc_position = vlc_position
                     GLib.idle_add(self.__scale_progress.set_value, vlc_position)
-
 
     def __on_thread_motion_activity(self, *_):
 
