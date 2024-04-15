@@ -33,6 +33,7 @@ from view import gtk_utils
 from view.common import _FONT_DEFAULT_COLOR, _FONT_ERROR_COLOR
 from controller import video_factory
 
+
 class PathsListstoreColumns:
     _path = 0
     _recursive = 1
@@ -235,7 +236,6 @@ class SettingsWindow:
             for playlist_path in self.__current_playlist.get_playlist_paths():
                 self.__liststore_paths_update_or_add(playlist_path)
 
-
         self.__togglebutton_edit_name.set_active(self.__is_new_playlist)
 
         self.__entry_playlist_name.set_sensitive(self.__is_new_playlist)
@@ -256,7 +256,6 @@ class SettingsWindow:
         self.__spinbutton_start_at_min.set_value(self.__current_playlist.get_start_at() // 60)
         self.__spinbutton_start_at_sec.set_value(self.__current_playlist.get_start_at() % 60)
         self.__populating_settings = False
-
 
     def __liststore_paths_update_or_add(self, playlist_path, liststore_path=None):
 
@@ -281,8 +280,6 @@ class SettingsWindow:
                                        active,
                                        ignored,
                                        missing])
-
-
 
     def __liststore_videos_path_glib_add(self, path):
         self.__liststore_videos_path.append([path])
@@ -319,8 +316,6 @@ class SettingsWindow:
         cursor = Gdk.Cursor.new_from_name(self.__parent.get_display(), 'default')
         GLib.idle_add(self.__parent.get_root_window().set_cursor, cursor)
 
-
-
     def __freeze_all(self):
 
         # Dialog paths
@@ -351,7 +346,6 @@ class SettingsWindow:
         self.__current_playlist = self.__get_next_playlist()
         self.__load_playlist()
 
-
     def __on_entry_playlist_name_changed(self, *_):
 
         playlist_name = self.__entry_playlist_name.get_text().strip()
@@ -370,8 +364,8 @@ class SettingsWindow:
         file_filter = Gtk.FileFilter()
         file_filter.set_name('Image')
 
-        for format in settings._IMAGE_FORMATS:
-            file_filter.add_pattern('*.'+format)
+        for img_format in settings._IMAGE_FORMATS:
+            file_filter.add_pattern('*.' + img_format)
 
         file = gtk_utils.dialog_select_file(self.__settings_window, file_filter)
         if file is None:
@@ -380,7 +374,6 @@ class SettingsWindow:
         self.__current_playlist.set_icon_path(file)
         pixbuf = Pixbuf.new_from_file_at_size(self.__current_playlist.get_icon_path(), -1, 30)
         self.__image_playlist.set_from_pixbuf(pixbuf)
-
 
     def __on_togglebutton_edit_name_press_event(self, widget, *_):
         status = not widget.get_active()
@@ -576,7 +569,6 @@ class SettingsWindow:
                     self.__liststore_videos_path.append([video.get_path()])
 
             self.__liststore_paths_update_or_add(playlist_path)
-
 
     def __on_cellrenderertoggle_r_startup_toggled(self, _, row):
         """

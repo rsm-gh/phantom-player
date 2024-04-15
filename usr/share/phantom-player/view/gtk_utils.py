@@ -23,11 +23,13 @@ from gi.repository import Gtk, Gdk
 from Texts import Texts
 from Paths import _ICON_LOGO_SMALL, _HOME_DIR
 
+
 def set_css(widget, css):
     provider = Gtk.CssProvider()
     provider.load_from_data(css.encode('utf-8'))
     context = widget.get_style_context()
     context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
+
 
 def get_default_color(text_type='theme_text_color', widget=None, on_error='#000000'):
     """
@@ -47,8 +49,8 @@ def get_default_color(text_type='theme_text_color', widget=None, on_error='#0000
 
     return found, color
 
-def iconview_get_first_icon(gtk_iconview, column=0):
 
+def iconview_get_first_icon(gtk_iconview, column=0):
     treepaths = gtk_iconview.get_selected_items()
 
     if not treepaths:
@@ -57,6 +59,7 @@ def iconview_get_first_icon(gtk_iconview, column=0):
     liststore = gtk_iconview.get_model()
 
     return liststore[treepaths[0]][column]
+
 
 def treeselection_get_first_cell(gtk_selection, column=0):
     liststore, treepaths = gtk_selection.get_selected_rows()
@@ -79,6 +82,7 @@ def treeselection_remove_first_row(gtk_selection):
 
     if len(treepaths) > 0:
         liststore.remove(liststore.get_iter(treepaths[0]))
+
 
 def dialog_select_directory(parent, start_path=None):
     dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
@@ -105,6 +109,7 @@ def dialog_select_directory(parent, start_path=None):
 
     return dir_path
 
+
 def dialog_select_file(parent, file_filter=None, start_path=None):
     dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
                                    parent=parent,
@@ -122,7 +127,6 @@ def dialog_select_file(parent, file_filter=None, start_path=None):
 
     if file_filter is not None:
         dialog.add_filter(file_filter)
-
 
     if start_path is None or not os.path.exists(start_path):
         dialog.set_current_folder(_HOME_DIR)
@@ -160,6 +164,7 @@ def dialog_yes_no(parent, text1, text2=None):
 
     elif response == Gtk.ResponseType.NO:
         return False
+
 
 def dialog_info(parent, text1, text2=None):
     dialog = Gtk.MessageDialog(parent,

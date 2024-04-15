@@ -32,6 +32,7 @@ if 'linux' in sys.platform:
 else:
     VLC_INSTANCE = vlc.Instance()
 
+
 class VLCWidget(Gtk.DrawingArea):
     __gtype_name__ = 'VLCWidget'
 
@@ -66,7 +67,6 @@ class VLCWidget(Gtk.DrawingArea):
         """To redraw the black background when resized"""
         cairo_ctx.set_source_rgb(0, 0, 0)
         cairo_ctx.paint()
-
 
     @staticmethod
     def get_window_pointer(window):

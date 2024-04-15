@@ -21,10 +21,10 @@ class PlaylistPath:
 
     def __init__(self, path, recursive, startup_discover):
 
-        while path.endswith('/'): # Linux
+        while path.endswith('/'):  # Linux
             path = path[:-1]
 
-        while path.endswith('\\'): # Windows
+        while path.endswith('\\'):  # Windows
             path = path[:-1]
 
         self.__path = path
@@ -48,5 +48,3 @@ class PlaylistPath:
 
     def set_startup_discover(self, value):
         self.__startup_discover = value
-        
-

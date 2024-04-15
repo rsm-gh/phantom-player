@@ -20,6 +20,7 @@
 import os
 from PIL import Image
 
+
 def open_directory(path):
     os.system('''exo-open "{0}" '''.format(os.path.dirname(path)))
 
@@ -100,10 +101,10 @@ def format_img(read_path, write_path, width=None, height=None, max_width=None, e
 
                 image = image.crop((delta_w, delta_h, width + delta_w, height + delta_h))
 
-
     image.save(write_path, format=extension)
 
     return image.size
+
 
 class EventCodes:
     class Cursor:

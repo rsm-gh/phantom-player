@@ -19,8 +19,8 @@
 def str_to_boolean(value):
     return value.lower().strip() == "true"
 
-def read_lines(file_path):
 
+def read_lines(file_path):
     with open(file_path, mode='rt', encoding='utf-8') as f:
         lines = f.readlines()
 

@@ -18,6 +18,7 @@
 
 _LONG_TIME_PLEASE_WAIT = "This may take long time, please wait.."
 
+
 class Texts:
     class MediaPlayer:
         class Tooltip:
@@ -76,7 +77,6 @@ class Texts:
         other_found = '{0} other videos have been found.'
 
     class StatusBar:
-
         _load_playlist_headers = "Loading playlists headers..."
         _load_playlist_cached = "Loading videos of '{}'..."
         _load_playlists_ended = "All the playlists are loaded."

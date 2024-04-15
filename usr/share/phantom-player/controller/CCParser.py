@@ -263,7 +263,6 @@ CCParser instance:
 
         return default
 
-
     def get_default_bool(self):
         return self.__default_bool
 

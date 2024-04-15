@@ -713,7 +713,6 @@ class MediaPlayerWidget(Gtk.VBox):
                 GLib.timeout_add_seconds(1, self.__populate_settings_menubutton)
                 GLib.timeout_add_seconds(1, self.__menubutton_settings.set_sensitive, True)
 
-
             elif self.__video_change_status == VideoChangeStatus._changed:
 
                 if self.__scale_progress_pressed:

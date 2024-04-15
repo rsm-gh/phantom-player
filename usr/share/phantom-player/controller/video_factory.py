@@ -25,8 +25,8 @@ from controller.utils import str_to_boolean, read_lines
 _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
 
-def __hash_of_file(file_path):
 
+def __hash_of_file(file_path):
     with open(file_path, "rb") as f:
         file_hash = hashlib.sha256()
         while chunk := f.read(8192):
@@ -36,7 +36,6 @@ def __hash_of_file(file_path):
 
 
 def load(playlist, is_startup, add_func=None):
-
     print("Loading videos of '{}':".format(playlist.get_name()))
     load_cached(playlist, add_func=add_func)
 
@@ -50,12 +49,11 @@ def load(playlist, is_startup, add_func=None):
     if not is_startup or (is_startup and auto_discover):
         discover(playlist, add_func=add_func)
 
-def load_cached(playlist, add_func=None):
 
+def load_cached(playlist, add_func=None):
     if not os.path.exists(playlist.get_save_path()):
         print("\tCached videos... SKIP, the configuration file does not exist.")
         return
-
 
     print("\tCached videos...")
 
@@ -64,7 +62,7 @@ def load_cached(playlist, add_func=None):
 
     for i, row in enumerate(read_lines(playlist.get_save_path())):
 
-        if i < 1: # the first line is always the header
+        if i < 1:  # the first line is always the header
             continue
 
         #
@@ -72,7 +70,7 @@ def load_cached(playlist, add_func=None):
         #
         columns = row.split('|')
 
-        if len(columns) <= 3: # is not a video item
+        if len(columns) <= 3:  # is not a video item
             continue
 
         name = ""
@@ -87,7 +85,7 @@ def load_cached(playlist, add_func=None):
             continue
         else:
             if "/" not in path and "\\" not in path:
-                print("\t\tunvalid the path=", path)
+                print("\t\tinvalid the path=", path)
                 continue
 
         try:
@@ -100,12 +98,10 @@ def load_cached(playlist, add_func=None):
         except Exception:
             print("\t\terror getting the position", columns)
 
-
         try:
             ignore = str_to_boolean(columns[3])
         except Exception:
             print("\t\terror getting the ignore state", columns)
-
 
         #
         # Check for valid lines
@@ -114,10 +110,9 @@ def load_cached(playlist, add_func=None):
             print("\t\tExit line because empty path.", columns)
             continue
 
-        if os.path.exists(path) and not __file_is_video(path,True):
+        if os.path.exists(path) and not __file_is_video(path, True):
             print("\t\tExit line because not video.", columns)
             continue
-
 
         if path in existent_video_paths:
             print("\t\tExit line because duplicated path.", path)
@@ -160,7 +155,6 @@ def load_cached(playlist, add_func=None):
 
 
 def discover(playlist, playlist_paths=None, add_func=None):
-
     print("\tDiscovering new videos...")
 
     playlist_path_values = [video.get_path() for video in playlist.get_videos()]
@@ -177,7 +171,8 @@ def discover(playlist, playlist_paths=None, add_func=None):
             print("\t\tSkipping...", playlist_path.get_path())
             continue
 
-        for video_path in __generate_videos_list_from_directory(playlist_path.get_path(), playlist_path.get_recursive()):
+        for video_path in __generate_videos_list_from_directory(playlist_path.get_path(),
+                                                                playlist_path.get_recursive()):
 
             if video_path in playlist_path_values:
                 continue
