@@ -27,30 +27,19 @@ from gi.repository import Gtk, Gdk, GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
 import settings
-from controller.CCParser import CCParser
-from controller import video_factory
-from controller import playlist_factory
-from model.Playlist import Playlist
-from model.Video import VideoPosition, VideoProgress
-from model.CurrentMedia import CurrentMedia
-from view.SettingsWindow import SettingsWindow
-from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
-from view.common import _FONT_NEW_COLOR, _FONT_ERROR_COLOR, _FONT_DEFAULT_COLOR, _FONT_HIDE_COLOR
 from Texts import Texts
 from view import gtk_utils
 from Paths import _SERIES_DIR, _CONF_FILE
 from system_utils import EventCodes, open_directory
-
-_DARK_CSS = """
-@define-color theme_text_color white;
-@define-color warning_color orange;
-@define-color error_color red;
-@define-color success_color green;
-
-window, treeview, box, menu {
-    background: #262626;
-    color: white;
-}"""
+from controller.CCParser import CCParser
+from controller import video_factory
+from controller import playlist_factory
+from model.Playlist import Playlist
+from model.CurrentMedia import CurrentMedia
+from model.Video import VideoPosition, VideoProgress
+from view.SettingsWindow import SettingsWindow
+from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
+from view.common import _FONT_NEW_COLOR, _FONT_ERROR_COLOR, _FONT_DEFAULT_COLOR, _FONT_HIDE_COLOR
 
 
 class PlaylistListstoreColumnsIndex:
@@ -70,11 +59,20 @@ class VideosListstoreColumnsIndex:
 
 
 class GlobalConfigTags:
+
+    _main_section = "phantom-player"
+
     _checkbox_missing_playlist_warning = "missing-playlist-warning"
     _checkbox_hidden_videos = "hidden-videos"
     _checkbox_hide_missing_playlist = "hide-missing-playlist"
     _current_playlist = "current_playlist"
-    _light_theme = "light_theme"
+    _prefer_dark_theme = "prefer_dark_theme"
+
+    _hide_video_number = 'hide_video_number'
+    _hide_video_path = 'hide_video_path'
+    _hide_video_name = 'hide_video_name'
+    _hide_video_extension = 'hide_video_extension'
+    _hide_video_progress = 'hide_video_progress'
 
 
 class PhantomPlayer:
@@ -91,20 +89,15 @@ class PhantomPlayer:
         self.__is_full_screen = None
         self.__threads = []
 
-        self.__configuration = CCParser(_CONF_FILE, 'phantom-player')
-
-        #
-        #   GTK style
-        #
-        use_dark_theme = not self.__configuration.get_bool(GlobalConfigTags._light_theme)
-        gtk_settings = Gtk.Settings.get_default()
-        gtk_settings.set_property("gtk-application-prefer-dark-theme", use_dark_theme)
+        self.__configuration = CCParser(_CONF_FILE, GlobalConfigTags._main_section)
 
         #
         #   GTK objects
         #
         builder = Gtk.Builder()
         builder.add_from_file(os.path.join(os.path.dirname(os.path.realpath(__file__)), "main-window.glade"))
+
+        self.__gtk_settings = Gtk.Settings.get_default()
 
         self.__window_root = builder.get_object('window_root')
         self.__window_about = builder.get_object('window_about')
@@ -122,6 +115,7 @@ class PhantomPlayer:
         self.__iconview_playlists = builder.get_object('iconview_playlists')
         self.__treeselection_playlist = builder.get_object('treeselection_playlist')
         self.__treeselection_videos = builder.get_object('treeselection_videos')
+        self.__checkbox_prefer_dark_theme = builder.get_object('checkbox_prefer_dark_theme')
         self.__checkbox_hidden_items = builder.get_object('checkbox_hidden_items')
         self.__checkbox_hide_ext = builder.get_object('checkbox_hide_ext')
         self.__checkbox_hide_number = builder.get_object('checkbox_hide_number')
@@ -152,6 +146,7 @@ class PhantomPlayer:
         self.__menuitem_playlist_new.connect("activate", self.__on_menuitem_playlist_new_activate)
         self.__menuitem_playlist_settings.connect("activate", self.__on_menuitem_playlist_settings_activate)
         self.__menuitem_about.connect("activate", self.__on_menuitem_about_activate)
+        self.__checkbox_prefer_dark_theme.connect('toggled', self.__on__checkbox_prefer_dark_theme_toggled)
         self.__checkbox_hide_warning_missing_playlist.connect('toggled',
                                                               self.__on_checkbox_hide_warning_missing_playlist_toggled)
         self.__checkbox_hide_missing_playlist.connect('toggled', self.__on_checkbox_hide_missing_playlist_toggled)
@@ -198,6 +193,9 @@ class PhantomPlayer:
                                                 restart_function=self.__on_settings_playlist_restart,
                                                 close_function=self.__on_settings_playlist_close)
 
+        self.__checkbox_prefer_dark_theme.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._prefer_dark_theme, True))
+
         self.__checkbox_hide_warning_missing_playlist.set_active(
             self.__configuration.get_bool(GlobalConfigTags._checkbox_missing_playlist_warning))
         self.__checkbox_hidden_items.set_active(
@@ -205,11 +203,11 @@ class PhantomPlayer:
         self.__checkbox_hide_missing_playlist.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._checkbox_hide_missing_playlist, False))
 
-        self.__checkbox_hide_number.set_active(self.__configuration.get_bool('hide_video_number'))
-        self.__checkbox_hide_path.set_active(self.__configuration.get_bool('hide_video_path'))
-        self.__checkbox_hide_name.set_active(self.__configuration.get_bool('hide_video_name'))
-        self.__checkbox_hide_extension.set_active(self.__configuration.get_bool('hide_video_extension'))
-        self.__checkbox_hide_progress.set_active(self.__configuration.get_bool('hide_video_progress'))
+        self.__checkbox_hide_number.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_number))
+        self.__checkbox_hide_path.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_path))
+        self.__checkbox_hide_name.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_name))
+        self.__checkbox_hide_extension.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_extension))
+        self.__checkbox_hide_progress.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_progress))
 
         #
         #    Display the window
@@ -889,39 +887,43 @@ class PhantomPlayer:
         if os.path.exists(path):
             open_directory(path)
 
-    def __on_checkbox_hide_warning_missing_playlist_toggled(self, *_):
-        self.__configuration.write(GlobalConfigTags._checkbox_missing_playlist_warning,
-                                   self.__checkbox_hide_warning_missing_playlist.get_active())
+    def __on__checkbox_prefer_dark_theme_toggled(self, checkbox, *_):
+        state = checkbox.get_active()
+        self.__configuration.write(GlobalConfigTags._prefer_dark_theme, state)
+        self.__gtk_settings.set_property("gtk-application-prefer-dark-theme", state)
+
+    def __on_checkbox_hide_warning_missing_playlist_toggled(self, checkbox, *_):
+        self.__configuration.write(GlobalConfigTags._checkbox_missing_playlist_warning, checkbox.get_active())
 
     def __on_checkbox_hide_missing_playlist_toggled(self, checkbox, *_):
         self.__liststore_playlists_populate()
         self.__configuration.write(GlobalConfigTags._checkbox_hide_missing_playlist, checkbox.get_active())
 
-    def __on_checkbox_hidden_items_toggled(self, *_):
-        self.__configuration.write(GlobalConfigTags._checkbox_hidden_videos, self.__checkbox_hidden_items.get_active())
+    def __on_checkbox_hidden_items_toggled(self, checkbox, *_):
+        self.__configuration.write(GlobalConfigTags._checkbox_hidden_videos, checkbox.get_active())
         self.__liststore_videos_populate()
 
     def __on_checkbox_hide_number_toggled(self, checkbox, *_):
         state = checkbox.get_active()
         self.__column_number.set_visible(not state)
-        self.__configuration.write('hide_video_number', state)
+        self.__configuration.write(GlobalConfigTags._hide_video_number, state)
 
     def __on_checkbox_hide_path_toggled(self, checkbox, *_):
         state = checkbox.get_active()
         self.__column_path.set_visible(not state)
-        self.__configuration.write('hide_video_path', state)
+        self.__configuration.write(GlobalConfigTags._hide_video_path, state)
 
     def __on_checkbox_hide_name_toggled(self, checkbox, *_):
         state = checkbox.get_active()
         self.__column_name.set_visible(not state)
-        self.__configuration.write('hide_video_name', state)
+        self.__configuration.write(GlobalConfigTags._hide_video_name, state)
 
     def __on_checkbox_hide_extension_toggled(self, checkbox, *_):
         state = checkbox.get_active()
         self.__column_extension.set_visible(not state)
-        self.__configuration.write('hide_video_extension', state)
+        self.__configuration.write(GlobalConfigTags._hide_video_extension, state)
 
     def __on_checkbox_hide_progress_toggled(self, checkbox, *_):
         state = checkbox.get_active()
         self.__column_progress.set_visible(not state)
-        self.__configuration.write('hide_video_progress', state)
+        self.__configuration.write(GlobalConfigTags._hide_video_progress, state)

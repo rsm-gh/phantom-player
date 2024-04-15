@@ -147,39 +147,25 @@ Author: Rafael Senties Martinelli
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_prefer_dark_theme">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Prefer Dark Theme</property>
+                                <property name="use-underline">True</property>
+                              </object>
+                            </child>
+                            <child>
                               <object class="GtkCheckMenuItem" id="checkbox_hide_warning_missing_playlist">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Missing playlist warning</property>
                               </object>
                             </child>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkMenuItem">
-                        <property name="use-action-appearance">False</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Rows</property>
-                        <child type="submenu">
-                          <object class="GtkMenu" id="menu1">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
                             <child>
                               <object class="GtkCheckMenuItem" id="checkbox_hide_missing_playlist">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Missing Playlist</property>
-                              </object>
-                            </child>
-                            <child>
-                              <object class="GtkCheckMenuItem" id="checkbox_hidden_items">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Ignored Videos</property>
-                                <property name="active">True</property>
+                                <property name="label" translatable="yes">Hide missing playlists</property>
                               </object>
                             </child>
                           </object>
@@ -191,7 +177,7 @@ Author: Rafael Senties Martinelli
                         <property name="use-action-appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide Columns</property>
+                        <property name="label" translatable="yes">Playlist Videos</property>
                         <child type="submenu">
                           <object class="GtkMenu" id="menu4">
                             <property name="visible">True</property>
@@ -200,14 +186,14 @@ Author: Rafael Senties Martinelli
                               <object class="GtkCheckMenuItem" id="checkbox_hide_number">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Videos Number</property>
+                                <property name="label" translatable="yes">Hide Number Column</property>
                               </object>
                             </child>
                             <child>
                               <object class="GtkCheckMenuItem" id="checkbox_hide_path">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Videos Path</property>
+                                <property name="label" translatable="yes">Hide Path Column</property>
                                 <property name="use-underline">True</property>
                               </object>
                             </child>
@@ -215,22 +201,30 @@ Author: Rafael Senties Martinelli
                               <object class="GtkCheckMenuItem" id="checkbox_hide_name">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Videos Name</property>
+                                <property name="label" translatable="yes">Hide Name Column</property>
                               </object>
                             </child>
                             <child>
                               <object class="GtkCheckMenuItem" id="checkbox_hide_extension">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Videos Extension</property>
+                                <property name="label" translatable="yes">Hide Extension Column</property>
                               </object>
                             </child>
                             <child>
                               <object class="GtkCheckMenuItem" id="checkbox_hide_progress">
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
-                                <property name="label" translatable="yes">Videos Progress</property>
+                                <property name="label" translatable="yes">Hide Progress Column</property>
                                 <property name="use-underline">True</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkCheckMenuItem" id="checkbox_hidden_items">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Hide Ignored</property>
+                                <property name="active">True</property>
                               </object>
                             </child>
                           </object>
