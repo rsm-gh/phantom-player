@@ -30,7 +30,6 @@ from Paths import *
 from Texts import Texts
 from model.PlaylistPath import PlaylistPath
 from view import gtk_utils
-from view.common import _FONT_DEFAULT_COLOR, _FONT_ERROR_COLOR
 from controller import video_factory
 
 
@@ -66,6 +65,9 @@ class SettingsWindow:
         self.__delete_function = delete_function
         self.__restart_function = restart_function
         self.__close_function = close_function
+
+        self.__fontcolor_default = None
+        self.__fontcolor_error = None
 
         #
         # Get the GTK objects
@@ -159,6 +161,10 @@ class SettingsWindow:
         self.__settings_window.set_transient_for(parent)
 
     def show(self, playlist, is_new):
+
+        # reload the font colors in case that they have changed.
+        _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default, on_error=settings.FontColors._default)
+        _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error, on_error=settings.FontColors._error)
 
         self.__current_playlist = playlist
         self.__is_new_playlist = is_new
@@ -491,16 +497,16 @@ class SettingsWindow:
 
             # Append to current paths
             if os.path.exists(old_video_path):
-                old_font = _FONT_DEFAULT_COLOR
+                old_font = self.__fontcolor_default
             else:
-                old_font = _FONT_ERROR_COLOR
+                old_font = self.__fontcolor_error
 
             # Append to new paths
             new_video_path = old_video_path.replace(current_path, self.__edit_path_new_value, 1)
             if os.path.exists(new_video_path):
-                new_font = _FONT_DEFAULT_COLOR
+                new_font = self.__fontcolor_default
             else:
-                new_font = _FONT_ERROR_COLOR
+                new_font = self.__fontcolor_error
 
             self.__liststore_edit_path.append([old_font,
                                                new_font,

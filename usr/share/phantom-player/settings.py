@@ -37,3 +37,10 @@ class ThemeButtons:
     _keep_playing = "media-playlist-repeat"
     _settings = "media-tape"
     _menu = "go-home"
+
+
+class FontColors:
+    _default = "#000000"
+    _success = "#009933"
+    _warning = "#ff9900"
+    _error = "#ff0000"

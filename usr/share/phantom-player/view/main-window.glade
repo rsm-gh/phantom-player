@@ -529,6 +529,7 @@ Author: Rafael Senties Martinelli
             <property name="can-focus">True</property>
             <property name="focus-on-click">False</property>
             <property name="receives-default">True</property>
+            <property name="tooltip-text" translatable="yes">Home</property>
             <property name="popup">menu_main</property>
             <child>
               <placeholder/>
@@ -545,6 +546,7 @@ Author: Rafael Senties Martinelli
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
+            <property name="tooltip-text" translatable="yes">New Playlist</property>
             <property name="image">image_add</property>
             <property name="always-show-image">True</property>
           </object>
@@ -559,6 +561,7 @@ Author: Rafael Senties Martinelli
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
+            <property name="tooltip-text" translatable="yes">Playlist Settings</property>
             <property name="image">image_playlist_settings</property>
           </object>
           <packing>
