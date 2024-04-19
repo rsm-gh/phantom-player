@@ -39,7 +39,6 @@ from model.CurrentMedia import CurrentMedia
 from model.Video import VideoPosition, VideoProgress
 from view.SettingsWindow import SettingsWindow
 from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
-from view.common import _FONT_NEW_COLOR, _FONT_ERROR_COLOR, _FONT_DEFAULT_COLOR, _FONT_HIDE_COLOR
 
 
 class PlaylistListstoreColumnsIndex:
@@ -93,6 +92,8 @@ class PhantomPlayer:
         #
         #   GTK objects
         #
+        self.__gtk_settings = Gtk.Settings.get_default()
+
         builder = Gtk.Builder()
         builder.add_from_file(os.path.join(os.path.dirname(os.path.realpath(__file__)), "main-window.glade"))
 
@@ -134,11 +135,6 @@ class PhantomPlayer:
         box_window = builder.get_object('box_window')
 
         #
-        # GTK creation
-        #
-        self.__gtk_settings = Gtk.Settings.get_default()
-
-        #
         # Header Bar
         #
         self.__headerbar.set_show_close_button(True)
@@ -149,7 +145,6 @@ class PhantomPlayer:
         #
         # GTK Binding
         #
-
         self.__window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.__window_root.connect('delete-event', self.quit)
         self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
@@ -206,9 +201,7 @@ class PhantomPlayer:
                                                 restart_function=self.__on_settings_playlist_restart,
                                                 close_function=self.__on_settings_playlist_close)
 
-        self.__checkbox_prefer_dark_theme.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._prefer_dark_theme, True))
-
+        self.__checkbox_prefer_dark_theme.set_active(self.__configuration.get_bool_defval(GlobalConfigTags._prefer_dark_theme, True))
         self.__checkbox_hide_warning_missing_playlist.set_active(
             self.__configuration.get_bool(GlobalConfigTags._checkbox_missing_playlist_warning))
         self.__checkbox_hidden_items.set_active(
@@ -225,6 +218,7 @@ class PhantomPlayer:
         #
         #    Display the window
         #
+        self.__load_fonts()
         self.__button_playlist_settings.set_sensitive(False)
         self.__button_new_playlist.set_sensitive(False)
 
@@ -258,6 +252,12 @@ class PhantomPlayer:
         self.__mp_widget.quit()
         VLC_INSTANCE.release()
 
+    def __load_fonts(self):
+        _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default, on_error=settings.FontColors._default)
+        _, self.__fontcolor_success = gtk_utils.get_default_color(gtk_utils.FontColors._success, on_error=settings.FontColors._success)
+        _, self.__fontcolor_warning = gtk_utils.get_default_color(gtk_utils.FontColors._warning, on_error=settings.FontColors._warning)
+        _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error, on_error=settings.FontColors._error)
+
     def __push_status(self, status):
         self.__statusbar.push(0, status)
 
@@ -276,18 +276,17 @@ class PhantomPlayer:
             self.__entry_search_playlists.hide()
             self.__button_playlist_settings.show()
 
-    @staticmethod
-    def __get_video_color(video):
+    def __get_video_color(self, video):
         if video.get_ignore():
-            return _FONT_HIDE_COLOR
+            return self.__fontcolor_warning
 
         elif video.get_is_new():
-            return _FONT_NEW_COLOR
+            return self.__fontcolor_success
 
         elif not video.exists():
-            return _FONT_ERROR_COLOR
+            return self.__fontcolor_error
 
-        return _FONT_DEFAULT_COLOR
+        return self.__fontcolor_default
 
     def __set_video(self,
                     video_id=None,
@@ -613,17 +612,19 @@ class PhantomPlayer:
         if not playlist.get_waiting_load():
             return
 
-        self.__playlist_selected = playlist
+        if self.__playlist_selected is None or playlist_id != self.__playlist_selected.get_id():
 
-        if self.__mp_widget.is_nothing():
-            self.__set_video(video_id=self.__playlist_selected.get_last_played_video_id(),
-                             play=False,
-                             ignore_none=True)
+            self.__playlist_selected = playlist
+
+            if self.__mp_widget.is_nothing():
+                self.__set_video(video_id=self.__playlist_selected.get_last_played_video_id(),
+                                 play=False,
+                                 ignore_none=True)
+
+            self.__liststore_videos_populate()
+            self.__liststore_videos_select_current()
 
         self.__display_playlists(False)
-
-        self.__liststore_videos_populate()
-        self.__liststore_videos_select_current()
 
     def __on_treeview_videos_drag_end(self, *_):
 
@@ -887,7 +888,7 @@ class PhantomPlayer:
                 row_iter = model.get_iter(treepath)
                 model.remove(row_iter)
             else:
-                self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = _FONT_HIDE_COLOR
+                self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = self.__fontcolor_warning
 
         self.__treeselection_videos.unselect_all()
 
@@ -915,6 +916,10 @@ class PhantomPlayer:
         state = checkbox.get_active()
         self.__configuration.write(GlobalConfigTags._prefer_dark_theme, state)
         self.__gtk_settings.set_property("gtk-application-prefer-dark-theme", state)
+
+        self.__load_fonts()
+        self.__liststore_videos_populate()
+
 
     def __on_checkbox_hide_warning_missing_playlist_toggled(self, checkbox, *_):
         self.__configuration.write(GlobalConfigTags._checkbox_missing_playlist_warning, checkbox.get_active())
