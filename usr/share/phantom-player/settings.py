@@ -35,4 +35,5 @@ class ThemeButtons:
     _un_fullscreen = "view-restore"
     _random = "media-playlist-shuffle"
     _keep_playing = "media-playlist-repeat"
-    _settings = "preferences-desktop"
+    _settings = "media-tape"
+    _menu = "go-home"

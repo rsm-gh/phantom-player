@@ -59,7 +59,6 @@ class VideosListstoreColumnsIndex:
 
 
 class GlobalConfigTags:
-
     _main_section = "phantom-player"
 
     _checkbox_missing_playlist_warning = "missing-playlist-warning"
@@ -97,15 +96,15 @@ class PhantomPlayer:
         builder = Gtk.Builder()
         builder.add_from_file(os.path.join(os.path.dirname(os.path.realpath(__file__)), "main-window.glade"))
 
-        self.__gtk_settings = Gtk.Settings.get_default()
-
         self.__window_root = builder.get_object('window_root')
         self.__window_about = builder.get_object('window_about')
+        self.__headerbar = builder.get_object('headerbar')
+        self.__menubutton_main = builder.get_object('menubutton_main')
+        self.__button_new_playlist = builder.get_object('button_new_playlist')
+        self.__button_playlist_settings = builder.get_object('button_playlist_settings')
+        self.__entry_search_playlists = builder.get_object('entry_search_playlists')
         self.__menubar = builder.get_object('menubar')
         self.__statusbar = builder.get_object('statusbar')
-        self.__menuitem_playlist = builder.get_object('menuitem_playlist')
-        self.__menuitem_playlist_new = builder.get_object('menuitem_playlist_new')
-        self.__menuitem_playlist_settings = builder.get_object('menuitem_playlist_settings')
         self.__menuitem_about = builder.get_object('menuitem_about')
         self.__main_paned = builder.get_object('main_paned')
         self.__button_display_playlists = builder.get_object('button_display_playlists')
@@ -135,6 +134,19 @@ class PhantomPlayer:
         box_window = builder.get_object('box_window')
 
         #
+        # GTK creation
+        #
+        self.__gtk_settings = Gtk.Settings.get_default()
+
+        #
+        # Header Bar
+        #
+        self.__headerbar.set_show_close_button(True)
+        self.__headerbar.props.title = Texts.GUI.title
+        self.__window_root.set_titlebar(self.__headerbar)
+        self.__menubutton_main.set_image(Gtk.Image.new_from_icon_name(settings.ThemeButtons._menu, Gtk.IconSize.BUTTON))
+
+        #
         # GTK Binding
         #
 
@@ -142,9 +154,10 @@ class PhantomPlayer:
         self.__window_root.connect('delete-event', self.quit)
         self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
         self.__window_root.connect("visibility_notify_event", self.__on_window_root_notify_event)
-        self.__menuitem_playlist.connect("activate", self.__on_menuitem_playlist_activate)
-        self.__menuitem_playlist_new.connect("activate", self.__on_menuitem_playlist_new_activate)
-        self.__menuitem_playlist_settings.connect("activate", self.__on_menuitem_playlist_settings_activate)
+
+        self.__button_new_playlist.connect("clicked", self.__on_button_new_playlist_clicked)
+        self.__button_playlist_settings.connect("clicked", self.__on_button_playlist_settings_clicked)
+
         self.__menuitem_about.connect("activate", self.__on_menuitem_about_activate)
         self.__checkbox_prefer_dark_theme.connect('toggled', self.__on__checkbox_prefer_dark_theme_toggled)
         self.__checkbox_hide_warning_missing_playlist.connect('toggled',
@@ -212,13 +225,13 @@ class PhantomPlayer:
         #
         #    Display the window
         #
-        self.__menuitem_playlist.set_sensitive(False)
-        self.__menuitem_playlist_settings.set_sensitive(False)
+        self.__button_playlist_settings.set_sensitive(False)
+        self.__button_new_playlist.set_sensitive(False)
 
         self.__window_root.maximize()
         self.__window_root.show_all()
         self.__mp_widget.hide_volume_label()
-        self.__media_box.hide()
+        self.__display_playlists(True)
 
         #
         #    Load the existent playlist
@@ -247,6 +260,21 @@ class PhantomPlayer:
 
     def __push_status(self, status):
         self.__statusbar.push(0, status)
+
+    def __display_playlists(self, value):
+
+        if value:
+            self.__media_box.hide()
+            self.__scrolledwindow_playlists.show()
+            self.__button_new_playlist.show()
+            self.__entry_search_playlists.show()
+            self.__button_playlist_settings.hide()
+        else:
+            self.__scrolledwindow_playlists.hide()
+            self.__media_box.show()
+            self.__button_new_playlist.hide()
+            self.__entry_search_playlists.hide()
+            self.__button_playlist_settings.show()
 
     @staticmethod
     def __get_video_color(video):
@@ -364,6 +392,7 @@ class PhantomPlayer:
             self.__playlist_selected = current_playlist
 
             GLib.idle_add(self.__on_settings_playlist_close, current_playlist)
+            GLib.idle_add(self.__display_playlists, False)
 
             video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
 
@@ -390,7 +419,8 @@ class PhantomPlayer:
         #
         #   Enable the GUI
         #
-        GLib.idle_add(self.__menuitem_playlist.set_sensitive, True)
+        GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
+        GLib.idle_add(self.__button_new_playlist.set_sensitive, True)
         GLib.idle_add(self.__window_root.set_sensitive, True)
         GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlists_ended)
         self.__playlists_loaded = True
@@ -551,8 +581,7 @@ class PhantomPlayer:
                 break
 
     def __on_button_display_playlists_clicked(self, *_):
-        self.__media_box.hide()
-        self.__scrolledwindow_playlists.show()
+        self.__display_playlists(True)
 
     def __on_media_player_video_end(self, *_):
 
@@ -591,8 +620,7 @@ class PhantomPlayer:
                              play=False,
                              ignore_none=True)
 
-        self.__scrolledwindow_playlists.hide()
-        self.__media_box.show()
+        self.__display_playlists(False)
 
         self.__liststore_videos_populate()
         self.__liststore_videos_select_current()
@@ -722,9 +750,6 @@ class PhantomPlayer:
         _ = self.__window_about.run()
         self.__window_about.hide()
 
-    def __on_menuitem_playlist_activate(self, *_):
-        self.__menuitem_playlist_settings.set_sensitive(self.__playlist_selected is not None)
-
     def __on_settings_playlist_add(self, playlist):
 
         self.__playlists[playlist.get_id()] = playlist
@@ -779,8 +804,7 @@ class PhantomPlayer:
                 break
 
         if playlist.get_id() == self.__playlist_selected.get_id():
-            self.__media_box.hide()
-            self.__scrolledwindow_playlists.show()
+            self.__display_playlists(True)
             self.__playlist_selected = None
 
     def __on_settings_playlist_close(self, closed_playlist):
@@ -807,12 +831,12 @@ class PhantomPlayer:
             self.__mp_widget.set_keep_playing(closed_playlist.get_keep_playing())
             self.__mp_widget.set_random(closed_playlist.get_random())
 
-    def __on_menuitem_playlist_new_activate(self, *_):
+    def __on_button_new_playlist_clicked(self, *_):
         new_playlist = Playlist(pid=len(self.__playlists))
         new_playlist.set_waiting_load(True)
         self.__settings_window.show(new_playlist, is_new=True)
 
-    def __on_menuitem_playlist_settings_activate(self, *_):
+    def __on_button_playlist_settings_clicked(self, *_):
         self.__settings_window.show(self.__playlist_selected, is_new=False)
 
     def __on_menuitem_set_progress(self, _, progress):
