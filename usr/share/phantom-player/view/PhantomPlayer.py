@@ -145,7 +145,6 @@ class PhantomPlayer:
         self.__window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.__window_root.connect('delete-event', self.quit)
         self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
-        self.__window_root.connect("visibility_notify_event", self.__on_window_root_notify_event)
 
         self.__entry_search_playlists.connect("changed", self.__on_entry_search_playlists_changed)
         self.__button_new_playlist.connect("clicked", self.__on_button_new_playlist_clicked)
@@ -281,6 +280,9 @@ class PhantomPlayer:
             self.__button_new_playlist.hide()
             self.__entry_search_playlists.hide()
             self.__button_playlist_settings.show()
+
+            _, window_height = self.__window_root.get_size()
+            self.__paned.set_position(window_height / 2)
 
     def __get_video_color(self, video):
         if video.get_ignore():
@@ -539,11 +541,6 @@ class PhantomPlayer:
             if row[VideosListstoreColumnsIndex._id] == video_id:
                 self.__treeview_videos.set_cursor(i)
                 break
-
-    def __on_window_root_notify_event(self, *_):
-        # Resize the VLC widget
-        _, window_height = self.__window_root.get_size()
-        self.__paned.set_position(window_height / 2)
 
     def __on_window_root_configure_event(self, *_):
 
