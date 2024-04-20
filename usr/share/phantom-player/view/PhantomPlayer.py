@@ -314,7 +314,7 @@ class PhantomPlayer:
             self.__mp_widget.stop()
 
             if not ignore_none:
-                gtk_utils.dialog_info(self.__window_root, Texts.DialogPlaylist.all_videos_played)
+                gtk_utils.dialog_info(self.__window_root, Texts.DialogPlaylist._all_videos_played)
 
             return
 
@@ -325,7 +325,7 @@ class PhantomPlayer:
                 self.__mp_widget.stop()
 
             if not ignore_missing:
-                gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.missing)
+                gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos._missing)
 
             return
 
@@ -440,7 +440,7 @@ class PhantomPlayer:
                 return
 
             found_videos = self.__current_media._playlist.find_video(videos_id[0], path)
-            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.other_found.format(found_videos), None)
+            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos._other_found.format(found_videos), None)
 
         else:
 
@@ -450,7 +450,7 @@ class PhantomPlayer:
                 return
 
             found_videos = self.__current_media._playlist.find_videos(path)
-            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.found_x.format(found_videos), None)
+            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos._found_x.format(found_videos), None)
 
         if found_videos > 0:
             self.__liststore_videos_populate()
@@ -697,29 +697,29 @@ class PhantomPlayer:
 
             if can_reset_progress:
                 # Reset Progress
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_reset)
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_reset)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._start)
 
             if can_fill_progress:
                 # Fill progress
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.progress_fill)
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_fill)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._end)
 
             # Find videos
             if self.__current_media._playlist.missing_videos(selected_ids):
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.search)
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._search)
                 menuitem.connect('activate', self.__playlist_find_videos, selected_ids)
                 menu.append(menuitem)
 
             # ignore videos
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.ignore)
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._ignore)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_playlist_ignore_video)
 
             # don't ignore videos
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.dont_ignore)
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._dont_ignore)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_playlist_dont_ignore_video)
 
@@ -728,7 +728,7 @@ class PhantomPlayer:
                 video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
                 video = self.__current_media._playlist.get_video(video_id)
 
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.open_dir)
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._open_dir)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_video_open_dir, video.get_path())
 
