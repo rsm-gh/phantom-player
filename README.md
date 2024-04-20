@@ -39,11 +39,6 @@ any of the hard-drive content.*
 
 ## Controls
 
-### Playlist List
-+ Select a playlist with single left-click.
-+ Start playing a playlist with a double left-click.
-+ Open the playlist settings with a right-click.
-
 ### Videos List
 + Play a video with a double left-click.
 + Open the video's menu with a right-click.
