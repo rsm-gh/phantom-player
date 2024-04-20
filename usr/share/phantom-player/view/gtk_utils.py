@@ -90,7 +90,7 @@ def treeselection_remove_first_row(gtk_selection):
 
 
 def dialog_select_directory(parent, start_path=None):
-    dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
+    dialog = Gtk.FileChooserDialog(title=Texts.GUI._title,
                                    parent=parent,
                                    action=Gtk.FileChooserAction.SELECT_FOLDER)
 
@@ -116,7 +116,7 @@ def dialog_select_directory(parent, start_path=None):
 
 
 def dialog_select_file(parent, file_filter=None, start_path=None):
-    dialog = Gtk.FileChooserDialog(title=Texts.GUI.title,
+    dialog = Gtk.FileChooserDialog(title=Texts.GUI._title,
                                    parent=parent,
                                    action=Gtk.FileChooserAction.OPEN)
 

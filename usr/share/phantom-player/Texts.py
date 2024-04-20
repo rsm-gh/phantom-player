@@ -33,7 +33,7 @@ class Texts:
             _random = "Random Mode"
 
     class GUI:
-        title = "Phantom Player"
+        _title = "Phantom Player"
 
     class DialogPlaylist:
         confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
