@@ -574,8 +574,8 @@ Author: Rafael Senties Martinelli
           <object class="GtkEntry" id="entry_search_playlists">
             <property name="name">entry_search_playlist</property>
             <property name="visible">True</property>
-            <property name="sensitive">False</property>
             <property name="can-focus">True</property>
+            <property name="caps-lock-warning">False</property>
             <property name="placeholder-text" translatable="yes">Search for Playlists</property>
           </object>
           <packing>

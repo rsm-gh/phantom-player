@@ -150,6 +150,7 @@ class PhantomPlayer:
         self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
         self.__window_root.connect("visibility_notify_event", self.__on_window_root_notify_event)
 
+        self.__entry_search_playlists.connect("changed", self.__on_entry_search_playlists_changed)
         self.__button_new_playlist.connect("clicked", self.__on_button_new_playlist_clicked)
         self.__button_playlist_settings.connect("clicked", self.__on_button_playlist_settings_clicked)
 
@@ -476,8 +477,24 @@ class PhantomPlayer:
                                            playlist.get_progress()])
 
     def __liststore_playlists_populate(self):
+
+        #
+        # Filter
+        #
+        text_filter = self.__entry_search_playlists.get_text().lower().strip()
+        if text_filter == "":
+            filtered_playlists = self.__playlists.values()
+        else:
+            filtered_playlists = []
+            for playlist in self.__playlists.values():
+                if text_filter in playlist.get_name().lower():
+                    filtered_playlists.append(playlist)
+
+        #
+        # Populate
+        #
         self.__liststore_playlists.clear()
-        for playlist in sorted(self.__playlists.values(), key=lambda x: x.get_name()):
+        for playlist in sorted(filtered_playlists, key=lambda x: x.get_name()):
             if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
                 self.__liststore_playlists_append(playlist)
 
@@ -836,6 +853,9 @@ class PhantomPlayer:
         if self.__current_media.is_playlist(closed_playlist):
             self.__mp_widget.set_keep_playing(closed_playlist.get_keep_playing())
             self.__mp_widget.set_random(closed_playlist.get_random())
+
+    def __on_entry_search_playlists_changed(self, *_):
+        self.__liststore_playlists_populate()
 
     def __on_button_new_playlist_clicked(self, *_):
         new_playlist = Playlist(pid=len(self.__playlists))
