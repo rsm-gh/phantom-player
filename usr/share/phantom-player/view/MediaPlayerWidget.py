@@ -399,6 +399,7 @@ class MediaPlayerWidget(Gtk.VBox):
     def stop(self):
         self.__video_change_status = VideoChangeStatus._none
         self.__vlc_widget.player.stop()
+        self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
         self.__buttons_box.set_sensitive(False)
         self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
         self.__label_volume.hide()

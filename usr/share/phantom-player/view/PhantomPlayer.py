@@ -78,7 +78,6 @@ class PhantomPlayer:
     def __init__(self, application):
 
         self.__playlist_new = None
-        self.__playlist_selected = None
         self.__playlists = OrderedDict()
         self.__playlists_loaded = False
         self.__current_playlist_loaded = False
@@ -107,7 +106,6 @@ class PhantomPlayer:
         self.__menubar = builder.get_object('menubar')
         self.__statusbar = builder.get_object('statusbar')
         self.__menuitem_about = builder.get_object('menuitem_about')
-        self.__main_paned = builder.get_object('main_paned')
         self.__button_display_playlists = builder.get_object('button_display_playlists')
         self.__scrolledwindow_playlists = builder.get_object('scrolledwindow_playlists')
         self.__media_box = builder.get_object('media_box')
@@ -138,7 +136,6 @@ class PhantomPlayer:
         # Header Bar
         #
         self.__headerbar.set_show_close_button(True)
-        self.__headerbar.props.title = Texts.GUI.title
         self.__window_root.set_titlebar(self.__headerbar)
         self.__menubutton_main.set_image(Gtk.Image.new_from_icon_name(settings.ThemeButtons._menu, Gtk.IconSize.BUTTON))
 
@@ -185,8 +182,8 @@ class PhantomPlayer:
 
         self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
         self.__paned.add1(self.__mp_widget)
-        box_window.remove(self.__main_paned)
-        self.__paned.add2(self.__main_paned)
+        box_window.remove(self.__media_box)
+        self.__paned.add2(self.__media_box)
         box_window.pack_start(self.__paned, True, True, 0)
 
         #
@@ -270,14 +267,17 @@ class PhantomPlayer:
     def __display_playlists(self, value):
 
         if value:
-            self.__media_box.hide()
+            self.__headerbar.props.title = Texts.GUI._title
+            self.__current_media = CurrentMedia()
+            self.__mp_widget.stop()
+            self.__paned.hide()
             self.__scrolledwindow_playlists.show()
             self.__button_new_playlist.show()
             self.__entry_search_playlists.show()
             self.__button_playlist_settings.hide()
         else:
             self.__scrolledwindow_playlists.hide()
-            self.__media_box.show()
+            self.__paned.show()
             self.__button_new_playlist.hide()
             self.__entry_search_playlists.hide()
             self.__button_playlist_settings.show()
@@ -394,7 +394,6 @@ class PhantomPlayer:
 
             current_playlist.set_waiting_load(True)
             self.__current_media = CurrentMedia(current_playlist)
-            self.__playlist_selected = current_playlist
 
             GLib.idle_add(self.__on_settings_playlist_close, current_playlist)
             GLib.idle_add(self.__display_playlists, False)
@@ -440,7 +439,7 @@ class PhantomPlayer:
             if path is None:
                 return
 
-            found_videos = self.__playlist_selected.find_video(videos_id[0], path)
+            found_videos = self.__current_media._playlist.find_video(videos_id[0], path)
             gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.other_found.format(found_videos), None)
 
         else:
@@ -450,7 +449,7 @@ class PhantomPlayer:
             if path is None:
                 return
 
-            found_videos = self.__playlist_selected.find_videos(path)
+            found_videos = self.__current_media._playlist.find_videos(path)
             gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos.found_x.format(found_videos), None)
 
         if found_videos > 0:
@@ -503,16 +502,16 @@ class PhantomPlayer:
         self.__liststore_videos.clear()
         self.__column_name.set_spacing(0)
 
-        if self.__playlist_selected is None:
+        if self.__current_media._playlist is None:
             return
 
-        for video in self.__playlist_selected.get_videos():
+        for video in self.__current_media._playlist.get_videos():
             self.__liststore_videos_add(video)
 
     def __liststore_videos_add_glib(self, playlist, video):
         """To be called from a thread"""
 
-        if self.__playlist_selected is None or self.__playlist_selected.get_id() != playlist.get_id():
+        if not self.__current_media.is_playlist(playlist):
             return
 
         GLib.idle_add(self.__liststore_videos_add, video)
@@ -533,8 +532,6 @@ class PhantomPlayer:
         """
             Select the current video from the videos liststore.
         """
-        if not self.__current_media.is_playlist(self.__playlist_selected):
-            return
 
         video_id = self.__current_media.get_video_id()
 
@@ -559,12 +556,12 @@ class PhantomPlayer:
             self.__is_full_screen = fullscreen
 
             if fullscreen:
-                self.__menubar.hide()
-                self.__main_paned.hide()
+                self.__scrolledwindow_playlists.hide()
+                self.__media_box.hide()
                 self.__statusbar.hide()
             else:
-                self.__menubar.show()
-                self.__main_paned.show()
+                self.__scrolledwindow_playlists.show()
+                self.__media_box.show()
                 self.__statusbar.show()
 
     def __on_media_player_btn_random_toggled(self, _, state):
@@ -584,10 +581,7 @@ class PhantomPlayer:
         #
         # Update the GUI
         #
-        if self.__playlist_selected is None:
-            return
-
-        elif not self.__current_media.is_playlist(self.__playlist_selected):
+        if self.__current_media._playlist is None:
             return
 
         GLib.idle_add(self.__liststore_playlists_set_progress,
@@ -634,17 +628,12 @@ class PhantomPlayer:
         if not playlist.get_waiting_load():
             return
 
-        if self.__playlist_selected is None or playlist_id != self.__playlist_selected.get_id():
-
-            self.__playlist_selected = playlist
-
-            if self.__mp_widget.is_nothing():
-                self.__set_video(video_id=self.__playlist_selected.get_last_played_video_id(),
-                                 play=False,
-                                 ignore_none=True)
-
-            self.__liststore_videos_populate()
-            self.__liststore_videos_select_current()
+        self.__current_media = CurrentMedia(playlist)
+        self.__liststore_videos_populate()
+        self.__liststore_videos_select_current()
+        self.__set_video(video_id=self.__current_media._playlist.get_last_played_video_id(),
+                         play=False,
+                         ignore_none=True)
 
         self.__display_playlists(False)
 
@@ -658,7 +647,7 @@ class PhantomPlayer:
             row[VideosListstoreColumnsIndex._id] = i
 
         # Update the CSV file
-        self.__playlist_selected.reorder(new_order)
+        self.__current_media._playlist.reorder(new_order)
         self.__treeselection_videos.unselect_all()
 
     def __on_treeview_videos_press_event(self, _, event):
@@ -674,27 +663,7 @@ class PhantomPlayer:
                 event.type == Gdk.EventType._2BUTTON_PRESS:
 
             video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
-
-            #
-            #   Quit if the video is already playing
-            #
-            same_video = False
-            if self.__current_media.is_playlist(self.__playlist_selected):
-                if video_id == self.__current_media.get_video_id():
-                    same_video = True
-                    if self.__mp_widget.is_playing():
-                        return
-
-            #
-            #   Update
-            #
-            if not same_video:
-                self.__configuration.write(GlobalConfigTags._current_playlist, self.__playlist_selected.get_name())
-                self.__current_media = CurrentMedia(self.__playlist_selected)
-
-            #
-            #    Play the video
-            #
+            self.__configuration.write(GlobalConfigTags._current_playlist, self.__current_media._playlist.get_name())
             self.__set_video(video_id, replay=True)
 
         elif event.button == EventCodes.Cursor.right_click:
@@ -722,10 +691,9 @@ class PhantomPlayer:
             can_fill_progress = True
             can_reset_progress = True
             if len(selected_ids) == 1:
-                if self.__current_media.is_playlist(self.__playlist_selected):
-                    if self.__current_media.get_video_id() == selected_ids[0]:
-                        can_fill_progress = False
-                        can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
+                if self.__current_media.get_video_id() == selected_ids[0]:
+                    can_fill_progress = False
+                    can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
 
             if can_reset_progress:
                 # Reset Progress
@@ -740,7 +708,7 @@ class PhantomPlayer:
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._end)
 
             # Find videos
-            if self.__playlist_selected.missing_videos(selected_ids):
+            if self.__current_media._playlist.missing_videos(selected_ids):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.search)
                 menuitem.connect('activate', self.__playlist_find_videos, selected_ids)
                 menu.append(menuitem)
@@ -758,7 +726,7 @@ class PhantomPlayer:
             # Open the containing folder (only if the user selected one video)
             if selection_length == 1:
                 video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
-                video = self.__playlist_selected.get_video(video_id)
+                video = self.__current_media._playlist.get_video(video_id)
 
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos.open_dir)
                 menu.append(menuitem)
@@ -780,9 +748,6 @@ class PhantomPlayer:
         if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
             self.__liststore_playlists_append(playlist)
 
-        self.__playlist_selected = playlist
-        self.__liststore_videos_populate()
-
     def __on_settings_playlist_restart(self, playlist):
         # This is done before to avoid updating the playlist data
         was_playing = False
@@ -791,16 +756,15 @@ class PhantomPlayer:
                 was_playing = True
                 self.__mp_widget.pause()
 
-        self.__playlist_selected.restart()
+        playlist.restart()
 
         if was_playing:
             self.__set_video()
 
-        # Update the liststores
-        self.__liststore_playlists_set_progress(self.__playlist_selected.get_id(),
-                                                self.__playlist_selected.get_progress())
+        self.__liststore_playlists_set_progress(playlist.get_id(),
+                                                playlist.get_progress())
 
-        if self.__playlist_selected.get_id() == playlist.get_id():
+        if self.__current_media.is_playlist(playlist):
             self.__liststore_videos_populate()
 
     def __on_settings_playlist_delete(self, playlist):
@@ -813,12 +777,12 @@ class PhantomPlayer:
             self.__current_media = CurrentMedia()
 
         # Delete the image (if saved)
-        icon_path = self.__playlist_selected.get_icon_path(allow_default=False)
+        icon_path = playlist.get_icon_path(allow_default=False)
         if icon_path is not None and os.path.exists(icon_path):
             os.remove(icon_path)
 
-        if os.path.exists(self.__playlist_selected.get_save_path()):
-            os.remove(self.__playlist_selected.get_save_path())
+        if os.path.exists(playlist.get_save_path()):
+            os.remove(playlist.get_save_path())
 
         # remove the item from the playlist store
         for row in self.__liststore_playlists:
@@ -826,9 +790,8 @@ class PhantomPlayer:
                 self.__liststore_playlists.remove(row.iter)
                 break
 
-        if playlist.get_id() == self.__playlist_selected.get_id():
+        if self.__current_media.is_playlist(playlist):
             self.__display_playlists(True)
-            self.__playlist_selected = None
 
     def __on_settings_playlist_close(self, closed_playlist):
 
@@ -845,12 +808,11 @@ class PhantomPlayer:
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._name] = closed_playlist.get_name()
                 break
 
-        # Update the videos liststore
-        if self.__playlist_selected is not None and self.__playlist_selected.get_id() == closed_playlist.get_id():
+        if self.__current_media.is_playlist(closed_playlist):
+            # Update the videos liststore
             self.__liststore_videos_populate()
 
-        # Update the media player
-        if self.__current_media.is_playlist(closed_playlist):
+            # Update the media player
             self.__mp_widget.set_keep_playing(closed_playlist.get_keep_playing())
             self.__mp_widget.set_random(closed_playlist.get_random())
 
@@ -863,7 +825,7 @@ class PhantomPlayer:
         self.__settings_window.show(new_playlist, is_new=True)
 
     def __on_button_playlist_settings_clicked(self, *_):
-        self.__settings_window.show(self.__playlist_selected, is_new=False)
+        self.__settings_window.show(self.__current_media._playlist, is_new=False)
 
     def __on_menuitem_set_progress(self, _, progress):
 
@@ -873,11 +835,10 @@ class PhantomPlayer:
             return
 
         id_to_skip = None
-        if self.__current_media.is_playlist(self.__playlist_selected):
-            if progress == VideoProgress._start and self.__current_media.get_video_progress() == VideoProgress._end:
-                pass
-            else:
-                id_to_skip = self.__current_media.get_video_id()
+        if progress == VideoProgress._start and self.__current_media.get_video_progress() == VideoProgress._end:
+            pass
+        else:
+            id_to_skip = self.__current_media.get_video_id()
 
         for treepath in treepaths:
 
@@ -886,14 +847,14 @@ class PhantomPlayer:
                 continue
 
             self.__liststore_videos[treepath][VideosListstoreColumnsIndex._progress] = progress
-            video = self.__playlist_selected.get_video(video_id)
+            video = self.__current_media._playlist.get_video(video_id)
             if progress == VideoProgress._start:
                 video.set_position(VideoPosition._start)
             else:
                 video.set_position(progress / VideoProgress._end)
 
-        self.__liststore_playlists_set_progress(self.__playlist_selected.get_id(),
-                                                self.__playlist_selected.get_progress())
+        self.__liststore_playlists_set_progress(self.__current_media._playlist.get_id(),
+                                                self.__current_media._playlist.get_progress())
 
     def __on_menuitem_playlist_ignore_video(self, _):
 
@@ -906,7 +867,7 @@ class PhantomPlayer:
 
         for treepath in reversed(treepaths):
             video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
-            video = self.__playlist_selected.get_video(video_id)
+            video = self.__current_media._playlist.get_video(video_id)
             video.set_ignore(True)
 
             if hide_row:
@@ -926,7 +887,7 @@ class PhantomPlayer:
 
         for treepath in treepaths:
             video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
-            video = self.__playlist_selected.get_video(video_id)
+            video = self.__current_media._playlist.get_video(video_id)
             video.set_ignore(False)
             self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = self.__get_video_color(video)
 
