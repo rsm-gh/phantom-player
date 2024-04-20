@@ -75,9 +75,11 @@ class SettingsWindow:
         builder = Gtk.Builder()
         builder.add_from_file(os.path.join(_SCRIPT_DIR, "settings-window.glade"))
 
-        self.__notebook = builder.get_object('notebook')
+        self.__headerbar_navigation = builder.get_object('headerbar_navigation')
         self.__button_previous_playlist = builder.get_object('button_previous_playlist')
         self.__button_next_playlist = builder.get_object('button_next_playlist')
+
+        self.__notebook = builder.get_object('notebook')
         self.__settings_window = builder.get_object('settings_window')
         self.__entry_playlist_name = builder.get_object('entry_playlist_name')
         self.__togglebutton_edit_name = builder.get_object('togglebutton_edit_name')
@@ -157,7 +159,7 @@ class SettingsWindow:
         #
         # Extra
         #
-
+        self.__settings_window.set_titlebar(self.__headerbar_navigation)
         self.__settings_window.set_transient_for(parent)
 
     def show(self, playlist, is_new):

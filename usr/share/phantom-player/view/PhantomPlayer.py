@@ -201,7 +201,8 @@ class PhantomPlayer:
                                                 restart_function=self.__on_settings_playlist_restart,
                                                 close_function=self.__on_settings_playlist_close)
 
-        self.__checkbox_prefer_dark_theme.set_active(self.__configuration.get_bool_defval(GlobalConfigTags._prefer_dark_theme, True))
+        self.__checkbox_prefer_dark_theme.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._prefer_dark_theme, True))
         self.__checkbox_hide_warning_missing_playlist.set_active(
             self.__configuration.get_bool(GlobalConfigTags._checkbox_missing_playlist_warning))
         self.__checkbox_hidden_items.set_active(
@@ -253,10 +254,14 @@ class PhantomPlayer:
         VLC_INSTANCE.release()
 
     def __load_fonts(self):
-        _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default, on_error=settings.FontColors._default)
-        _, self.__fontcolor_success = gtk_utils.get_default_color(gtk_utils.FontColors._success, on_error=settings.FontColors._success)
-        _, self.__fontcolor_warning = gtk_utils.get_default_color(gtk_utils.FontColors._warning, on_error=settings.FontColors._warning)
-        _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error, on_error=settings.FontColors._error)
+        _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default,
+                                                                  on_error=settings.FontColors._default)
+        _, self.__fontcolor_success = gtk_utils.get_default_color(gtk_utils.FontColors._success,
+                                                                  on_error=settings.FontColors._success)
+        _, self.__fontcolor_warning = gtk_utils.get_default_color(gtk_utils.FontColors._warning,
+                                                                  on_error=settings.FontColors._warning)
+        _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error,
+                                                                on_error=settings.FontColors._error)
 
     def __push_status(self, status):
         self.__statusbar.push(0, status)
@@ -919,7 +924,6 @@ class PhantomPlayer:
 
         self.__load_fonts()
         self.__liststore_videos_populate()
-
 
     def __on_checkbox_hide_warning_missing_playlist_toggled(self, checkbox, *_):
         self.__configuration.write(GlobalConfigTags._checkbox_missing_playlist_warning, checkbox.get_active())
