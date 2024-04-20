@@ -36,16 +36,16 @@ class Texts:
         _title = "Phantom Player"
 
     class DialogPlaylist:
-        confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
-        confirm_reset = 'Are you sure that you want to restart "{0}"?.'
-        is_missing = 'The playlist can not be reproduced because the videos are missing!\n\nUse the search button to find them.'
-        already_exist = 'The playlist "{}" already exists.\n\nPlease rename the other playlist before adding this one.'
-        name_exist = 'The playlist "{}" already exists.\n\nPlease choose a different name.'
-        all_videos_played = 'All the videos have been played, restart the playlist to watch it again.'
+        _confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
+        _confirm_reset = 'Are you sure that you want to restart "{0}"?.'
+        _is_missing = 'The playlist can not be reproduced because the videos are missing!\n\nUse the search button to find them.'
+        _already_exist = 'The playlist "{}" already exists.\n\nPlease rename the other playlist before adding this one.'
+        _name_exist = 'The playlist "{}" already exists.\n\nPlease choose a different name.'
+        _all_videos_played = 'All the videos have been played, restart the playlist to watch it again.'
 
     class WindowSettings:
-        new_title = "New Playlist"
-        playlist_name_empty = "The playlist name can not be empty."
+        _new_title = "New Playlist"
+        _playlist_name_empty = "The playlist name can not be empty."
 
         _add_path_title = "Discovering Videos"
         _add_path_videos = _LONG_TIME_PLEASE_WAIT
@@ -62,19 +62,18 @@ class Texts:
         _playlist_path_cant_add = "The path is already in the added (or recursively included)."
 
     class MenuItemVideos:
-        open_dir = "Open Directory"
-        ignore = "Ignore"
-        dont_ignore = "Don't Ignore"
-        search = "Search"
-        reproduce = "Play"
-        progress_reset = "Restart Progress"
-        progress_fill = "Fill Progress"
+        _open_dir = "Open Directory"
+        _ignore = "Ignore"
+        _dont_ignore = "Don't Ignore"
+        _search = "Search"
+        _progress_reset = "Restart Progress"
+        _progress_fill = "Fill Progress"
 
     class DialogVideos:
-        delete = '''Are you sure that you want to delete the selected videos?\n\nThey wont be removed from your hard drive.'''
-        missing = 'The video can not be reproduced because the file is missing. Use the search button to find it.'
-        found_x = '{0} videos have been found.'
-        other_found = '{0} other videos have been found.'
+        _delete = '''Are you sure that you want to delete the selected videos?\n\nThey wont be removed from your hard drive.'''
+        _missing = 'The video can not be reproduced because the file is missing. Use the search button to find it.'
+        _found_x = '{0} videos have been found.'
+        _other_found = '{0} other videos have been found.'
 
     class StatusBar:
         _load_playlist_headers = "Loading playlists headers..."
