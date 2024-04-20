@@ -183,7 +183,9 @@ Author: Rafael Senties Martinelli
                     <property name="reorderable">True</property>
                     <property name="search-column">1</property>
                     <child internal-child="selection">
-                      <object class="GtkTreeSelection" id="treeselection_videos"/>
+                      <object class="GtkTreeSelection" id="treeselection_videos">
+                        <property name="mode">multiple</property>
+                      </object>
                     </child>
                     <child>
                       <object class="GtkTreeViewColumn" id="column_number">

@@ -184,12 +184,12 @@ class SettingsWindow:
             pass
 
         elif new_name == "":
-            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings.playlist_name_empty)
+            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings._playlist_name_empty)
             return
 
         elif new_name in [playlist.get_name().lower() for playlist in self.__playlists.values()]:
             gtk_utils.dialog_info(self.__settings_window,
-                                  Texts.DialogPlaylist.name_exist.format(new_name))
+                                  Texts.DialogPlaylist._name_exist.format(new_name))
             return
 
         else:
@@ -592,7 +592,7 @@ class SettingsWindow:
 
     def __on_button_delete_clicked(self, *_):
         if gtk_utils.dialog_yes_no(self.__settings_window,
-                                   Texts.DialogPlaylist.confirm_delete.format(self.__current_playlist.get_name())):
+                                   Texts.DialogPlaylist._confirm_delete.format(self.__current_playlist.get_name())):
             self.__settings_window.hide()
             self.__delete_function(self.__current_playlist)
 
@@ -615,7 +615,7 @@ class SettingsWindow:
         selected_playlist_name = self.__current_playlist.get_name()
 
         if gtk_utils.dialog_yes_no(self.__settings_window,
-                                   Texts.DialogPlaylist.confirm_reset.format(selected_playlist_name)):
+                                   Texts.DialogPlaylist._confirm_reset.format(selected_playlist_name)):
             self.__restart_function(self.__current_playlist)
 
     def __on_button_add_clicked(self, *_):
@@ -623,12 +623,12 @@ class SettingsWindow:
         playlist_name = self.__entry_playlist_name.get_text().strip()
 
         if playlist_name == "":
-            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings.playlist_name_empty)
+            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings._playlist_name_empty)
             return
 
         elif playlist_name.lower() in [playlist.get_name().lower() for playlist in self.__playlists.values()]:
             gtk_utils.dialog_info(self.__settings_window,
-                                  Texts.DialogPlaylist.name_exist.format(playlist_name))
+                                  Texts.DialogPlaylist._name_exist.format(playlist_name))
             return
 
         self.__current_playlist.set_name(playlist_name)
