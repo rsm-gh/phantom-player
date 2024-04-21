@@ -516,6 +516,13 @@ class Playlist(object):
 
         return None
 
+    def get_video_by_hash(self, video_hash):
+        for video in self.__videos_instances:
+            if video.get_hash() == video_hash:
+                return video
+
+        return None
+
     def get_last_played_video_id(self):
 
         if self.__current_video_hash == "":
