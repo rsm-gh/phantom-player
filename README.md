@@ -6,24 +6,21 @@
 ![Videos Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview-videos.png)  
 <sub><sup>*The Desktop theme defines the look and the icons of the player.</sup></sub>
 
-**Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive,
-and it will be particularly useful if you're still downloading torrents.
-
-Some of its major features are:
-
+**Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive. Some of its major features are:
 + Play lists of videos in order or randomly (without repeating videos).
 + Remember the last played playlist, and the videos progress.
 + Organize the play order.
 + Hide videos or files.
-+ Automatically discover new videos.
++ Automatically discover new/renamed videos.
 + Set a start/end time to skip the introduction/credits.
 + Set the default audio/subtitle track.
 + Turn off the screensaver while playing.
 + Keep playing mode.
-+ Fullscreen mode.
++ and more...
 
-**When organizing the playlists and videos, the software will never modify 
-any of the hard-drive content.*
+Beside the media playing, this software will be particularly useful for:
++ Reproducing videos that are coming from torrents.
++ Discover the videos from a hard-drive and organize them.
 
 ## How to Install
 
