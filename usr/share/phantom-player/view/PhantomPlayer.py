@@ -18,6 +18,7 @@
 
 import os
 import gi
+from time import sleep
 from threading import Thread
 from collections import OrderedDict
 
@@ -228,7 +229,7 @@ class PhantomPlayer:
         #
         #    Load the existent playlist
         #
-        th = Thread(target=self.__playlists_thread_load)
+        th = Thread(target=self.__playlists_load)
         th.start()
         self.__threads.append(th)
 
@@ -360,7 +361,7 @@ class PhantomPlayer:
 
         self.__liststore_videos_select_current()
 
-    def __playlists_thread_load(self):
+    def __playlists_load(self):
 
         current_playlist_name = self.__configuration.get_str(GlobalConfigTags._current_playlist)
         current_playlist = None
@@ -398,10 +399,13 @@ class PhantomPlayer:
             self.__current_media = CurrentMedia(current_playlist)
 
             GLib.idle_add(self.__on_settings_playlist_close, current_playlist)
+
+            # To ensure that the window is already maximized, and the pan will be correctly sized
+            # probably .25 seconds may be enough, but 2 seconds is to avoid blinking the interface.
+            sleep(2)
             GLib.idle_add(self.__display_playlists, False)
 
             video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
-
             GLib.idle_add(self.__liststore_playlists_set_progress,
                           current_playlist.get_id(),
                           current_playlist.get_progress())
@@ -630,7 +634,8 @@ class PhantomPlayer:
         self.__liststore_videos_select_current()
         self.__set_video(video_id=self.__current_media._playlist.get_last_played_video_id(),
                          play=False,
-                         ignore_none=True)
+                         ignore_none=True,
+                         ignore_missing=True)
 
         self.__display_playlists(False)
 
