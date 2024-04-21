@@ -57,8 +57,7 @@ def load_cached(playlist, add_func=None):
 
     print("\tCached videos...")
 
-    existent_video_hashes = []
-    existent_video_paths = []
+    current_data = {}
 
     for i, row in enumerate(read_lines(playlist.get_save_path())):
 
@@ -107,18 +106,16 @@ def load_cached(playlist, add_func=None):
         # Check for valid lines
         #
         if path is None:
-            print("\t\tExit line because empty path.", columns)
+            print("\t\tSkipping line because empty path.", columns)
             continue
 
         if os.path.exists(path) and not __file_is_video(path, True):
-            print("\t\tExit line because not video.", columns)
+            print("\t\tSkipping line because not video.", columns)
             continue
 
-        if path in existent_video_paths:
-            print("\t\tExit line because duplicated path.", path)
+        if path in current_data.values():
+            print("\t\tSkipping line because duplicated path.", path)
             continue
-        else:
-            existent_video_paths.append(path)
 
         #
         # This must be calculated after all the previous tests,
@@ -137,18 +134,19 @@ def load_cached(playlist, add_func=None):
             print("\t\trecalculating video hash...", path)
             hash_file = __hash_of_file(path)
 
-        if hash_file in existent_video_hashes:
-            print("\t\tExit line because duplicated hash", hash_file, path)
+        if hash_file in current_data.keys():
+            print("\t\tSkipping line because hash exists...", hash_file)
+            print("\t\t\tImported path:", current_data[hash_file])
+            print("\t\t\tSkipped path:", path)
             continue
-
-        if os.path.exists(path):
-            existent_video_hashes.append(hash_file)
 
         video = Video(path, name)
         video.set_position(position)
         video.set_ignore(ignore)
         video.set_hash(hash_file)
         playlist.add_video(video)
+        if hash_file != "":  # The hash can be empty if the path does not exist
+            current_data[hash_file] = path
 
         if add_func is not None:
             add_func(playlist, video)
@@ -157,8 +155,7 @@ def load_cached(playlist, add_func=None):
 def discover(playlist, playlist_paths=None, add_func=None):
     print("\tDiscovering new videos...")
 
-    playlist_path_values = [video.get_path() for video in playlist.get_videos()]
-    playlist_hash_values = [video.get_hash() for video in playlist.get_videos()]
+    current_data = {video.get_hash(): video.get_path() for video in playlist.get_videos()}
 
     if playlist_paths is None:
         playlist_paths = playlist.get_playlist_paths()
@@ -174,18 +171,36 @@ def discover(playlist, playlist_paths=None, add_func=None):
         for video_path in __generate_videos_list_from_directory(playlist_path.get_path(),
                                                                 playlist_path.get_recursive()):
 
-            if video_path in playlist_path_values:
-                continue
+            if video_path in current_data.values():
+                continue  # No message on already added videos
 
             video_hash = __hash_of_file(video_path)
-            if video_hash in playlist_hash_values:
-                print("\t\t\tSkipping video because hash exist...", video_path)
-                continue
+            if video_hash in current_data.keys():
+
+                imported_path = current_data[video_hash]
+
+                if not os.path.exists(imported_path):
+                    # The video was renamed, use the new path instead
+                    video = playlist.get_video_by_hash(video_hash)
+                    video.set_path(video_path)
+                    video.set_is_new(True)
+                    current_data[video_hash] = video_path
+
+                    print("\t\t\tUpdating path of video:")
+                    print("\t\t\t\tOld path:", imported_path)
+                    print("\t\t\t\tNew path:", video_path)
+                    continue
+                else:
+                    print("\t\t\tSkipping video because hash exists...", video_hash)
+                    print("\t\t\t\tImported path:", imported_path)
+                    print("\t\t\t\tSkipped path:", video_path)
+                    continue
 
             new_video = Video(video_path)
             new_video.set_is_new(True)
             new_video.set_hash(video_hash)
             playlist.add_video(new_video)
+            current_data[video_hash] = video_path
             print("\t\t\tAdding...", video_path)
             if add_func is not None:
                 add_func(playlist, new_video)
