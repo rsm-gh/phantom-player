@@ -274,13 +274,17 @@ class PhantomPlayer:
             self.__scrolledwindow_playlists.show()
             self.__button_new_playlist.show()
             self.__entry_search_playlists.show()
+            self.__menubutton_main.show()
             self.__button_playlist_settings.hide()
+            self.__button_display_playlists.hide()
         else:
             self.__scrolledwindow_playlists.hide()
             self.__paned.show()
             self.__button_new_playlist.hide()
             self.__entry_search_playlists.hide()
+            self.__menubutton_main.hide()
             self.__button_playlist_settings.show()
+            self.__button_display_playlists.show()
 
             _, window_height = self.__window_root.get_size()
             self.__paned.set_position(window_height / 2)
