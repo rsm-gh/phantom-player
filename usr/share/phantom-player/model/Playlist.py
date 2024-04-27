@@ -425,6 +425,16 @@ class Playlist(object):
 
         return None
 
+    def get_videos_by_id(self, videos_id):
+        videos = []
+
+        for video_id in videos_id:
+            video = self.get_video(video_id)
+            if video is not None:
+                videos.append(video)
+
+        return videos
+
     def get_video_by_hash(self, video_hash):
         for video in self.__videos_instances:
             if video.get_hash() == video_hash:

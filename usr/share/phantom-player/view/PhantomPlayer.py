@@ -667,6 +667,8 @@ class PhantomPlayer:
             selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
                             treepaths]
 
+            selected_videos = self.__current_media._playlist.get_videos_by_id(selected_ids)
+
             # If only 1 video is selected, and it is loaded in the player.
             # the progress buttons shall not be displayed.
             can_fill_progress = True
@@ -676,36 +678,39 @@ class PhantomPlayer:
                     can_fill_progress = False
                     can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
 
-            if can_reset_progress:
+            if any(video.get_position() > VideoPosition._start for video in selected_videos) and can_reset_progress:
                 # Reset Progress
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_reset)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._start)
 
-            if can_fill_progress:
+            if any(video.get_position() < VideoPosition._end for video in selected_videos) and can_fill_progress:
                 # Fill progress
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_fill)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._end)
 
             # ignore videos
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._ignore)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_playlist_ignore_video)
+            if any(not video.get_ignore() for video in selected_videos):
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._ignore)
+                menu.append(menuitem)
+                menuitem.connect('activate', self.__on_menuitem_playlist_ignore_video)
 
             # don't ignore videos
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._dont_ignore)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_playlist_dont_ignore_video)
+            if any(video.get_ignore() for video in selected_videos):
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._dont_ignore)
+                menu.append(menuitem)
+                menuitem.connect('activate', self.__on_menuitem_playlist_dont_ignore_video)
 
             # Open the containing folder (only if the user selected one video)
             if selection_length == 1:
                 video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
                 video = self.__current_media._playlist.get_video(video_id)
 
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._open_dir)
-                menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_video_open_dir, video.get_path())
+                if os.path.exists(video.get_path()):
+                    menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._open_dir)
+                    menu.append(menuitem)
+                    menuitem.connect('activate', self.__on_menuitem_video_open_dir, video.get_path())
 
             menu.show_all()
             menu.popup(None, None, None, None, event.button, event.time)
