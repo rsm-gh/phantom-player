@@ -65,7 +65,6 @@ class Texts:
         _open_dir = "Open Directory"
         _ignore = "Ignore"
         _dont_ignore = "Don't Ignore"
-        _search = "Search"
         _progress_reset = "Restart Progress"
         _progress_fill = "Fill Progress"
 

@@ -440,31 +440,6 @@ class PhantomPlayer:
         self.__playlists_loaded = True
         print("Load playlist ended.")
 
-    def __playlist_find_videos(self, _, videos_id):
-
-        if len(videos_id) == 1:  # if the user only selected one video to find...
-
-            path = gtk_utils.dialog_select_file(self.__window_root)
-
-            if path is None:
-                return
-
-            found_videos = self.__current_media._playlist.find_video(videos_id[0], path)
-            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos._other_found.format(found_videos), None)
-
-        else:
-
-            path = gtk_utils.dialog_select_directory(self.__window_root)
-
-            if path is None:
-                return
-
-            found_videos = self.__current_media._playlist.find_videos(path)
-            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos._found_x.format(found_videos), None)
-
-        if found_videos > 0:
-            self.__liststore_videos_populate()
-
     def __liststore_playlists_set_progress(self, playlist_id, value):
         for i, row in enumerate(self.__liststore_playlists):
             if row[PlaylistListstoreColumnsIndex._id] == playlist_id:
@@ -712,12 +687,6 @@ class PhantomPlayer:
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_fill)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._end)
-
-            # Find videos
-            if self.__current_media._playlist.missing_videos(selected_ids):
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._search)
-                menuitem.connect('activate', self.__playlist_find_videos, selected_ids)
-                menu.append(menuitem)
 
             # ignore videos
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._ignore)
