@@ -16,9 +16,7 @@
 ### Features to add:
 + Create the "delete video" option (instead of clean)
 + Create a dialog to rename videos.
-+ Create a dialog to find videos?
 + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
-+ Hash videos to simplify the finding?
 
 ## MediaPlayerWidget
 

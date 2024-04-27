@@ -53,37 +53,6 @@ Beside the media playing, this software will be particularly useful for:
 ***Only in fullscreen mode.*  
 
 ## Extra
-### Find missing Videos
-
-When a video is missing, the text will be displayed in red*, 
-you can then find it by using `right-click menu > find`.
-
-There are two different method functions that you can use to perform this action:
-
-A) By selecting a single row:
-	
-You will be asked to select a file, and the player will try to find the rest of the 
-missing videos in the same directory.
-
-This will work even if some files are renamed with easy patterns, for example:
-
-```
-foo-700 -> lol-700
-foo-701 -> lol-701
-
-700-faa -> 700.fifu
-701-faa -> 701.fifu
-
-foo-700 -> 700
-foo-700 -> 701
-```
-				
-B) By selecting multiple rows:
-	
-You will be asked to select a directory, and the player will try to find all the missing videos 
-by matching their exact name.
-
-**The font-colors depend on your Desktop theme.*
 
 ### Development documentation
 
