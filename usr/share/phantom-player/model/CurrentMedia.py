@@ -41,20 +41,20 @@ class CurrentMedia:
     def current_video(self):
         return self.__video
 
-    def get_video(self, video_name):
+    def get_video_by_guid(self, video_guid):
 
         if self._playlist is None:
             return None
 
-        self.__video = self._playlist.get_video(video_name)
+        self.__video = self._playlist.get_video_by_guid(video_guid)
         return self.__video
 
-    def get_video_id(self):
+    def get_video_guid(self):
 
         if self.__video is None:
             return None
 
-        return self.__video.get_id()
+        return self.__video.get_guid()
 
     def set_video_position(self, pos):
 

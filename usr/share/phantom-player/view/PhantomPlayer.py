@@ -36,6 +36,7 @@ from controller.CCParser import CCParser
 from controller import video_factory
 from controller import playlist_factory
 from model.Playlist import Playlist
+from model.Playlist import LoadStatus as PlaylistLoadStatus
 from model.CurrentMedia import CurrentMedia
 from model.Video import VideoPosition, VideoProgress
 from view.SettingsWindow import SettingsWindow
@@ -302,7 +303,7 @@ class PhantomPlayer:
         return self.__fontcolor_default
 
     def __set_video(self,
-                    video_id=None,
+                    video_guid=None,
                     play=True,
                     replay=False,
                     ignore_none=False,
@@ -311,10 +312,10 @@ class PhantomPlayer:
         if self.__current_media._playlist is None:
             return
 
-        if video_id is None:
+        if video_guid is None:
             video = self.__current_media.get_next_video()
         else:
-            video = self.__current_media.get_video(video_id)
+            video = self.__current_media.get_video_by_guid(video_guid)
 
         if video is None:
             self.__window_root.unfullscreen()
@@ -397,11 +398,10 @@ class PhantomPlayer:
         #    Start by loading the last playlist
         #
         if current_playlist is not None:
+
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(current_playlist.get_name()))
-
-            current_playlist.set_waiting_load(True)
+            current_playlist.set_load_status(PlaylistLoadStatus._loading)
             self.__current_media = CurrentMedia(current_playlist)
-
             GLib.idle_add(self.__on_settings_playlist_close, current_playlist)
 
             # To ensure that the window is already maximized, and the pan will be correctly sized
@@ -410,9 +410,12 @@ class PhantomPlayer:
             GLib.idle_add(self.__display_playlists, False)
 
             video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
+
             GLib.idle_add(self.__liststore_playlists_set_progress,
                           current_playlist.get_id(),
                           current_playlist.get_progress())
+
+            current_playlist.set_load_status(PlaylistLoadStatus._loaded)
 
         #
         #   Load the rest of the videos
@@ -421,14 +424,18 @@ class PhantomPlayer:
             if current_playlist is not None and playlist.get_id() == current_playlist.get_id():
                 continue
 
-            playlist.set_waiting_load(True)
+            playlist.set_load_status(PlaylistLoadStatus._loading)
+
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
             GLib.idle_add(self.__on_settings_playlist_close, playlist)
+
             video_factory.load(playlist, is_startup=True)  # No add_func because the GUI is frozen on the first playlist
 
             GLib.idle_add(self.__liststore_playlists_set_progress,
                           playlist.get_id(),
                           playlist.get_progress())
+
+            playlist.set_load_status(PlaylistLoadStatus._loaded)
 
         #
         #   Enable the GUI
@@ -502,12 +509,12 @@ class PhantomPlayer:
         GLib.idle_add(self.__liststore_videos_add, video)
 
         if video.get_hash() == playlist.get_current_video_hash() and not self.__mp_widget.has_media():
-            GLib.idle_add(self.__set_video, video.get_id(), False, False, True, True)
+            GLib.idle_add(self.__set_video, video.get_guid(), False, False, True, True)
 
     def __liststore_videos_add(self, video):
         if not video.get_ignore() or not self.__checkbox_hidden_items.get_active():
             self.__liststore_videos.append([self.__get_video_color(video),
-                                            video.get_id(),
+                                            video.get_guid(),
                                             video.get_path(),
                                             video.get_name(),
                                             video.get_extension(),
@@ -518,10 +525,10 @@ class PhantomPlayer:
             Select the current video from the videos liststore.
         """
 
-        video_id = self.__current_media.get_video_id()
+        video_guid = self.__current_media.get_video_guid()
 
         for i, row in enumerate(self.__liststore_videos):
-            if row[VideosListstoreColumnsIndex._id] == video_id:
+            if row[VideosListstoreColumnsIndex._id] == video_guid:
                 self.__treeview_videos.set_cursor(i)
                 break
 
@@ -568,9 +575,9 @@ class PhantomPlayer:
                       self.__current_media._playlist.get_id(),
                       self.__current_media._playlist.get_progress())
 
-        video_id = self.__current_media.get_video_id()
+        video_guid = self.__current_media.get_video_guid()
         for i, row in enumerate(self.__liststore_videos):
-            if row[VideosListstoreColumnsIndex._id] == video_id:
+            if row[VideosListstoreColumnsIndex._id] == video_guid:
                 self.__liststore_videos[i][
                     VideosListstoreColumnsIndex._progress] = self.__current_media.get_video_progress()
                 break
@@ -605,13 +612,13 @@ class PhantomPlayer:
         playlist_id = self.__liststore_playlists[path][PlaylistListstoreColumnsIndex._id]
         playlist = self.__playlists[playlist_id]
 
-        if not playlist.get_waiting_load():
+        if playlist.get_load_status() == PlaylistLoadStatus._waiting_load:
             return
 
         self.__current_media = CurrentMedia(playlist)
         self.__liststore_videos_populate()
         self.__liststore_videos_select_current()
-        self.__set_video(video_id=self.__current_media._playlist.get_last_played_video_id(),
+        self.__set_video(video_guid=self.__current_media._playlist.get_last_played_video_guid(),
                          play=False,
                          ignore_none=True,
                          ignore_missing=True)
@@ -643,9 +650,9 @@ class PhantomPlayer:
                 selection_length == 1 and \
                 event.type == Gdk.EventType._2BUTTON_PRESS:
 
-            video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
+            video_guid = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
             self.__configuration.write(GlobalConfigTags._current_playlist, self.__current_media._playlist.get_name())
-            self.__set_video(video_id, replay=True)
+            self.__set_video(video_guid, replay=True)
 
         elif event.button == EventCodes.Cursor.right_click:
 
@@ -667,25 +674,26 @@ class PhantomPlayer:
             selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
                             treepaths]
 
-            selected_videos = self.__current_media._playlist.get_videos_by_id(selected_ids)
+            selected_videos = self.__current_media._playlist.get_videos_by_guid(selected_ids)
 
             # If only 1 video is selected, and it is loaded in the player.
             # the progress buttons shall not be displayed.
             can_fill_progress = True
             can_reset_progress = True
             if len(selected_ids) == 1:
-                if self.__current_media.get_video_id() == selected_ids[0]:
+                if self.__current_media.get_video_guid() == selected_ids[0]:
                     can_fill_progress = False
                     can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
 
+            # Reset Progress
             if any(video.get_position() > VideoPosition._start for video in selected_videos) and can_reset_progress:
-                # Reset Progress
+
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_reset)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._start)
 
+            # Fill progress
             if any(video.get_position() < VideoPosition._end for video in selected_videos) and can_fill_progress:
-                # Fill progress
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_fill)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._end)
@@ -694,23 +702,32 @@ class PhantomPlayer:
             if any(not video.get_ignore() for video in selected_videos):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._ignore)
                 menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_playlist_ignore_video)
+                menuitem.connect('activate', self.__on_menuitem_playlist_ignore_change, True)
 
             # don't ignore videos
             if any(video.get_ignore() for video in selected_videos):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._dont_ignore)
                 menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_playlist_dont_ignore_video)
+                menuitem.connect('activate', self.__on_menuitem_playlist_ignore_change, False)
 
             # Open the containing folder (only if the user selected one video)
             if selection_length == 1:
-                video_id = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
-                video = self.__current_media._playlist.get_video(video_id)
+                video_guid = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
+                video = self.__current_media._playlist.get_video_by_guid(video_guid)
 
                 if os.path.exists(video.get_path()):
                     menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._open_dir)
                     menu.append(menuitem)
                     menuitem.connect('activate', self.__on_menuitem_video_open_dir, video.get_path())
+
+            # Remove items from the list
+            if not any(video.exists() for video in selected_videos):
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._remove)
+                if self.__current_media._playlist.get_load_status() != PlaylistLoadStatus._loaded:
+                    menuitem.set_sensitive(False)
+                menuitem.connect('activate', self.__on_menuitem_video_remove, selected_videos)
+
+                menu.append(menuitem)
 
             menu.show_all()
             menu.popup(None, None, None, None, event.button, event.time)
@@ -801,7 +818,7 @@ class PhantomPlayer:
 
     def __on_button_new_playlist_clicked(self, *_):
         new_playlist = Playlist(pid=len(self.__playlists))
-        new_playlist.set_waiting_load(True)
+        new_playlist.set_load_status(PlaylistLoadStatus._loading)
         self.__settings_window.show(new_playlist, is_new=True)
 
     def __on_button_playlist_settings_clicked(self, *_):
@@ -818,16 +835,16 @@ class PhantomPlayer:
         if progress == VideoProgress._start and self.__current_media.get_video_progress() == VideoProgress._end:
             pass
         else:
-            id_to_skip = self.__current_media.get_video_id()
+            id_to_skip = self.__current_media.get_video_guid()
 
         for treepath in treepaths:
 
-            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
-            if video_id == id_to_skip:
+            video_guid = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
+            if video_guid == id_to_skip:
                 continue
 
             self.__liststore_videos[treepath][VideosListstoreColumnsIndex._progress] = progress
-            video = self.__current_media._playlist.get_video(video_id)
+            video = self.__current_media._playlist.get_video_by_guid(video_guid)
             if progress == VideoProgress._start:
                 video.set_position(VideoPosition._start)
             else:
@@ -836,29 +853,7 @@ class PhantomPlayer:
         self.__liststore_playlists_set_progress(self.__current_media._playlist.get_id(),
                                                 self.__current_media._playlist.get_progress())
 
-    def __on_menuitem_playlist_ignore_video(self, _):
-
-        model, treepaths = self.__treeselection_videos.get_selected_rows()
-
-        if not treepaths:
-            return
-
-        hide_row = self.__checkbox_hidden_items.get_active()
-
-        for treepath in reversed(treepaths):
-            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
-            video = self.__current_media._playlist.get_video(video_id)
-            video.set_ignore(True)
-
-            if hide_row:
-                row_iter = model.get_iter(treepath)
-                model.remove(row_iter)
-            else:
-                self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = self.__fontcolor_warning
-
-        self.__treeselection_videos.unselect_all()
-
-    def __on_menuitem_playlist_dont_ignore_video(self, _):
+    def __on_menuitem_playlist_ignore_change(self, _, ignore):
 
         model, treepaths = self.__treeselection_videos.get_selected_rows()
 
@@ -866,12 +861,16 @@ class PhantomPlayer:
             return
 
         for treepath in treepaths:
-            video_id = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
-            video = self.__current_media._playlist.get_video(video_id)
-            video.set_ignore(False)
+            video_guid = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
+            video = self.__current_media._playlist.get_video_by_guid(video_guid)
+            video.set_ignore(ignore)
             self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = self.__get_video_color(video)
 
         self.__treeselection_videos.unselect_all()
+
+    def __on_menuitem_video_remove(self, _, selected_videos):
+        self.__current_media._playlist.remove_videos(selected_videos)
+        self.__liststore_videos_populate()
 
     @staticmethod
     def __on_menuitem_video_open_dir(_, path):
