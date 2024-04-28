@@ -28,24 +28,6 @@ Author: Rafael Senties Martinelli
   <!-- interface-description This package allows you to create and reproduce playlists from folders containing videos. -->
   <!-- interface-copyright 2014-2015, 2024 Rafael Senties Martinelli -->
   <!-- interface-authors Rafael Senties Martinelli -->
-  <object class="GtkAdjustment" id="adjustment_audio">
-    <property name="lower">-2</property>
-    <property name="upper">100</property>
-    <property name="value">-2</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_start_at">
-    <property name="upper">999</property>
-    <property name="step-increment">0.01</property>
-    <property name="page-increment">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjustment_subtitles">
-    <property name="lower">-2</property>
-    <property name="upper">100</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-  </object>
   <object class="GtkImage" id="image_add">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
