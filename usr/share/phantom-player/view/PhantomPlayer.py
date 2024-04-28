@@ -193,12 +193,13 @@ class PhantomPlayer:
         if application is not None:
             self.__window_root.set_application(application)
 
-        self.__settings_window = SettingsWindow(parent=self.__window_root,
+        self.__window_playlist_settings = SettingsWindow(parent=self.__window_root,
                                                 playlists=self.__playlists,
                                                 add_function=self.__on_settings_playlist_add,
                                                 delete_function=self.__on_settings_playlist_delete,
                                                 restart_function=self.__on_settings_playlist_restart,
-                                                close_function=self.__on_settings_playlist_close)
+                                                close_function=self.__on_settings_playlist_close,
+                                                change_function=self.__on_settings_playlist_change)
 
         self.__checkbox_prefer_dark_theme.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._prefer_dark_theme, True))
@@ -219,9 +220,8 @@ class PhantomPlayer:
         #    Display the window
         #
         self.__load_fonts()
-        self.__button_playlist_settings.set_sensitive(False)
         self.__button_new_playlist.set_sensitive(False)
-
+        self.__button_playlist_settings.set_sensitive(False)
         self.__window_root.maximize()
         self.__window_root.show_all()
         self.__mp_widget.hide_volume_label()
@@ -285,6 +285,8 @@ class PhantomPlayer:
             self.__entry_search_playlists.hide()
             self.__menubutton_main.hide()
             self.__button_playlist_settings.show()
+            self.__button_playlist_settings.set_sensitive(
+                self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
             self.__button_display_playlists.show()
 
             _, window_height = self.__window_root.get_size()
@@ -394,6 +396,9 @@ class PhantomPlayer:
                 if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
                     GLib.idle_add(self.__liststore_playlists_append, new_playlist)
 
+        # Once the playlists headers are loaded, it is possible to create new playlists.
+        GLib.idle_add(self.__button_new_playlist.set_sensitive, True)
+
         #
         #    Start by loading the last playlist
         #
@@ -407,7 +412,8 @@ class PhantomPlayer:
             # To ensure that the window is already maximized, and the pan will be correctly sized
             # probably .25 seconds may be enough, but 2 seconds is to avoid blinking the interface.
             sleep(2)
-            GLib.idle_add(self.__display_playlists, False)
+            if not self.__window_playlist_settings.get_visible():
+                GLib.idle_add(self.__display_playlists, False)
 
             video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
 
@@ -416,6 +422,10 @@ class PhantomPlayer:
                           current_playlist.get_progress())
 
             current_playlist.set_load_status(PlaylistLoadStatus._loaded)
+
+            if self.__current_media.is_playlist(
+                    current_playlist) and current_playlist.get_load_status() == PlaylistLoadStatus._loaded:
+                GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
 
         #
         #   Load the rest of the videos
@@ -437,12 +447,14 @@ class PhantomPlayer:
 
             playlist.set_load_status(PlaylistLoadStatus._loaded)
 
+            if self.__current_media.is_playlist(playlist) and playlist.get_load_status() == PlaylistLoadStatus._loaded:
+                GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
+
         #
         #   Enable the GUI
         #
-        GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
-        GLib.idle_add(self.__button_new_playlist.set_sensitive, True)
         GLib.idle_add(self.__window_root.set_sensitive, True)
+        GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
         GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlists_ended)
         self.__playlists_loaded = True
         print("Load playlist ended.")
@@ -687,7 +699,6 @@ class PhantomPlayer:
 
             # Reset Progress
             if any(video.get_position() > VideoPosition._start for video in selected_videos) and can_reset_progress:
-
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_reset)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._start)
@@ -806,12 +817,17 @@ class PhantomPlayer:
                 break
 
         if self.__current_media.is_playlist(closed_playlist):
-            # Update the videos liststore
             self.__liststore_videos_populate()
-
-            # Update the media player
             self.__mp_widget.set_keep_playing(closed_playlist.get_keep_playing())
             self.__mp_widget.set_random(closed_playlist.get_random())
+
+    def __on_settings_playlist_change(self, new_playlist):
+        self.__current_media = CurrentMedia(new_playlist)
+        self.__headerbar.props.title = new_playlist.get_name()
+        self.__liststore_videos_populate()
+        self.__mp_widget.stop()
+        self.__mp_widget.set_keep_playing(new_playlist.get_keep_playing())
+        self.__mp_widget.set_random(new_playlist.get_random())
 
     def __on_entry_search_playlists_changed(self, *_):
         self.__liststore_playlists_populate()
@@ -819,10 +835,10 @@ class PhantomPlayer:
     def __on_button_new_playlist_clicked(self, *_):
         new_playlist = Playlist(pid=len(self.__playlists))
         new_playlist.set_load_status(PlaylistLoadStatus._loading)
-        self.__settings_window.show(new_playlist, is_new=True)
+        self.__window_playlist_settings.show(new_playlist, is_new=True)
 
     def __on_button_playlist_settings_clicked(self, *_):
-        self.__settings_window.show(self.__current_media._playlist, is_new=False)
+        self.__window_playlist_settings.show(self.__current_media._playlist, is_new=False)
 
     def __on_menuitem_set_progress(self, _, progress):
 

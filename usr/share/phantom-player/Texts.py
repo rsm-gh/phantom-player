@@ -45,7 +45,7 @@ class Texts:
 
     class WindowSettings:
         _new_title = "New Playlist"
-        _playlist_name_empty = "The playlist name can not be empty."
+        _playlist_name_empty = "The name can not be empty."
 
         _add_path_title = "Discovering Videos"
         _add_path_videos = _LONG_TIME_PLEASE_WAIT

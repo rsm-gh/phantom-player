@@ -29,6 +29,7 @@ import settings
 from Paths import *
 from Texts import Texts
 from model.PlaylistPath import PlaylistPath
+from model.Playlist import LoadStatus as PlaylistLoadStatus
 from view import gtk_utils
 from controller import video_factory
 
@@ -50,7 +51,8 @@ class SettingsWindow:
                  add_function,
                  delete_function,
                  restart_function,
-                 close_function):
+                 close_function,
+                 change_function):
 
         self.__parent = parent
         self.__is_new_playlist = False
@@ -65,6 +67,7 @@ class SettingsWindow:
         self.__delete_function = delete_function
         self.__restart_function = restart_function
         self.__close_function = close_function
+        self.__change_function = change_function
 
         self.__fontcolor_default = None
         self.__fontcolor_error = None
@@ -80,7 +83,7 @@ class SettingsWindow:
         self.__button_next_playlist = builder.get_object('button_next_playlist')
 
         self.__notebook = builder.get_object('notebook')
-        self.__settings_window = builder.get_object('settings_window')
+        self.__window_settings = builder.get_object('settings_window')
         self.__entry_playlist_name = builder.get_object('entry_playlist_name')
         self.__togglebutton_edit_name = builder.get_object('togglebutton_edit_name')
         self.__image_playlist = builder.get_object('image_playlist')
@@ -159,8 +162,8 @@ class SettingsWindow:
         #
         # Extra
         #
-        self.__settings_window.set_titlebar(self.__headerbar_navigation)
-        self.__settings_window.set_transient_for(parent)
+        self.__window_settings.set_titlebar(self.__headerbar_navigation)
+        self.__window_settings.set_transient_for(parent)
 
     def show(self, playlist, is_new):
 
@@ -173,9 +176,12 @@ class SettingsWindow:
         self.__load_playlist()
 
         if is_new:
-            self.__settings_window.set_title("Playlist Settings")
+            self.__window_settings.set_title("New Playlist")
 
-        self.__settings_window.show()
+        self.__window_settings.show()
+
+    def get_visible(self):
+        return self.__window_settings.get_visible()
 
     def __save_playlist_changes(self):
         new_name = self.__entry_playlist_name.get_text().strip()
@@ -184,11 +190,11 @@ class SettingsWindow:
             pass
 
         elif new_name == "":
-            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings._playlist_name_empty)
+            gtk_utils.dialog_info(self.__window_settings, Texts.WindowSettings._playlist_name_empty)
             return
 
         elif new_name in [playlist.get_name().lower() for playlist in self.__playlists.values()]:
-            gtk_utils.dialog_info(self.__settings_window,
+            gtk_utils.dialog_info(self.__window_settings,
                                   Texts.DialogPlaylist._name_exist.format(new_name))
             return
 
@@ -196,7 +202,8 @@ class SettingsWindow:
             self.__current_playlist.set_name(new_name)
 
     def __get_previous_playlist(self):
-        keys = list(self.__playlists.keys())
+        keys = [playlist.get_id() for playlist in self.__playlists.values() if playlist.get_load_status() == PlaylistLoadStatus._loaded]
+
         prev_index = keys.index(self.__current_playlist.get_id()) - 1
 
         if prev_index < 0:
@@ -210,7 +217,7 @@ class SettingsWindow:
             return self.__playlists[prev_playlist_name]
 
     def __get_next_playlist(self):
-        keys = list(self.__playlists.keys())
+        keys = [playlist.get_id() for playlist in self.__playlists.values() if playlist.get_load_status() == PlaylistLoadStatus._loaded]
         next_index = keys.index(self.__current_playlist.get_id()) + 1
 
         try:
@@ -318,7 +325,7 @@ class SettingsWindow:
         GLib.idle_add(self.__button_edit_path_cancel.set_sensitive, True)
 
         # Settings window
-        GLib.idle_add(self.__settings_window.set_sensitive, True)
+        GLib.idle_add(self.__window_settings.set_sensitive, True)
 
         # Root Window
         cursor = Gdk.Cursor.new_from_name(self.__parent.get_display(), 'default')
@@ -336,7 +343,7 @@ class SettingsWindow:
         self.__button_edit_path_cancel.set_sensitive(False)
 
         # Settings window
-        self.__settings_window.set_sensitive(False)
+        self.__window_settings.set_sensitive(False)
 
         # Root window
         cursor = Gdk.Cursor.new_from_name(self.__parent.get_display(), 'wait')
@@ -344,24 +351,27 @@ class SettingsWindow:
 
     def __on_button_previous_playlist(self, *_):
         self.__save_playlist_changes()
-        self.__close_function(self.__current_playlist)
         self.__current_playlist = self.__get_previous_playlist()
         self.__load_playlist()
+        self.__change_function(self.__current_playlist)
 
     def __on_button_next_playlist(self, *_):
         self.__save_playlist_changes()
-        self.__close_function(self.__current_playlist)
         self.__current_playlist = self.__get_next_playlist()
         self.__load_playlist()
+        self.__change_function(self.__current_playlist)
 
     def __on_entry_playlist_name_changed(self, *_):
 
         playlist_name = self.__entry_playlist_name.get_text().strip()
 
-        if playlist_name == "":
+        if self.__is_new_playlist:
+            playlist_name = "New Playlist"
+
+        elif playlist_name == "":
             playlist_name = "Playlist Settings"
 
-        self.__settings_window.set_title(playlist_name)
+        self.__window_settings.set_title(playlist_name)
 
     def __on_button_set_image_clicked(self, *_):
         """
@@ -375,7 +385,7 @@ class SettingsWindow:
         for img_format in settings._IMAGE_FORMATS:
             file_filter.add_pattern('*.' + img_format)
 
-        file = gtk_utils.dialog_select_file(self.__settings_window, file_filter)
+        file = gtk_utils.dialog_select_file(self.__window_settings, file_filter)
         if file is None:
             return
 
@@ -442,7 +452,7 @@ class SettingsWindow:
 
     def __on_button_path_add_clicked(self, *_):
 
-        path = gtk_utils.dialog_select_directory(self.__settings_window)
+        path = gtk_utils.dialog_select_directory(self.__window_settings)
         if path is None:
             return
 
@@ -451,7 +461,7 @@ class SettingsWindow:
                                      startup_discover=False)
         added = self.__current_playlist.add_playlist_path(playlist_path)
         if not added:
-            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings._playlist_path_cant_add)
+            gtk_utils.dialog_info(self.__window_settings, Texts.WindowSettings._playlist_path_cant_add)
             return
 
         self.__button_path_reload_all.set_sensitive(True)
@@ -485,7 +495,7 @@ class SettingsWindow:
 
     def __on_button_path_edit_clicked(self, *_):
 
-        self.__edit_path_new_value = gtk_utils.dialog_select_directory(self.__settings_window)
+        self.__edit_path_new_value = gtk_utils.dialog_select_directory(self.__window_settings)
         if self.__edit_path_new_value is None:
             return
 
@@ -553,7 +563,7 @@ class SettingsWindow:
         playlist_path = self.__current_playlist.get_playlist_path(path)
 
         if new_state is True and not self.__current_playlist.can_recursive(playlist_path):
-            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings._playlist_path_cant_recursive)
+            gtk_utils.dialog_info(self.__window_settings, Texts.WindowSettings._playlist_path_cant_recursive)
             return
 
         playlist_path.set_recursive(new_state)
@@ -591,9 +601,9 @@ class SettingsWindow:
             playlist_path.set_startup_discover(state)
 
     def __on_button_delete_clicked(self, *_):
-        if gtk_utils.dialog_yes_no(self.__settings_window,
+        if gtk_utils.dialog_yes_no(self.__window_settings,
                                    Texts.DialogPlaylist._confirm_delete.format(self.__current_playlist.get_name())):
-            self.__settings_window.hide()
+            self.__window_settings.hide()
             self.__delete_function(self.__current_playlist)
 
     def __on_button_close_clicked(self, *_):
@@ -606,7 +616,7 @@ class SettingsWindow:
         else:
             self.__save_playlist_changes()
 
-        self.__settings_window.hide()
+        self.__window_settings.hide()
 
         self.__close_function(self.__current_playlist)
 
@@ -614,7 +624,7 @@ class SettingsWindow:
 
         selected_playlist_name = self.__current_playlist.get_name()
 
-        if gtk_utils.dialog_yes_no(self.__settings_window,
+        if gtk_utils.dialog_yes_no(self.__window_settings,
                                    Texts.DialogPlaylist._confirm_reset.format(selected_playlist_name)):
             self.__restart_function(self.__current_playlist)
 
@@ -623,14 +633,14 @@ class SettingsWindow:
         playlist_name = self.__entry_playlist_name.get_text().strip()
 
         if playlist_name == "":
-            gtk_utils.dialog_info(self.__settings_window, Texts.WindowSettings._playlist_name_empty)
+            gtk_utils.dialog_info(self.__window_settings, Texts.WindowSettings._playlist_name_empty)
             return
 
         elif playlist_name.lower() in [playlist.get_name().lower() for playlist in self.__playlists.values()]:
-            gtk_utils.dialog_info(self.__settings_window,
+            gtk_utils.dialog_info(self.__window_settings,
                                   Texts.DialogPlaylist._name_exist.format(playlist_name))
             return
 
         self.__current_playlist.set_name(playlist_name)
-        self.__settings_window.hide()
+        self.__window_settings.hide()
         self.__add_function(self.__current_playlist)
