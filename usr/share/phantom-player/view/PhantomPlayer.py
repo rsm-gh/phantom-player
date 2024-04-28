@@ -417,9 +417,7 @@ class PhantomPlayer:
 
             video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
 
-            GLib.idle_add(self.__liststore_playlists_set_progress,
-                          current_playlist.get_id(),
-                          current_playlist.get_progress())
+            GLib.idle_add(self.__liststore_playlists_update_progress, current_playlist)
 
             current_playlist.set_load_status(PlaylistLoadStatus._loaded)
 
@@ -441,9 +439,7 @@ class PhantomPlayer:
 
             video_factory.load(playlist, is_startup=True)  # No add_func because the GUI is frozen on the first playlist
 
-            GLib.idle_add(self.__liststore_playlists_set_progress,
-                          playlist.get_id(),
-                          playlist.get_progress())
+            GLib.idle_add(self.__liststore_playlists_update_progress, playlist)
 
             playlist.set_load_status(PlaylistLoadStatus._loaded)
 
@@ -459,12 +455,23 @@ class PhantomPlayer:
         self.__playlists_loaded = True
         print("Load playlist ended.")
 
-    def __liststore_playlists_set_progress(self, playlist_id, value):
+    def __liststore_playlists_update_progress(self, playlist):
         for i, row in enumerate(self.__liststore_playlists):
-            if row[PlaylistListstoreColumnsIndex._id] == playlist_id:
-                if row[PlaylistListstoreColumnsIndex._percent] != value:
-                    self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = value
+            if row[PlaylistListstoreColumnsIndex._id] == playlist.get_id():
+                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = playlist.get_progress()
                 return
+
+    def __liststore_playlists_update(self, playlist):
+        for i, row in enumerate(self.__liststore_playlists):
+            if row[PlaylistListstoreColumnsIndex._id] == playlist.get_id():
+                # Update the icon
+                pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(),
+                                                      settings._DEFAULT_IMG_WIDTH,
+                                                      settings._DEFAULT_IMG_HEIGHT)
+                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._icon] = pixbuf
+                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._name] = playlist.get_name()
+                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = playlist.get_progress()
+                break
 
     def __liststore_playlists_append(self, playlist):
         """
@@ -583,9 +590,7 @@ class PhantomPlayer:
         if self.__current_media._playlist is None:
             return
 
-        GLib.idle_add(self.__liststore_playlists_set_progress,
-                      self.__current_media._playlist.get_id(),
-                      self.__current_media._playlist.get_progress())
+        GLib.idle_add(self.__liststore_playlists_update_progress, self.__current_media._playlist)
 
         video_guid = self.__current_media.get_video_guid()
         for i, row in enumerate(self.__liststore_videos):
@@ -628,14 +633,13 @@ class PhantomPlayer:
             return
 
         self.__current_media = CurrentMedia(playlist)
+        self.__display_playlists(False)
         self.__liststore_videos_populate()
         self.__liststore_videos_select_current()
         self.__set_video(video_guid=self.__current_media._playlist.get_last_played_video_guid(),
                          play=False,
                          ignore_none=True,
                          ignore_missing=True)
-
-        self.__display_playlists(False)
 
     def __on_treeview_videos_drag_end(self, *_):
 
@@ -769,8 +773,7 @@ class PhantomPlayer:
         if was_playing:
             self.__set_video()
 
-        self.__liststore_playlists_set_progress(playlist.get_id(),
-                                                playlist.get_progress())
+        self.__liststore_playlists_update_progress(playlist)
 
         if self.__current_media.is_playlist(playlist):
             self.__liststore_videos_populate()
@@ -802,20 +805,7 @@ class PhantomPlayer:
             self.__display_playlists(True)
 
     def __on_settings_playlist_close(self, closed_playlist):
-
-        # Update the playlists liststore
-        for i, row in enumerate(self.__liststore_playlists):
-            if row[PlaylistListstoreColumnsIndex._id] == closed_playlist.get_id():
-                # Update the icon
-                pixbuf = Pixbuf.new_from_file_at_size(closed_playlist.get_icon_path(),
-                                                      settings._DEFAULT_IMG_WIDTH,
-                                                      settings._DEFAULT_IMG_HEIGHT)
-                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._icon] = pixbuf
-
-                # Update the name
-                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._name] = closed_playlist.get_name()
-                break
-
+        self.__liststore_playlists_update(closed_playlist)
         if self.__current_media.is_playlist(closed_playlist):
             self.__liststore_videos_populate()
             self.__mp_widget.set_keep_playing(closed_playlist.get_keep_playing())
@@ -866,8 +856,7 @@ class PhantomPlayer:
             else:
                 video.set_position(progress / VideoProgress._end)
 
-        self.__liststore_playlists_set_progress(self.__current_media._playlist.get_id(),
-                                                self.__current_media._playlist.get_progress())
+        self.__liststore_playlists_update_progress(self.__current_media._playlist)
 
     def __on_menuitem_playlist_ignore_change(self, _, ignore):
 

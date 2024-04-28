@@ -164,6 +164,7 @@ class SettingsWindow:
         #
         self.__window_settings.set_titlebar(self.__headerbar_navigation)
         self.__window_settings.set_transient_for(parent)
+        self.__window_settings.set_modal(True)
 
     def show(self, playlist, is_new):
 
