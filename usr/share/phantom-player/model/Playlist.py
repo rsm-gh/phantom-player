@@ -25,6 +25,12 @@ from model.Video import VideoPosition
 from system_utils import format_img
 
 
+class LoadStatus:
+    _waiting_load = 0
+    _loading = 1
+    _loaded = 2
+
+
 class TimeValue:
     _minium = 0
     _maximum = 59 * 60 + 59
@@ -62,8 +68,8 @@ class Playlist(object):
         self.__start_at = 0.0
         self.__audio_track = Track.Value._undefined
         self.__subtitles_track = Track.Value._undefined
-        self.__waiting_load = False
 
+        self.__load_status = LoadStatus._waiting_load
         self.__current_video_hash = current_video_hash
 
         self.set_name(name)
@@ -88,11 +94,17 @@ class Playlist(object):
         self.__videos_instances = [self.__videos_instances[i - 1] for i in new_order_indexes]
 
         for i, video in enumerate(self.__videos_instances, 1):
-            video.set_id(i)
+            video.set_guid(i)
 
-    def update_ids(self):
+    def remove_videos(self, videos):
+        for video in videos:
+            self.__videos_instances.remove(video)
+
+        self.__recalculate_videos_guid()
+
+    def __recalculate_videos_guid(self):
         for i, video in enumerate(self.__videos_instances, 1):
-            video.set_id(i)
+            video.set_guid(i)
 
     def remove_playlist_path(self, playlist_path):
 
@@ -117,7 +129,7 @@ class Playlist(object):
         for video in removed_videos:
             self.__videos_instances.remove(video)
 
-        self.update_ids()
+        self.__recalculate_videos_guid()
 
         return removed_videos
 
@@ -142,7 +154,7 @@ class Playlist(object):
         for video in removed_videos:
             self.__videos_instances.remove(video)
 
-        self.update_ids()
+        self.__recalculate_videos_guid()
 
         return removed_videos
 
@@ -163,7 +175,7 @@ class Playlist(object):
         return True
 
     def add_video(self, video):
-        video.set_id(len(self.__videos_instances) + 1)
+        video.set_guid(len(self.__videos_instances) + 1)
         self.__videos_instances.append(video)
         self.__active_videos_nb += 1
 
@@ -188,45 +200,6 @@ class Playlist(object):
                 return True
 
         return False
-
-    def missing_videos(self, videos_id):
-        """Return if from the selected videos there is someone missing"""
-
-        for vid in videos_id:
-            for video in self.__videos_instances:
-                if video.get_id() == vid and not os.path.exists(video.get_path()):
-                    return True
-
-        return False
-
-    def ignore_video(self, video_name):
-
-        for video in self.__videos_instances:
-            if video.get_name() == video_name:
-
-                if os.path.exists(video.get_path()):
-                    video.set_ignore(True)
-                else:
-                    self.__videos_instances.remove(video)
-
-                self.__active_videos_nb -= 1
-                self.update_ids()
-                self.update_not_hidden_videos()
-
-                break
-
-    def dont_ignore_video(self, video_name):
-        for video in self.__videos_instances:
-            if video.get_name() == video_name:
-                video.set_ignore(False)
-
-                self.__active_videos_nb -= 1
-                self.update_ids()
-                self.update_not_hidden_videos()
-
-                return video
-
-        return None
 
     def can_recursive(self, rec_playlist_path):
 
@@ -271,8 +244,8 @@ class Playlist(object):
 
         return active, ignored, missing
 
-    def get_waiting_load(self):
-        return self.__waiting_load
+    def get_load_status(self):
+        return self.__load_status
 
     def get_id(self):
         return self.__id
@@ -321,7 +294,7 @@ class Playlist(object):
     def get_icon_path(self, allow_default=True):
 
         if allow_default:
-            if not self.get_waiting_load():
+            if not self.get_load_status():
                 return Paths._ICON_LOADING_PLAYLIST
 
         if self.__name != "":
@@ -406,7 +379,7 @@ class Playlist(object):
 
         return random.choice(videos)
 
-    def get_nb_videos(self):
+    def get_videos_nb(self):
         return self.__active_videos_nb
 
     def get_audio_track(self):
@@ -418,22 +391,12 @@ class Playlist(object):
     def get_random(self):
         return self.__random
 
-    def get_video(self, video_id):
+    def get_video_by_guid(self, video_guid):
         for video in self.__videos_instances:
-            if video.get_id() == video_id:
+            if video.get_guid() == video_guid:
                 return video
 
         return None
-
-    def get_videos_by_id(self, videos_id):
-        videos = []
-
-        for video_id in videos_id:
-            video = self.get_video(video_id)
-            if video is not None:
-                videos.append(video)
-
-        return videos
 
     def get_video_by_hash(self, video_hash):
         for video in self.__videos_instances:
@@ -442,14 +405,24 @@ class Playlist(object):
 
         return None
 
-    def get_last_played_video_id(self):
+    def get_videos_by_guid(self, videos_guid):
+        videos = []
+
+        for video_guid in videos_guid:
+            video = self.get_video_by_guid(video_guid)
+            if video is not None:
+                videos.append(video)
+
+        return videos
+
+    def get_last_played_video_guid(self):
 
         if self.__current_video_hash == "":
             return None
 
         for video in self.__videos_instances:
             if video.get_hash() == self.__current_video_hash:
-                return video.get_id()
+                return video.get_guid()
 
         return None
 
@@ -462,8 +435,11 @@ class Playlist(object):
     def get_current_video_hash(self):
         return self.__current_video_hash
 
-    def set_waiting_load(self, value):
-        self.__waiting_load = value
+    def set_load_status(self, value):
+        if value not in (LoadStatus._waiting_load, LoadStatus._loading, LoadStatus._loaded):
+            raise ValueError("wrong value={}".format(value))
+
+        self.__load_status = value
 
     def set_keep_playing(self, value):
         self.__keep_playing = value
@@ -512,12 +488,6 @@ class Playlist(object):
 
     def set_random(self, is_random):
         self.__random = is_random
-
-    def set_video_position(self, video_to_find, position):
-        for video in self.__videos_instances:
-            if video_to_find.get_id() == video.get_id():
-                video.set_position(position)
-                return
 
     def set_name(self, new_name, force=False):
         """

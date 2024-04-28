@@ -36,7 +36,7 @@ class Video(object):
         self.__path = path
         self.__name = name
         self.__extension = ""
-        self.__id = -1
+        self.__guid = -1
         self.__is_new = False
         self.__position = VideoPosition._start
         self.__ignore = False
@@ -66,8 +66,8 @@ class Video(object):
     def get_full_name(self):
         return self.__name + "." + self.__extension
 
-    def get_id(self):
-        return self.__id
+    def get_guid(self):
+        return self.__guid
 
     def get_ignore(self):
         return self.__ignore
@@ -115,8 +115,8 @@ class Video(object):
     def set_ignore(self, bool_value):
         self.__ignore = bool_value
 
-    def set_id(self, integer):
+    def set_guid(self, integer):
         if int(integer) < 0:
             print("video id error " + self.__name)
         else:
-            self.__id = int(integer)
+            self.__guid = int(integer)

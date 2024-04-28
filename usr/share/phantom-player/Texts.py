@@ -67,6 +67,7 @@ class Texts:
         _dont_ignore = "Don't Ignore"
         _progress_reset = "Restart Progress"
         _progress_fill = "Fill Progress"
+        _remove = "Remove from listing"
 
     class DialogVideos:
         _delete = '''Are you sure that you want to delete the selected videos?\n\nThey wont be removed from your hard drive.'''
