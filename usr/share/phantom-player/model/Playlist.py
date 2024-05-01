@@ -24,6 +24,8 @@ import Paths
 from model.Video import VideoPosition
 from system_utils import format_img
 
+_SAVE_EXTENSION = '.cfg'
+
 
 class LoadStatus:
     _waiting_load = 0
@@ -49,36 +51,18 @@ class Track:
 
 class Playlist(object):
 
-    def __init__(self,
-                 pid,
-                 name="",
-                 is_random=False,
-                 keep_playing=True,
-                 start_at=0,
-                 audio_track=Track.Value._undefined,
-                 subtitles_track=Track.Value._undefined,
-                 current_video_hash=""):
+    def __init__(self):
 
-        self.__id = pid
+        self.__guid = -1
         self.__name = ""
-
         self.__playlist_paths = {}
         self.__random = False
         self.__keep_playing = False
         self.__start_at = 0.0
         self.__audio_track = Track.Value._undefined
         self.__subtitles_track = Track.Value._undefined
-
         self.__load_status = LoadStatus._waiting_load
-        self.__current_video_hash = current_video_hash
-
-        self.set_name(name)
-
-        self.set_random(is_random)
-        self.set_keep_playing(keep_playing)
-        self.set_audio_track(audio_track)
-        self.set_subtitles_track(subtitles_track)
-        self.set_start_at(start_at)
+        self.__current_video_hash = ""
 
         # Variables
         self.__videos_instances = []
@@ -247,8 +231,8 @@ class Playlist(object):
     def get_load_status(self):
         return self.__load_status
 
-    def get_id(self):
-        return self.__id
+    def get_guid(self):
+        return self.__guid
 
     def get_linked_videos(self, path):
 
@@ -282,11 +266,7 @@ class Playlist(object):
                 sorted(self.__playlist_paths.items(), key=lambda item: item[0])]
 
     def get_save_path(self):
-        path = os.path.join(Paths._SERIES_DIR, self.__name)
-        if not path.lower().endswith(".csv"):
-            path += ".csv"
-
-        return path
+        return os.path.join(Paths._SERIES_DIR, self.__name + _SAVE_EXTENSION)
 
     def get_start_at(self):
         return self.__start_at
@@ -435,6 +415,9 @@ class Playlist(object):
     def get_current_video_hash(self):
         return self.__current_video_hash
 
+    def set_guid(self, value):
+        self.__guid = value
+
     def set_load_status(self, value):
         if value not in (LoadStatus._waiting_load, LoadStatus._loading, LoadStatus._loaded):
             raise ValueError("wrong value={}".format(value))
@@ -493,7 +476,7 @@ class Playlist(object):
         """
             Set a new name, or rename.
         """
-        if new_name.lower().endswith(".csv"):
+        if new_name.lower().endswith(_SAVE_EXTENSION):
             new_name = new_name.rsplit(".", 1)[0]
 
         if new_name == self.__name and not force:

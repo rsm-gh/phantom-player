@@ -23,7 +23,7 @@ class CurrentMedia:
 
     def is_playlist(self, playlist):
         if self._playlist is not None:
-            return self._playlist.get_id() == playlist.get_id()
+            return self._playlist.get_guid() == playlist.get_guid()
 
         return False
 

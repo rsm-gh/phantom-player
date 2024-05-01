@@ -203,9 +203,9 @@ class SettingsWindow:
             self.__current_playlist.set_name(new_name)
 
     def __get_previous_playlist(self):
-        keys = [playlist.get_id() for playlist in self.__playlists.values() if playlist.get_load_status() == PlaylistLoadStatus._loaded]
+        keys = [playlist.get_guid() for playlist in self.__playlists.values() if playlist.get_load_status() == PlaylistLoadStatus._loaded]
 
-        prev_index = keys.index(self.__current_playlist.get_id()) - 1
+        prev_index = keys.index(self.__current_playlist.get_guid()) - 1
 
         if prev_index < 0:
             return None
@@ -218,8 +218,8 @@ class SettingsWindow:
             return self.__playlists[prev_playlist_name]
 
     def __get_next_playlist(self):
-        keys = [playlist.get_id() for playlist in self.__playlists.values() if playlist.get_load_status() == PlaylistLoadStatus._loaded]
-        next_index = keys.index(self.__current_playlist.get_id()) + 1
+        keys = [playlist.get_guid() for playlist in self.__playlists.values() if playlist.get_load_status() == PlaylistLoadStatus._loaded]
+        next_index = keys.index(self.__current_playlist.get_guid()) + 1
 
         try:
             next_playlist_name = keys[next_index]
@@ -312,7 +312,7 @@ class SettingsWindow:
         self.__unfreeze_all()
 
     def __thread_reload_paths(self):
-        video_factory.load(self.__current_playlist, is_startup=False)
+        video_factory.discover_all(self.__current_playlist, is_startup=False)
         self.__unfreeze_all()
 
     def __unfreeze_all(self):

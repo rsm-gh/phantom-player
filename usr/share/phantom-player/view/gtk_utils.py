@@ -23,11 +23,13 @@ from gi.repository import Gtk, Gdk
 from Texts import Texts
 from Paths import _ICON_LOGO_SMALL, _HOME_DIR
 
+
 class FontColors:
     _default = 'theme_text_color'
     _success = 'success_color'
     _warning = 'warning_color'
     _error = 'error_color'
+
 
 def set_css(widget, css):
     provider = Gtk.CssProvider()
