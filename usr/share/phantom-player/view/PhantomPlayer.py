@@ -36,6 +36,7 @@ from controller.CCParser import CCParser
 from controller import video_factory
 from controller import playlist_factory
 from model.Playlist import Playlist
+from model.Playlist import _SAVE_EXTENSION as _PLAYLIST_EXTENSION
 from model.Playlist import LoadStatus as PlaylistLoadStatus
 from model.CurrentMedia import CurrentMedia
 from model.Video import VideoPosition, VideoProgress
@@ -194,12 +195,12 @@ class PhantomPlayer:
             self.__window_root.set_application(application)
 
         self.__window_playlist_settings = SettingsWindow(parent=self.__window_root,
-                                                playlists=self.__playlists,
-                                                add_function=self.__on_settings_playlist_add,
-                                                delete_function=self.__on_settings_playlist_delete,
-                                                restart_function=self.__on_settings_playlist_restart,
-                                                close_function=self.__on_settings_playlist_close,
-                                                change_function=self.__on_settings_playlist_change)
+                                                         playlists=self.__playlists,
+                                                         add_function=self.__on_settings_playlist_add,
+                                                         delete_function=self.__on_settings_playlist_delete,
+                                                         restart_function=self.__on_settings_playlist_restart,
+                                                         close_function=self.__on_settings_playlist_close,
+                                                         change_function=self.__on_settings_playlist_change)
 
         self.__checkbox_prefer_dark_theme.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._prefer_dark_theme, True))
@@ -382,16 +383,18 @@ class PhantomPlayer:
         if os.path.exists(_SERIES_DIR):
             for file_name in sorted(os.listdir(_SERIES_DIR)):
 
-                if not file_name.lower().endswith('.csv'):
+                if not file_name.lower().endswith(_PLAYLIST_EXTENSION):
                     continue
 
-                new_playlist = playlist_factory.load_from_file(file_path=os.path.join(_SERIES_DIR, file_name),
-                                                               pid=len(self.__playlists))
+                full_path = os.path.join(_SERIES_DIR, file_name)
+
+                new_playlist = playlist_factory.load(file_path=full_path)
+                new_playlist.set_guid(len(self.__playlists))
 
                 if new_playlist.get_name() == current_playlist_name:
                     current_playlist = new_playlist
 
-                self.__playlists[new_playlist.get_id()] = new_playlist
+                self.__playlists[new_playlist.get_guid()] = new_playlist
 
                 if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
                     GLib.idle_add(self.__liststore_playlists_append, new_playlist)
@@ -415,7 +418,7 @@ class PhantomPlayer:
             if not self.__window_playlist_settings.get_visible():
                 GLib.idle_add(self.__display_playlists, False)
 
-            video_factory.load(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
+            video_factory.discover_all(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
 
             GLib.idle_add(self.__liststore_playlists_update_progress, current_playlist)
 
@@ -429,7 +432,7 @@ class PhantomPlayer:
         #   Load the rest of the videos
         #
         for playlist in self.__playlists.values():
-            if current_playlist is not None and playlist.get_id() == current_playlist.get_id():
+            if current_playlist is not None and playlist.get_guid() == current_playlist.get_guid():
                 continue
 
             playlist.set_load_status(PlaylistLoadStatus._loading)
@@ -437,7 +440,7 @@ class PhantomPlayer:
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
             GLib.idle_add(self.__on_settings_playlist_close, playlist)
 
-            video_factory.load(playlist, is_startup=True)  # No add_func because the GUI is frozen on the first playlist
+            video_factory.discover_all(playlist, is_startup=True)  # No add_func because the GUI is frozen on the first playlist
 
             GLib.idle_add(self.__liststore_playlists_update_progress, playlist)
 
@@ -457,13 +460,13 @@ class PhantomPlayer:
 
     def __liststore_playlists_update_progress(self, playlist):
         for i, row in enumerate(self.__liststore_playlists):
-            if row[PlaylistListstoreColumnsIndex._id] == playlist.get_id():
+            if row[PlaylistListstoreColumnsIndex._id] == playlist.get_guid():
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = playlist.get_progress()
                 return
 
     def __liststore_playlists_update(self, playlist):
         for i, row in enumerate(self.__liststore_playlists):
-            if row[PlaylistListstoreColumnsIndex._id] == playlist.get_id():
+            if row[PlaylistListstoreColumnsIndex._id] == playlist.get_guid():
                 # Update the icon
                 pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(),
                                                       settings._DEFAULT_IMG_WIDTH,
@@ -481,7 +484,7 @@ class PhantomPlayer:
         pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(),
                                               settings._DEFAULT_IMG_WIDTH,
                                               settings._DEFAULT_IMG_HEIGHT)
-        self.__liststore_playlists.append([playlist.get_id(),
+        self.__liststore_playlists.append([playlist.get_guid(),
                                            pixbuf,
                                            playlist.get_name(),
                                            playlist.get_progress()])
@@ -755,7 +758,7 @@ class PhantomPlayer:
 
     def __on_settings_playlist_add(self, playlist):
 
-        self.__playlists[playlist.get_id()] = playlist
+        self.__playlists[playlist.get_guid()] = playlist
 
         if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
             self.__liststore_playlists_append(playlist)
@@ -780,7 +783,7 @@ class PhantomPlayer:
 
     def __on_settings_playlist_delete(self, playlist):
 
-        self.__playlists.pop(playlist.get_id())
+        self.__playlists.pop(playlist.get_guid())
 
         # Remove from the player (if necessary)
         if self.__current_media.is_playlist(playlist):
@@ -797,7 +800,7 @@ class PhantomPlayer:
 
         # remove the item from the playlist store
         for row in self.__liststore_playlists:
-            if row[PlaylistListstoreColumnsIndex._id] == playlist.get_id():
+            if row[PlaylistListstoreColumnsIndex._id] == playlist.get_guid():
                 self.__liststore_playlists.remove(row.iter)
                 break
 
@@ -823,7 +826,8 @@ class PhantomPlayer:
         self.__liststore_playlists_populate()
 
     def __on_button_new_playlist_clicked(self, *_):
-        new_playlist = Playlist(pid=len(self.__playlists))
+        new_playlist = Playlist()
+        new_playlist.set_guid(len(self.__playlists))
         new_playlist.set_load_status(PlaylistLoadStatus._loading)
         self.__window_playlist_settings.show(new_playlist, is_new=True)
 
