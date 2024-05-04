@@ -15,6 +15,7 @@
 
 import os
 
+from settings import _VIDEO_HASH_SIZE
 from model.Playlist import Playlist
 from model.PlaylistPath import PlaylistPath
 from model.Video import VideoPosition, Video
@@ -158,9 +159,6 @@ def __load_settings(playlist, file_lines):
                     current_video_hash = value
                 except Exception:
                     print("\tError getting 'current_video_hash'")
-                else:
-                    if len(current_video_hash) < 20:  # in case the CSV parser saves "false" as value
-                        current_video_hash = ""
             case _:
                 print("Error: wrong attr name on line=", line)
 
@@ -245,7 +243,7 @@ def __load_videos(playlist, file_lines):
         # Since hashes are the ID of videos, if there's no hash, the
         # video shall be rejected.
         hash_file = columns[0].strip()
-        if len(hash_file) < 20:
+        if len(hash_file) < _VIDEO_HASH_SIZE:
             print("\tError: Video with invalid hash.", line)
             continue
 
