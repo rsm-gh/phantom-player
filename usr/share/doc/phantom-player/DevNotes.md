@@ -8,7 +8,7 @@
 + Finish the option "end at"
 + Discover videos in the background, once all the series are loaded? To speed up the startup.
 + Settings dialog, paths, display how may valid videos, how many missing videos in the liststore.
-
++ Improve user messages. Example: if path not added, or video not added, explain why.
 ### Bugs:
 + When searching in the playlist liststore, empty the videos if no playlist is selected.
 + When selecting multiple videos to re-order with drag-and-drop, only the fist one is moved.

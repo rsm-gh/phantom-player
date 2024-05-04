@@ -30,6 +30,7 @@ from Paths import *
 from Texts import Texts
 from model.PlaylistPath import PlaylistPath
 from model.Playlist import LoadStatus as PlaylistLoadStatus
+from controller.playlist_factory import _COLUMN_SEPARATOR
 from view import gtk_utils
 from controller import video_factory
 
@@ -177,7 +178,7 @@ class SettingsWindow:
         self.__load_playlist()
 
         if is_new:
-            self.__window_settings.set_title("New Playlist")
+            self.__window_settings.set_title(Texts.WindowSettings._new_title)
 
         self.__window_settings.show()
 
@@ -455,6 +456,10 @@ class SettingsWindow:
 
         path = gtk_utils.dialog_select_directory(self.__window_settings)
         if path is None:
+            return
+
+        elif _COLUMN_SEPARATOR in path:
+            gtk_utils.dialog_info(self.__window_settings, Texts.WindowSettings._add_path_error.format(_COLUMN_SEPARATOR))
             return
 
         playlist_path = PlaylistPath(path=path,

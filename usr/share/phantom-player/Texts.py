@@ -47,6 +47,7 @@ class Texts:
         _new_title = "New Playlist"
         _playlist_name_empty = "The name can not be empty."
 
+        _add_path_error = 'It is not possible to add a path (or recursive path) that contains the following character "{}"'
         _add_path_title = "Discovering Videos"
         _add_path_videos = _LONG_TIME_PLEASE_WAIT
         _add_path_videos_done = "Inspection done, the following videos will be added:"
