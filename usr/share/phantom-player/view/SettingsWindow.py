@@ -587,7 +587,7 @@ class SettingsWindow:
             self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
 
             removed_videos = self.__current_playlist.remove_recursive_videos(playlist_path)
-            if removed_videos > 0:
+            if len(removed_videos) > 0:
                 self.__dialog_paths.show()
                 for video in removed_videos:
                     self.__liststore_videos_path.append([video.get_path()])
