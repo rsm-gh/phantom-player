@@ -128,6 +128,10 @@ def __get_videos_from_dir(dir_path, recursive):
     if recursive:
         for dp, dn, filenames in os.walk(dir_path):
             for filename in filenames:
+
+                if filename.endswith(".part"):
+                    continue
+
                 path = os.path.join(dp, filename)
                 if _COLUMN_SEPARATOR in path:
                     print("\tWarning:__get_videos_from_dir excluded an invalid path=", path)
@@ -135,6 +139,10 @@ def __get_videos_from_dir(dir_path, recursive):
                     paths.append(path)
     else:
         for filename in os.listdir(dir_path):
+
+            if filename.endswith(".part"):
+                continue
+
             path = os.path.join(dir_path, filename)
             if _COLUMN_SEPARATOR in path:
                 print("\tWarning:__get_videos_from_dir excluded an invalid path=", path)
