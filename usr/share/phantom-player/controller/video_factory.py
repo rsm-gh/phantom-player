@@ -54,7 +54,8 @@ def discover(playlist, playlist_paths=None, add_func=None):
             continue
 
         for video_path in __get_videos_from_dir(playlist_path.get_path(),
-                                                playlist_path.get_recursive()):
+                                                playlist_path.get_recursive(),
+                                                list(current_data.values())):
 
             if video_path in current_data.values():
                 continue  # No message on already added videos
@@ -112,7 +113,7 @@ def __file_hash(file_path):
     return file_hash.hexdigest()
 
 
-def __get_videos_from_dir(dir_path, recursive):
+def __get_videos_from_dir(dir_path, recursive, exclude_paths):
     if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
         return []
 
@@ -130,7 +131,11 @@ def __get_videos_from_dir(dir_path, recursive):
                     continue
 
                 path = os.path.join(dp, filename)
-                if _COLUMN_SEPARATOR in path:
+
+                if path in exclude_paths:
+                    continue
+
+                elif _COLUMN_SEPARATOR in path:
                     print("\tWarning:__get_videos_from_dir excluded an invalid path=", path)
 
                 elif __file_is_video(path):
