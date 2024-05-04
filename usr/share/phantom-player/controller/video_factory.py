@@ -20,6 +20,7 @@ import magic
 import hashlib
 
 from model.Video import Video
+from controller.playlist_factory import _COLUMN_SEPARATOR
 
 _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
@@ -118,9 +119,26 @@ def __get_videos_from_dir(dir_path, recursive):
     if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
         return []
 
-    if recursive:
-        paths = [os.path.join(dp, filename) for dp, dn, filenames in os.walk(dir_path) for filename in filenames]
-    else:
-        paths = [os.path.join(dir_path, filename) for filename in os.listdir(dir_path)]
+    elif _COLUMN_SEPARATOR in dir_path:
+        print("\tWarning:__get_videos_from_dir excluded an invalid path=", dir_path)
+        return []
 
-    return [path for path in sorted(paths) if __file_is_video(path)]
+    paths = []
+
+    if recursive:
+        for dp, dn, filenames in os.walk(dir_path):
+            for filename in filenames:
+                path = os.path.join(dp, filename)
+                if _COLUMN_SEPARATOR in path:
+                    print("\tWarning:__get_videos_from_dir excluded an invalid path=", path)
+                else:
+                    paths.append(path)
+    else:
+        for filename in os.listdir(dir_path):
+            path = os.path.join(dir_path, filename)
+            if _COLUMN_SEPARATOR in path:
+                print("\tWarning:__get_videos_from_dir excluded an invalid path=", path)
+            else:
+                paths.append(path)
+
+    return paths
