@@ -46,7 +46,7 @@ class Track:
     class Type:
         _audio = 0
         _subtitles = 1
-        _spu = 2
+        _video = 2
 
 
 class Playlist(object):

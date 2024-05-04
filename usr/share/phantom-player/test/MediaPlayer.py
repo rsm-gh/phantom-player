@@ -53,6 +53,6 @@ class MediaPlayer(Gtk.Window):
 
 if __name__ == '__main__':
     player = MediaPlayer()
-    player.play_video('/home/rsm/Videos/vid.avi')
+    player.play_video('/home/rsm/Videos/test.mkv')
     Gtk.main()
     VLC_INSTANCE.release()
