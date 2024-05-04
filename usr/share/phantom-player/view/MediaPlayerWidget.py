@@ -131,9 +131,18 @@ def format_track(track):
     number = str(track[0])
 
     try:
-        content = track[1].strip().replace('[', '').replace(']', '').replace('_', ' ').title().strip()
+        content = " ".join(track[1].replace('_', ' ').split()).replace('[', '').replace(']', '').title().strip()
+
+        if 'Track' in content and "-" in content:
+            content = content.split('-', 1)[1].strip()
+
+        if content.startswith("Track "):
+            content = "Track {}".format(number)
+
+
     except Exception as e:
         content = track[1]
+        print(track)
         print(str(e))
 
     if len(number) == 0:
@@ -918,7 +927,12 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_menuitem_file_subs_activate(self, *_):
 
-        path = gtk_utils.dialog_select_file(self.__root_window)
+        file_filter = Gtk.FileFilter()
+        file_filter.set_name('*.srt')
+        file_filter.add_pattern('*.srt')
+
+        path = gtk_utils.dialog_select_file(parent=self.__root_window,
+                                            file_filter=file_filter)
 
         if path is not None:
             self.__vlc_widget.player.video_set_subtitle_file(path)
