@@ -403,37 +403,15 @@ class PhantomPlayer:
         GLib.idle_add(self.__button_new_playlist.set_sensitive, True)
 
         #
-        #    Start by loading the last playlist
+        #    Load the playlists (starting by the saved playlist)
         #
+
+        playlists = list(self.__playlists.values())
         if current_playlist is not None:
+            playlists.remove(current_playlist)
+            playlists.insert(0, current_playlist)
 
-            GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(current_playlist.get_name()))
-            current_playlist.set_load_status(PlaylistLoadStatus._loading)
-            self.__current_media = CurrentMedia(current_playlist)
-            GLib.idle_add(self.__on_settings_playlist_close, current_playlist)
-
-            # To ensure that the window is already maximized, and the pan will be correctly sized
-            # probably .25 seconds may be enough, but 2 seconds is to avoid blinking the interface.
-            sleep(2)
-            if not self.__window_playlist_settings.get_visible():
-                GLib.idle_add(self.__display_playlists, False)
-
-            video_factory.discover_all(current_playlist, is_startup=True, add_func=self.__liststore_videos_add_glib)
-
-            GLib.idle_add(self.__liststore_playlists_update_progress, current_playlist)
-
-            current_playlist.set_load_status(PlaylistLoadStatus._loaded)
-
-            if self.__current_media.is_playlist(
-                    current_playlist) and current_playlist.get_load_status() == PlaylistLoadStatus._loaded:
-                GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
-
-        #
-        #   Load the rest of the videos
-        #
-        for playlist in self.__playlists.values():
-            if current_playlist is not None and playlist.get_guid() == current_playlist.get_guid():
-                continue
+        for playlist in playlists:
 
             playlist.set_load_status(PlaylistLoadStatus._loading)
 
@@ -448,6 +426,7 @@ class PhantomPlayer:
 
             if self.__current_media.is_playlist(playlist) and playlist.get_load_status() == PlaylistLoadStatus._loaded:
                 GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
+
 
         #
         #   Enable the GUI
