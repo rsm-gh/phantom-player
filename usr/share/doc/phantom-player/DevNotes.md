@@ -3,14 +3,12 @@
 ## Phantom-Player
 
 ### Remaining Work:
-+ Manage multiple paths into the playlist settings menu.
 + Apply the "load video/discover" methods of the settings dialog into a thread.
 + Finish the option "end at"
 + Discover videos in the background, once all the series are loaded? To speed up the startup.
 + Settings dialog, paths, display how may valid videos, how many missing videos in the liststore.
 + Improve user messages. Example: if path not added, or video not added, explain why.
 ### Bugs:
-+ When searching in the playlist liststore, empty the videos if no playlist is selected.
 + When selecting multiple videos to re-order with drag-and-drop, only the fist one is moved.
 
 ### Features to add:
@@ -19,6 +17,7 @@
 + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
 
 ## MediaPlayerWidget
++ Enable video tracks?
 
 ### Remaining Work:
 + `set_video(play=False)` currently does nothing, but it should set a video and load a frame image without starting to play it.
@@ -31,7 +30,6 @@
 
 ### Bugs:
 + Test/Fix (when cancel) the option to choose the subtitles' file...
-+ Fixes to the menu of the subtitles & audio tracks?
 + Sometimes when clicking very fast the progress scale, the video position is not modified. Despite multiple ways of trying to fix this, I haven't found a solution.
 + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
     I haven't found a solution for this, because the press signals connect to the button and not the scale.

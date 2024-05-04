@@ -911,10 +911,10 @@ class MediaPlayerWidget(Gtk.VBox):
             self.__vlc_widget.player.audio_set_track(track)
 
         elif track_type == Track.Type._subtitles:
-            self.__vlc_widget.player.video_set_track(track)
-
-        elif track_type == Track.Type._spu:
             self.__vlc_widget.player.video_set_spu(track)
+
+        elif track_type == Track.Type._video:
+            self.__vlc_widget.player.video_set_track(track)
 
     def __on_menuitem_file_subs_activate(self, *_):
 

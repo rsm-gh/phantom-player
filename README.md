@@ -1,7 +1,3 @@
-
-> **NOTE: THE PLAYER IS CURRENTLY UNDER DEVELOPMENT. The first stable version is not yet released**
-
-
 ![Playlists Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview-playlists.png)  
 ![Videos Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview-videos.png)  
 <sub><sup>*The Desktop theme defines the look and the icons of the player.</sup></sub>
@@ -21,6 +17,11 @@
 Beside the media playing, this software will be particularly useful for:
 + Reproducing videos that are coming from torrents.
 + Discover the videos from a hard-drive and organize them.
+
+
+> **NOTE: THE PLAYER IS CURRENTLY UNDER DEVELOPMENT,
+> and the first stable version is not yet released.**  
+> The remaining work can be read [here](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/DevNotes.md).
 
 ## How to Install
 
