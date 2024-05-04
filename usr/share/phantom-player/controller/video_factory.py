@@ -91,11 +91,8 @@ def discover(playlist, playlist_paths=None, add_func=None):
                 add_func(playlist, new_video)
 
 
-def __file_is_video(path, forgive_broken_links=False):
+def __file_is_video(path):
     if os.path.islink(path):
-        if forgive_broken_links and not os.path.exists(os.path.realpath(path)):
-            return True
-
         mimetype = _MAGIC_MIMETYPE.file(os.path.realpath(path))
     else:
         mimetype = _MAGIC_MIMETYPE.file(path)
@@ -135,7 +132,8 @@ def __get_videos_from_dir(dir_path, recursive):
                 path = os.path.join(dp, filename)
                 if _COLUMN_SEPARATOR in path:
                     print("\tWarning:__get_videos_from_dir excluded an invalid path=", path)
-                else:
+
+                elif __file_is_video(path):
                     paths.append(path)
     else:
         for filename in os.listdir(dir_path):
@@ -146,7 +144,8 @@ def __get_videos_from_dir(dir_path, recursive):
             path = os.path.join(dir_path, filename)
             if _COLUMN_SEPARATOR in path:
                 print("\tWarning:__get_videos_from_dir excluded an invalid path=", path)
-            else:
+
+            elif __file_is_video(path):
                 paths.append(path)
 
     return paths
