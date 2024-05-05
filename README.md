@@ -58,6 +58,7 @@ Beside the media playing, this software will be particularly useful for:
 + All paths (and video names) containing the pipe "|" character will be excluded from the software.
 + If a video has a "*.srt" file with the same name and same location, it will be used as default subtitles.
 + "*.part" files will always be excluded since they break the hashing system.
++ It is not possible to remove videos while the playlist is loading/discovering videos.
 
 ### Development documentation
 
