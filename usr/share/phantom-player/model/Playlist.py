@@ -90,6 +90,19 @@ class Playlist(object):
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_guid(i)
 
+    def requires_discover(self, is_startup):
+
+        auto_discover = False
+        for playlist_path in self.get_playlist_paths():
+            if playlist_path.get_startup_discover():
+                auto_discover = True
+                break
+
+        if not is_startup or (is_startup and auto_discover):
+            return True
+
+        return False
+
     def remove_playlist_path(self, playlist_path):
 
         path = playlist_path.get_path()
