@@ -592,9 +592,7 @@ class PhantomPlayer:
 
         if self.__current_media._playlist.get_keep_playing():
             self.__set_video()
-
         else:
-            self.__mp_widget.pause()
             self.__window_root.unfullscreen()
 
     def __on_iconview_playlists_press_event(self, iconview, event):
