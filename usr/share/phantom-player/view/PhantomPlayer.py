@@ -353,13 +353,17 @@ class PhantomPlayer:
         #
         # Play the video
         #
+        if video.get_position() == VideoPosition._end and replay:
+            video_position = VideoPosition._start
+        else:
+            video_position = video.get_position()
+
         self.__mp_widget.set_video(video.get_path(),
-                                   position=video.get_position(),
+                                   position=video_position,
                                    start_at=self.__current_media._playlist.get_start_at(),
                                    subtitles_track=self.__current_media._playlist.get_subtitles_track(),
                                    audio_track=self.__current_media._playlist.get_audio_track(),
-                                   play=play,
-                                   replay=replay)
+                                   play=play)
 
         if self.__mp_widget.get_random() != self.__current_media._playlist.get_random():
             self.__mp_widget.set_random(self.__current_media._playlist.get_random())
@@ -558,7 +562,7 @@ class PhantomPlayer:
 
     def __on_media_player_position_changed(self, _, position):
 
-        if self.__current_media.get_video_progress() == VideoProgress._end:
+        if self.__current_media.get_video_position() == VideoPosition._end:
             # This is to avoid updating the progress on videos that was
             # already played.
             return

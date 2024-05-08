@@ -20,9 +20,7 @@
 + Enable video tracks?
 
 ### Remaining Work:
-+ `set_video(play=False)` currently does nothing, but it should set a video and load a frame image without starting to play it.
 + `player.set_track()` returns a status. It would be good to read the status and display a message in case of error.
-+ Start/Stop the thread `__on_thread_player_activity` depending on the VLC status?
 
 ### Features to add:
 + When the media changes, display a label. I think it can be done with the VLC API.
@@ -34,6 +32,7 @@
 + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
     I haven't found a solution for this, because the press signals connect to the button and not the scale.
 + VolumeButton: it should get hidden when clicking out of the button. Is this a problem of GTK?
++ sometimes if the progress is changed while the video is paused, it starts playing. This seems like a VLC bug.
 
 ### Patches:
 
