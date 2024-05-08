@@ -69,3 +69,10 @@ class CurrentMedia:
             return
 
         return self.__video.get_progress()
+
+    def get_video_position(self):
+
+        if self.__video is None:
+            return
+
+        return self.__video.get_position()
