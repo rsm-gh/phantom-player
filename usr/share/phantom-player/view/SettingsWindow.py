@@ -171,8 +171,10 @@ class SettingsWindow:
     def show(self, playlist, is_new):
 
         # reload the font colors in case that they have changed.
-        _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default, on_error=settings.FontColors._default)
-        _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error, on_error=settings.FontColors._error)
+        _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default,
+                                                                  on_error=settings.FontColors._default)
+        _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error,
+                                                                on_error=settings.FontColors._error)
 
         self.__current_playlist = playlist
         self.__is_new_playlist = is_new
@@ -207,7 +209,8 @@ class SettingsWindow:
         playlist_factory.save(self.__current_playlist)  # Important in case of a crash
 
     def __get_previous_playlist(self):
-        keys = [playlist.get_guid() for playlist in self.__playlists.values() if playlist.get_load_status() == PlaylistLoadStatus._loaded]
+        keys = [playlist.get_guid() for playlist in self.__playlists.values() if
+                playlist.get_load_status() == PlaylistLoadStatus._loaded]
 
         prev_index = keys.index(self.__current_playlist.get_guid()) - 1
 
@@ -222,7 +225,8 @@ class SettingsWindow:
             return self.__playlists[prev_playlist_name]
 
     def __get_next_playlist(self):
-        keys = [playlist.get_guid() for playlist in self.__playlists.values() if playlist.get_load_status() == PlaylistLoadStatus._loaded]
+        keys = [playlist.get_guid() for playlist in self.__playlists.values() if
+                playlist.get_load_status() == PlaylistLoadStatus._loaded]
         next_index = keys.index(self.__current_playlist.get_guid()) + 1
 
         try:
@@ -316,9 +320,9 @@ class SettingsWindow:
         self.__unfreeze_all()
 
     def __thread_reload_paths(self):
-        video_factory.discover_all(self.__current_playlist,
-                                   is_startup=False,
-                                   update_func=self.__liststore_videos_update_glib)
+        video_factory.discover(self.__current_playlist,
+                               is_startup=False,
+                               update_func=self.__liststore_videos_update_glib)
         self.__unfreeze_all()
 
     def __unfreeze_all(self):
@@ -464,7 +468,8 @@ class SettingsWindow:
             return
 
         elif _COLUMN_SEPARATOR in path:
-            gtk_utils.dialog_info(self.__window_settings, Texts.WindowSettings._add_path_error.format(_COLUMN_SEPARATOR))
+            gtk_utils.dialog_info(self.__window_settings,
+                                  Texts.WindowSettings._add_path_error.format(_COLUMN_SEPARATOR))
             return
 
         playlist_path = PlaylistPath(path=path,

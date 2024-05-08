@@ -16,7 +16,7 @@
 import os
 
 from settings import _VIDEO_HASH_SIZE
-from model.Playlist import Playlist
+from model.Playlist import Playlist, LoadStatus
 from model.PlaylistPath import PlaylistPath
 from model.Video import VideoPosition, Video
 from Paths import _SERIES_DIR
@@ -67,6 +67,12 @@ def load(file_path):
 
 
 def save(playlist):
+
+    if playlist.get_load_status() == LoadStatus._waiting_load:
+        return
+
+    print("Saving... {}".format(playlist.get_name()))
+
     if not os.path.exists(_SERIES_DIR):
         os.mkdir(_SERIES_DIR)
 
