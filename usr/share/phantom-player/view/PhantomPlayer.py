@@ -82,12 +82,11 @@ class PhantomPlayer:
 
         self.__playlist_new = None
         self.__playlists = OrderedDict()
-        self.__playlists_loaded = False
         self.__current_playlist_loaded = False
 
         self.__current_media = CurrentMedia()
         self.__is_full_screen = None
-        self.__threads = []
+        self.__quit_requested = False
 
         self.__configuration = CCParser(_CONF_FILE, GlobalConfigTags._main_section)
 
@@ -146,7 +145,7 @@ class PhantomPlayer:
         # GTK Binding
         #
         self.__window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        self.__window_root.connect('delete-event', self.quit)
+        self.__window_root.connect('delete-event', self.__on_delete_event)
         self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
 
         self.__entry_search_playlists.connect("changed", self.__on_entry_search_playlists_changed)
@@ -231,25 +230,26 @@ class PhantomPlayer:
         #
         #    Load the existent playlist
         #
-        th = Thread(target=self.__playlists_load)
-        th.start()
-        self.__threads.append(th)
+        self.__thread_load_playlists = Thread(target=self.__playlists_load)
+        self.__thread_load_playlists.start()
 
     def present(self):
         self.__window_root.present()
 
-    def join(self):
-        for th in self.__threads:
-            th.join()
-
-    def save(self):
-        if self.__playlists_loaded:
-            for playlist in self.__playlists.values():
-                playlist_factory.save(playlist)
-
-    def quit(self, *_):
+    def __on_delete_event(self, *_):
+        self.__mp_widget.pause() # faster than quit
+        self.__window_root.hide() # GLib is used to hide the GUI without LAG
+        self.__quit_requested = True
         self.__mp_widget.quit()
+        self.__thread_load_playlists.join()
         VLC_INSTANCE.release()
+        for playlist in self.__playlists.values():
+            playlist_factory.save(playlist)
+
+        return False
+
+    def get_quit(self):
+        return self.__quit_requested
 
     def __load_fonts(self):
         _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default,
@@ -373,33 +373,38 @@ class PhantomPlayer:
 
     def __playlists_load(self):
 
+        killed = False
         current_playlist_name = self.__configuration.get_str(GlobalConfigTags._current_playlist)
         current_playlist = None
 
         #
         # Load the playlists
         #
-
-        GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_headers)
-
         if os.path.exists(_SERIES_DIR):
             for file_name in sorted(os.listdir(_SERIES_DIR)):
 
-                if not file_name.lower().endswith(_PLAYLIST_EXTENSION):
+                if self.get_quit():
+                    killed = True
+                    break
+
+                elif not file_name.lower().endswith(_PLAYLIST_EXTENSION):
                     continue
 
                 full_path = os.path.join(_SERIES_DIR, file_name)
 
-                new_playlist = playlist_factory.load(file_path=full_path)
-                new_playlist.set_guid(len(self.__playlists))
+                GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(file_name))
 
-                if new_playlist.get_name() == current_playlist_name:
-                    current_playlist = new_playlist
+                playlist = playlist_factory.load(file_path=full_path)
+                playlist.set_guid(len(self.__playlists))
+                playlist.set_load_status(PlaylistLoadStatus._loading)
 
-                self.__playlists[new_playlist.get_guid()] = new_playlist
+                if playlist.get_name() == current_playlist_name:
+                    current_playlist = playlist
 
-                if new_playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
-                    GLib.idle_add(self.__liststore_playlists_append, new_playlist)
+                self.__playlists[playlist.get_guid()] = playlist
+
+                if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
+                    GLib.idle_add(self.__liststore_playlists_append, playlist)
 
         # Once the playlists headers are loaded, it is possible to create new playlists.
         GLib.idle_add(self.__button_new_playlist.set_sensitive, True)
@@ -415,17 +420,19 @@ class PhantomPlayer:
 
         for playlist in playlists:
 
-            playlist.set_load_status(PlaylistLoadStatus._loading)
+            if self.get_quit():
+                killed = True
+                break
 
-            GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
             GLib.idle_add(self.__on_settings_playlist_close, playlist)
 
-            video_factory.discover_all(playlist,
-                                       is_startup=True,
-                                       update_func=self.__liststore_videos_update_glib)  # No add_func because the GUI is frozen on the first playlist
+            if playlist.requires_discover(is_startup=True):
+                GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_discover.format(playlist.get_name()))
+                video_factory.discover(playlist,
+                                       update_func=self.__liststore_videos_update_glib,
+                                       quit_func=self.get_quit)  # No add_func because the GUI is frozen on the first playlist
 
             GLib.idle_add(self.__liststore_playlists_update_progress, playlist)
-
             playlist.set_load_status(PlaylistLoadStatus._loaded)
 
             if self.__current_media.is_playlist(playlist) and playlist.get_load_status() == PlaylistLoadStatus._loaded:
@@ -437,8 +444,11 @@ class PhantomPlayer:
         GLib.idle_add(self.__window_root.set_sensitive, True)
         GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
         GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlists_ended)
-        self.__playlists_loaded = True
-        print("Load playlist ended.")
+
+        if killed:
+            print("Load playlist killed.")
+        else:
+            print("Load playlist ended.")
 
     def __liststore_playlists_update_progress(self, playlist):
         if playlist is None:

@@ -41,14 +41,6 @@ class PhantomApp(Gtk.Application):
             self.__phantom_player = PhantomPlayer(application=self)
             self.__phantom_player.present()
 
-    def close(self):
-        if self.__phantom_player is None:
-            return
-
-        self.__phantom_player.join()
-        self.__phantom_player.save()
-
-
 app = PhantomApp(application_id="com.senties-martinelli.PhantomPlayer")
 app.run(sys.argv)
-app.close()
+print('ENDED?')

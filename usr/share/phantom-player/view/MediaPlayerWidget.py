@@ -719,10 +719,14 @@ class MediaPlayerWidget(Gtk.VBox):
         return False
 
     def __set_cursor_empty(self):
-        self.get_window().set_cursor(self.__empty_cursor)
+        window = self.get_window()
+        if window is not None: # it can become none when quitting.
+            window.set_cursor(self.__empty_cursor)
 
     def __set_cursor_default(self):
-        self.get_window().set_cursor(self.__default_cursor)
+        window = self.get_window()
+        if window is not None: # it can become none when quitting.
+            window.set_cursor(self.__default_cursor)
 
     def __set_fullscreen(self, fullscreen):
 

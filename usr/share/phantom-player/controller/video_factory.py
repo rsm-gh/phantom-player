@@ -26,18 +26,7 @@ _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
 
 
-def discover_all(playlist, is_startup, add_func=None, update_func=None):
-    auto_discover = False
-    for playlist_path in playlist.get_playlist_paths():
-        if playlist_path.get_startup_discover():
-            auto_discover = True
-            break
-
-    if not is_startup or (is_startup and auto_discover):
-        discover(playlist, add_func=add_func, update_func=update_func)
-
-
-def discover(playlist, playlist_paths=None, add_func=None, update_func=None):
+def discover(playlist, playlist_paths=None, add_func=None, update_func=None, quit_func=None):
     print("Discovering new videos of '{}'...".format(playlist.get_name()))
 
     current_data = {video.get_hash(): video.get_path() for video in playlist.get_videos()}
@@ -46,54 +35,113 @@ def discover(playlist, playlist_paths=None, add_func=None, update_func=None):
         playlist_paths = playlist.get_playlist_paths()
 
     for playlist_path in playlist_paths:
+        __discover_playlist_path(playlist=playlist,
+                                 playlist_path=playlist_path,
+                                 exclude_data=list(current_data.values()),
+                                 current_data=current_data,
+                                 add_func=add_func,
+                                 update_func=update_func,
+                                 quit_func=quit_func)
 
-        if os.path.exists(playlist_path.get_path()):
-            print("\tDiscovering...", playlist_path.get_path())
+
+def __discover_playlist_path(playlist,
+                             playlist_path,
+                             exclude_data,
+                             current_data,
+                             add_func=None,
+                             update_func=None,
+                             quit_func=None):
+    source_path = playlist_path.get_path()
+
+    if os.path.exists(source_path):
+        print("\tDiscovering...", source_path)
+    else:
+        print("\tSkipping...", source_path)
+        return
+
+    if not os.path.exists(source_path) or not os.path.isdir(source_path):
+        return
+
+    elif _COLUMN_SEPARATOR in source_path:
+        print("\tWarning:__get_videos_from_dir excluded an invalid path=", source_path)
+        return
+
+    if playlist_path.get_recursive():
+        for dp, dn, filenames in os.walk(source_path):
+            for filename in filenames:
+                __discover_video(playlist=playlist,
+                                 file_path=os.path.join(dp, filename),
+                                 exclude_paths=exclude_data,
+                                 current_data=current_data,
+                                 add_func=add_func,
+                                 update_func=update_func)
+
+                if quit_func is not None and quit_func():
+                    return
+    else:
+        for filename in os.listdir(source_path):
+            __discover_video(playlist=playlist,
+                             file_path=os.path.join(source_path, filename),
+                             exclude_paths=exclude_data,
+                             current_data=current_data,
+                             add_func=add_func,
+                             update_func=update_func)
+
+            if quit_func is not None and quit_func():
+                return
+
+
+def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=None, update_func=None):
+    if file_path in exclude_paths:
+        return
+
+    elif file_path.endswith(".part"):
+        return
+
+    elif _COLUMN_SEPARATOR in file_path:
+        print("\tWarning:__discover_video excluded an invalid path=", file_path)
+        return
+
+    elif not __file_is_video(file_path):
+        return
+
+    elif file_path in current_data.values():
+        return  # No message on already added videos
+
+    video_hash = __file_hash(file_path)
+    if video_hash in current_data.keys():
+
+        imported_path = current_data[video_hash]
+
+        if not os.path.exists(imported_path):
+            # The video was renamed, use the new path instead
+            video = playlist.get_video_by_hash(video_hash)
+            video.set_path(file_path)
+            video.set_is_new(True)
+            current_data[video_hash] = file_path
+
+            print("\t\tUpdating path of video:")
+            print("\t\t\tOld path:", imported_path)
+            print("\t\t\tNew path:", file_path)
+
+            if update_func is not None:
+                update_func(playlist, video)
+
+            return
         else:
-            print("\tSkipping...", playlist_path.get_path())
-            continue
+            print("\t\tSkipping video because hash exists...", video_hash)
+            print("\t\t\tImported path:", imported_path)
+            print("\t\t\tSkipped path:", file_path)
+            return
 
-        for video_path in __get_videos_from_dir(playlist_path.get_path(),
-                                                playlist_path.get_recursive(),
-                                                list(current_data.values())):
-
-            if video_path in current_data.values():
-                continue  # No message on already added videos
-
-            video_hash = __file_hash(video_path)
-            if video_hash in current_data.keys():
-
-                imported_path = current_data[video_hash]
-
-                if not os.path.exists(imported_path):
-                    # The video was renamed, use the new path instead
-                    video = playlist.get_video_by_hash(video_hash)
-                    video.set_path(video_path)
-                    video.set_is_new(True)
-                    current_data[video_hash] = video_path
-
-                    print("\t\tUpdating path of video:")
-                    print("\t\t\tOld path:", imported_path)
-                    print("\t\t\tNew path:", video_path)
-
-                    if update_func is not None:
-                        update_func(playlist, video)
-
-                    continue
-                else:
-                    print("\t\tSkipping video because hash exists...", video_hash)
-                    print("\t\t\tImported path:", imported_path)
-                    print("\t\t\tSkipped path:", video_path)
-                    continue
-
-            new_video = Video(video_path)
-            new_video.set_is_new(True)
-            new_video.set_hash(video_hash)
-            playlist.add_video(new_video)
-            current_data[video_hash] = video_path
-            print("\t\tAdding...", video_path)
-            if add_func is not None:
-                add_func(playlist, new_video)
+    new_video = Video(file_path)
+    new_video.set_is_new(True)
+    new_video.set_hash(video_hash)
+    playlist.add_video(new_video)
+    current_data[video_hash] = file_path
+    print("\t\tAdding...", file_path)
+    if add_func is not None:
+        add_func(playlist, new_video)
 
 
 def __file_is_video(path):
@@ -115,46 +163,3 @@ def __file_hash(file_path):
             file_hash.update(chunk)
 
     return file_hash.hexdigest()
-
-
-def __get_videos_from_dir(dir_path, recursive, exclude_paths):
-    if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
-        return []
-
-    elif _COLUMN_SEPARATOR in dir_path:
-        print("\tWarning:__get_videos_from_dir excluded an invalid path=", dir_path)
-        return []
-
-    paths = []
-
-    if recursive:
-        for dp, dn, filenames in os.walk(dir_path):
-            for filename in filenames:
-
-                if filename.endswith(".part"):
-                    continue
-
-                path = os.path.join(dp, filename)
-
-                if path in exclude_paths:
-                    continue
-
-                elif _COLUMN_SEPARATOR in path:
-                    print("\tWarning:__get_videos_from_dir excluded an invalid path=", path)
-
-                elif __file_is_video(path):
-                    paths.append(path)
-    else:
-        for filename in os.listdir(dir_path):
-
-            if filename.endswith(".part"):
-                continue
-
-            path = os.path.join(dir_path, filename)
-            if _COLUMN_SEPARATOR in path:
-                print("\tWarning:__get_videos_from_dir excluded an invalid path=", path)
-
-            elif __file_is_video(path):
-                paths.append(path)
-
-    return paths
