@@ -800,7 +800,6 @@ class MediaPlayerWidget(Gtk.VBox):
 
         cached_emitted_position = 0
         cached_vlc_position = 0
-        end_position = -1
 
         while getattr(this_thread, "do_run", True):
             sleep(.25)
@@ -844,7 +843,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
                     cached_emitted_position = self.__calculate_cached_emitted_position(vlc_position,
                                                                                        self.__delayed_media_data._position_precision,
-                                                                                       end_position,
+                                                                                       self.__delayed_media_data._end_position,
                                                                                        cached_emitted_position)
 
                     if cached_emitted_position > vlc_position:  # because of the rounding?
@@ -854,14 +853,11 @@ class MediaPlayerWidget(Gtk.VBox):
                         continue
 
                     cached_vlc_position = vlc_position
-                    GLib.idle_add(self.__scale_progress.set_value, vlc_position)
 
-                    if vlc_position >= end_position != -1:
-                        self.__video_ended = True
-                        self.__video_is_loaded = False
-                        GLib.idle_add(self.pause, False)
-                        self.emit(CustomSignals._video_end)
+                    if vlc_position >= self.__delayed_media_data._end_position != -1:
+                        GLib.idle_add(self.__on_toolbutton_end_clicked)
                     else:
+                        GLib.idle_add(self.__scale_progress.set_value, vlc_position)
                         self.emit(CustomSignals._position_changed, vlc_position)
 
                 case _:
@@ -1003,19 +999,18 @@ class MediaPlayerWidget(Gtk.VBox):
             self.play()
 
     def __on_toolbutton_end_clicked(self, *_):
-        self.__video_change_status = VideoScanStatus._hold
+        self.__video_change_status = VideoScanStatus._none
 
-        position, accuracy = calculate_end_position(self.__video_duration)
-        self.__vlc_widget.player.set_position(position)  # position = 1 will not work
-        # self.emit(CustomSignals._video_end) the thread will emit This signal
+        print("CALLED VIDEO END")
 
-        self.__toolbutton_play.set_icon_name(ThemeButtons._play)
-        self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
+        self.__video_ended = True
         self.__video_is_loaded = False
 
-        # Necessary if the video is paused.
-        print("__on_toolbutton_end_clicked")
-        self.__scale_progress.set_value(VideoPosition._end)
+        self.__scale_progress.set_value(VideoPosition._end) # Necessary if the video is paused.
+        self.pause()
+        self.__vlc_widget.player.stop()
+
+        self.emit(CustomSignals._video_end)
 
     def __on_togglebutton_keep_playing_toggled(self, widget):
         self.emit(CustomSignals._btn_keep_playing_toggled, widget.get_active())
@@ -1086,14 +1081,13 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_scale_progress_release(self, widget, *_):
         print("__on_scale_progress_release")
-        if widget.get_value() >= .99:
+        if widget.get_value() >= self.__delayed_media_data._end_position:
             print("\t __on_toolbutton_end_clicked")
             self.__on_toolbutton_end_clicked()
-        elif widget.get_value() <= .01:
+        elif widget.get_value() <= (1 - self.__delayed_media_data._end_position):
             print("\t __on_toolbutton_restart_clicked")
             self.__on_toolbutton_restart_clicked()
         else:
-            print("\tSETTING", widget.get_value())
             self.__vlc_widget.player.set_position(widget.get_value())
             if self.is_paused() and self.__was_playing_before_press:
                 self.__vlc_widget.player.play()  # In case of long press
