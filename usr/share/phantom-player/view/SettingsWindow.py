@@ -28,11 +28,12 @@ sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 import settings
 from Paths import *
 from Texts import Texts
+from view import gtk_utils
 from model.PlaylistPath import PlaylistPath
 from model.Playlist import LoadStatus as PlaylistLoadStatus
 from controller.playlist_factory import _COLUMN_SEPARATOR
-from view import gtk_utils
 from controller import video_factory
+from controller import playlist_factory
 
 
 class PathsListstoreColumns:
@@ -203,6 +204,8 @@ class SettingsWindow:
         else:
             self.__current_playlist.set_name(new_name)
 
+        playlist_factory.save(self.__current_playlist)  # Important in case of a crash
+
     def __get_previous_playlist(self):
         keys = [playlist.get_guid() for playlist in self.__playlists.values() if playlist.get_load_status() == PlaylistLoadStatus._loaded]
 
@@ -313,7 +316,9 @@ class SettingsWindow:
         self.__unfreeze_all()
 
     def __thread_reload_paths(self):
-        video_factory.discover_all(self.__current_playlist, is_startup=False)
+        video_factory.discover_all(self.__current_playlist,
+                                   is_startup=False,
+                                   update_func=self.__liststore_videos_update_glib)
         self.__unfreeze_all()
 
     def __unfreeze_all(self):
