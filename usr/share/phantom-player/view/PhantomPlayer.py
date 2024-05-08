@@ -544,11 +544,9 @@ class PhantomPlayer:
             self.__is_full_screen = fullscreen
 
             if fullscreen:
-                self.__scrolledwindow_playlists.hide()
                 self.__media_box.hide()
                 self.__statusbar.hide()
             else:
-                self.__scrolledwindow_playlists.show()
                 self.__media_box.show()
                 self.__statusbar.show()
 
