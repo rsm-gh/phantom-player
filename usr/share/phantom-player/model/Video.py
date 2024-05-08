@@ -82,7 +82,13 @@ class Video(object):
         return self.__position
 
     def get_progress(self):
-        return round(self.__position * VideoProgress._end)
+
+        progress = round(self.__position * VideoProgress._end)
+
+        if progress == 100 and self.__position < 1:
+            progress = 99
+
+        return progress
 
     def get_is_new(self):
         return self.__is_new
