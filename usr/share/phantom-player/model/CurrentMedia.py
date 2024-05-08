@@ -19,7 +19,7 @@
 class CurrentMedia:
     def __init__(self, playlist=None):
         self._playlist = playlist
-        self.__video = None
+        self._video = None
 
     def is_playlist(self, playlist):
         if self._playlist is not None:
@@ -32,47 +32,47 @@ class CurrentMedia:
         if self._playlist.get_random():
             video = self._playlist.get_next_random_video()
         else:
-            video = self._playlist.get_next_organized_video(self.__video)
+            video = self._playlist.get_next_organized_video(self._video)
 
-        self.__video = video
+        self._video = video
 
         return video
 
     def current_video(self):
-        return self.__video
+        return self._video
 
     def get_video_by_guid(self, video_guid):
 
         if self._playlist is None:
             return None
 
-        self.__video = self._playlist.get_video_by_guid(video_guid)
-        return self.__video
+        self._video = self._playlist.get_video_by_guid(video_guid)
+        return self._video
 
     def get_video_guid(self):
 
-        if self.__video is None:
+        if self._video is None:
             return None
 
-        return self.__video.get_guid()
+        return self._video.get_guid()
 
     def set_video_position(self, pos):
 
-        if self.__video is None:
+        if self._video is None:
             return
 
-        self.__video.set_position(pos)
+        self._video.set_position(pos)
 
     def get_video_progress(self):
 
-        if self.__video is None:
+        if self._video is None:
             return
 
-        return self.__video.get_progress()
+        return self._video.get_progress()
 
     def get_video_position(self):
 
-        if self.__video is None:
+        if self._video is None:
             return
 
-        return self.__video.get_position()
+        return self._video.get_position()

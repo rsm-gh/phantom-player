@@ -26,7 +26,7 @@ _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
 
 
-def discover_all(playlist, is_startup, add_func=None):
+def discover_all(playlist, is_startup, add_func=None, update_func=None):
     auto_discover = False
     for playlist_path in playlist.get_playlist_paths():
         if playlist_path.get_startup_discover():
@@ -34,10 +34,10 @@ def discover_all(playlist, is_startup, add_func=None):
             break
 
     if not is_startup or (is_startup and auto_discover):
-        discover(playlist, add_func=add_func)
+        discover(playlist, add_func=add_func, update_func=update_func)
 
 
-def discover(playlist, playlist_paths=None, add_func=None):
+def discover(playlist, playlist_paths=None, add_func=None, update_func=None):
     print("Discovering new videos of '{}'...".format(playlist.get_name()))
 
     current_data = {video.get_hash(): video.get_path() for video in playlist.get_videos()}
@@ -75,6 +75,10 @@ def discover(playlist, playlist_paths=None, add_func=None):
                     print("\t\tUpdating path of video:")
                     print("\t\t\tOld path:", imported_path)
                     print("\t\t\tNew path:", video_path)
+
+                    if update_func is not None:
+                        update_func(playlist, video)
+
                     continue
                 else:
                     print("\t\tSkipping video because hash exists...", video_hash)

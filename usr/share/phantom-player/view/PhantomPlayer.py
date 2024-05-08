@@ -242,8 +242,6 @@ class PhantomPlayer:
         for th in self.__threads:
             th.join()
 
-        self.__mp_widget.join()
-
     def save(self):
         if self.__playlists_loaded:
             for playlist in self.__playlists.values():
@@ -423,7 +421,8 @@ class PhantomPlayer:
             GLib.idle_add(self.__on_settings_playlist_close, playlist)
 
             video_factory.discover_all(playlist,
-                                       is_startup=True)  # No add_func because the GUI is frozen on the first playlist
+                                       is_startup=True,
+                                       update_func=self.__liststore_videos_update_glib)  # No add_func because the GUI is frozen on the first playlist
 
             GLib.idle_add(self.__liststore_playlists_update_progress, playlist)
 
@@ -442,6 +441,9 @@ class PhantomPlayer:
         print("Load playlist ended.")
 
     def __liststore_playlists_update_progress(self, playlist):
+        if playlist is None:
+            return
+
         for i, row in enumerate(self.__liststore_playlists):
             if row[PlaylistListstoreColumnsIndex._id] == playlist.get_guid():
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = playlist.get_progress()
@@ -505,17 +507,6 @@ class PhantomPlayer:
         for video in self.__current_media._playlist.get_videos():
             self.__liststore_videos_add(video)
 
-    def __liststore_videos_add_glib(self, playlist, video):
-        """To be called from a thread"""
-
-        if not self.__current_media.is_playlist(playlist):
-            return
-
-        GLib.idle_add(self.__liststore_videos_add, video)
-
-        if video.get_hash() == playlist.get_current_video_hash() and not self.__mp_widget.has_media():
-            GLib.idle_add(self.__set_video, video.get_guid(), False, False, True, True)
-
     def __liststore_videos_add(self, video):
         if not video.get_ignore() or not self.__checkbox_hidden_items.get_active():
             self.__liststore_videos.append([self.__get_video_color(video),
@@ -524,6 +515,32 @@ class PhantomPlayer:
                                             video.get_name(),
                                             video.get_extension(),
                                             video.get_progress()])
+
+    def __liststore_videos_update(self, video, color=True, path=True):
+
+        if video is None:
+            return
+
+        video_guid = video.get_guid()
+        for i, row in enumerate(self.__liststore_videos):
+            if row[VideosListstoreColumnsIndex._id] == video_guid:
+                if color:
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex._color] = self.__get_video_color(video)
+
+                if path:
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex._path] = video.get_path()
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex.name] = video.get_name()
+
+                self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_progress()
+                return
+
+    def __liststore_videos_update_glib(self, playlist, video):
+        """To be called from a thread"""
+
+        if not self.__current_media.is_playlist(playlist):
+            return
+
+        GLib.idle_add(self.__liststore_videos_update, video)
 
     def __liststore_videos_select_current(self):
         """
@@ -563,37 +580,28 @@ class PhantomPlayer:
     def __on_media_player_position_changed(self, _, position):
 
         if self.__current_media.get_video_position() == VideoPosition._end:
-            # This is to avoid updating the progress on videos that was
-            # already played.
+            # To is to avoid updating progress on videos that went already played.
             return
 
         self.__current_media.set_video_position(position)
-        #
-        # Update the GUI
-        #
-        if self.__current_media._playlist is None:
-            return
-
-        GLib.idle_add(self.__liststore_playlists_update_progress, self.__current_media._playlist)
-
-        video_guid = self.__current_media.get_video_guid()
-        for i, row in enumerate(self.__liststore_videos):
-            if row[VideosListstoreColumnsIndex._id] == video_guid:
-                self.__liststore_videos[i][
-                    VideosListstoreColumnsIndex._progress] = self.__current_media.get_video_progress()
-                break
-
-    def __on_button_display_playlists_clicked(self, *_):
-        self.__display_playlists(True)
+        self.__liststore_playlists_update_progress(self.__current_media._playlist)
+        self.__liststore_videos_update(self.__current_media._video, color=False, path=False)
 
     def __on_media_player_video_end(self, *_):
 
-        self.__on_media_player_position_changed(None, VideoPosition._end)
+        self.__current_media.set_video_position(VideoPosition._end)
+        playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
+
+        self.__liststore_playlists_update_progress(self.__current_media._playlist)
+        self.__liststore_videos_update(self.__current_media._video, color=False, path=False)
 
         if self.__current_media._playlist.get_keep_playing():
             self.__set_video()
         else:
             self.__window_root.unfullscreen()
+
+    def __on_button_display_playlists_clicked(self, *_):
+        self.__display_playlists(True)
 
     def __on_iconview_playlists_press_event(self, iconview, event):
 
@@ -635,6 +643,7 @@ class PhantomPlayer:
         # Update the CSV file
         self.__current_media._playlist.reorder(new_order)
         self.__treeselection_videos.unselect_all()
+        playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
     def __on_treeview_videos_press_event(self, _, event):
         model, treepaths = self.__treeselection_videos.get_selected_rows()
@@ -840,6 +849,7 @@ class PhantomPlayer:
                 video.set_position(progress / VideoProgress._end)
 
         self.__liststore_playlists_update_progress(self.__current_media._playlist)
+        playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
     def __on_menuitem_playlist_ignore_change(self, _, ignore):
 
@@ -855,10 +865,12 @@ class PhantomPlayer:
             self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = self.__get_video_color(video)
 
         self.__treeselection_videos.unselect_all()
+        playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
     def __on_menuitem_video_remove(self, _, selected_videos):
         self.__current_media._playlist.remove_videos(selected_videos)
         self.__liststore_videos_populate()
+        playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
     @staticmethod
     def __on_menuitem_video_open_dir(_, path):

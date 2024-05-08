@@ -443,15 +443,11 @@ class MediaPlayerWidget(Gtk.VBox):
     def hide_volume_label(self):
         self.__label_volume.hide()
 
-    def join(self):
-        if self.__thread_player_activity is not None:
-            self.__thread_player_activity.join()
-        self.__thread_scan_motion.join()
-
     def quit(self):
         self.stop()
-        self.__thread_scan_motion.do_run = False
         turn_off_screensaver(False)
+        self.__thread_scan_motion.do_run = False
+        self.__thread_scan_motion.join()
 
     def set_video(self,
                   file_path,
@@ -540,11 +536,10 @@ class MediaPlayerWidget(Gtk.VBox):
             self.__video_is_loaded = True
 
         while True:
-
             sleep(.1)
 
             if self.__media is None or self.__delayed_media_data is None:
-                break
+                return
 
             self.__video_duration = self.__media.get_duration()
 
@@ -589,9 +584,7 @@ class MediaPlayerWidget(Gtk.VBox):
                 GLib.idle_add(self.__populate_settings_menubutton)
 
             self.__video_change_status = VideoScanStatus._scan
-            break
-
-        return
+            return
 
     def __populate_settings_menubutton(self):
 
