@@ -418,7 +418,8 @@ class PhantomPlayer:
             GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(playlist.get_name()))
             GLib.idle_add(self.__on_settings_playlist_close, playlist)
 
-            video_factory.discover_all(playlist, is_startup=True)  # No add_func because the GUI is frozen on the first playlist
+            video_factory.discover_all(playlist,
+                                       is_startup=True)  # No add_func because the GUI is frozen on the first playlist
 
             GLib.idle_add(self.__liststore_playlists_update_progress, playlist)
 
@@ -426,7 +427,6 @@ class PhantomPlayer:
 
             if self.__current_media.is_playlist(playlist) and playlist.get_load_status() == PlaylistLoadStatus._loaded:
                 GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
-
 
         #
         #   Enable the GUI
@@ -586,12 +586,12 @@ class PhantomPlayer:
 
         self.__on_media_player_position_changed(None, VideoPosition._end)
 
-        if not self.__current_media._playlist.get_keep_playing():
+        if self.__current_media._playlist.get_keep_playing():
+            self.__set_video()
+
+        else:
             self.__mp_widget.pause()
             self.__window_root.unfullscreen()
-            return
-
-        self.__set_video()
 
     def __on_iconview_playlists_press_event(self, iconview, event):
 
