@@ -18,6 +18,8 @@
 #
 
 import os
+import threading
+
 import vlc
 from time import time, sleep
 from datetime import timedelta
@@ -139,7 +141,6 @@ def format_track(track):
         if content.startswith("Track "):
             content = "Track {}".format(number)
 
-
     except Exception as e:
         content = track[1]
         print(track)
@@ -174,6 +175,7 @@ class CustomSignals:
 
 class DelayedMediaData:
     def __init__(self, position, start_at, sub_track, audio_track, replay, play):
+        # To be used when the video is being loaded.
         self._position = position
         self._start_at = start_at
         self._sub_track = sub_track
@@ -181,10 +183,30 @@ class DelayedMediaData:
         self._replay = replay
         self._play = play
 
+        # To be defined after the video is loaded.
+        self._video_settings_loaded = False
+        self._position_precision = -1
+        self._end_position = -1
+
+    def set_video_settings_loaded(self, value):
+        self._video_settings_loaded = value
+
+    def set_sub_track(self, value):
+        self._sub_track = value
+
+    def set_audio_track(self, value):
+        self._audio_track = value
+
+    def set_position_precision(self, value):
+        self._position_precision = value
+
+    def set_end_position(self, value):
+        self._end_position = value
+
 
 class VideoScanStatus:
     _none = 0
-    _changing = 1
+    _change = 1
     _scan = 2
     _restart = 3
     _hold = 4
@@ -211,6 +233,10 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__video_duration = _EMPTY__VIDEO_LENGTH
         self.__hidden_controls = False
         self.__media = None
+        self.__video_is_loaded = False
+        self.__video_ended = False
+        self.__was_playing_before_press = False
+        self.__video_status_before_press = VideoScanStatus._none
         self.__video_change_status = VideoScanStatus._none  # Patch 001
 
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
@@ -279,6 +305,8 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_progress = Gtk.Label()
         self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
         self.__label_progress.set_margin_end(5)
+        self.__label_progress.set_size_request(100, -1)
+        self.__label_progress.set_xalign(1)
         self.__buttons_box.pack_start(self.__label_progress, expand=False, fill=False, padding=3)
 
         if keep_playing_button:
@@ -393,7 +421,8 @@ class MediaPlayerWidget(Gtk.VBox):
     def has_media(self):
         return self.__media is not None
 
-    def play(self):
+    def play(self, from_scale=True):
+        print("\n play()")
 
         self.__video_change_status == VideoScanStatus._hold
 
@@ -403,11 +432,15 @@ class MediaPlayerWidget(Gtk.VBox):
         if vlc_position >= position:
             return
 
-        if self.__vlc_widget.player.will_play() == 0 and self.__media is not None:
-            self.__vlc_widget.player.set_media(self.__media)
-            self.__vlc_widget.player.play()
-            self.__vlc_widget.player.set_position(self.__scale_progress.get_value())
+        elif self.__media is None:
+            raise ValueError('Attempting to play without media.')
+
+        if self.__vlc_widget.player.will_play() == 0 or self.__video_ended or not self.__video_is_loaded:
+            print("\t set_media... at position", from_scale)
+            threading.Thread(target=self.__thread_set_video, args=[True, from_scale]).start()
+
         else:
+            print("\t playing with current media")
             self.__vlc_widget.player.play()
 
         self.__toolbutton_play.set_icon_name(ThemeButtons._pause)
@@ -416,16 +449,17 @@ class MediaPlayerWidget(Gtk.VBox):
         turn_off_screensaver(True)
         self.emit(CustomSignals._play)
 
-    def pause(self):
+    def pause(self, emit=True):
         self.__video_change_status == VideoScanStatus._hold
         self.__toolbutton_play.set_icon_name(ThemeButtons._play)
         self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
         self.__vlc_widget.player.pause()
         turn_off_screensaver(False)
-        self.emit(CustomSignals._paused)
+        if emit:
+            self.emit(CustomSignals._paused)
 
     def stop(self):
-        print("CALLED")
+        print("\t STOP")
         self.__video_change_status = VideoScanStatus._none
         self.__vlc_widget.player.stop()
         self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
@@ -484,18 +518,23 @@ class MediaPlayerWidget(Gtk.VBox):
                   play=True,
                   replay=False):
 
-        self.__video_change_status = VideoScanStatus._changing
+        self.__video_change_status = VideoScanStatus._none
+
         self.__media = None
         self.__video_duration = 0
+        self.__video_ended = False
+        self.__video_is_loaded = False
 
         GLib.idle_add(self.__buttons_box.set_sensitive, False),
         GLib.idle_add(self.__menubutton_settings.set_sensitive, False)
         GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
-        GLib.idle_add(self.__scale_progress.set_value, VideoPosition._start)
+        #  The self.__scale_progress.set_value is not updated here to avoid blinking the GUI,
+        #  the right value will be set after.
 
         GLib.idle_add(self.__vlc_widget.player.stop)  # To remove any previous video
 
         if not os.path.exists(file_path):
+            GLib.idle_add(self.__scale_progress.set_value, VideoPosition._start)
             return
 
         media = VLC_INSTANCE.media_new(file_path)
@@ -504,11 +543,6 @@ class MediaPlayerWidget(Gtk.VBox):
 
         GLib.idle_add(self.__root_window.set_title, self.__media.get_meta(0))
 
-        if play:
-            turn_off_screensaver(True)
-
-        GLib.idle_add(self.play)
-
         # Patch 001: Some actions will be performed when the video length be properly parsed
         self.__delayed_media_data = DelayedMediaData(position=position,
                                                      start_at=start_at,
@@ -516,6 +550,11 @@ class MediaPlayerWidget(Gtk.VBox):
                                                      audio_track=audio_track,
                                                      replay=replay,
                                                      play=play)
+
+        if play:
+            self.play(from_scale=False)
+        else:
+            threading.Thread(target=self.__thread_set_video, args=[False, False]).start()
 
     def set_random(self, state):
         self.__toggletoolbutton_random.set_active(state)
@@ -626,6 +665,9 @@ class MediaPlayerWidget(Gtk.VBox):
 
         menu.show_all()
 
+        self.__menubutton_settings.set_sensitive(True)
+        self.__delayed_media_data.set_video_settings_loaded(True)
+
     def __get_window_is_fullscreen(self):
 
         window = self.__root_window.get_window()
@@ -637,6 +679,88 @@ class MediaPlayerWidget(Gtk.VBox):
             return True
 
         return False
+
+    def __thread_set_video(self, play, from_scale):
+        """
+            Patch 001: When setting a new video, wait until the media duration
+            can be correctly parsed to apply all the settings that depend on it.
+        """
+
+        print("__thread_set_video(play=", play, "from_scale=", from_scale, ")")
+
+        if self.__media is None or self.__delayed_media_data is None:
+            print("\t quit")
+            return
+
+        GLib.idle_add(self.__vlc_widget.player.set_media, self.__media)
+
+        if play:
+            GLib.idle_add(self.__vlc_widget.player.play)
+            self.__video_is_loaded = True
+
+        while True:
+
+            sleep(.1)
+
+            if self.__media is None or self.__delayed_media_data is None:
+                break
+
+            self.__video_duration = self.__media.get_duration()
+
+            if self.__video_duration <= 0:
+                continue
+
+            if self.__delayed_media_data._position_precision == -1 or self.__delayed_media_data._end_position == -1:
+                end_pos, pos_precision = calculate_end_position(self.__video_duration)
+                self.__delayed_media_data.set_end_position(end_pos)
+                self.__delayed_media_data.set_position_precision(pos_precision)
+
+            #
+            # Set the audio track
+            #
+            if self.__delayed_media_data._audio_track != Track.Value._undefined:
+                GLib.idle_add(self.__vlc_widget.player.audio_set_track,
+                              self.__delayed_media_data._audio_track)
+
+            #
+            # Set the subtitles' track
+            #
+            if self.__delayed_media_data._sub_track != Track.Value._undefined:
+                GLib.idle_add(self.__vlc_widget.player.video_set_spu,
+                              self.__delayed_media_data._sub_track)
+
+            #
+            # Start the video at some position (if necessary)
+            #
+            if from_scale:
+                start_position = self.__scale_progress.get_value()
+            else:
+                start_position = calculate_start_position(saved_position=self.__delayed_media_data._position,
+                                                          start_at=self.__delayed_media_data._start_at,
+                                                          end_position=self.__delayed_media_data._end_position,
+                                                          video_length=self.__video_duration,
+                                                          replay=self.__delayed_media_data._replay)
+
+                GLib.idle_add(self.__scale_progress.set_value, start_position)
+
+            if start_position > VideoPosition._start:
+                print("\tchanging player position", start_position)
+                GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
+
+            #
+            # Re-Activate the GUI
+            #
+            GLib.idle_add(self.__buttons_box.set_sensitive, True)
+
+            if play and not self.__delayed_media_data._video_settings_loaded:
+                GLib.idle_add(self.__populate_settings_menubutton)
+
+            self.__video_change_status = VideoScanStatus._scan
+            break
+
+        print("\tEND")
+
+        return
 
     def __set_cursor_empty(self):
         self.get_window().set_cursor(self.__empty_cursor)
@@ -677,126 +801,71 @@ class MediaPlayerWidget(Gtk.VBox):
         cached_emitted_position = 0
         cached_vlc_position = 0
         end_position = -1
-        position_precision = -1
 
         while getattr(this_thread, "do_run", True):
-
             sleep(.25)
 
-            if self.__video_change_status == VideoScanStatus._hold:
-                sleep(.5)
-                self.__video_change_status = VideoScanStatus._scan
+            match self.__video_change_status:
 
-            elif self.__video_change_status == VideoScanStatus._restart:
-                cached_emitted_position = 0
-                cached_vlc_position = 0
-
-            elif self.__video_change_status == VideoScanStatus._changing:
-
-                if self.__media is None or self.__delayed_media_data is None:
+                case VideoScanStatus._none:
                     continue
 
-                #
-                # Patch 001: In case of a new video, wait until the media duration
-                # can be correctly parsed to apply all the settings that depend on it.
-                #
-                self.__video_duration = self.__media.get_duration()
-                cached_emitted_position = 0
-                cached_vlc_position = 0
-                end_position = -1
-                position_precision = -1
+                case VideoScanStatus._hold:
+                    sleep(.5)
+                    self.__video_change_status = VideoScanStatus._scan
 
-                if self.__video_duration <= 0 < end_position:
-                    continue
+                case VideoScanStatus._restart:
+                    cached_emitted_position = 0
+                    cached_vlc_position = 0
 
-                self.__video_change_status = VideoScanStatus._scan
-                end_position, position_precision = calculate_end_position(self.__video_duration)
+                case VideoScanStatus._scan:
 
-                #
-                # Set the audio track
-                #
-                if self.__delayed_media_data._audio_track != Track.Value._undefined:
-                    GLib.idle_add(self.__vlc_widget.player.audio_set_track,
-                                  self.__delayed_media_data._audio_track)
+                    print("CALLING VideoScanStatus._scan")
 
-                #
-                # Set the subtitles' track
-                #
-                if self.__delayed_media_data._sub_track != Track.Value._undefined:
-                    GLib.timeout_add_seconds(self.__vlc_widget.player.video_set_spu,
-                                             self.__delayed_media_data._sub_track)
+                    #
+                    #    Update the volume. Is this necessary?
+                    #
+                    vlc_volume = self.__vlc_widget.player.audio_get_volume()
+                    scale_volume_value = int(self.__volumebutton.get_value() * 100)
+                    if vlc_volume <= 100 and vlc_volume != scale_volume_value:
+                        GLib.idle_add(self.__volumebutton.set_value, vlc_volume / 100.000)
+                        GLib.idle_add(self.__label_volume.set_text, " Vol: {}% ".format(vlc_volume))
+                        GLib.idle_add(self.__label_volume.show)
 
-                #
-                # Start the video at some position (if necessary)
-                #
-                start_position = calculate_start_position(saved_position=self.__delayed_media_data._position,
-                                                          start_at=self.__delayed_media_data._start_at,
-                                                          end_position=end_position,
-                                                          video_length=self.__video_duration,
-                                                          replay=self.__delayed_media_data._replay)
-                if start_position > VideoPosition._start:
-                    GLib.idle_add(self.__vlc_widget.player.set_position, start_position)
+                        self.__motion_time = time()
+                        self.__widgets_shown = WidgetsShown._volume
 
-                #
-                # Pause the video if requested
-                #
-                if not self.__delayed_media_data._play:
-                    GLib.idle_add(self.__vlc_widget.player.pause)
+                    #
+                    #    Update the time of the scale and the time
+                    #
+                    vlc_position = self.__vlc_widget.player.get_position()
+                    if vlc_position > VideoPosition._end:
+                        vlc_position = VideoPosition._end
 
-                #
-                # Re-Activate the GUI
-                #
-                GLib.idle_add(self.__buttons_box.set_sensitive, True)
-                GLib.timeout_add_seconds(1, self.__populate_settings_menubutton)
-                GLib.timeout_add_seconds(1, self.__menubutton_settings.set_sensitive, True)
+                    cached_emitted_position = self.__calculate_cached_emitted_position(vlc_position,
+                                                                                       self.__delayed_media_data._position_precision,
+                                                                                       end_position,
+                                                                                       cached_emitted_position)
 
-            elif self.__video_change_status == VideoScanStatus._scan:
+                    if cached_emitted_position > vlc_position:  # because of the rounding?
+                        vlc_position = cached_emitted_position
 
-                if self.__scale_progress_pressed:
-                    continue
+                    if vlc_position == cached_vlc_position:
+                        continue
 
-                vlc_is_playing = self.is_playing()
-
-                #
-                #    Update the play-pause button
-                #
-                if vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons._pause:
-                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons._pause)
-
-                elif not vlc_is_playing and self.__toolbutton_play.get_icon_name() != ThemeButtons._play:
-                    GLib.idle_add(self.__toolbutton_play.set_icon_name, ThemeButtons._play)
-
-                #
-                #    Update the volume. Is this necessary?
-                #
-                vlc_volume = self.__vlc_widget.player.audio_get_volume()
-                scale_volume_value = int(self.__volumebutton.get_value() * 100)
-                if vlc_volume <= 100 and vlc_volume != scale_volume_value:
-                    GLib.idle_add(self.__volumebutton.set_value, vlc_volume / 100.000)
-                    GLib.idle_add(self.__label_volume.set_text, " Vol: {}% ".format(vlc_volume))
-                    GLib.idle_add(self.__label_volume.show)
-
-                    self.__motion_time = time()
-                    self.__widgets_shown = WidgetsShown._volume
-
-                #
-                #    Update the time of the scale and the time
-                #
-                vlc_position = self.__vlc_widget.player.get_position()
-                if vlc_position > VideoPosition._end:
-                    vlc_position = VideoPosition._end
-
-                cached_emitted_position = self.__on_player_position_changed(vlc_position,
-                                                                            position_precision,
-                                                                            end_position,
-                                                                            cached_emitted_position)
-
-                if cached_emitted_position > vlc_position:
-                    vlc_position = cached_emitted_position
-
-                if vlc_position != cached_vlc_position:
                     cached_vlc_position = vlc_position
                     GLib.idle_add(self.__scale_progress.set_value, vlc_position)
+
+                    if vlc_position >= end_position != -1:
+                        self.__video_ended = True
+                        self.__video_is_loaded = False
+                        GLib.idle_add(self.pause, False)
+                        self.emit(CustomSignals._video_end)
+                    else:
+                        self.emit(CustomSignals._position_changed, vlc_position)
+
+                case _:
+                    raise ValueError
 
     def __on_thread_motion_activity(self, *_):
 
@@ -854,14 +923,14 @@ class MediaPlayerWidget(Gtk.VBox):
             elif key == EventCodes.Keyboard.arrow_down:
                 self.volume_down()
 
-    def __on_player_position_changed(self, vlc_position, position_precision, end_position, cached_position):
+    @staticmethod
+    def __calculate_cached_emitted_position(vlc_position, position_precision, end_position, cached_position):
 
         if vlc_position < VideoPosition._start:
             return cached_position
 
         elif vlc_position > VideoPosition._end:
             vlc_position = VideoPosition._end
-
         else:
             vlc_position = round(vlc_position, position_precision)
 
@@ -870,9 +939,6 @@ class MediaPlayerWidget(Gtk.VBox):
 
         if vlc_position >= end_position:
             vlc_position = VideoPosition._end
-            self.emit(CustomSignals._video_end)
-        else:
-            self.emit(CustomSignals._position_changed, vlc_position)
 
         return vlc_position
 
@@ -915,6 +981,7 @@ class MediaPlayerWidget(Gtk.VBox):
                     self.__vlc_widget.player.pause()
                     turn_off_screensaver(False)
                 else:
+                    print("SETTING PLAY")
                     self.__vlc_widget.player.play()
                     turn_off_screensaver(True)
 
@@ -924,6 +991,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.emit(CustomSignals._video_restart)
 
         # Necessary if the video is paused.
+        print("__on_toolbutton_restart_clicked")
         self.__scale_progress.set_value(VideoPosition._start)
 
     def __on_toolbutton_play_clicked(self, *_):
@@ -931,6 +999,7 @@ class MediaPlayerWidget(Gtk.VBox):
         if self.is_playing():
             self.pause()
         else:
+            print("__on_toolbutton_play_clicked")
             self.play()
 
     def __on_toolbutton_end_clicked(self, *_):
@@ -942,10 +1011,11 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__toolbutton_play.set_icon_name(ThemeButtons._play)
         self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
+        self.__video_is_loaded = False
+
         # Necessary if the video is paused.
+        print("__on_toolbutton_end_clicked")
         self.__scale_progress.set_value(VideoPosition._end)
-
-
 
     def __on_togglebutton_keep_playing_toggled(self, widget):
         self.emit(CustomSignals._btn_keep_playing_toggled, widget.get_active())
@@ -960,9 +1030,11 @@ class MediaPlayerWidget(Gtk.VBox):
 
         if track_type == Track.Type._audio:
             self.__vlc_widget.player.audio_set_track(track)
+            self.__delayed_media_data.set_audio_track(track)
 
         elif track_type == Track.Type._subtitles:
             self.__vlc_widget.player.video_set_spu(track)
+            self.__delayed_media_data.set_sub_track(track)
 
         elif track_type == Track.Type._video:
             self.__vlc_widget.player.video_set_track(track)
@@ -998,29 +1070,41 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__scale_progress_pressed = False
 
     def __on_scale_progress_press(self, *_):
-        self.__scale_progress_pressed = True
-        GLib.timeout_add_seconds(.5, self.__on_scale_progress_long_press)
 
-    def __on_scale_progress_long_press(self):
+        if not self.__scale_progress_pressed:
+            self.__video_status_before_press = self.__video_change_status
+            self.__video_change_status = VideoScanStatus._none
+            self.__was_playing_before_press = self.is_playing()
+
+        self.__scale_progress_pressed = True
+        threading.Thread(target=self.__on_thread_scale_progress_long_press).start()
+
+    def __on_thread_scale_progress_long_press(self):
+        sleep(.5)
         if self.__scale_progress_pressed:
-            self.__vlc_widget.player.pause()  # In case of long press
+            GLib.idle_add(self.__vlc_widget.player.pause)
 
     def __on_scale_progress_release(self, widget, *_):
-
-        if widget.get_value() >= .9:
+        print("__on_scale_progress_release")
+        if widget.get_value() >= .99:
+            print("\t __on_toolbutton_end_clicked")
             self.__on_toolbutton_end_clicked()
-        elif widget.get_value() <= .1:
+        elif widget.get_value() <= .01:
+            print("\t __on_toolbutton_restart_clicked")
             self.__on_toolbutton_restart_clicked()
         else:
+            print("\tSETTING", widget.get_value())
             self.__vlc_widget.player.set_position(widget.get_value())
-            if self.is_paused():
+            if self.is_paused() and self.__was_playing_before_press:
                 self.__vlc_widget.player.play()  # In case of long press
 
         self.__motion_time = time()
         self.__scale_progress_pressed = False
+        self.__video_change_status = self.__video_status_before_press
 
     def __on_scale_progress_changed(self, widget, *_):
-        if self.__media is not None:
-            video_time = widget.get_value() * self.__media.get_duration()
+        duration = self.__media.get_duration()
+        if self.__media is not None and duration > 0:
+            video_time = widget.get_value() * duration
             video_time = format_milliseconds_to_time(video_time)
             self.__label_progress.set_text(video_time + " / " + format_milliseconds_to_time(self.__video_duration))
