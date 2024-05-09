@@ -38,6 +38,18 @@ def set_css(widget, css):
     context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
 
+def bind_header_click(treeview_column, bind_func):
+    label = Gtk.Label(treeview_column.get_title())
+    label.show()
+    treeview_column.set_widget(label)
+
+    widget = treeview_column.get_widget()
+    while not isinstance(widget, Gtk.Button):
+        widget = widget.get_parent()
+
+    widget.connect('button-release-event', bind_func)
+
+
 def get_default_color(text_type='theme_text_color', widget=None, on_error='#000000'):
     """
         theme_text_color
