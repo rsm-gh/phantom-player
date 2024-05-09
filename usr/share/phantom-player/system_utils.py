@@ -108,17 +108,16 @@ def format_img(read_path, write_path, width=None, height=None, max_width=None, e
 
 class EventCodes:
     class Cursor:
-        left_click = 1
-        middle_click = 2
-        right_click = 3
-
+        _left_click = 1
+        _middle_click = 2
+        _right_click = 3
 
     class Keyboard:
-        esc = 65307
-        f11 = 65480
-        space_bar = 32
-        enter = 65293
-        arrow_up = 65362
-        arrow_down = 65364
-        arrow_right = 65363
-        arrow_left = 65361
+        _esc = 65307
+        _f11 = 65480
+        _space_bar = 32
+        _enter = 65293
+        _arrow_up = 65362
+        _arrow_down = 65364
+        _arrow_right = 65363
+        _arrow_left = 65361

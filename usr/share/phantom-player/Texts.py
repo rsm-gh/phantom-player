@@ -38,7 +38,7 @@ class Texts:
     class DialogPlaylist:
         _confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
         _confirm_reset = 'Are you sure that you want to restart "{0}"?.'
-        _is_missing = 'The playlist can not be reproduced because the videos are missing!\n\nUse the search button to find them.'
+        _is_missing = 'The playlist can not be reproduced because the videos are missing.'
         _already_exist = 'The playlist "{}" already exists.\n\nPlease rename the other playlist before adding this one.'
         _name_exist = 'The playlist "{}" already exists.\n\nPlease choose a different name.'
         _all_videos_played = 'All the videos have been played, restart the playlist to watch it again.'
@@ -71,8 +71,8 @@ class Texts:
         _remove = "Remove from listing"
 
     class DialogVideos:
-        _delete = '''Are you sure that you want to delete the selected videos?\n\nThey wont be removed from your hard drive.'''
-        _missing = 'The video can not be reproduced because the file is missing. Use the search button to find it.'
+        _delete = '''Are you sure that you want to delete the selected videos?\n\nThey won't be removed from your hard drive.'''
+        _missing = 'The video can not be reproduced because the file is missing.'
         _found_x = '{0} videos have been found.'
         _other_found = '{0} other videos have been found.'
 

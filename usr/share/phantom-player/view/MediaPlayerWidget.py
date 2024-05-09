@@ -836,25 +836,25 @@ class MediaPlayerWidget(Gtk.VBox):
 
         key = event.keyval
 
-        if key == EventCodes.Keyboard.f11 and self.get_media() is not None:
+        if key == EventCodes.Keyboard._f11 and self.get_media() is not None:
             self.__set_fullscreen(True)
 
         elif self.__get_window_is_fullscreen():
 
             # display the toolbox if the arrows are shown
-            if key in (EventCodes.Keyboard.arrow_left, EventCodes.Keyboard.arrow_right):
+            if key in (EventCodes.Keyboard._arrow_left, EventCodes.Keyboard._arrow_right):
                 self.__motion_time = time()
 
-            if key == EventCodes.Keyboard.esc:
+            if key == EventCodes.Keyboard._esc:
                 self.__set_fullscreen(False)
 
-            elif key in (EventCodes.Keyboard.space_bar, EventCodes.Keyboard.enter):
+            elif key in (EventCodes.Keyboard._space_bar, EventCodes.Keyboard._enter):
                 self.__on_toolbutton_play_clicked(None, None)
 
-            elif key == EventCodes.Keyboard.arrow_up:
+            elif key == EventCodes.Keyboard._arrow_up:
                 self.volume_up()
 
-            elif key == EventCodes.Keyboard.arrow_down:
+            elif key == EventCodes.Keyboard._arrow_down:
                 self.volume_down()
 
     def __on_motion_notify_event(self, *_):
@@ -890,7 +890,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
 
-            if event.button == EventCodes.Cursor.left_click:
+            if event.button == EventCodes.Cursor._left_click:
 
                 if self.is_playing():
                     self.__vlc_widget.player.pause()
