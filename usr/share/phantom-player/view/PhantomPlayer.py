@@ -633,7 +633,7 @@ class PhantomPlayer:
 
     def __on_iconview_playlists_press_event(self, iconview, event):
 
-        if event.type != Gdk.EventType.BUTTON_PRESS or event.button != EventCodes.Cursor.left_click:
+        if event.type != Gdk.EventType.BUTTON_PRESS or event.button != EventCodes.Cursor._left_click:
             return
 
         #
@@ -683,7 +683,7 @@ class PhantomPlayer:
             or this signal will be overridden.
         """
 
-        if event.button != EventCodes.Cursor.middle_click:
+        if event.button != EventCodes.Cursor._middle_click:
             return False
 
         #
@@ -711,7 +711,7 @@ class PhantomPlayer:
 
     def __on_treeview_videos_press_event(self, _widget, event):
 
-        if event.button != EventCodes.Cursor.right_click:
+        if event.button != EventCodes.Cursor._right_click:
             return False
 
         # get the iter where the user is pointing
