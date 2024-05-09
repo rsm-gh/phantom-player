@@ -176,21 +176,6 @@ class Playlist(object):
         self.__videos_instances.append(video)
         self.__active_videos_nb += 1
 
-    def clean_videos(self):
-        """Delete the hidden and un-existing videos"""
-
-        videos = []
-        for video in self.__videos_instances:
-            if not os.path.exists(video.get_path()) and video.get_ignore():
-                pass
-            else:
-                videos.append(video)
-
-        self.__videos_instances = videos
-
-    def update_not_hidden_videos(self):
-        self.__active_videos_nb = len([0 for video in self.__videos_instances if video.get_ignore()])
-
     def has_existent_paths(self):
         for path in self.__playlist_paths.keys():
             if os.path.exists(path):
@@ -308,12 +293,6 @@ class Playlist(object):
     def get_name(self):
         return self.__name
 
-    def get_first_video(self):
-        if len(self.__videos_instances) <= 0:
-            return None
-
-        return self.__videos_instances[0]
-
     def get_progress(self):
 
         total_of_videos = 0
@@ -372,9 +351,6 @@ class Playlist(object):
 
         return random.choice(videos)
 
-    def get_videos_nb(self):
-        return self.__active_videos_nb
-
     def get_audio_track(self):
         return self.__audio_track
 
@@ -424,9 +400,6 @@ class Playlist(object):
 
     def get_keep_playing(self):
         return self.__keep_playing
-
-    def get_current_video_hash(self):
-        return self.__current_video_hash
 
     def set_guid(self, value):
         self.__guid = value
