@@ -41,6 +41,7 @@ class PhantomApp(Gtk.Application):
             self.__phantom_player = PhantomPlayer(application=self)
             self.__phantom_player.present()
 
+
 app = PhantomApp(application_id="com.senties-martinelli.PhantomPlayer")
 app.run(sys.argv)
-print('ENDED?')
+print("PhantomApp Ended.")

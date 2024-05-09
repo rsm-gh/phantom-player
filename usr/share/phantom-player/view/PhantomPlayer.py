@@ -117,6 +117,7 @@ class PhantomPlayer:
         self.__treeselection_videos = builder.get_object('treeselection_videos')
         self.__checkbox_prefer_dark_theme = builder.get_object('checkbox_prefer_dark_theme')
         self.__checkbox_hidden_items = builder.get_object('checkbox_hidden_items')
+        self.__menu_videos_header = builder.get_object('menu_videos_header')
         self.__checkbox_hide_ext = builder.get_object('checkbox_hide_ext')
         self.__checkbox_hide_number = builder.get_object('checkbox_hide_number')
         self.__checkbox_hide_path = builder.get_object('checkbox_hide_path')
@@ -157,16 +158,27 @@ class PhantomPlayer:
         self.__checkbox_hide_warning_missing_playlist.connect('toggled',
                                                               self.__on_checkbox_hide_warning_missing_playlist_toggled)
         self.__checkbox_hide_missing_playlist.connect('toggled', self.__on_checkbox_hide_missing_playlist_toggled)
-        self.__checkbox_hidden_items.connect('toggled', self.__on_checkbox_hidden_items_toggled)
+
         self.__checkbox_hide_number.connect('toggled', self.__on_checkbox_hide_number_toggled)
         self.__checkbox_hide_path.connect('toggled', self.__on_checkbox_hide_path_toggled)
         self.__checkbox_hide_name.connect('toggled', self.__on_checkbox_hide_name_toggled)
         self.__checkbox_hide_extension.connect('toggled', self.__on_checkbox_hide_extension_toggled)
         self.__checkbox_hide_progress.connect('toggled', self.__on_checkbox_hide_progress_toggled)
         self.__iconview_playlists.connect('button-press-event', self.__on_iconview_playlists_press_event)
+        self.__checkbox_hidden_items.connect('toggled', self.__on_checkbox_hidden_items_toggled)
+
         self.__treeview_videos.connect('drag-end', self.__on_treeview_videos_drag_end)
+        self.__treeview_videos.connect("row-activated", self.__on_treeview_videos_row_activated)
         self.__treeview_videos.connect('button-press-event', self.__on_treeview_videos_press_event)
+
         self.__button_display_playlists.connect('clicked', self.__on_button_display_playlists_clicked)
+
+        for widget in (self.__column_number,
+                       self.__column_path,
+                       self.__column_name,
+                       self.__column_extension,
+                       self.__column_progress):
+            gtk_utils.bind_header_click(widget, self.__on_treeviewcolumn_videos_header_clicked)
 
         #
         #    Media Player
@@ -205,16 +217,22 @@ class PhantomPlayer:
             self.__configuration.get_bool_defval(GlobalConfigTags._prefer_dark_theme, True))
         self.__checkbox_hide_warning_missing_playlist.set_active(
             self.__configuration.get_bool(GlobalConfigTags._checkbox_missing_playlist_warning))
-        self.__checkbox_hidden_items.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._checkbox_hidden_videos, False))
+
         self.__checkbox_hide_missing_playlist.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._checkbox_hide_missing_playlist, False))
 
-        self.__checkbox_hide_number.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_number))
-        self.__checkbox_hide_path.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_path))
-        self.__checkbox_hide_name.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_name))
-        self.__checkbox_hide_extension.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_extension))
-        self.__checkbox_hide_progress.set_active(self.__configuration.get_bool(GlobalConfigTags._hide_video_progress))
+        self.__checkbox_hide_number.set_active(
+            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_number, False))
+        self.__checkbox_hide_path.set_active(
+            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_path, False))
+        self.__checkbox_hide_name.set_active(
+            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_name, False))
+        self.__checkbox_hide_extension.set_active(
+            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_extension, False))
+        self.__checkbox_hide_progress.set_active(
+            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_progress, False))
+        self.__checkbox_hidden_items.set_active(
+            not self.__configuration.get_bool_defval(GlobalConfigTags._checkbox_hidden_videos, False))
 
         #
         #    Display the window
@@ -237,8 +255,8 @@ class PhantomPlayer:
         self.__window_root.present()
 
     def __on_delete_event(self, *_):
-        self.__mp_widget.pause() # faster than quit
-        self.__window_root.hide() # GLib is used to hide the GUI without LAG
+        self.__mp_widget.pause()  # faster than quit
+        self.__window_root.hide()  # GLib is used to hide the GUI without LAG
         self.__quit_requested = True
         self.__mp_widget.quit()
         self.__thread_load_playlists.join()
@@ -655,100 +673,128 @@ class PhantomPlayer:
         self.__treeselection_videos.unselect_all()
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
-    def __on_treeview_videos_press_event(self, _, event):
+    def __on_treeview_videos_row_activated(self, _treeview, treepath, _column):
+        video_guid = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
+        self.__set_video(video_guid, replay=True)
+
+    def __on_treeviewcolumn_videos_header_clicked(self, _widget, event):
+        """
+            The event.button must be different from __on_treeview_videos_press_event,
+            or this signal will be overridden.
+        """
+
+        if event.button != EventCodes.Cursor.middle_click:
+            return False
+
+        #
+        # Prevent that the users de-activate all the columns
+        #
+        column_checkboxes = (self.__checkbox_hide_number,
+                             self.__checkbox_hide_path,
+                             self.__checkbox_hide_name,
+                             self.__checkbox_hide_extension,
+                             self.__checkbox_hide_progress)
+        active_checks = []
+        for checkbox in column_checkboxes:
+            checkbox.set_sensitive(True)
+
+            if checkbox.get_active():
+                active_checks.append(checkbox)
+
+        if len(active_checks) == 1:
+            active_checks[0].set_sensitive(False)
+
+        # Show the menu
+        self.__menu_videos_header.show_all()
+        self.__menu_videos_header.popup(None, None, None, None, event.button, event.time)
+        return True
+
+    def __on_treeview_videos_press_event(self, _widget, event):
+
+        if event.button != EventCodes.Cursor.right_click:
+            return False
+
+        # get the iter where the user is pointing
+        try:
+            pointing_treepath = self.__treeview_videos.get_path_at_pos(event.x, event.y)[0]
+        except Exception:
+            return False
+
         model, treepaths = self.__treeselection_videos.get_selected_rows()
 
         if not treepaths:
-            return
+            return False
 
         selection_length = len(treepaths)
 
-        if event.button == EventCodes.Cursor.left_click and \
-                selection_length == 1 and \
-                event.type == Gdk.EventType._2BUTTON_PRESS:
+        # if the iter is not in the selected iters, remove the previous selection
+        model, treepaths = self.__treeselection_videos.get_selected_rows()
 
+        if pointing_treepath not in treepaths:
+            self.__treeselection_videos.unselect_all()
+            self.__treeselection_videos.select_path(pointing_treepath)
+
+        menu = Gtk.Menu()
+        selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
+                        treepaths]
+
+        selected_videos = self.__current_media._playlist.get_videos_by_guid(selected_ids)
+
+        # If only 1 video is selected, and it is loaded in the player.
+        # the progress buttons shall not be displayed.
+        can_fill_progress = True
+        can_reset_progress = True
+        if len(selected_ids) == 1:
+            if self.__current_media.get_video_guid() == selected_ids[0]:
+                can_fill_progress = False
+                can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
+
+        # Reset Progress
+        if any(video.get_position() > VideoPosition._start for video in selected_videos) and can_reset_progress:
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_reset)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._start)
+
+        # Fill progress
+        if any(video.get_position() < VideoPosition._end for video in selected_videos) and can_fill_progress:
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_fill)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._end)
+
+        # ignore videos
+        if any(not video.get_ignore() for video in selected_videos):
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._ignore)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__on_menuitem_playlist_ignore_change, True)
+
+        # don't ignore videos
+        if any(video.get_ignore() for video in selected_videos):
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._dont_ignore)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__on_menuitem_playlist_ignore_change, False)
+
+        # Open the containing folder (only if the user selected one video)
+        if selection_length == 1:
             video_guid = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
-            self.__configuration.write(GlobalConfigTags._current_playlist, self.__current_media._playlist.get_name())
-            self.__set_video(video_guid, replay=True)
+            video = self.__current_media._playlist.get_video_by_guid(video_guid)
 
-        elif event.button == EventCodes.Cursor.right_click:
-
-            # get the iter where the user is pointing
-            try:
-                pointing_treepath = self.__treeview_videos.get_path_at_pos(event.x, event.y)[0]
-            except Exception:
-                return
-
-            # if the iter is not in the selected iters, remove the previous selection
-            model, treepaths = self.__treeselection_videos.get_selected_rows()
-
-            if pointing_treepath not in treepaths:
-                self.__treeselection_videos.unselect_all()
-                self.__treeselection_videos.select_path(pointing_treepath)
-
-            menu = Gtk.Menu()
-
-            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
-                            treepaths]
-
-            selected_videos = self.__current_media._playlist.get_videos_by_guid(selected_ids)
-
-            # If only 1 video is selected, and it is loaded in the player.
-            # the progress buttons shall not be displayed.
-            can_fill_progress = True
-            can_reset_progress = True
-            if len(selected_ids) == 1:
-                if self.__current_media.get_video_guid() == selected_ids[0]:
-                    can_fill_progress = False
-                    can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
-
-            # Reset Progress
-            if any(video.get_position() > VideoPosition._start for video in selected_videos) and can_reset_progress:
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_reset)
+            if os.path.exists(video.get_path()):
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._open_dir)
                 menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._start)
+                menuitem.connect('activate', self.__on_menuitem_video_open_dir, video.get_path())
 
-            # Fill progress
-            if any(video.get_position() < VideoPosition._end for video in selected_videos) and can_fill_progress:
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_fill)
-                menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_set_progress, VideoProgress._end)
+        # Remove items from the list
+        if not any(video.exists() for video in selected_videos):
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._remove)
+            if self.__current_media._playlist.get_load_status() != PlaylistLoadStatus._loaded:
+                menuitem.set_sensitive(False)
+            menuitem.connect('activate', self.__on_menuitem_video_remove, selected_videos)
 
-            # ignore videos
-            if any(not video.get_ignore() for video in selected_videos):
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._ignore)
-                menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_playlist_ignore_change, True)
+            menu.append(menuitem)
 
-            # don't ignore videos
-            if any(video.get_ignore() for video in selected_videos):
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._dont_ignore)
-                menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_playlist_ignore_change, False)
-
-            # Open the containing folder (only if the user selected one video)
-            if selection_length == 1:
-                video_guid = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
-                video = self.__current_media._playlist.get_video_by_guid(video_guid)
-
-                if os.path.exists(video.get_path()):
-                    menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._open_dir)
-                    menu.append(menuitem)
-                    menuitem.connect('activate', self.__on_menuitem_video_open_dir, video.get_path())
-
-            # Remove items from the list
-            if not any(video.exists() for video in selected_videos):
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._remove)
-                if self.__current_media._playlist.get_load_status() != PlaylistLoadStatus._loaded:
-                    menuitem.set_sensitive(False)
-                menuitem.connect('activate', self.__on_menuitem_video_remove, selected_videos)
-
-                menu.append(menuitem)
-
-            menu.show_all()
-            menu.popup(None, None, None, None, event.button, event.time)
-
-            return True
+        menu.show_all()
+        menu.popup(None, None, None, None, event.button, event.time)
+        return True
 
     def __on_menuitem_about_activate(self, *_):
         _ = self.__window_about.run()
@@ -902,31 +948,31 @@ class PhantomPlayer:
         self.__liststore_playlists_populate()
         self.__configuration.write(GlobalConfigTags._checkbox_hide_missing_playlist, checkbox.get_active())
 
-    def __on_checkbox_hidden_items_toggled(self, checkbox, *_):
-        self.__configuration.write(GlobalConfigTags._checkbox_hidden_videos, checkbox.get_active())
-        self.__liststore_videos_populate()
-
     def __on_checkbox_hide_number_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.__column_number.set_visible(not state)
-        self.__configuration.write(GlobalConfigTags._hide_video_number, state)
+        self.__column_number.set_visible(state)
+        self.__configuration.write(GlobalConfigTags._hide_video_number, not state)
 
     def __on_checkbox_hide_path_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.__column_path.set_visible(not state)
-        self.__configuration.write(GlobalConfigTags._hide_video_path, state)
+        self.__column_path.set_visible(state)
+        self.__configuration.write(GlobalConfigTags._hide_video_path, not state)
 
     def __on_checkbox_hide_name_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.__column_name.set_visible(not state)
-        self.__configuration.write(GlobalConfigTags._hide_video_name, state)
+        self.__column_name.set_visible(state)
+        self.__configuration.write(GlobalConfigTags._hide_video_name, not state)
 
     def __on_checkbox_hide_extension_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.__column_extension.set_visible(not state)
-        self.__configuration.write(GlobalConfigTags._hide_video_extension, state)
+        self.__column_extension.set_visible(state)
+        self.__configuration.write(GlobalConfigTags._hide_video_extension, not state)
 
     def __on_checkbox_hide_progress_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.__column_progress.set_visible(not state)
-        self.__configuration.write(GlobalConfigTags._hide_video_progress, state)
+        self.__column_progress.set_visible(state)
+        self.__configuration.write(GlobalConfigTags._hide_video_progress, not state)
+
+    def __on_checkbox_hidden_items_toggled(self, checkbox, *_):
+        self.__configuration.write(GlobalConfigTags._checkbox_hidden_videos, not checkbox.get_active())
+        self.__liststore_videos_populate()
