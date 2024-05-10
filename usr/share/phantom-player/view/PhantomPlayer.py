@@ -18,7 +18,6 @@
 
 import os
 import gi
-from time import sleep
 from threading import Thread
 from collections import OrderedDict
 
@@ -41,6 +40,7 @@ from model.Playlist import LoadStatus as PlaylistLoadStatus
 from model.CurrentMedia import CurrentMedia
 from model.Video import VideoPosition, VideoProgress
 from view.SettingsWindow import SettingsWindow
+from view.DialogRenameSingle import DialogRenameSingle
 from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
 
 
@@ -179,6 +179,11 @@ class PhantomPlayer:
                        self.__column_extension,
                        self.__column_progress):
             gtk_utils.bind_header_click(widget, self.__on_treeviewcolumn_videos_header_clicked)
+
+        #
+        # Extra dialogs
+        #
+        self.__dialog_rename_single = DialogRenameSingle(self.__window_root, self.__liststore_videos_update)
 
         #
         #    Media Player
@@ -557,7 +562,7 @@ class PhantomPlayer:
 
                 if path:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._path] = video.get_path()
-                    self.__liststore_videos[i][VideosListstoreColumnsIndex.name] = video.get_name()
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex._name] = video.get_name()
 
                 self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_progress()
                 return
@@ -773,11 +778,17 @@ class PhantomPlayer:
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_playlist_ignore_change, False)
 
-        # Open the containing folder (only if the user selected one video)
+
         if selection_length == 1:
             video_guid = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
             video = self.__current_media._playlist.get_video_by_guid(video_guid)
 
+            # Rename dialog
+            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._rename)
+            menu.append(menuitem)
+            menuitem.connect('activate', self.__on_menuitem_video_rename_single, video)
+
+            # Open the containing folder (only if the user selected one video)
             if os.path.exists(video.get_path()):
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._open_dir)
                 menu.append(menuitem)
@@ -927,6 +938,9 @@ class PhantomPlayer:
         self.__current_media._playlist.remove_videos(selected_videos)
         self.__liststore_videos_populate()
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
+
+    def __on_menuitem_video_rename_single(self, _, video):
+        self.__dialog_rename_single.show(video, self.__current_media._playlist)
 
     @staticmethod
     def __on_menuitem_video_open_dir(_, path):

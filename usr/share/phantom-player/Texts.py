@@ -68,6 +68,7 @@ class Texts:
         _dont_ignore = "Don't Ignore"
         _progress_reset = "Restart Progress"
         _progress_fill = "Fill Progress"
+        _rename = "Rename"
         _remove = "Remove from listing"
 
     class DialogVideos:
@@ -80,3 +81,8 @@ class Texts:
         _load_playlist_cached = "Loading videos of '{}'..."
         _load_playlists_ended = "All the playlists are loaded."
         _load_playlist_discover = "Discovering videos of '{}'..."
+
+    class DialogRenameSingle:
+        _title = "Rename"
+        _hdrive_off = "Rename the file only in the Phantom-Player."
+        _hdrive_on = "Rename the file in the hard-drive"

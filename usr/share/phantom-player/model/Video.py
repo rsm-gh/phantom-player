@@ -126,3 +126,9 @@ class Video(object):
             print("video id error " + self.__name)
         else:
             self.__guid = int(integer)
+
+    def set_name(self, name):
+        self.__name = name
+
+    def set_path(self, path):
+        self.__path = path
