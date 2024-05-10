@@ -2,22 +2,41 @@
 ![Videos Window](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/preview-videos.png)  
 <sub><sup>*The Desktop theme defines the look and the icons of the player.</sup></sub>
 
-**Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive. Some of its major features are:
+**Phantom Player** is conceived to reproduce and organize lists of videos from a hard-drive.  
+
+Some of its major features are:
 + Play lists of videos in order or randomly (without repeating videos).
 + Remember the last played playlist, and the videos progress.
 + Organize the play order.
 + Hide videos or files.
-+ Automatically discover new/renamed videos.
++ Automatically discover new/renamed/moved videos.
 + Set a start/end time to skip the introduction/credits.
 + Set the default audio/subtitle track.
 + Turn off the screensaver while playing.
 + Keep playing mode.
++ Rename videos.
 + and more...
 
-Beside the media playing, this software will be particularly useful for:
-+ Reproducing videos that are coming from torrents.
-+ Discover the videos from a hard-drive and organize them.
+### Reproducing media from torrents
+When it comes to torrents, the most important is to do not modify the data
+in the hard-drive, so you can continue seeding.  
 
+With this software you can:
++ Add a parent directory and create a recursive playlist.
++ Add multiple directories to a play list.
+
+And the software will filter only for the fully downloaded video files, and 
+display them nicely in the interface. Also, it will discover new videos
+if you are still downloading the torrent.
+
+### Organizing data from a hard-drive
+The software is great for organizing data from a hard-drive. You can add for example,
+the root directory of the hard-drive as a playlist path, and set it as recursive.
+The software will then scan the whole hard-drive and create a playlist with all the videos.
+This will allow you to:
++ Identify all the videos (and their paths)
++ Identify the duplicated videos.
++ Rename the videos.
 
 > **NOTE: THE PLAYER IS CURRENTLY UNDER DEVELOPMENT,
 > and the first stable version is not yet released.**  
