@@ -57,6 +57,8 @@ class DialogRenameSingle:
         if not os.path.exists(video.get_path()):
             self.__switch_hardrive.set_active(False)
             self.__switch_hardrive.set_sensitive(False)
+        else:
+            self.__switch_hardrive.set_sensitive(True)
         self.__entry_name.set_text(video.get_name())
 
         extension = video.get_extension()
@@ -64,6 +66,7 @@ class DialogRenameSingle:
             extension = "." + extension
         self.__entry_extension.set_text(extension)
         self.__dialog_rename.show()
+        self.__entry_name.grab_focus()
 
     def __update_switch_label(self):
         if self.__switch_hardrive.get_active():
