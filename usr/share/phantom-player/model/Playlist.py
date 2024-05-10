@@ -360,6 +360,10 @@ class Playlist(object):
     def get_random(self):
         return self.__random
 
+    def get_current_video_hash(self):
+        """This method is called by a getattr(), do not remove it."""
+        return self.__current_video_hash
+
     def get_video_by_guid(self, video_guid):
         for video in self.__videos_instances:
             if video.get_guid() == video_guid:
