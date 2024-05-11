@@ -859,8 +859,7 @@ class PhantomPlayer:
                 self.__liststore_playlists.remove(row.iter)
                 break
 
-        if self.__current_media.is_playlist(playlist):
-            self.__display_playlists(True)
+        self.__display_playlists(True)
 
     def __on_settings_playlist_close(self, closed_playlist):
         self.__liststore_playlists_update(closed_playlist)
