@@ -76,12 +76,17 @@ class DialogRenameSingle:
 
     def __on_button_apply(self, *_):
 
+        modify_hdrive = self.__switch_hardrive.get_active()
+        current_path = self.__video.get_path()
+
         new_name = self.__entry_name.get_text().strip()
         if new_name == "":
             print("ERROR: empty name")
             return
 
-        elif new_name == self.__video.get_name():
+        elif new_name == self.__video.get_name() and not modify_hdrive:
+            # If the file name is the same, but different in the hdrive (the user just changed the option)
+            # the code should not quit here.
             self.__dialog_rename.hide()
             return
 
@@ -90,16 +95,16 @@ class DialogRenameSingle:
         if extension != "":
             full_name = full_name + "." + extension
 
-        new_path = os.path.join(os.path.dirname(self.__video.get_path()), full_name)
+        new_path = os.path.join(os.path.dirname(current_path), full_name)
 
-        if self.__switch_hardrive.get_active():
+        if self.__switch_hardrive.get_active() and new_path != current_path:
 
             if os.path.exists(new_path):
                 print("ERROR: already existent path", new_path)
                 return
 
             try:
-                os.rename(self.__video.get_path(), new_path)
+                os.rename(current_path, new_path)
             except Exception as e:
                 print(e)
                 return
