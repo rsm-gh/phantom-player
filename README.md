@@ -19,30 +19,32 @@ Some of its major features are:
 
 ### Reproducing media from torrents
 When it comes to torrents, the most important is to do not modify the data
-in the hard-drive, so you can continue seeding.  
+in order to continue seeding.  
 
 With this software you can:
 + Add a parent directory and create a recursive playlist.
 + Add multiple directories to a play list.
 
-And the software will filter only for the fully downloaded video files, and 
-display them nicely in the interface. Also, it will discover new videos
-if you are still downloading the torrent.
+And the software will filter only the fully downloaded video files,
+display them nicely in the interface, and give you a streaming platform feeling.   
+
+Also, if there are multiple seasons, or you have many episodes to download,
+it will automatically discover the new videos.
 
 ### Organizing data from a hard-drive
-The software is great for organizing data from a hard-drive. You can add for example,
-the root directory of the hard-drive as a playlist path, and set it as recursive.
+The software is great for organizing data from a hard-drive.  
+
+For example, you can add the root directory of the hard-drive as a playlist path, and set it as recursive. 
 The software will then scan the whole hard-drive and create a playlist with all the videos.
 This will allow you to:
-+ Identify all the videos (and their paths)
++ Identify all the videos (and their paths).
 + Identify the duplicated videos.
 + Rename the videos.
 
-> **NOTE: THE PLAYER IS CURRENTLY UNDER DEVELOPMENT,
-> and the first stable version is not yet released.**  
-> The remaining work can be read [here](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/DevNotes.md).
-
 ## How to Install
+
+> **NOTE: THE PLAYER IS CURRENTLY UNDER DEVELOPMENT,
+> and the first stable version is not yet released** [more info](https://github.com/rsm-gh/phantom-player/blob/master/usr/share/doc/phantom-player/DevNotes.md).
 
 1. Download the [stable branch](https://github.com/rsm-gh/phantom-player/archive/master.zip).
 2. Install the dependencies:
@@ -52,7 +54,7 @@ This will allow you to:
 3. Execute the setup file.
 
 **If the dependencies are satisfied, the software can be directly executed, the installation is not mandatory.*  
-***When the stable version is released, there will be some packages for popular distributions & windows.* 
+***When the stable version be released, there will be some packages for popular distributions & windows.* 
 
 ## Controls
 
@@ -60,6 +62,7 @@ This will allow you to:
 + Play a video with a double left-click.
 + Open the video's menu with a right-click.
 + Order the videos with drag and drop.
++ Modify the columns to display, by doing a middle-click in the videos-list header.
 
 ### Media Player
 + Turn to fullscreen with the F11 key or with the button from the media player.
