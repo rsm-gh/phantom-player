@@ -81,7 +81,6 @@ class DialogRenameSingle:
 
         new_name = self.__entry_name.get_text().strip()
         if new_name == "":
-            print("ERROR: empty name")
             return
 
         elif new_name == self.__video.get_name() and not modify_hdrive:
