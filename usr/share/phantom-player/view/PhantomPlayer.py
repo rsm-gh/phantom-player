@@ -778,7 +778,6 @@ class PhantomPlayer:
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_playlist_ignore_change, False)
 
-
         if selection_length == 1:
             video_guid = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
             video = self.__current_media._playlist.get_video_by_guid(video_guid)
@@ -787,6 +786,7 @@ class PhantomPlayer:
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._rename)
             menu.append(menuitem)
             menuitem.connect('activate', self.__on_menuitem_video_rename_single, video)
+            menuitem.set_sensitive(self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
 
             # Open the containing folder (only if the user selected one video)
             if os.path.exists(video.get_path()):
