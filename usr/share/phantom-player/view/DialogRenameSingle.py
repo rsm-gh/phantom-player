@@ -20,6 +20,7 @@ import os
 from gi.repository import Gtk
 
 from Texts import Texts
+from controller.playlist_factory import _COLUMN_SEPARATOR
 from controller.playlist_factory import save as save_playlist
 
 class DialogRenameSingle:
@@ -81,6 +82,10 @@ class DialogRenameSingle:
 
         new_name = self.__entry_name.get_text().strip()
         if new_name == "":
+            return
+
+        elif _COLUMN_SEPARATOR in new_name:
+            print("ERROR, _COLUMN_SEPARATOR in new name", new_name)
             return
 
         elif new_name == self.__video.get_name() and not modify_hdrive:
