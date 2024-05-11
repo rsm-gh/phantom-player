@@ -3,6 +3,8 @@
 ## Phantom-Player
 
 ### Remaining Work:
++ Display the duplicated (excluded videos) at startup.
++ Add keyboard shortcuts (ctrl-i -> ignore, ctr-r -> rename, etc..)
 + Apply the "load video/discover" methods of the settings dialog into a thread.
 + Finish the option "end at"
 + Discover videos in the background, once all the series are loaded? To speed up the startup.

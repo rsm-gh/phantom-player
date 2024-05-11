@@ -29,15 +29,15 @@ class ThemeButtons:
     """
     _play = "media-playback-start"
     _pause = "media-playback-pause"
-    _next = "go-next"
-    _previous = "go-previous"
+    _next = "go-last"
+    _previous = "go-first"
     _volume = ["audio-volume-muted", "audio-volume-high", "audio-volume-medium"]
     _fullscreen = "view-fullscreen"
     _un_fullscreen = "view-restore"
     _random = "media-playlist-shuffle"
     _keep_playing = "media-playlist-repeat"
     _settings = "media-tape"
-    _menu = "go-home"
+    _menu = "open-menu"
 
 
 class FontColors:

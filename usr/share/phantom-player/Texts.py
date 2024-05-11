@@ -22,8 +22,8 @@ _LONG_TIME_PLEASE_WAIT = "This may take long time, please wait.."
 class Texts:
     class MediaPlayer:
         class Tooltip:
-            _start = "Restart"
-            _end = "End"
+            _start = "Go to Start"
+            _end = "Go to End"
             _play = "Play"
             _pause = "Pause"
             _tracks = "Audio & Subtitles"
