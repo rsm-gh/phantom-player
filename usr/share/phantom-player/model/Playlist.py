@@ -176,12 +176,16 @@ class Playlist(object):
         self.__videos_instances.append(video)
         self.__active_videos_nb += 1
 
-    def has_existent_paths(self):
+    def is_missing(self):
+
+        if len(self.__playlist_paths) == 0:
+            return False  # Playlists without paths should be displayed
+
         for path in self.__playlist_paths.keys():
             if os.path.exists(path):
-                return True
+                return False
 
-        return False
+        return True
 
     def can_recursive(self, rec_playlist_path):
 
