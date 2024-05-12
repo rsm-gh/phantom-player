@@ -180,7 +180,7 @@ class MediaPlayerWidget(Gtk.VBox):
         super().__init__()
 
         self.__delayed_media_data = None
-        self.__root_window = root_window
+        self.__window_root = root_window
         self.__motion_time = time()
         self.__scale_progress_pressed = False
         self.__video_duration = _EMPTY__VIDEO_LENGTH
@@ -208,7 +208,7 @@ class MediaPlayerWidget(Gtk.VBox):
         if un_max_fixed_toolbar:
             # It is important to add the motion_notify to the root_window,
             # to avoid hiding-it on un-maximized mode.
-            event_widget = self.__root_window
+            event_widget = self.__window_root
         else:
             event_widget = self.__vlc_widget
         event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
@@ -216,7 +216,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
-        self.__root_window.connect('key-press-event', self.__on_key_pressed)
+        self.__window_root.connect('key-press-event', self.__on_key_pressed)
 
         self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
         self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
@@ -477,7 +477,7 @@ class MediaPlayerWidget(Gtk.VBox):
         media.parse()
         self.__media = media  # assigned only after `parse()` has finished.
 
-        GLib.idle_add(self.__root_window.set_title, self.__media.get_meta(0))
+        GLib.idle_add(self.__window_root.set_title, self.__media.get_meta(0))
 
         # Patch 001: Some actions will be performed when the video length be properly parsed
         self.__delayed_media_data = DelayedMediaData(position=position,
@@ -719,13 +719,13 @@ class MediaPlayerWidget(Gtk.VBox):
                 parent.remove(self.__buttons_box)
 
         if fullscreen:
-            self.__root_window.fullscreen()
+            self.__window_root.fullscreen()
             self.__toolbutton_fullscreen.set_icon_name(ThemeButtons._un_fullscreen)
             self.__toolbutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._unfullscreen)
             if self.__un_maximized_fixed_toolbar:
                 self.__overlay.add_overlay(self.__buttons_box)
         else:
-            self.__root_window.unfullscreen()
+            self.__window_root.unfullscreen()
             self.__toolbutton_fullscreen.set_icon_name(ThemeButtons._fullscreen)
             self.__toolbutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._fullscreen)
             if self.__un_maximized_fixed_toolbar:
@@ -793,7 +793,7 @@ class MediaPlayerWidget(Gtk.VBox):
             time_delta = time() - self.__motion_time
 
             if self.__un_maximized_fixed_toolbar:
-                fullscreen = gtk_utils.window_is_fullscreen(self.__root_window)
+                fullscreen = gtk_utils.window_is_fullscreen(self.__window_root)
             else:
                 fullscreen = None
 
@@ -820,7 +820,7 @@ class MediaPlayerWidget(Gtk.VBox):
         if event.keyval == EventCodes.Keyboard._f11 and self.__media is not None:
             self.__set_fullscreen(True)
 
-        elif gtk_utils.window_is_fullscreen(self.__root_window):
+        elif gtk_utils.window_is_fullscreen(self.__window_root):
 
             match event.keyval:
                 # display the toolbox if the arrows are pressed?
@@ -867,7 +867,7 @@ class MediaPlayerWidget(Gtk.VBox):
         elif self.__scale_progress_pressed:
             return
 
-        elif not gtk_utils.window_is_fullscreen(self.__root_window):
+        elif not gtk_utils.window_is_fullscreen(self.__window_root):
             return
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
@@ -913,7 +913,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.emit(CustomSignals._btn_random_toggled, widget.get_active())
 
     def __on_toolbutton_fullscreen_clicked(self, *_):
-        self.__set_fullscreen(not gtk_utils.window_is_fullscreen(self.__root_window))
+        self.__set_fullscreen(not gtk_utils.window_is_fullscreen(self.__window_root))
 
     def __on_menuitem_track_activate(self, _, track_type, track):
 
@@ -934,7 +934,7 @@ class MediaPlayerWidget(Gtk.VBox):
         file_filter.set_name('*.srt')
         file_filter.add_pattern('*.srt')
 
-        path = gtk_utils.dialog_select_file(parent=self.__root_window,
+        path = gtk_utils.dialog_select_file(parent=self.__window_root,
                                             file_filter=file_filter)
 
         if path is not None:
