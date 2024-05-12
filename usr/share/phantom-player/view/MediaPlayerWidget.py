@@ -216,11 +216,10 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
+        self.__root_window.connect('key-press-event', self.__on_key_pressed)
 
         self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
         self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
-
-        self.__root_window.connect('key-press-event', self.__on_key_pressed)
 
         # Buttons Box
         self.__buttons_box = Gtk.Box()
@@ -515,10 +514,6 @@ class MediaPlayerWidget(Gtk.VBox):
             return False
 
         return self.__toggletoolbutton_keep_playing.get_active()
-
-    def get_media(self):
-        # self.__vlc_widget.player.get_media()
-        return self.__media
 
     def __thread_set_video(self, play, from_scale):
         """
@@ -817,7 +812,7 @@ class MediaPlayerWidget(Gtk.VBox):
             if (time_delta > 3 and not self.__scale_progress_pressed and
                     ((not self.__un_maximized_fixed_toolbar and self.__widgets_shown > WidgetsShown._none) or
                      (self.__widgets_shown != WidgetsShown._toolbox and fullscreen is not None) or
-                     (self.__hidden_controls is False and self.get_media()))):
+                     (self.__hidden_controls is False and self.__media))):
 
                 GLib.idle_add(self.__label_volume.hide)
                 GLib.idle_add(self.__set_cursor_empty)
@@ -836,7 +831,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         key = event.keyval
 
-        if key == EventCodes.Keyboard._f11 and self.get_media() is not None:
+        if key == EventCodes.Keyboard._f11 and self.__media is not None:
             self.__set_fullscreen(True)
 
         elif self.__get_window_is_fullscreen():
@@ -868,7 +863,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_mouse_scroll(self, _, event):
 
-        if self.get_media() is None:
+        if self.__media is None:
             return
 
         elif event.direction == Gdk.ScrollDirection.UP:
@@ -879,7 +874,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_mouse_button_press(self, _, event):
 
-        if self.get_media() is None:
+        if self.__media is None:
             return
 
         elif self.__scale_progress_pressed:
