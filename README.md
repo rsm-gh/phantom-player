@@ -56,11 +56,22 @@ This will allow you to:
 **If the dependencies are satisfied, the software can be directly executed, the installation is not mandatory.*  
 ***When the stable version be released, there will be some packages for popular distributions & windows.* 
 
-## Controls
+## User Manual
 
-### Videos List
+The user manual is in progress. For the moment, here you can find some details about the
+software controls & behaviour.
+
+### Playlists menu
++ Select a playlist with a single left-click.
+
++ Keyboard shortcuts:
+  + `ctrl+h` hide / display missing playlists.
+  + `ctrl+f` find playlists. 
+  + `ctrl+a` display the about dialog.
+
+### Videos menu
 + Play a video with a double left-click.
-+ Open the video's menu with a right-click.
++ Open a video's menu with a right-click.
 + Order the videos with drag and drop.
 + Modify the columns to display, by doing a middle-click in the videos-list header.
 

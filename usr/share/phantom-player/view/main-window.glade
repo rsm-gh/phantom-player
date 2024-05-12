@@ -398,7 +398,7 @@ Author: Rafael Senties Martinelli
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="button_new_playlist">
+          <object class="GtkButton" id="button_playlist_new">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>

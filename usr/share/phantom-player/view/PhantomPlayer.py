@@ -742,7 +742,7 @@ class PhantomPlayer:
         self.__mp_widget.stop()
         self.__mp_widget.set_keep_playing(new_playlist.get_keep_playing())
         self.__mp_widget.set_random(new_playlist.get_random())
-        
+
     def __on_entry_playlist_search_changed(self, *_):
         self.__liststore_playlists_populate()
 
