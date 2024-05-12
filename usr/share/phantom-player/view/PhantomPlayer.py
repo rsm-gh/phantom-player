@@ -235,13 +235,13 @@ class PhantomPlayer:
         #
         #    Display the window
         #
-        self.__load_fonts()
+        self.__fonts_reload()
         self.__button_new_playlist.set_sensitive(False)
         self.__button_playlist_settings.set_sensitive(False)
         self.__window_root.maximize()
         self.__window_root.show_all()
         self.__mp_widget.hide_volume_label()
-        self.__display_playlists(True)
+        self.__playlists_display(True)
 
         #
         #    Load the existent playlist
@@ -252,86 +252,8 @@ class PhantomPlayer:
     def present(self):
         self.__window_root.present()
 
-    def __on_key_pressed(self, _, event):
-
-        if not (Gdk.ModifierType.CONTROL_MASK & event.state):
-            return
-
-        if self.__scrolledwindow_playlists.is_visible():
-            match event.keyval:
-                case EventCodes.Keyboard._letter_h:  # Hide playlists
-                    self.__checkbox_hide_missing_playlist.set_active(
-                        not self.__checkbox_hide_missing_playlist.get_active()
-                    )
-
-                case EventCodes.Keyboard._letter_f:  # Search playlists
-                    self.__entry_search_playlists.grab_focus()
-
-                case EventCodes.Keyboard._letter_n:  # New Playlists
-                    if self.__button_new_playlist.get_sensitive():
-                        self.__on_button_new_playlist_clicked()
-
-                case EventCodes.Keyboard._letter_a:  # About dialog
-                    self.__on_menuitem_about_activate()
-
-
-        elif not gtk_utils.window_is_fullscreen(self.__window_root):
-            pass
-
-    def __on_delete_event(self, *_):
-        self.__mp_widget.pause()  # faster than quit
-        self.__window_root.hide()  # GLib is used to hide the GUI without LAG
-        self.__quit_requested = True
-        self.__mp_widget.quit()
-        self.__thread_load_playlists.join()
-        VLC_INSTANCE.release()
-        for playlist in self.__playlists.values():
-            playlist_factory.save(playlist)
-
-        return False
-
     def get_quit(self):
         return self.__quit_requested
-
-    def __load_fonts(self):
-        _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default,
-                                                                  on_error=settings.FontColors._default)
-        _, self.__fontcolor_success = gtk_utils.get_default_color(gtk_utils.FontColors._success,
-                                                                  on_error=settings.FontColors._success)
-        _, self.__fontcolor_warning = gtk_utils.get_default_color(gtk_utils.FontColors._warning,
-                                                                  on_error=settings.FontColors._warning)
-        _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error,
-                                                                on_error=settings.FontColors._error)
-
-    def __push_status(self, status):
-        self.__statusbar.push(0, status)
-
-    def __display_playlists(self, value):
-
-        if value:
-            self.__headerbar.props.title = Texts.GUI._title
-            self.__current_media = CurrentMedia()
-            self.__mp_widget.stop()
-            self.__paned.hide()
-            self.__scrolledwindow_playlists.show()
-            self.__button_new_playlist.show()
-            self.__entry_search_playlists.show()
-            self.__menubutton_main.show()
-            self.__button_playlist_settings.hide()
-            self.__button_display_playlists.hide()
-        else:
-            self.__scrolledwindow_playlists.hide()
-            self.__paned.show()
-            self.__button_new_playlist.hide()
-            self.__entry_search_playlists.hide()
-            self.__menubutton_main.hide()
-            self.__button_playlist_settings.show()
-            self.__button_playlist_settings.set_sensitive(
-                self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
-            self.__button_display_playlists.show()
-
-            _, window_height = self.__window_root.get_size()
-            self.__paned.set_position(window_height / 2)
 
     def __get_video_color(self, video):
         if video.get_ignore():
@@ -413,6 +335,19 @@ class PhantomPlayer:
 
         self.__liststore_videos_select_current()
 
+    def __fonts_reload(self):
+        _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default,
+                                                                  on_error=settings.FontColors._default)
+        _, self.__fontcolor_success = gtk_utils.get_default_color(gtk_utils.FontColors._success,
+                                                                  on_error=settings.FontColors._success)
+        _, self.__fontcolor_warning = gtk_utils.get_default_color(gtk_utils.FontColors._warning,
+                                                                  on_error=settings.FontColors._warning)
+        _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error,
+                                                                on_error=settings.FontColors._error)
+
+    def __statusbar_push(self, status):
+        self.__statusbar.push(0, status)
+
     def __playlists_load(self):
 
         killed = False
@@ -434,7 +369,7 @@ class PhantomPlayer:
 
                 full_path = os.path.join(_SERIES_DIR, file_name)
 
-                GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_cached.format(file_name))
+                GLib.idle_add(self.__statusbar_push, Texts.StatusBar._load_playlist_cached.format(file_name))
 
                 playlist = playlist_factory.load(file_path=full_path)
                 playlist.set_guid(len(self.__playlists))
@@ -469,7 +404,8 @@ class PhantomPlayer:
             GLib.idle_add(self.__on_settings_playlist_close, playlist)
 
             if playlist.requires_discover(is_startup=True):
-                GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlist_discover.format(playlist.get_name()))
+                GLib.idle_add(self.__statusbar_push,
+                              Texts.StatusBar._load_playlist_discover.format(playlist.get_name()))
                 video_factory.discover(playlist,
                                        update_func=self.__liststore_videos_update_glib,
                                        quit_func=self.get_quit)  # No add_func because the GUI is frozen on the first playlist
@@ -485,12 +421,39 @@ class PhantomPlayer:
         #
         GLib.idle_add(self.__window_root.set_sensitive, True)
         GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
-        GLib.idle_add(self.__push_status, Texts.StatusBar._load_playlists_ended)
+        GLib.idle_add(self.__statusbar_push, Texts.StatusBar._load_playlists_ended)
 
         if killed:
             print("Load playlist killed.")
         else:
             print("Load playlist ended.")
+
+    def __playlists_display(self, value):
+
+        if value:
+            self.__headerbar.props.title = Texts.GUI._title
+            self.__current_media = CurrentMedia()
+            self.__mp_widget.stop()
+            self.__paned.hide()
+            self.__scrolledwindow_playlists.show()
+            self.__button_new_playlist.show()
+            self.__entry_search_playlists.show()
+            self.__menubutton_main.show()
+            self.__button_playlist_settings.hide()
+            self.__button_display_playlists.hide()
+        else:
+            self.__scrolledwindow_playlists.hide()
+            self.__paned.show()
+            self.__button_new_playlist.hide()
+            self.__entry_search_playlists.hide()
+            self.__menubutton_main.hide()
+            self.__button_playlist_settings.show()
+            self.__button_playlist_settings.set_sensitive(
+                self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
+            self.__button_display_playlists.show()
+
+            _, window_height = self.__window_root.get_size()
+            self.__paned.set_position(window_height / 2)
 
     def __liststore_playlists_update_progress(self, playlist):
         if playlist is None:
@@ -606,6 +569,43 @@ class PhantomPlayer:
                 self.__treeview_videos.set_cursor(i)
                 break
 
+    def __on_delete_event(self, *_):
+        self.__mp_widget.pause()  # faster than quit
+        self.__window_root.hide()  # GLib is used to hide the GUI without LAG
+        self.__quit_requested = True
+        self.__mp_widget.quit()
+        self.__thread_load_playlists.join()
+        VLC_INSTANCE.release()
+        for playlist in self.__playlists.values():
+            playlist_factory.save(playlist)
+
+        return False
+
+    def __on_key_pressed(self, _, event):
+
+        if not (Gdk.ModifierType.CONTROL_MASK & event.state):
+            return
+
+        if self.__scrolledwindow_playlists.is_visible():
+            match event.keyval:
+                case EventCodes.Keyboard._letter_h:  # Hide playlists
+                    self.__checkbox_hide_missing_playlist.set_active(
+                        not self.__checkbox_hide_missing_playlist.get_active()
+                    )
+
+                case EventCodes.Keyboard._letter_f:  # Search playlists
+                    self.__entry_search_playlists.grab_focus()
+
+                case EventCodes.Keyboard._letter_n:  # New Playlists
+                    if self.__button_new_playlist.get_sensitive():
+                        self.__on_button_new_playlist_clicked()
+
+                case EventCodes.Keyboard._letter_a:  # About dialog
+                    self.__on_menuitem_about_activate()
+
+        elif not gtk_utils.window_is_fullscreen(self.__window_root):
+            pass
+
     def __on_window_root_configure_event(self, *_):
 
         if Gdk.WindowState.FULLSCREEN & self.__window_root.get_window().get_state():
@@ -653,7 +653,7 @@ class PhantomPlayer:
             self.__window_root.unfullscreen()
 
     def __on_button_display_playlists_clicked(self, *_):
-        self.__display_playlists(True)
+        self.__playlists_display(True)
 
     def __on_iconview_playlists_press_event(self, iconview, event):
 
@@ -675,7 +675,7 @@ class PhantomPlayer:
             return
 
         self.__current_media = CurrentMedia(playlist)
-        self.__display_playlists(False)
+        self.__playlists_display(False)
         self.__liststore_videos_populate()
         self.__liststore_videos_select_current()
         self.__set_video(video_guid=self.__current_media._playlist.get_last_played_video_guid(),
@@ -703,7 +703,7 @@ class PhantomPlayer:
 
     def __on_treeviewcolumn_videos_header_clicked(self, _widget, event):
         """
-            The event.button must be different from __on_treeview_videos_press_event,
+            The event button must be different from __on_treeview_videos_press_event,
             or this signal will be overridden.
         """
 
@@ -878,7 +878,7 @@ class PhantomPlayer:
                 self.__liststore_playlists.remove(row.iter)
                 break
 
-        self.__display_playlists(True)
+        self.__playlists_display(True)
 
     def __on_settings_playlist_close(self, closed_playlist):
         self.__liststore_playlists_update(closed_playlist)
@@ -970,7 +970,7 @@ class PhantomPlayer:
         self.__configuration.write(GlobalConfigTags._dark_theme, state)
         self.__gtk_settings.set_property("gtk-application-prefer-dark-theme", state)
 
-        self.__load_fonts()
+        self.__fonts_reload()
         self.__liststore_videos_populate()
 
     def __on_checkbox_hide_missing_playlist_toggled(self, checkbox, *_):
