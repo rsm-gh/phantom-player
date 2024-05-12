@@ -63,11 +63,10 @@ class VideosListstoreColumnsIndex:
 class GlobalConfigTags:
     _main_section = "phantom-player"
 
-    _checkbox_missing_playlist_warning = "missing-playlist-warning"
     _checkbox_hidden_videos = "hidden-videos"
     _checkbox_hide_missing_playlist = "hide-missing-playlist"
     _current_playlist = "current_playlist"
-    _prefer_dark_theme = "prefer_dark_theme"
+    _dark_theme = "dark_theme"
 
     _hide_video_number = 'hide_video_number'
     _hide_video_path = 'hide_video_path'
@@ -115,7 +114,7 @@ class PhantomPlayer:
         self.__iconview_playlists = builder.get_object('iconview_playlists')
         self.__treeselection_playlist = builder.get_object('treeselection_playlist')
         self.__treeselection_videos = builder.get_object('treeselection_videos')
-        self.__checkbox_prefer_dark_theme = builder.get_object('checkbox_prefer_dark_theme')
+        self.__checkbox_dark_theme = builder.get_object('checkbox_dark_theme')
         self.__checkbox_hidden_items = builder.get_object('checkbox_hidden_items')
         self.__menu_videos_header = builder.get_object('menu_videos_header')
         self.__checkbox_hide_ext = builder.get_object('checkbox_hide_ext')
@@ -124,7 +123,6 @@ class PhantomPlayer:
         self.__checkbox_hide_name = builder.get_object('checkbox_hide_name')
         self.__checkbox_hide_extension = builder.get_object('checkbox_hide_extension')
         self.__checkbox_hide_progress = builder.get_object('checkbox_hide_progress')
-        self.__checkbox_hide_warning_missing_playlist = builder.get_object('checkbox_hide_warning_missing_playlist')
         self.__checkbox_hide_missing_playlist = builder.get_object('checkbox_hide_missing_playlist')
         self.__column_number = builder.get_object('column_number')
         self.__column_path = builder.get_object('column_path')
@@ -154,9 +152,7 @@ class PhantomPlayer:
         self.__button_playlist_settings.connect("clicked", self.__on_button_playlist_settings_clicked)
 
         self.__menuitem_about.connect("activate", self.__on_menuitem_about_activate)
-        self.__checkbox_prefer_dark_theme.connect('toggled', self.__on__checkbox_prefer_dark_theme_toggled)
-        self.__checkbox_hide_warning_missing_playlist.connect('toggled',
-                                                              self.__on_checkbox_hide_warning_missing_playlist_toggled)
+        self.__checkbox_dark_theme.connect('toggled', self.__on__checkbox_dark_theme_toggled)
         self.__checkbox_hide_missing_playlist.connect('toggled', self.__on_checkbox_hide_missing_playlist_toggled)
 
         self.__checkbox_hide_number.connect('toggled', self.__on_checkbox_hide_number_toggled)
@@ -218,13 +214,8 @@ class PhantomPlayer:
                                                          close_function=self.__on_settings_playlist_close,
                                                          change_function=self.__on_settings_playlist_change)
 
-        self.__checkbox_prefer_dark_theme.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._prefer_dark_theme, True))
-        self.__checkbox_hide_warning_missing_playlist.set_active(
-            self.__configuration.get_bool(GlobalConfigTags._checkbox_missing_playlist_warning))
-
-        self.__checkbox_hide_missing_playlist.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._checkbox_hide_missing_playlist, False))
+        self.__checkbox_dark_theme.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._dark_theme, True))
 
         self.__checkbox_hide_number.set_active(
             not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_number, False))
@@ -426,7 +417,7 @@ class PhantomPlayer:
 
                 self.__playlists[playlist.get_guid()] = playlist
 
-                if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
+                if not playlist.is_missing() or not self.__checkbox_hide_missing_playlist.get_active():
                     GLib.idle_add(self.__liststore_playlists_append, playlist)
 
         # Once the playlists headers are loaded, it is possible to create new playlists.
@@ -526,7 +517,7 @@ class PhantomPlayer:
         #
         self.__liststore_playlists.clear()
         for playlist in sorted(filtered_playlists, key=lambda x: x.get_name()):
-            if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
+            if not playlist.is_missing() or not self.__checkbox_hide_missing_playlist.get_active():
                 self.__liststore_playlists_append(playlist)
 
     def __liststore_videos_populate(self):
@@ -815,7 +806,7 @@ class PhantomPlayer:
 
         self.__playlists[playlist.get_guid()] = playlist
 
-        if playlist.has_existent_paths() or not self.__checkbox_hide_missing_playlist.get_active():
+        if not playlist.is_missing() or not self.__checkbox_hide_missing_playlist.get_active():
             self.__liststore_playlists_append(playlist)
 
     def __on_settings_playlist_restart(self, playlist):
@@ -946,16 +937,13 @@ class PhantomPlayer:
         if os.path.exists(path):
             open_directory(path)
 
-    def __on__checkbox_prefer_dark_theme_toggled(self, checkbox, *_):
+    def __on__checkbox_dark_theme_toggled(self, checkbox, *_):
         state = checkbox.get_active()
-        self.__configuration.write(GlobalConfigTags._prefer_dark_theme, state)
+        self.__configuration.write(GlobalConfigTags._dark_theme, state)
         self.__gtk_settings.set_property("gtk-application-prefer-dark-theme", state)
 
         self.__load_fonts()
         self.__liststore_videos_populate()
-
-    def __on_checkbox_hide_warning_missing_playlist_toggled(self, checkbox, *_):
-        self.__configuration.write(GlobalConfigTags._checkbox_missing_playlist_warning, checkbox.get_active())
 
     def __on_checkbox_hide_missing_playlist_toggled(self, checkbox, *_):
         self.__liststore_playlists_populate()

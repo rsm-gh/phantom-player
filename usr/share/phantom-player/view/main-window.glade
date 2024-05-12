@@ -326,10 +326,10 @@ Author: Rafael Senties Martinelli
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_prefer_dark_theme">
+                      <object class="GtkCheckMenuItem" id="checkbox_dark_theme">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Prefer Dark Theme</property>
+                        <property name="label" translatable="yes">Dark Theme</property>
                       </object>
                     </child>
                   </object>
@@ -346,13 +346,6 @@ Author: Rafael Senties Martinelli
                   <object class="GtkMenu" id="menu2">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_warning_missing_playlist">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Warn if missing</property>
-                      </object>
-                    </child>
                     <child>
                       <object class="GtkCheckMenuItem" id="checkbox_hide_missing_playlist">
                         <property name="visible">True</property>
