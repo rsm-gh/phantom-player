@@ -701,18 +701,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__thread_player_activity.join()
         self.__thread_player_activity = None
 
-    def __get_window_is_fullscreen(self):
-
-        window = self.__root_window.get_window()
-
-        if window is None:
-            return False
-
-        elif Gdk.WindowState.FULLSCREEN & window.get_state():
-            return True
-
-        return False
-
     def __set_cursor_empty(self):
         window = self.get_window()
         if window is not None: # it can become none when quitting.
@@ -805,7 +793,7 @@ class MediaPlayerWidget(Gtk.VBox):
             time_delta = time() - self.__motion_time
 
             if self.__un_maximized_fixed_toolbar:
-                fullscreen = self.__get_window_is_fullscreen()
+                fullscreen = gtk_utils.window_is_fullscreen(self.__root_window)
             else:
                 fullscreen = None
 
@@ -829,15 +817,13 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def __on_key_pressed(self, _, event):
 
-        key = event.keyval
-
-        if key == EventCodes.Keyboard._f11 and self.__media is not None:
+        if event.keyval == EventCodes.Keyboard._f11 and self.__media is not None:
             self.__set_fullscreen(True)
 
-        elif self.__get_window_is_fullscreen():
+        elif gtk_utils.window_is_fullscreen(self.__root_window):
 
-            match key:
-                # display the toolbox if the arrows are shown
+            match event.keyval:
+                # display the toolbox if the arrows are pressed?
                 case EventCodes.Keyboard._arrow_left | EventCodes.Keyboard._arrow_right:
                     self.__motion_time = time()
 
@@ -881,7 +867,7 @@ class MediaPlayerWidget(Gtk.VBox):
         elif self.__scale_progress_pressed:
             return
 
-        elif not self.__get_window_is_fullscreen():
+        elif not gtk_utils.window_is_fullscreen(self.__root_window):
             return
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
@@ -927,7 +913,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.emit(CustomSignals._btn_random_toggled, widget.get_active())
 
     def __on_toolbutton_fullscreen_clicked(self, *_):
-        self.__set_fullscreen(not self.__get_window_is_fullscreen())
+        self.__set_fullscreen(not gtk_utils.window_is_fullscreen(self.__root_window))
 
     def __on_menuitem_track_activate(self, _, track_type, track):
 

@@ -121,3 +121,13 @@ class EventCodes:
         _arrow_down = 65364
         _arrow_right = 65363
         _arrow_left = 65361
+        _letter_a = 97
+        _letter_e = 101
+        _letter_f = 102
+        _letter_h = 104
+        _letter_i = 105
+        _letter_n = 110
+        _letter_o = 111
+        _letter_r = 114
+        _letter_s = 115
+

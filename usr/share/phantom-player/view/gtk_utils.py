@@ -201,3 +201,15 @@ def dialog_info(parent, text1, text2=None):
 
     _ = dialog.run()
     dialog.destroy()
+
+
+def window_is_fullscreen(gtk_window):
+    window = gtk_window.get_window()
+
+    if window is None:
+        return False
+
+    elif Gdk.WindowState.FULLSCREEN & window.get_state():
+        return True
+
+    return False

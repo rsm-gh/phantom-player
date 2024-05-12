@@ -20,6 +20,7 @@
 
 ## MediaPlayerWidget
 + Enable video tracks?
++ on left right arrows?
 
 ### Remaining Work:
 + `player.set_track()` returns a status. It would be good to read the status and display a message in case of error.

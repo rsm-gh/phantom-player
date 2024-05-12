@@ -144,6 +144,8 @@ class PhantomPlayer:
         # GTK Binding
         #
         self.__window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.__window_root.connect('key-press-event', self.__on_key_pressed)
+
         self.__window_root.connect('delete-event', self.__on_delete_event)
         self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
 
@@ -249,6 +251,32 @@ class PhantomPlayer:
 
     def present(self):
         self.__window_root.present()
+
+    def __on_key_pressed(self, _, event):
+
+        if not (Gdk.ModifierType.CONTROL_MASK & event.state):
+            return
+
+        if self.__scrolledwindow_playlists.is_visible():
+            match event.keyval:
+                case EventCodes.Keyboard._letter_h:  # Hide playlists
+                    self.__checkbox_hide_missing_playlist.set_active(
+                        not self.__checkbox_hide_missing_playlist.get_active()
+                    )
+
+                case EventCodes.Keyboard._letter_f:  # Search playlists
+                    self.__entry_search_playlists.grab_focus()
+
+                case EventCodes.Keyboard._letter_n:  # New Playlists
+                    if self.__button_new_playlist.get_sensitive():
+                        self.__on_button_new_playlist_clicked()
+
+                case EventCodes.Keyboard._letter_a:  # About dialog
+                    self.__on_menuitem_about_activate()
+
+
+        elif not gtk_utils.window_is_fullscreen(self.__window_root):
+            pass
 
     def __on_delete_event(self, *_):
         self.__mp_widget.pause()  # faster than quit
