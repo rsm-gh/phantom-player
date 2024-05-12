@@ -3,6 +3,7 @@
 ## Phantom-Player
 
 ### Remaining Work:
++ Create the playlist cellrender
 + Display the duplicated (excluded videos) at startup.
 + Add keyboard shortcuts (ctrl-i -> ignore, ctr-r -> rename, etc..)
 + Apply the "load video/discover" methods of the settings dialog into a thread.

@@ -159,7 +159,7 @@ class PhantomPlayer:
         self.__menuitem_about.connect("activate", self.__on_menuitem_about_activate)
         self.__checkbox_dark_theme.connect('toggled', self.__on__checkbox_dark_theme_toggled)
         self.__checkbox_playlist_missing.connect('toggled', self.__on_checkbox_playlist_missing_toggled)
-        self.__iconview_playlists.connect('button-press-event', self.__on_iconview_playlists_press_event)
+        self.__iconview_playlists.connect('item-activated', self.__on_iconview_playlists_item_activated)
 
         self.__checkbox_video_cnumber.connect('toggled',
                                               self.__on_checkbox_video_column_toggled,
@@ -681,18 +681,7 @@ class PhantomPlayer:
     def __on_button_display_playlists_clicked(self, *_):
         self.__playlists_display(True)
 
-    def __on_iconview_playlists_press_event(self, iconview, event):
-
-        if event.type != Gdk.EventType.BUTTON_PRESS or event.button != EventCodes.Cursor._left_click:
-            return
-
-        #
-        # General
-        #
-
-        path = iconview.get_path_at_pos(event.x, event.y)
-        if path is None:
-            return
+    def __on_iconview_playlists_item_activated(self, _, path):
 
         playlist_id = self.__liststore_playlists[path][PlaylistListstoreColumnsIndex._id]
         playlist = self.__playlists[playlist_id]
