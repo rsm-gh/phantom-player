@@ -58,33 +58,45 @@ This will allow you to:
 
 ## User Manual
 
-The user manual is in progress. For the moment, here you can find some details about the
-software controls & behaviour.
+The user manual is in progress. For the moment, here you can find some details 
+about the controls & behaviour.
 
 ### Playlists menu
 + Select a playlist with a single left-click.
 
 + Keyboard shortcuts:
-  + `ctrl+h` hide / display missing playlists.
-  + `ctrl+f` find playlists. 
   + `ctrl+a` display the about dialog.
+  + `ctrl+f` find/filter playlists by name.
+  + `ctrl+h` hide/display missing playlists.
+  + `ctrl+n` create a new playlist.
 
 ### Videos menu
 + Play a video with a double left-click.
 + Open a video's menu with a right-click.
 + Order the videos with drag and drop.
 + Modify the columns to display, by doing a middle-click in the videos-list header.
-
-### Media Player
-+ Turn to fullscreen with the F11 key or with the button from the media player.
-+ Turn off the fullscreen with the Esc key or with the button from the media player.
-+ Change the volume with the mouse wheel or the up/down arrows**.
-+ Toggle Play/Pause with a left-click**, the space bar** or the enter key**.
-+ Change the subtitles or the audio track with the button from the media player.
 + Resize the player by grabbing the separator with and moving it up or down.
++ Keyboard shortcuts [WORK IN PROGRESS]:
+  + `ctrl+h` hide/show missing videos.
+  + `ctrl+i` ignore/un-ignore videos.
+  + `ctrl+o` open the video location.
+  + `ctrl+r` rename videos.
 
-**The media player controls only work if a video is loaded.*  
-***Only in fullscreen mode.*  
+
+#### Media Player
++ Controls:
+    + Change the volume with the mouse wheel.
+  + Fullscreen only:
+      + Toggle Play/Pause with a left-click.
+
++ Keyboard shortcuts:
+  + `F11` to set fullscreen. 
+  + Fullscreen only:
+    + `Esc` to quit fullscreen. 
+    + `up/down arrows` to change the volume.
+    + `space bar` or `enter key` to toggle play/pause.
+
+**The media player controls only work if a video is loaded.*
 
 ## Extra
 
