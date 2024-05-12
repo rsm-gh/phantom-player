@@ -348,10 +348,10 @@ Author: Rafael Senties Martinelli
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkCheckMenuItem" id="checkbox_hide_missing_playlist">
+                      <object class="GtkCheckMenuItem" id="checkbox_playlist_missing">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hide missing</property>
+                        <property name="label" translatable="yes">Missing</property>
                       </object>
                     </child>
                   </object>
@@ -462,42 +462,42 @@ Author: Rafael Senties Martinelli
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <child>
-      <object class="GtkCheckMenuItem" id="checkbox_hide_number">
+      <object class="GtkCheckMenuItem" id="checkbox_video_cnumber">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Number</property>
       </object>
     </child>
     <child>
-      <object class="GtkCheckMenuItem" id="checkbox_hide_path">
+      <object class="GtkCheckMenuItem" id="checkbox_video_cpath">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Path</property>
       </object>
     </child>
     <child>
-      <object class="GtkCheckMenuItem" id="checkbox_hide_name">
+      <object class="GtkCheckMenuItem" id="checkbox_video_cname">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Name</property>
       </object>
     </child>
     <child>
-      <object class="GtkCheckMenuItem" id="checkbox_hide_extension">
+      <object class="GtkCheckMenuItem" id="checkbox_video_cextension">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Extension</property>
       </object>
     </child>
     <child>
-      <object class="GtkCheckMenuItem" id="checkbox_hide_progress">
+      <object class="GtkCheckMenuItem" id="checkbox_video_cprogress">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Progress</property>
       </object>
     </child>
     <child>
-      <object class="GtkCheckMenuItem" id="checkbox_hidden_items">
+      <object class="GtkCheckMenuItem" id="checkbox_video_rhidden">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Hidden Items</property>
