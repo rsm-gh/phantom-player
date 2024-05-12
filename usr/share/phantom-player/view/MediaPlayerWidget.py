@@ -836,21 +836,22 @@ class MediaPlayerWidget(Gtk.VBox):
 
         elif self.__get_window_is_fullscreen():
 
-            # display the toolbox if the arrows are shown
-            if key in (EventCodes.Keyboard._arrow_left, EventCodes.Keyboard._arrow_right):
-                self.__motion_time = time()
+            match key:
+                # display the toolbox if the arrows are shown
+                case EventCodes.Keyboard._arrow_left | EventCodes.Keyboard._arrow_right:
+                    self.__motion_time = time()
 
-            if key == EventCodes.Keyboard._esc:
-                self.__set_fullscreen(False)
+                case EventCodes.Keyboard._esc:
+                    self.__set_fullscreen(False)
 
-            elif key in (EventCodes.Keyboard._space_bar, EventCodes.Keyboard._enter):
-                self.__on_toolbutton_play_clicked(None, None)
+                case EventCodes.Keyboard._space_bar | EventCodes.Keyboard._enter:
+                    self.__on_toolbutton_play_clicked(None, None)
 
-            elif key == EventCodes.Keyboard._arrow_up:
-                self.volume_up()
+                case EventCodes.Keyboard._arrow_up:
+                    self.volume_up()
 
-            elif key == EventCodes.Keyboard._arrow_down:
-                self.volume_down()
+                case EventCodes.Keyboard._arrow_down:
+                    self.volume_down()
 
     def __on_motion_notify_event(self, *_):
         self.__motion_time = time()
