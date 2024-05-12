@@ -63,16 +63,17 @@ class VideosListstoreColumnsIndex:
 class GlobalConfigTags:
     _main_section = "phantom-player"
 
-    _checkbox_hidden_videos = "hidden-videos"
-    _checkbox_hide_missing_playlist = "hide-missing-playlist"
-    _current_playlist = "current_playlist"
-    _dark_theme = "dark_theme"
+    _dark_theme = "dark-theme"
 
-    _hide_video_number = 'hide_video_number'
-    _hide_video_path = 'hide_video_path'
-    _hide_video_name = 'hide_video_name'
-    _hide_video_extension = 'hide_video_extension'
-    _hide_video_progress = 'hide_video_progress'
+    _playlist_missing = "playlist-missing"
+    _playlist_current = "playlist-current"
+
+    _video_cnumb = 'video-column-number'
+    _video_cpath = 'video-column-path'
+    _video_cname = 'video-column-name'
+    _video_cext = 'video-column-extension'
+    _video_cprog = 'video-column-progress'
+    _video_rhidden = "videos-hidden"
 
 
 class PhantomPlayer:
@@ -115,15 +116,17 @@ class PhantomPlayer:
         self.__treeselection_playlist = builder.get_object('treeselection_playlist')
         self.__treeselection_videos = builder.get_object('treeselection_videos')
         self.__checkbox_dark_theme = builder.get_object('checkbox_dark_theme')
-        self.__checkbox_hidden_items = builder.get_object('checkbox_hidden_items')
+        self.__checkbox_playlist_missing = builder.get_object('checkbox_playlist_missing')
+
         self.__menu_videos_header = builder.get_object('menu_videos_header')
-        self.__checkbox_hide_ext = builder.get_object('checkbox_hide_ext')
-        self.__checkbox_hide_number = builder.get_object('checkbox_hide_number')
-        self.__checkbox_hide_path = builder.get_object('checkbox_hide_path')
-        self.__checkbox_hide_name = builder.get_object('checkbox_hide_name')
-        self.__checkbox_hide_extension = builder.get_object('checkbox_hide_extension')
-        self.__checkbox_hide_progress = builder.get_object('checkbox_hide_progress')
-        self.__checkbox_hide_missing_playlist = builder.get_object('checkbox_hide_missing_playlist')
+        self.__checkbox_video_cext = builder.get_object('checkbox_video_cext')
+        self.__checkbox_video_cnumber = builder.get_object('checkbox_video_cnumber')
+        self.__checkbox_video_cpath = builder.get_object('checkbox_video_cpath')
+        self.__checkbox_video_cname = builder.get_object('checkbox_video_cname')
+        self.__checkbox_video_cextension = builder.get_object('checkbox_video_cextension')
+        self.__checkbox_video_cprogress = builder.get_object('checkbox_video_cprogress')
+        self.__checkbox_video_rhidden = builder.get_object('checkbox_video_rhidden')
+
         self.__column_number = builder.get_object('column_number')
         self.__column_path = builder.get_object('column_path')
         self.__column_name = builder.get_object('column_name')
@@ -155,15 +158,35 @@ class PhantomPlayer:
 
         self.__menuitem_about.connect("activate", self.__on_menuitem_about_activate)
         self.__checkbox_dark_theme.connect('toggled', self.__on__checkbox_dark_theme_toggled)
-        self.__checkbox_hide_missing_playlist.connect('toggled', self.__on_checkbox_hide_missing_playlist_toggled)
-
-        self.__checkbox_hide_number.connect('toggled', self.__on_checkbox_hide_number_toggled)
-        self.__checkbox_hide_path.connect('toggled', self.__on_checkbox_hide_path_toggled)
-        self.__checkbox_hide_name.connect('toggled', self.__on_checkbox_hide_name_toggled)
-        self.__checkbox_hide_extension.connect('toggled', self.__on_checkbox_hide_extension_toggled)
-        self.__checkbox_hide_progress.connect('toggled', self.__on_checkbox_hide_progress_toggled)
+        self.__checkbox_playlist_missing.connect('toggled', self.__on_checkbox_playlist_missing_toggled)
         self.__iconview_playlists.connect('button-press-event', self.__on_iconview_playlists_press_event)
-        self.__checkbox_hidden_items.connect('toggled', self.__on_checkbox_hidden_items_toggled)
+
+        self.__checkbox_video_cnumber.connect('toggled',
+                                              self.__on_checkbox_video_column_toggled,
+                                              self.__column_number,
+                                              GlobalConfigTags._video_cnumb)
+
+        self.__checkbox_video_cpath.connect('toggled',
+                                            self.__on_checkbox_video_column_toggled,
+                                            self.__column_path,
+                                            GlobalConfigTags._video_cpath)
+
+        self.__checkbox_video_cname.connect('toggled',
+                                            self.__on_checkbox_video_column_toggled,
+                                            self.__column_name,
+                                            GlobalConfigTags._video_cname)
+
+        self.__checkbox_video_cextension.connect('toggled',
+                                                 self.__on_checkbox_video_column_toggled,
+                                                 self.__column_extension,
+                                                 GlobalConfigTags._video_cext)
+
+        self.__checkbox_video_cprogress.connect('toggled',
+                                                self.__on_checkbox_video_column_toggled,
+                                                self.__column_progress,
+                                                GlobalConfigTags._video_cprog)
+
+        self.__checkbox_video_rhidden.connect('toggled', self.__on_checkbox_video_rhidden_toggled)
 
         self.__treeview_videos.connect('drag-end', self.__on_treeview_videos_drag_end)
         self.__treeview_videos.connect("row-activated", self.__on_treeview_videos_row_activated)
@@ -219,18 +242,20 @@ class PhantomPlayer:
         self.__checkbox_dark_theme.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._dark_theme, True))
 
-        self.__checkbox_hide_number.set_active(
-            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_number, False))
-        self.__checkbox_hide_path.set_active(
-            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_path, False))
-        self.__checkbox_hide_name.set_active(
-            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_name, False))
-        self.__checkbox_hide_extension.set_active(
-            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_extension, False))
-        self.__checkbox_hide_progress.set_active(
-            not self.__configuration.get_bool_defval(GlobalConfigTags._hide_video_progress, False))
-        self.__checkbox_hidden_items.set_active(
-            not self.__configuration.get_bool_defval(GlobalConfigTags._checkbox_hidden_videos, False))
+        self.__checkbox_playlist_missing.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._playlist_missing, True))
+        self.__checkbox_video_cnumber.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._video_cnumb, True))
+        self.__checkbox_video_cpath.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._video_cpath, True))
+        self.__checkbox_video_cname.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._video_cname, True))
+        self.__checkbox_video_cextension.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._video_cext, True))
+        self.__checkbox_video_cprogress.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._video_cprog, True))
+        self.__checkbox_video_rhidden.set_active(
+            self.__configuration.get_bool_defval(GlobalConfigTags._video_rhidden, True))
 
         #
         #    Display the window
@@ -310,7 +335,7 @@ class PhantomPlayer:
         #
         # Update the configuration file
         #
-        self.__configuration.write(GlobalConfigTags._current_playlist, self.__current_media._playlist.get_name())
+        self.__configuration.write(GlobalConfigTags._playlist_current, self.__current_media._playlist.get_name())
 
         #
         # Play the video
@@ -351,7 +376,7 @@ class PhantomPlayer:
     def __playlists_load(self):
 
         killed = False
-        current_playlist_name = self.__configuration.get_str(GlobalConfigTags._current_playlist)
+        current_playlist_name = self.__configuration.get_str(GlobalConfigTags._playlist_current)
         current_playlist = None
 
         #
@@ -380,7 +405,7 @@ class PhantomPlayer:
 
                 self.__playlists[playlist.get_guid()] = playlist
 
-                if not playlist.is_missing() or not self.__checkbox_hide_missing_playlist.get_active():
+                if not playlist.is_missing() or self.__checkbox_playlist_missing.get_active():
                     GLib.idle_add(self.__liststore_playlists_append, playlist)
 
         # Once the playlists headers are loaded, it is possible to create new playlists.
@@ -508,7 +533,7 @@ class PhantomPlayer:
         #
         self.__liststore_playlists.clear()
         for playlist in sorted(filtered_playlists, key=lambda x: x.get_name()):
-            if not playlist.is_missing() or not self.__checkbox_hide_missing_playlist.get_active():
+            if not playlist.is_missing() or self.__checkbox_playlist_missing.get_active():
                 self.__liststore_playlists_append(playlist)
 
     def __liststore_videos_populate(self):
@@ -520,10 +545,11 @@ class PhantomPlayer:
             return
 
         for video in self.__current_media._playlist.get_videos():
-            self.__liststore_videos_add(video)
+            if not video.get_ignore() or self.__checkbox_video_rhidden.get_active():
+                self.__liststore_videos_add(video)
 
     def __liststore_videos_add(self, video):
-        if not video.get_ignore() or not self.__checkbox_hidden_items.get_active():
+        if not video.get_ignore() or self.__checkbox_video_rhidden.get_active():
             self.__liststore_videos.append([self.__get_video_color(video),
                                             video.get_guid(),
                                             video.get_path(),
@@ -589,8 +615,8 @@ class PhantomPlayer:
         if self.__scrolledwindow_playlists.is_visible():
             match event.keyval:
                 case EventCodes.Keyboard._letter_h:  # Hide playlists
-                    self.__checkbox_hide_missing_playlist.set_active(
-                        not self.__checkbox_hide_missing_playlist.get_active()
+                    self.__checkbox_playlist_missing.set_active(
+                        not self.__checkbox_playlist_missing.get_active()
                     )
 
                 case EventCodes.Keyboard._letter_f:  # Search playlists
@@ -713,11 +739,11 @@ class PhantomPlayer:
         #
         # Prevent that the users de-activate all the columns
         #
-        column_checkboxes = (self.__checkbox_hide_number,
-                             self.__checkbox_hide_path,
-                             self.__checkbox_hide_name,
-                             self.__checkbox_hide_extension,
-                             self.__checkbox_hide_progress)
+        column_checkboxes = (self.__checkbox_video_cnumber,
+                             self.__checkbox_video_cpath,
+                             self.__checkbox_video_cname,
+                             self.__checkbox_video_cextension,
+                             self.__checkbox_video_cprogress)
         active_checks = []
         for checkbox in column_checkboxes:
             checkbox.set_sensitive(True)
@@ -834,7 +860,7 @@ class PhantomPlayer:
 
         self.__playlists[playlist.get_guid()] = playlist
 
-        if not playlist.is_missing() or not self.__checkbox_hide_missing_playlist.get_active():
+        if not playlist.is_missing() or self.__checkbox_playlist_missing.get_active():
             self.__liststore_playlists_append(playlist)
 
     def __on_settings_playlist_restart(self, playlist):
@@ -973,35 +999,15 @@ class PhantomPlayer:
         self.__fonts_reload()
         self.__liststore_videos_populate()
 
-    def __on_checkbox_hide_missing_playlist_toggled(self, checkbox, *_):
+    def __on_checkbox_playlist_missing_toggled(self, checkbox, *_):
         self.__liststore_playlists_populate()
-        self.__configuration.write(GlobalConfigTags._checkbox_hide_missing_playlist, checkbox.get_active())
+        self.__configuration.write(GlobalConfigTags._playlist_missing, checkbox.get_active())
 
-    def __on_checkbox_hide_number_toggled(self, checkbox, *_):
+    def __on_checkbox_video_column_toggled(self, checkbox, column, config_name):
         state = checkbox.get_active()
-        self.__column_number.set_visible(state)
-        self.__configuration.write(GlobalConfigTags._hide_video_number, not state)
+        column.set_visible(state)
+        self.__configuration.write(config_name, state)
 
-    def __on_checkbox_hide_path_toggled(self, checkbox, *_):
-        state = checkbox.get_active()
-        self.__column_path.set_visible(state)
-        self.__configuration.write(GlobalConfigTags._hide_video_path, not state)
-
-    def __on_checkbox_hide_name_toggled(self, checkbox, *_):
-        state = checkbox.get_active()
-        self.__column_name.set_visible(state)
-        self.__configuration.write(GlobalConfigTags._hide_video_name, not state)
-
-    def __on_checkbox_hide_extension_toggled(self, checkbox, *_):
-        state = checkbox.get_active()
-        self.__column_extension.set_visible(state)
-        self.__configuration.write(GlobalConfigTags._hide_video_extension, not state)
-
-    def __on_checkbox_hide_progress_toggled(self, checkbox, *_):
-        state = checkbox.get_active()
-        self.__column_progress.set_visible(state)
-        self.__configuration.write(GlobalConfigTags._hide_video_progress, not state)
-
-    def __on_checkbox_hidden_items_toggled(self, checkbox, *_):
-        self.__configuration.write(GlobalConfigTags._checkbox_hidden_videos, not checkbox.get_active())
+    def __on_checkbox_video_rhidden_toggled(self, checkbox, *_):
+        self.__configuration.write(GlobalConfigTags._video_rhidden, checkbox.get_active())
         self.__liststore_videos_populate()
