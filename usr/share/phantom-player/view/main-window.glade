@@ -94,6 +94,7 @@ Author: Rafael Senties Martinelli
                 <property name="selection-mode">none</property>
                 <property name="model">liststore_playlists</property>
                 <property name="tooltip-column">2</property>
+                <property name="activate-on-single-click">True</property>
                 <child>
                   <object class="GtkCellRendererPixbuf"/>
                   <attributes>
