@@ -557,7 +557,7 @@ class PhantomPlayer:
                                             video.get_extension(),
                                             video.get_progress()])
 
-    def __liststore_videos_update(self, video, color=True, path=True):
+    def __liststore_videos_update(self, video, progress=True, color=True, path=True):
 
         if video is None:
             return
@@ -572,7 +572,8 @@ class PhantomPlayer:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._path] = video.get_path()
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._name] = video.get_name()
 
-                self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_progress()
+                if progress:
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_progress()
                 return
 
     def __liststore_videos_update_glib(self, playlist, video):
@@ -638,10 +639,14 @@ class PhantomPlayer:
 
     def __on_window_root_key_pressed(self, _, event):
 
-        if not (Gdk.ModifierType.CONTROL_MASK & event.state):
-            return
-
         if self.__scrolledwindow_playlists.is_visible():
+
+            if not (Gdk.ModifierType.CONTROL_MASK & event.state):
+                return False
+
+            #
+            # Playlists shortcuts
+            #
             match event.keyval:
                 case EventCodes.Keyboard._letter_h:  # Hide playlists
                     self.__checkbox_playlist_missing.set_active(
@@ -658,8 +663,88 @@ class PhantomPlayer:
                 case EventCodes.Keyboard._letter_a:  # About dialog
                     self.__on_menuitem_about_activate()
 
+                case _:
+                    return False
+
+            return True
+
         elif not gtk_utils.window_is_fullscreen(self.__window_root):
-            pass
+            #
+            # Videos shortcuts
+            #
+
+            if event.keyval == EventCodes.Keyboard._back:
+                self.__playlists_display(True)
+                return True
+
+            elif not (Gdk.ModifierType.CONTROL_MASK & event.state):
+                return False
+
+            match event.keyval:
+                case EventCodes.Keyboard._letter_h:  # hide/un-hide rows
+                    self.__checkbox_video_rhidden.set_active(not self.__checkbox_video_rhidden.get_active())
+                    return True
+
+                case EventCodes.Keyboard._letter_s:  # display the settings
+                    if self.__button_playlist_settings.get_sensitive():
+                        self.__on_button_playlist_settings_clicked()
+                    return True
+
+            # Get the selected videos
+            model, treepaths = self.__treeselection_videos.get_selected_rows()
+            if not treepaths:
+                return False
+
+            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
+                            treepaths]
+
+            selected_videos = self.__current_media._playlist.get_videos_by_guid(selected_ids)
+
+            match event.keyval:
+                case EventCodes.Keyboard._letter_u:  # Un-View
+                    self.__on_menuitem_video_set_progress(None, VideoProgress._start, selected_videos)
+
+                case EventCodes.Keyboard._letter_v:  # Un-View
+                    self.__on_menuitem_video_set_progress(None, VideoProgress._end, selected_videos)
+
+                case EventCodes.Keyboard._letter_i:  # Ignore/Un-Ignore
+                    if all(video.get_ignore() for video in selected_videos):
+                        ignore = False
+                    else:
+                        ignore = True
+
+                    self.__on_menuitem_video_ignore_changed(None, ignore, selected_videos)
+
+                case EventCodes.Keyboard._letter_v:  # Un-View
+                    self.__on_menuitem_video_set_progress(None, VideoProgress._end, selected_videos)
+
+                case EventCodes.Keyboard._letter_i:  # Ignore/Un-Ignore
+                    if all(video.get_ignore() for video in selected_videos):
+                        ignore = False
+                    else:
+                        ignore = True
+
+                    self.__on_menuitem_video_ignore_changed(ignore, selected_videos)
+
+                case EventCodes.Keyboard._letter_d:  # delete
+                    if self.__current_media._playlist.get_load_status() != PlaylistLoadStatus._loaded:
+                        self.__on_menuitem_video_remove(None, selected_videos)
+
+                case EventCodes.Keyboard._letter_o if len(selected_videos) == 1:
+                    video = selected_videos[0]
+                    if video.exists():
+                        self.__on_menuitem_video_open_dir(None, video.get_path())
+
+                case EventCodes.Keyboard._letter_r if len(selected_videos) == 1:
+                    video = selected_videos[0]
+                    if video.exists():
+                        self.__on_menuitem_video_rename_single(None, video)
+
+
+                case _:
+                    return False
+
+            return True
 
     def __on_window_root_configure_event(self, *_):
 
@@ -830,37 +915,40 @@ class PhantomPlayer:
         if event.button != EventCodes.Cursor._right_click:
             return False
 
+        model, treepaths = self.__treeselection_videos.get_selected_rows()
+        if not treepaths:
+            return False
+
         # get the iter where the user is pointing
+        # if the iter is not in the selected iters, remove the previous selection
         try:
             pointing_treepath = self.__treeview_videos.get_path_at_pos(event.x, event.y)[0]
         except Exception:
             return False
-
         model, treepaths = self.__treeselection_videos.get_selected_rows()
-
-        if not treepaths:
-            return False
-
-        selection_length = len(treepaths)
-
-        # if the iter is not in the selected iters, remove the previous selection
-        model, treepaths = self.__treeselection_videos.get_selected_rows()
-
         if pointing_treepath not in treepaths:
             self.__treeselection_videos.unselect_all()
             self.__treeselection_videos.select_path(pointing_treepath)
 
-        menu = Gtk.Menu()
+        #
+        # Get the video objects
+        #
+
         selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
                         treepaths]
 
         selected_videos = self.__current_media._playlist.get_videos_by_guid(selected_ids)
 
+        #
+        # Create the GTK menu
+        #
+        menu = Gtk.Menu()
+
         # If only 1 video is selected, and it is loaded in the player.
         # the progress buttons shall not be displayed.
         can_fill_progress = True
         can_reset_progress = True
-        if len(selected_ids) == 1:
+        if len(selected_videos) == 1:
             if self.__current_media.get_video_guid() == selected_ids[0]:
                 can_fill_progress = False
                 can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
@@ -869,38 +957,36 @@ class PhantomPlayer:
         if any(video.get_position() > VideoPosition._start for video in selected_videos) and can_reset_progress:
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_reset)
             menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_video_set_progress, VideoProgress._start)
+            menuitem.connect('activate', self.__on_menuitem_video_set_progress, VideoProgress._start, selected_videos)
 
         # Fill progress
         if any(video.get_position() < VideoPosition._end for video in selected_videos) and can_fill_progress:
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_fill)
             menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_video_set_progress, VideoProgress._end)
+            menuitem.connect('activate', self.__on_menuitem_video_set_progress, VideoProgress._end, selected_videos)
 
         # ignore videos
         if any(not video.get_ignore() for video in selected_videos):
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._ignore)
             menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_video_ignore_changed, True)
+            menuitem.connect('activate', self.__on_menuitem_video_ignore_changed, True, selected_videos)
 
         # don't ignore videos
         if any(video.get_ignore() for video in selected_videos):
             menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._dont_ignore)
             menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_video_ignore_changed, False)
+            menuitem.connect('activate', self.__on_menuitem_video_ignore_changed, False, selected_videos)
 
-        if selection_length == 1:
-            video_guid = self.__liststore_videos[treepaths[0]][VideosListstoreColumnsIndex._id]
-            video = self.__current_media._playlist.get_video_by_guid(video_guid)
+        if len(selected_videos) == 1:
+            video = selected_videos[0]
 
-            # Rename dialog
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._rename)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_video_rename_single, video)
-            menuitem.set_sensitive(self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
-
-            # Open the containing folder (only if the user selected one video)
             if os.path.exists(video.get_path()):
+                # Rename dialog
+                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._rename)
+                menu.append(menuitem)
+                menuitem.connect('activate', self.__on_menuitem_video_rename_single, video)
+
+                # Open the containing folder (only if the user selected one video)
                 menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._open_dir)
                 menu.append(menuitem)
                 menuitem.connect('activate', self.__on_menuitem_video_open_dir, video.get_path())
@@ -943,12 +1029,7 @@ class PhantomPlayer:
         _ = self.__window_about.run()
         self.__window_about.hide()
 
-    def __on_menuitem_video_set_progress(self, _, progress):
-
-        model, treepaths = self.__treeselection_videos.get_selected_rows()
-
-        if not treepaths:
-            return
+    def __on_menuitem_video_set_progress(self, _, progress, videos):
 
         id_to_skip = None
         if progress == VideoProgress._start and self.__current_media.get_video_progress() == VideoProgress._end:
@@ -956,40 +1037,31 @@ class PhantomPlayer:
         else:
             id_to_skip = self.__current_media.get_video_guid()
 
-        for treepath in treepaths:
-
-            video_guid = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
-            if video_guid == id_to_skip:
+        for video in videos:
+            if video.get_guid() == id_to_skip:
                 continue
 
-            self.__liststore_videos[treepath][VideosListstoreColumnsIndex._progress] = progress
-            video = self.__current_media._playlist.get_video_by_guid(video_guid)
             if progress == VideoProgress._start:
                 video.set_position(VideoPosition._start)
             else:
                 video.set_position(progress / VideoProgress._end)
 
+            self.__liststore_videos_update(video, color=False, path=False)
+
         self.__liststore_playlists_update_progress(self.__current_media._playlist)
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
-    def __on_menuitem_video_ignore_changed(self, _, ignore):
+    def __on_menuitem_video_ignore_changed(self, _, ignore, videos):
 
-        model, treepaths = self.__treeselection_videos.get_selected_rows()
-
-        if not treepaths:
-            return
-
-        for treepath in treepaths:
-            video_guid = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
-            video = self.__current_media._playlist.get_video_by_guid(video_guid)
+        for video in videos:
             video.set_ignore(ignore)
-            self.__liststore_videos[treepath][VideosListstoreColumnsIndex._color] = self.__get_video_color(video)
+            self.__liststore_videos_update(video, progress=False, path=False)
 
         self.__treeselection_videos.unselect_all()
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
     def __on_menuitem_video_remove(self, _, selected_videos):
-        self.__current_media._playlist.remove_videos(selected_videos)
+        self.__current_media._playlist.remove_videos([video for video in selected_videos if video.exists()])
         self.__liststore_videos_populate()
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
