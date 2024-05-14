@@ -65,11 +65,11 @@ class Texts:
     class MenuItemVideos:
         _open_dir = "Open Directory"
         _ignore = "Ignore"
-        _dont_ignore = "Don't Ignore"
-        _progress_reset = "Restart Progress"
-        _progress_fill = "Fill Progress"
+        _dont_ignore = "Un-Ignore"
+        _progress_reset = "Un-View (0%)"
+        _progress_fill = "View (100%)"
         _rename = "Rename"
-        _remove = "Remove from listing"
+        _remove = "Delete"
 
     class DialogVideos:
         _delete = '''Are you sure that you want to delete the selected videos?\n\nThey won't be removed from your hard drive.'''

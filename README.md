@@ -76,7 +76,9 @@ about the controls & behaviour.
 + Order the videos with drag and drop.
 + Modify the columns to display, by doing a middle-click in the videos-list header.
 + Resize the player by grabbing the separator with and moving it up or down.
-+ Keyboard shortcuts [WORK IN PROGRESS]:
++ Keyboard shortcuts:
+  + `back` to return to the playlists' menu.
+  + `ctrl+s` open the settings menu.
   + `ctrl+u` mark video as un-viewed (0% progress).
   + `ctrl+v` mark video as viewed (100% progress).
   + `ctrl+d` delete videos.
@@ -84,8 +86,6 @@ about the controls & behaviour.
   + `ctrl+i` ignore/un-ignore videos.
   + `ctrl+o` open the video location.
   + `ctrl+r` rename videos.
-  + `ctrl+s` open the settings menu.
-
 
 #### Media Player
 + Controls:
