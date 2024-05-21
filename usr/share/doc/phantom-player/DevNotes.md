@@ -22,6 +22,10 @@
 ## MediaPlayerWidget
 + Enable video tracks?
 + on left right arrows?
++ Fix "subtitles from file" should be checked srt file exists. 
++ Fix subtitles, if cancel "select from file"...
++ If paused, on button restart, the position is not sent.
++ Set custom title? Ex: video name? not video full name?
 
 ### Remaining Work:
 + `player.set_track()` returns a status. It would be good to read the status and display a message in case of error.

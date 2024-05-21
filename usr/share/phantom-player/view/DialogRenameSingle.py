@@ -23,6 +23,7 @@ from Texts import Texts
 from controller.playlist_factory import _COLUMN_SEPARATOR
 from controller.playlist_factory import save as save_playlist
 
+
 class DialogRenameSingle:
 
     def __init__(self, parent, update_func=None):
