@@ -129,6 +129,3 @@ class Video(object):
 
     def set_name(self, name):
         self.__name = name
-
-    def set_path(self, path):
-        self.__path = path

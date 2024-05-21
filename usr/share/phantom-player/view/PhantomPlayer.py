@@ -17,12 +17,9 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
-import gi
 from threading import Thread
 from collections import OrderedDict
 
-gi.require_version('Gtk', '3.0')
-gi.require_version('WebKit2', '4.0')
 from gi.repository import Gtk, Gdk, GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
@@ -724,7 +721,7 @@ class PhantomPlayer:
                     else:
                         ignore = True
 
-                    self.__on_menuitem_video_ignore_changed(ignore, selected_videos)
+                    self.__on_menuitem_video_ignore_changed(None, ignore, selected_videos)
 
                 case EventCodes.Keyboard._letter_d:  # delete
                     if self.__current_media._playlist.get_load_status() != PlaylistLoadStatus._loaded:
@@ -739,7 +736,6 @@ class PhantomPlayer:
                     video = selected_videos[0]
                     if video.exists():
                         self.__on_menuitem_video_rename_single(None, video)
-
 
                 case _:
                     return False

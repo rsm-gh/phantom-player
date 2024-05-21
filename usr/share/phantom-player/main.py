@@ -22,6 +22,7 @@ import gi
 
 os.environ["GDK_BACKEND"] = "x11"
 gi.require_version('Gtk', '3.0')
+gi.require_version('WebKit2', '4.0')  # is this necessary?
 from gi.repository import Gtk
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
