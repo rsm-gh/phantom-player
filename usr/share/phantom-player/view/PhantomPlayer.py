@@ -215,6 +215,7 @@ class PhantomPlayer:
                                  self.__on_media_player_btn_keep_playing_toggled)
         self.__mp_widget.connect(CustomSignals._btn_random_toggled, self.__on_media_player_btn_random_toggled)
         self.__mp_widget.connect(CustomSignals._video_end, self.__on_media_player_video_end)
+        self.__mp_widget.connect(CustomSignals._video_restart, self.__on_media_player_video_restart)
 
         self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
         self.__paned.add1(self.__mp_widget)
@@ -608,6 +609,9 @@ class PhantomPlayer:
         self.__current_media.set_video_position(position)
         self.__liststore_playlists_update_progress(self.__current_media._playlist)
         self.__liststore_videos_update(self.__current_media._video, color=False, path=False)
+
+    def __on_media_player_video_restart(self, *_):
+        self.__on_media_player_position_changed(None, VideoPosition._start)
 
     def __on_media_player_video_end(self, *_):
 
