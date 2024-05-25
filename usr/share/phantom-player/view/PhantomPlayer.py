@@ -811,6 +811,7 @@ class PhantomPlayer:
 
     def __on_window_psettings_close(self, closed_playlist):
         self.__liststore_playlists_update(closed_playlist)
+
         if self.__current_media.is_playlist(closed_playlist):
             self.__liststore_videos_populate()
             self.__mp_widget.set_keep_playing(closed_playlist.get_keep_playing())
@@ -830,7 +831,7 @@ class PhantomPlayer:
     def __on_button_playlist_new_clicked(self, *_):
         new_playlist = Playlist()
         new_playlist.set_guid(len(self.__playlists))
-        new_playlist.set_load_status(PlaylistLoadStatus._loading)
+        new_playlist.set_load_status(PlaylistLoadStatus._loaded)
         self.__window_playlist_settings.show(new_playlist, is_new=True)
 
     def __on_button_playlist_settings_clicked(self, *_):
