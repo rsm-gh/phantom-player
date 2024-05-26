@@ -17,6 +17,7 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
+from time import sleep
 from threading import Thread
 from collections import OrderedDict
 
@@ -80,6 +81,7 @@ class PhantomPlayer:
         self.__playlist_new = None
         self.__playlists = OrderedDict()
         self.__current_playlist_loaded = False
+        self.__playlist_headers_are_loaded = False
 
         self.__current_media = CurrentMedia()
         self.__is_full_screen = None
@@ -131,7 +133,10 @@ class PhantomPlayer:
         self.__column_progress = builder.get_object('column_progress')
         self.__liststore_playlists = builder.get_object('liststore_playlists')
         self.__liststore_videos = builder.get_object('liststore_videos')
-        box_window = builder.get_object('box_window')
+        self.__box_window = builder.get_object('box_window')
+        self.__paned = None
+
+        self.__box_window.remove(self.__media_box)
 
         #
         # Header Bar
@@ -210,18 +215,16 @@ class PhantomPlayer:
                                              random_button=True,
                                              keep_playing_button=True)
 
+        # important or VLC will not be attached to the window when the player directly plays
+        # a file video instead of a playlist.
+        self.__box_window.pack_start(self.__mp_widget, True, True, 0)
+
         self.__mp_widget.connect(CustomSignals._position_changed, self.__on_media_player_position_changed)
         self.__mp_widget.connect(CustomSignals._btn_keep_playing_toggled,
                                  self.__on_media_player_btn_keep_playing_toggled)
         self.__mp_widget.connect(CustomSignals._btn_random_toggled, self.__on_media_player_btn_random_toggled)
         self.__mp_widget.connect(CustomSignals._video_end, self.__on_media_player_video_end)
         self.__mp_widget.connect(CustomSignals._video_restart, self.__on_media_player_video_restart)
-
-        self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
-        self.__paned.add1(self.__mp_widget)
-        box_window.remove(self.__media_box)
-        self.__paned.add2(self.__media_box)
-        box_window.pack_start(self.__paned, True, True, 0)
 
         #
         #    Configuration
@@ -274,6 +277,32 @@ class PhantomPlayer:
 
     def present(self):
         self.__window_root.present()
+
+    def open_file(self, file_path):
+        if self.__mp_widget.is_playing():
+            self.__mp_widget.pause()
+
+        #
+        # Wait until the header of playlists are loaded
+        #
+        while self.__playlist_headers_are_loaded is False:
+            sleep(.2)
+
+        #
+        # Play the video from a playlist (if it exists)
+        #
+        for playlist in self.__playlists.values():
+            video = playlist.get_video_by_path(file_path)
+            if video is not None:
+                self.__playlist_open(playlist, video)
+                return
+
+        #
+        # Play the video without a playlist
+        #
+        self.__current_media = CurrentMedia()
+        self.__playlists_display(False, only_player=True)
+        self.__mp_widget.set_video(file_path)
 
     def get_quit(self):
         return self.__quit_requested
@@ -408,6 +437,7 @@ class PhantomPlayer:
 
         # Once the playlists headers are loaded, it is possible to create new playlists.
         GLib.idle_add(self.__button_playlist_new.set_sensitive, True)
+        self.__playlist_headers_are_loaded = True
 
         #
         #    Load the playlists (starting by the saved playlist)
@@ -451,32 +481,85 @@ class PhantomPlayer:
         else:
             print("Load playlist ended.")
 
-    def __playlists_display(self, value):
+    def __playlists_display(self, value, only_player=False):
 
         if value:
             self.__headerbar.props.title = Texts.GUI._title
             self.__current_media = CurrentMedia()
             self.__mp_widget.stop()
-            self.__paned.hide()
+
+            if self.__paned is None:
+                self.__box_window.remove(self.__mp_widget)
+            else:
+                self.__paned.hide()
+
+            self.__button_playlist_settings.hide()
+            self.__button_display_playlists.hide()
+
             self.__scrolledwindow_playlists.show()
             self.__button_playlist_new.show()
             self.__entry_playlist_search.show()
             self.__menubutton_main.show()
-            self.__button_playlist_settings.hide()
-            self.__button_display_playlists.hide()
+            self.__statusbar.show()
         else:
-            self.__scrolledwindow_playlists.hide()
-            self.__paned.show()
+
             self.__button_playlist_new.hide()
             self.__entry_playlist_search.hide()
             self.__menubutton_main.hide()
+            self.__scrolledwindow_playlists.hide()
+
             self.__button_playlist_settings.show()
-            self.__button_playlist_settings.set_sensitive(
-                self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
             self.__button_display_playlists.show()
 
-            _, window_height = self.__window_root.get_size()
-            self.__paned.set_position(window_height / 2)
+            if only_player:
+                self.__button_playlist_settings.set_sensitive(False)
+                self.__statusbar.hide()
+
+                if self.__paned is not None:
+                    self.__paned.remove(self.__mp_widget)
+                    self.__paned.remove(self.__media_box)
+                    self.__paned.destroy()
+                    self.__paned = None
+
+                self.__box_window.pack_start(self.__mp_widget, True, True, 0)
+
+            else:
+                self.__statusbar.hide()
+                self.__treeview_videos.show()
+                self.__button_playlist_settings.set_sensitive(
+                    self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
+
+                if self.__paned is None:
+                    self.__box_window.remove(self.__mp_widget)
+                    self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
+                    self.__paned.add1(self.__mp_widget)
+                    self.__paned.add2(self.__media_box)
+                    self.__box_window.pack_start(self.__paned, True, True, 0)
+
+                self.__paned.show_all()
+                _, window_height = self.__window_root.get_size()
+                self.__paned.set_position(window_height / 2)
+
+    def __playlist_open(self, playlist, video=None):
+        self.__current_media = CurrentMedia(playlist)
+        self.__playlists_display(False)
+        self.__liststore_videos_populate()
+        self.__liststore_videos_select_current()
+
+        if video is None:
+            video_guid = self.__current_media._playlist.get_last_played_video_guid()
+            play = False
+            replay = False
+        else:
+            video_guid = video.get_guid()
+            play = True
+            replay = True
+
+        self.__set_video(video_guid=video_guid,
+                         play=play,
+                         replay=replay,
+                         ignore_none=True,
+                         ignore_missing=True)
 
     def __liststore_playlists_update_progress(self, playlist):
         if playlist is None:
@@ -761,7 +844,6 @@ class PhantomPlayer:
                 self.__statusbar.hide()
             else:
                 self.__media_box.show()
-                self.__statusbar.show()
 
     def __on_window_psettings_add(self, playlist):
 
@@ -852,14 +934,7 @@ class PhantomPlayer:
         if playlist.get_load_status() == PlaylistLoadStatus._waiting_load:
             return
 
-        self.__current_media = CurrentMedia(playlist)
-        self.__playlists_display(False)
-        self.__liststore_videos_populate()
-        self.__liststore_videos_select_current()
-        self.__set_video(video_guid=self.__current_media._playlist.get_last_played_video_guid(),
-                         play=False,
-                         ignore_none=True,
-                         ignore_missing=True)
+        self.__playlist_open(playlist)
 
     def __on_treeview_videos_drag_end(self, *_):
 

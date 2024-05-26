@@ -1,7 +1,13 @@
 [Desktop Entry]
+Version=2.0
 Name=Phantom Player
-Exec=phantom-player
+GenericName=Video player
+Comment=Reproduce and organize lists of videos from a hard-drive
+Exec=/usr/bin/phantom-player --open-file=%U
+TryExec=/usr/bin/phantom-player
+Icon=/usr/share/phantom-player/view/img/movie-icon-medium.png
 Terminal=false
 Type=Application
-Icon=/usr/share/phantom-player/view/img/movie-icon-medium.png
-Categories=Video
+Categories=Video;Player;
+MimeType=application/mpeg4-iod;application/mpeg4-muxcodetable;application/mxf;application/ogg;application/ram;application/sdp;application/vnd.apple.mpegurl;application/vnd.ms-asf;application/vnd.ms-wpl;application/vnd.rn-realmedia;application/vnd.rn-realmedia-vbr;application/x-cd-image;application/x-extension-m4a;application/x-extension-mp4;application/x-flac;application/x-flash-video;application/x-matroska;application/x-ogg;application/x-quicktime-media-link;application/x-quicktimeplayer;application/x-shockwave-flash;application/xspf+xml;video/3gp;video/3gpp;video/3gpp2;video/avi;video/divx;video/dv;video/fli;video/flv;video/mp2t;video/mp4;video/mp4v-es;video/mpeg;video/mpeg-system;video/msvideo;video/ogg;video/quicktime;video/vnd.divx;video/vnd.mpegurl;video/vnd.rn-realvideo;video/webm;video/x-anim;video/x-avi;video/x-flc;video/x-fli;video/x-flv;video/x-m4v;video/x-matroska;video/x-matroska;video/x-mpeg;video/x-mpeg-system;video/x-mpeg2;video/x-ms-asf;video/x-ms-asf-plugin;video/x-ms-asx;video/x-ms-wm;video/x-ms-wmv;video/x-ms-wmx;video/x-ms-wvx;video/x-msvideo;video/x-nsv;video/x-ogm;video/x-ogm+ogg;video/x-theora;video/x-theora+ogg;
+Keywords=Player;Video;

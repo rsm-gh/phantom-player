@@ -84,5 +84,5 @@ class Texts:
 
     class DialogRenameSingle:
         _title = "Rename"
-        _hdrive_off = "Rename the file only in the Phantom-Player."
+        _hdrive_off = "Rename the file only in Phantom-Player."
         _hdrive_on = "Rename the file in the hard-drive"

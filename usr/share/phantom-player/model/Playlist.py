@@ -368,6 +368,13 @@ class Playlist(object):
         """This method is called by a getattr(), do not remove it."""
         return self.__current_video_hash
 
+    def get_video_by_path(self, path):
+        for video in self.__videos_instances:
+            if video.get_path() == path:
+                return video
+
+        return None
+
     def get_video_by_guid(self, video_guid):
         for video in self.__videos_instances:
             if video.get_guid() == video_guid:
