@@ -278,15 +278,19 @@ class PhantomPlayer:
     def present(self):
         self.__window_root.present()
 
+    def wait_ready(self):
+        while self.__playlist_headers_are_loaded is False:
+            sleep(.2)
+
     def open_file(self, file_path):
         if self.__mp_widget.is_playing():
             self.__mp_widget.pause()
 
         #
-        # Wait until the header of playlists are loaded
+        # Check if the settings window is busy
         #
-        while self.__playlist_headers_are_loaded is False:
-            sleep(.2)
+        if self.__window_playlist_settings.get_visible():
+            return False
 
         #
         # Play the video from a playlist (if it exists)
@@ -295,7 +299,7 @@ class PhantomPlayer:
             video = playlist.get_video_by_path(file_path)
             if video is not None:
                 self.__playlist_open(playlist, video)
-                return
+                return True
 
         #
         # Play the video without a playlist
@@ -303,6 +307,7 @@ class PhantomPlayer:
         self.__current_media = CurrentMedia()
         self.__playlists_display(False, only_player=True)
         self.__mp_widget.set_video(file_path)
+        return True
 
     def get_quit(self):
         return self.__quit_requested
@@ -396,9 +401,6 @@ class PhantomPlayer:
                                                                   on_error=settings.FontColors._warning)
         _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error,
                                                                 on_error=settings.FontColors._error)
-
-    def __statusbar_push(self, status):
-        self.__statusbar.push(0, status)
 
     def __playlists_load(self):
 
@@ -563,6 +565,9 @@ class PhantomPlayer:
                          replay=replay,
                          ignore_none=True,
                          ignore_missing=True)
+
+    def __statusbar_push(self, status):
+        self.__statusbar.push(0, status)
 
     def __liststore_playlists_update_progress(self, playlist):
         if playlist is None:

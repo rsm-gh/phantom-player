@@ -1027,7 +1027,7 @@ class MediaPlayerWidget(Gtk.VBox):
         duration = self.__media.get_duration()
         if duration < 0:
             return
-        
+
         video_time = widget.get_value() * duration
         video_time = format_milliseconds_to_time(video_time)
         self.__label_progress.set_text(video_time + " / " + format_milliseconds_to_time(self.__video_duration))
