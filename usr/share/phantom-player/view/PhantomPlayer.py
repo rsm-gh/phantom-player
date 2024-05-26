@@ -521,6 +521,7 @@ class PhantomPlayer:
                     self.__paned.destroy()
                     self.__paned = None
 
+                self.__mp_widget.display_playlist_controls(False)
                 self.__box_window.pack_start(self.__mp_widget, True, True, 0)
 
             else:
@@ -528,6 +529,8 @@ class PhantomPlayer:
                 self.__treeview_videos.show()
                 self.__button_playlist_settings.set_sensitive(
                     self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
+
+                self.__mp_widget.display_playlist_controls(True)
 
                 if self.__paned is None:
                     self.__box_window.remove(self.__mp_widget)
