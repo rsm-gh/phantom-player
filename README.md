@@ -73,6 +73,7 @@ about the controls & behaviour.
 + Select a playlist with a single left-click.
 
 + Keyboard shortcuts:
+  + `ctrl+o` to open a file.
   + `ctrl+a` display the about dialog.
   + `ctrl+f` find/filter playlists by name.
   + `ctrl+h` hide/display missing playlists.
