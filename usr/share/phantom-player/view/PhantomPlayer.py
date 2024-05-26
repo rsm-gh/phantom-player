@@ -701,6 +701,9 @@ class PhantomPlayer:
 
     def __on_media_player_video_end(self, *_):
 
+        if self.__current_media._playlist is None:
+            return
+
         self.__current_media.set_video_position(VideoPosition._end)
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
