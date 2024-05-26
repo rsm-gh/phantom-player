@@ -439,6 +439,20 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_volume.hide()
         self.__widgets_shown = WidgetsShown._none
 
+    def display_playlist_controls(self, show=True):
+
+        if self.__toggletoolbutton_random is not None:
+            if show:
+                self.__toggletoolbutton_random.show()
+            else:
+                self.__toggletoolbutton_random.hide()
+
+        if self.__toggletoolbutton_keep_playing is not None:
+            if show:
+                self.__toggletoolbutton_keep_playing.show()
+            else:
+                self.__toggletoolbutton_keep_playing.hide()
+
     def hide_volume_label(self):
         self.__label_volume.hide()
 
