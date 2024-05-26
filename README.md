@@ -17,7 +17,15 @@ Some of its major features are:
 + Rename videos.
 + and more...
 
-### Reproducing media from torrents
+
+### Reproducing videos directly form the hard-drive.
+It is possible to simply play a video directly from the hard-drive:
+1) With the desktop interface `right-click > open with > Phantom-Player`
+2) With a command `phantom-player --open-file='/path/to/file'`
+
+*If the video is in a playlist, the playlist will be selected.
+
+### Reproducing videos from torrents
 When it comes to torrents, the most important is to do not modify the data
 in order to continue seeding.  
 
@@ -31,7 +39,7 @@ display them nicely in the interface, and give you a streaming platform feeling.
 Also, if there are multiple seasons, or you have many episodes to download,
 it will automatically discover the new videos.
 
-### Organizing data from a hard-drive
+### Organizing videos of a hard-drive
 The software is great for organizing data from a hard-drive.  
 
 For example, you can add the root directory of the hard-drive as a playlist path, and set it as recursive. 
