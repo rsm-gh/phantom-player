@@ -106,6 +106,7 @@ class PhantomPlayer:
         self.__entry_playlist_search = builder.get_object('entry_playlist_search')
         self.__menubar = builder.get_object('menubar')
         self.__statusbar = builder.get_object('statusbar')
+        self.__menuitem_open_file = builder.get_object('menuitem_open_file')
         self.__menuitem_about = builder.get_object('menuitem_about')
         self.__button_display_playlists = builder.get_object('button_display_playlists')
         self.__scrolledwindow_playlists = builder.get_object('scrolledwindow_playlists')
@@ -158,6 +159,7 @@ class PhantomPlayer:
         self.__button_playlist_new.connect("clicked", self.__on_button_playlist_new_clicked)
         self.__button_playlist_settings.connect("clicked", self.__on_button_playlist_settings_clicked)
 
+        self.__menuitem_open_file.connect("activate", self.__on_menuitem_open_file)
         self.__menuitem_about.connect("activate", self.__on_menuitem_about_activate)
         self.__checkbox_dark_theme.connect('toggled', self.__on_checkbox_dark_theme_toggled)
         self.__checkbox_playlist_missing.connect('toggled', self.__on_checkbox_playlist_missing_toggled)
@@ -755,6 +757,9 @@ class PhantomPlayer:
                     if self.__button_playlist_new.get_sensitive():
                         self.__on_button_playlist_new_clicked()
 
+                case EventCodes.Keyboard._letter_o:  # Open file
+                    self.__on_menuitem_open_file()
+
                 case EventCodes.Keyboard._letter_a:  # About dialog
                     self.__on_menuitem_about_activate()
 
@@ -1111,6 +1116,11 @@ class PhantomPlayer:
     def __on_checkbox_video_rhidden_toggled(self, checkbox, *_):
         self.__configuration.write(GlobalConfigTags._video_rhidden, checkbox.get_active())
         self.__liststore_videos_populate()
+
+    def __on_menuitem_open_file(self, *_):
+        file_path = gtk_utils.dialog_select_file(self.__window_root)
+        if file_path is not None:
+            self.open_file(file_path)
 
     def __on_menuitem_about_activate(self, *_):
         _ = self.__window_about.run()

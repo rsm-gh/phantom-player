@@ -363,6 +363,14 @@ Author: Rafael Senties Martinelli
       </object>
     </child>
     <child>
+      <object class="GtkMenuItem" id="menuitem_open_file">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Open File</property>
+        <property name="use-underline">True</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkMenuItem" id="menuitem_about">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
