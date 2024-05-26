@@ -56,7 +56,14 @@ class PhantomApp(Gtk.Application):
     def do_command_line(self, command_line):
         args = command_line.get_arguments()
         args.pop(0)
+
         self.activate()
+
+        if self.__phantom_player is None:
+            print("Critical Error: do_command_line > self.__phantom_player is None")
+            return 1
+
+        self.__phantom_player.wait_ready()
 
         if len(args) > 0:
             file_path = ""
@@ -65,17 +72,18 @@ class PhantomApp(Gtk.Application):
                     file_path = arg.split("=",1)[1]
                     break
                 else:
-                    print("Warning: Skipping non valid argument=", arg)
+                    print("Error: non valid CMD argument '{}'".format(arg))
+                    return 1
 
             if file_path != "":
                 if not os.path.exists(file_path):
-                    print("Error: skipping un-existing file=",file_path)
+                    print("Error: requesting to open un-existing file '{}'".format(file_path))
+                    return 1
 
                 elif self.__phantom_player is not None:
-                    self.__phantom_player.open_file(file_path)
-
-                else:
-                    print("Error: calling --open_file but self.__phantom_player is None.")
+                    if not self.__phantom_player.open_file(file_path):
+                        print("Error: requesting to open '{}' while the software is busy.".format(file_path))
+                        return 1
 
         return 0
 
