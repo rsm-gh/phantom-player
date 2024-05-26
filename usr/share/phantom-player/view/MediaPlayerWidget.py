@@ -745,6 +745,19 @@ class MediaPlayerWidget(Gtk.VBox):
             if self.__un_maximized_fixed_toolbar:
                 self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
 
+    def __set_scale_progress_end(self):
+        """
+            To be called ONLY from GLib.
+
+            It is necessary to apply a delay, so the Glib methods
+            of self.__on_thread_player_activity do not override the end value.
+
+            self.__stop_player_scan() may end the thread, but Glib methods already sent
+            will not be killed.
+        """
+        sleep(.2)
+        self.__scale_progress.set_value(VideoPosition._end)
+
     def __on_thread_player_activity(self):
         """
             This method scans the state of the player to:
@@ -916,7 +929,8 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.pause()
         self.__vlc_widget.player.stop()
-        self.__scale_progress.set_value(VideoPosition._end)  # Necessary if the video is paused.
+
+        GLib.idle_add(self.__set_scale_progress_end)
 
         self.emit(CustomSignals._video_end)
 
@@ -1013,7 +1027,7 @@ class MediaPlayerWidget(Gtk.VBox):
         duration = self.__media.get_duration()
         if duration < 0:
             return
-
+        
         video_time = widget.get_value() * duration
         video_time = format_milliseconds_to_time(video_time)
         self.__label_progress.set_text(video_time + " / " + format_milliseconds_to_time(self.__video_duration))
