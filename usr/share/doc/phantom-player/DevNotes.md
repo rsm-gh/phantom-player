@@ -36,11 +36,11 @@
 
 ### Bugs:
 + Test/Fix (when cancel) the option to choose the subtitles' file...
-+ Sometimes when clicking very fast the progress scale, the video position is not modified. Despite multiple ways of trying to fix this, I haven't found a solution.
 + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
     I haven't found a solution for this, because the press signals connect to the button and not the scale.
 + VolumeButton: it should get hidden when clicking out of the button. Is this a problem of GTK?
-+ sometimes if the progress is changed while the video is paused, it starts playing. This seems like a VLC bug.
+
+
 
 ### Patches:
 
@@ -62,6 +62,8 @@ Please read the patches before reading this section.
         + `start_at` and `end_at` must be saved in `time` format, because it is an input given by the user and, it must be a constant across all media.
         + `end_position` is used to detect when a video has ended. Normally it should be `1`,
            but the value may change based on a numeric approach. For example, for a very long video, it may be `.9999999`, and for a shorter `.9`.
+
++ Careful while using `player.pause()`, because if the player is already paused, it may (randomly) start playing.
 
 ### To investigate
 + Is it possible to remove the thread `on_thread_player_activity` and replaced by VLC signals?
