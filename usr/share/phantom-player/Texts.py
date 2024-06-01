@@ -73,7 +73,7 @@ class Texts:
 
     class DialogVideos:
         _delete = '''Are you sure that you want to delete the selected videos?\n\nThey won't be removed from your hard drive.'''
-        _missing = 'The video can not be reproduced because the file is missing.'
+        _missing = 'The file is missing.'
         _found_x = '{0} videos have been found.'
         _other_found = '{0} other videos have been found.'
 

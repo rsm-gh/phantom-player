@@ -117,7 +117,3 @@ about the controls & behaviour.
 + If a video has a "*.srt" file with the same name and same location, it will be used as default subtitles.
 + "*.part" files will always be excluded since they break the hashing system.
 + It is not possible to remove videos while the playlist is loading/discovering videos.
-
-### Development documentation
-
-Please check `/usr/share/doc/phantom-player`.
