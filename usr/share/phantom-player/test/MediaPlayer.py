@@ -54,6 +54,6 @@ class MediaPlayer(Gtk.Window):
 
 if __name__ == '__main__':
     player = MediaPlayer()
-    player.play_video('/home/rsm/Videos/test.mkv')
+    player.play_video('/home/rsm/Videos/The Best Of Scotty Cranmer.mp4')
     Gtk.main()
     VLC_INSTANCE.release()
