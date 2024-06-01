@@ -898,9 +898,7 @@ class MediaPlayerWidget(Gtk.VBox):
             return
 
         elif event.type == Gdk.EventType.BUTTON_PRESS:
-
             if event.button == EventCodes.Cursor._left_click:
-
                 if self.is_playing():
                     self.__vlc_widget.player.pause()
                     turn_off_screensaver(False)
@@ -914,7 +912,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.emit(CustomSignals._video_restart)
 
     def __on_toolbutton_play_clicked(self, *_):
-
         if self.is_playing():
             self.pause()
         else:
@@ -992,29 +989,34 @@ class MediaPlayerWidget(Gtk.VBox):
             self.__video_status_before_press = self.__video_change_status
             self.__video_change_status = VideoScanStatus._none
             self.__was_playing_before_press = self.is_playing()
+            if self.__was_playing_before_press:
+                threading.Thread(target=self.__on_thread_scale_progress_long_press).start()
 
         self.__scale_progress_pressed = True
-        threading.Thread(target=self.__on_thread_scale_progress_long_press).start()
 
     def __on_thread_scale_progress_long_press(self):
-        sleep(.5)
+        sleep(.25)
         if self.__scale_progress_pressed:
             GLib.idle_add(self.__vlc_widget.player.pause)
 
     def __on_scale_progress_release(self, widget, *_):
-        if widget.get_value() == 1:
-            self.__on_toolbutton_end_clicked()
 
-        elif widget.get_value() == 0:
-            self.__on_toolbutton_restart_clicked()
+        match widget.get_value():
+            case VideoPosition._start:
+                self.__on_toolbutton_restart_clicked()
 
-        else:
-            self.__vlc_widget.player.set_position(widget.get_value())
-            if self.is_paused() and self.__was_playing_before_press:
-                self.__vlc_widget.player.play()  # In case of long press
+            case VideoPosition._end:
+                self.__on_toolbutton_end_clicked()
 
-            if self.__thread_player_activity is None:
-                self.emit(CustomSignals._position_changed, widget.get_value())
+            case _:
+                self.__vlc_widget.player.set_position(widget.get_value())
+
+                if self.__was_playing_before_press:  # In case of long press
+                    if self.is_paused():
+                        self.__vlc_widget.player.play()
+
+                if self.__thread_player_activity is None:
+                    self.emit(CustomSignals._position_changed, widget.get_value())
 
         self.__motion_time = time()
         self.__scale_progress_pressed = False
