@@ -17,6 +17,13 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
+"""
+    Patch:
+        + The control buttons had different sized, and It seems that in GTK3 it was not possible to use
+          `ToolButton.set_image`, so in order to properly size all the images, I used a MenuButton().
+          The sizing works, but it's needed then to: 1) only listen when the button is active. 2) de-active the button.
+"""
+
 import os
 import threading
 
@@ -231,23 +238,17 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__buttons_box.set_halign(Gtk.Align.FILL)
         self.__buttons_box.set_sensitive(False)
 
-        self.__toolbutton_previous = Gtk.ToolButton()
-        self.__toolbutton_previous.set_tooltip_text(Texts.MediaPlayer.Tooltip._start)
-        self.__toolbutton_previous.set_icon_name(ThemeButtons._previous)
-        self.__toolbutton_previous.connect('clicked', self.__on_toolbutton_restart_clicked)
-        self.__buttons_box.pack_start(self.__toolbutton_previous, expand=False, fill=False, padding=3)
+        self.__menubutton_previous = self.__add_menu_button(ThemeButtons._previous,
+                                                       Texts.MediaPlayer.Tooltip._start,
+                                                       self.__on_menubutton_restart_clicked)
 
-        self.__toolbutton_play = Gtk.ToolButton()
-        self.__toolbutton_play.set_icon_name(ThemeButtons._play)
-        self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
-        self.__toolbutton_play.connect('clicked', self.__on_toolbutton_play_clicked)
-        self.__buttons_box.pack_start(self.__toolbutton_play, expand=False, fill=False, padding=3)
+        self.__menubutton_play = self.__add_menu_button(ThemeButtons._play,
+                                                   Texts.MediaPlayer.Tooltip._play,
+                                                   self.__on_menubutton_play_clicked)
 
-        self.__toolbutton_next = Gtk.ToolButton()
-        self.__toolbutton_next.set_icon_name(ThemeButtons._next)
-        self.__toolbutton_next.set_tooltip_text(Texts.MediaPlayer.Tooltip._end)
-        self.__toolbutton_next.connect('clicked', self.__on_toolbutton_end_clicked)
-        self.__buttons_box.pack_start(self.__toolbutton_next, expand=False, fill=False, padding=3)
+        self.__menubutton_next = self.__add_menu_button(ThemeButtons._next,
+                                                   Texts.MediaPlayer.Tooltip._end,
+                                                   self.__on_menubutton_end_clicked)
 
         self.__scale_progress = Gtk.Scale()
         self.__scale_progress.set_range(VideoPosition._start, VideoPosition._end)
@@ -266,20 +267,17 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__buttons_box.pack_start(self.__label_progress, expand=False, fill=False, padding=3)
 
         if keep_playing_button:
-            self.__toggletoolbutton_keep_playing = Gtk.ToggleToolButton()
-            self.__toggletoolbutton_keep_playing.set_tooltip_text(Texts.MediaPlayer.Tooltip._keep_playing)
-            self.__toggletoolbutton_keep_playing.set_icon_name(ThemeButtons._keep_playing)
-            self.__toggletoolbutton_keep_playing.connect('toggled', self.__on_togglebutton_keep_playing_toggled)
-            self.__buttons_box.pack_start(self.__toggletoolbutton_keep_playing, expand=False, fill=False, padding=3)
+            self.__toggletoolbutton_keep_playing = self.__add_menu_button(ThemeButtons._keep_playing,
+                                                                     Texts.MediaPlayer.Tooltip._keep_playing,
+                                                                     self.__on_menubutton_keep_playing_toggled)
         else:
             self.__toggletoolbutton_keep_playing = None
 
         if random_button:
-            self.__toggletoolbutton_random = Gtk.ToggleToolButton()
-            self.__toggletoolbutton_random.set_tooltip_text(Texts.MediaPlayer.Tooltip._random)
-            self.__toggletoolbutton_random.set_icon_name(ThemeButtons._random)
-            self.__toggletoolbutton_random.connect('toggled', self.__on_togglebutton_random_toggled)
-            self.__buttons_box.pack_start(self.__toggletoolbutton_random, expand=False, fill=False, padding=3)
+            self.__toggletoolbutton_random = self.__add_menu_button(ThemeButtons._random,
+                                                               Texts.MediaPlayer.Tooltip._random,
+                                                               self.__on_menubutton_random_toggled)
+
         else:
             self.__toggletoolbutton_random = None
 
@@ -300,11 +298,9 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__volumebutton.connect('button-press-event', self.__on_scale_volume_press)
         self.__volumebutton.connect('button-release-event', self.__on_scale_volume_release)
 
-        self.__toolbutton_fullscreen = Gtk.ToolButton()
-        self.__toolbutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._fullscreen)
-        self.__toolbutton_fullscreen.set_icon_name(ThemeButtons._fullscreen)
-        self.__toolbutton_fullscreen.connect('clicked', self.__on_toolbutton_fullscreen_clicked)
-        self.__buttons_box.pack_start(self.__toolbutton_fullscreen, expand=False, fill=False, padding=3)
+        self.__menubutton_fullscreen = self.__add_menu_button(ThemeButtons._fullscreen,
+                                                         Texts.MediaPlayer.Tooltip._fullscreen,
+                                                         self.__on_menubutton_fullscreen_clicked)
 
         gtk_utils.set_css(self.__buttons_box, _DEFAULT_CSS)
 
@@ -367,8 +363,6 @@ class MediaPlayerWidget(Gtk.VBox):
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE, (bool,))
 
-
-
         #
         #    Init the threads
         #
@@ -383,38 +377,43 @@ class MediaPlayerWidget(Gtk.VBox):
     def play(self, from_scale=True):
 
         if self.__media is None:
+            self.__menubutton_play.set_active(False)
             raise ValueError('Attempting to play without media.')
 
         elif from_scale and self.__scale_progress.get_value() == VideoPosition._end:
-            return
+            pass
 
-        self.__video_change_status == VideoScanStatus._hold
-        self.__start_player_scan()
-
-        if self.__vlc_widget.player.will_play() == 0 or self.__video_ended or not self.__video_is_loaded:
-            threading.Thread(target=self.__thread_set_video, args=[True, from_scale]).start()
         else:
-            self.__vlc_widget.player.play()
+            self.__video_change_status == VideoScanStatus._hold
+            self.__start_player_scan()
 
-        self.__toolbutton_play.set_icon_name(ThemeButtons._pause)
-        self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._pause)
+            if self.__vlc_widget.player.will_play() == 0 or self.__video_ended or not self.__video_is_loaded:
+                threading.Thread(target=self.__thread_set_video, args=[True, from_scale]).start()
+            else:
+                self.__vlc_widget.player.play()
 
-        turn_off_screensaver(True)
-        self.emit(CustomSignals._play)
+            self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._pause, Gtk.IconSize.BUTTON))
+            self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._pause)
+
+            turn_off_screensaver(True)
+            self.emit(CustomSignals._play)
 
     def pause(self, emit=True):
+        print("PAUSE CALLED")
         self.__stop_player_scan()
-        self.__toolbutton_play.set_icon_name(ThemeButtons._play)
-        self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
+        self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._play, Gtk.IconSize.BUTTON))
+        self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
         self.__vlc_widget.player.pause()
         turn_off_screensaver(False)
         if emit:
             self.emit(CustomSignals._paused)
+        print("PAUSE ENDED")
 
     def stop(self):
         self.__stop_player_scan()
         self.__vlc_widget.player.stop()
-        self.__toolbutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
+        self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._play, Gtk.IconSize.BUTTON))
+        self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
         self.__buttons_box.set_sensitive(False)
         self.__label_progress.set_text(_DEFAULT_PROGRESS_LABEL)
         self.__label_volume.hide()
@@ -535,6 +534,22 @@ class MediaPlayerWidget(Gtk.VBox):
             return False
 
         return self.__toggletoolbutton_keep_playing.get_active()
+
+    def __add_menu_button(self, icon_name, tooltip, on_toggle):
+        """
+            It's important to use MenuButtons instead ToolButtons or
+            set_image will miss, and the icons will have different sizes
+            than the VolumeButton.
+        """
+        button = Gtk.MenuButton()
+        button.set_tooltip_text(tooltip)
+        button.set_relief(Gtk.ReliefStyle.NONE)
+        button.set_image(Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.BUTTON))
+        button.connect('toggled', on_toggle)
+        button.set_sensitive(True)
+        self.__buttons_box.pack_start(button, expand=False, fill=False, padding=3)
+
+        return button
 
     def __thread_set_video(self, play, from_scale):
         """
@@ -769,16 +784,18 @@ class MediaPlayerWidget(Gtk.VBox):
 
         if fullscreen:
             self.__window_root.fullscreen()
-            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons._un_fullscreen)
-            self.__toolbutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._unfullscreen)
+            self.__menubutton_fullscreen.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._un_fullscreen, Gtk.IconSize.BUTTON))
+            self.__menubutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._unfullscreen)
             if self.__un_maximized_fixed_toolbar:
                 self.__overlay.add_overlay(self.__buttons_box)
         else:
             self.__window_root.unfullscreen()
-            self.__toolbutton_fullscreen.set_icon_name(ThemeButtons._fullscreen)
-            self.__toolbutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._fullscreen)
+            self.__menubutton_fullscreen.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._fullscreen, Gtk.IconSize.BUTTON))
+            self.__menubutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._fullscreen)
             if self.__un_maximized_fixed_toolbar:
                 self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
+
+        self.__menubutton_fullscreen.set_active(False)
 
     def __set_scale_progress_end(self):
         """
@@ -822,7 +839,7 @@ class MediaPlayerWidget(Gtk.VBox):
                     # of 1s, the video may end at position .8
                     #
                     if self.get_state() == vlc.State.Ended:
-                        GLib.idle_add(self.__on_toolbutton_end_clicked)
+                        GLib.idle_add(self.__on_menubutton_end_clicked)
                         break  # important of the loop may continue until glib executes the previous func
                     else:
                         vlc_position = self.__vlc_widget.player.get_position()
@@ -878,7 +895,7 @@ class MediaPlayerWidget(Gtk.VBox):
                     self.__set_fullscreen(False)
 
                 case EventCodes.Keyboard._space_bar | EventCodes.Keyboard._enter:
-                    self.__on_toolbutton_play_clicked(None, None)
+                    self.__on_menubutton_play_clicked(None, None)
 
                 case EventCodes.Keyboard._arrow_up:
                     self.volume_up()
@@ -926,18 +943,32 @@ class MediaPlayerWidget(Gtk.VBox):
                     self.__vlc_widget.player.play()
                     turn_off_screensaver(True)
 
-    def __on_toolbutton_restart_clicked(self, *_):
+    def __on_menubutton_restart_clicked(self, button):
+
+        if not button.get_active():
+            return
+
         self.__vlc_widget.player.set_position(VideoPosition._start)
         self.__scale_progress.set_value(VideoPosition._start)  # Necessary if the video is paused.
         self.emit(CustomSignals._video_restart)
+        button.set_active(False)
 
-    def __on_toolbutton_play_clicked(self, *_):
+    def __on_menubutton_play_clicked(self, button):
+
+        if not button.get_active():
+            return
+
         if self.is_playing():
             self.pause()
         else:
             self.play()
 
-    def __on_toolbutton_end_clicked(self, *_):
+        button.set_active(False)
+
+    def __on_menubutton_end_clicked(self, button):
+
+        if not button.get_active():
+            return
 
         self.__stop_player_scan()
 
@@ -951,14 +982,25 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.emit(CustomSignals._video_end)
 
-    def __on_togglebutton_keep_playing_toggled(self, widget):
+        button.set_active(False)
+
+    def __on_menubutton_keep_playing_toggled(self, widget):
         self.emit(CustomSignals._btn_keep_playing_toggled, widget.get_active())
 
-    def __on_togglebutton_random_toggled(self, widget):
+    def __on_menubutton_random_toggled(self, widget):
         self.emit(CustomSignals._btn_random_toggled, widget.get_active())
 
-    def __on_toolbutton_fullscreen_clicked(self, *_):
+    def __on_menubutton_fullscreen_clicked(self, button):
+
+        if not button.get_active():
+            return
+
         self.__set_fullscreen(not gtk_utils.window_is_fullscreen(self.__window_root))
+
+        button.set_active(False)
+
+    def __on_volumebutton_changed(self, _, value):
+        self.__set_volume(int(value * 100), display_label=False, update_vbutton=False)
 
     def __on_menuitem_track_activate(self, _, track_type, track):
 
@@ -988,9 +1030,6 @@ class MediaPlayerWidget(Gtk.VBox):
 
         return False
 
-    def __on_volumebutton_changed(self, _, value):
-        self.__set_volume(int(value*100), display_label=False, update_vbutton=False)
-
     def __on_scale_volume_press(self, *_):
         print("__on_scale_volume_press")
         pass
@@ -1019,10 +1058,10 @@ class MediaPlayerWidget(Gtk.VBox):
 
         match widget.get_value():
             case VideoPosition._start:
-                self.__on_toolbutton_restart_clicked()
+                self.__on_menubutton_restart_clicked()
 
             case VideoPosition._end:
-                self.__on_toolbutton_end_clicked()
+                self.__on_menubutton_end_clicked()
 
             case _:
                 self.__vlc_widget.player.set_position(widget.get_value())
