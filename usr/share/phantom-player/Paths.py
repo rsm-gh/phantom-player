@@ -35,4 +35,5 @@ else:
     _HOME_DIR = "/home/" + getpass.getuser()
 
 _SERIES_DIR = os.path.join(_HOME_DIR, ".local/share/phantom-player")
+_NEW_PLAYLIST_IMG_PATH = os.path.join(_SERIES_DIR, ".png")
 _CONF_FILE = os.path.join(_HOME_DIR,  ".config/phantom-player.ini")
