@@ -34,6 +34,8 @@ from system_utils import EventCodes, turn_off_screensaver
 from settings import ThemeButtons
 from Texts import Texts
 
+_VOLUME_LABEL_NONE = " Muted "
+_VOLUME_LABEL = " Vol: {}% "
 _EMPTY__VIDEO_LENGTH = "00:00"
 _DEFAULT_PROGRESS_LABEL = "{0} / {0}".format(_EMPTY__VIDEO_LENGTH)
 _DEFAULT_CSS = """
@@ -186,6 +188,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__video_duration = _EMPTY__VIDEO_LENGTH
         self.__hidden_controls = False
         self.__media = None
+        self.__volume = -1
         self.__video_is_loaded = False
         self.__video_ended = False
         self.__was_playing_before_press = False
@@ -288,11 +291,13 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__volumebutton = Gtk.VolumeButton()
         self.__volumebutton.set_icons(ThemeButtons._volume)
-        self.__volumebutton.connect('value_changed', self.__on_scale_volume_changed)
-        # this is being called when the button is pressed, not the scale...
-        # self.__volumebutton.connect('button-press-event', self.__on_scale_volume_press)
-        # self.__volumebutton.connect('button-release-event', self.__on_scale_volume_release)
+        self.__volumebutton.connect('value_changed', self.__on_volumebutton_changed)
         self.__buttons_box.pack_start(self.__volumebutton, expand=False, fill=False, padding=3)
+
+        # this is being called when the button is pressed, not the scale...
+        # It important to detect the long press...
+        self.__volumebutton.connect('button-press-event', self.__on_scale_volume_press)
+        self.__volumebutton.connect('button-release-event', self.__on_scale_volume_release)
 
         self.__toolbutton_fullscreen = Gtk.ToolButton()
         self.__toolbutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._fullscreen)
@@ -304,13 +309,13 @@ class MediaPlayerWidget(Gtk.VBox):
 
         #   Extra volume label
         self.__label_volume = Gtk.Label()
-        self.__label_volume.set_text(" Vol: 0% ")
         self.__label_volume.set_valign(Gtk.Align.START)
         self.__label_volume.set_halign(Gtk.Align.END)
         self.__label_volume.set_margin_start(5)
         self.__label_volume.set_margin_end(5)
         gtk_utils.set_css(self.__label_volume, _DEFAULT_CSS)
         self.__overlay.add_overlay(self.__label_volume)
+        self.__set_volume(0, update_player=False)
 
         #
         # Add the toolbar
@@ -360,6 +365,8 @@ class MediaPlayerWidget(Gtk.VBox):
                            self,
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE, (bool,))
+
+
 
         #
         #    Init the threads
@@ -424,14 +431,16 @@ class MediaPlayerWidget(Gtk.VBox):
         return self.get_state() == vlc.State.NothingSpecial
 
     def volume_up(self):
-        actual_volume = self.__vlc_widget.player.audio_get_volume()
-        if actual_volume + 1 <= 100:
-            self.__vlc_widget.player.audio_set_volume(actual_volume + 1)
+        new_volume = self.__volume + 1
+        print("volume_up", self.__volume, new_volume)
+        if new_volume <= 100:
+            self.__set_volume(new_volume)
 
     def volume_down(self):
-        actual_volume = self.__vlc_widget.player.audio_get_volume()
-        if actual_volume >= 1:
-            self.__vlc_widget.player.audio_set_volume(actual_volume - 1)
+        new_volume = self.__volume - 1
+        print("volume_down", self.__volume, new_volume)
+        if new_volume >= 0:
+            self.__set_volume(new_volume)
 
     def hide_controls(self):
         self.__buttons_box.hide()
@@ -478,8 +487,7 @@ class MediaPlayerWidget(Gtk.VBox):
         GLib.idle_add(self.__buttons_box.set_sensitive, False),
         GLib.idle_add(self.__menubutton_settings.set_sensitive, False)
         GLib.idle_add(self.__label_progress.set_text, _DEFAULT_PROGRESS_LABEL)
-        #  The self.__scale_progress.set_value is not updated here to avoid blinking the GUI,
-        #  the right value will be set after.
+        #  self.__scale_progress.set_value is not updated here to avoid blinking the GUI.
 
         GLib.idle_add(self.__vlc_widget.player.stop)  # To remove any previous video
 
@@ -593,7 +601,7 @@ class MediaPlayerWidget(Gtk.VBox):
                 GLib.idle_add(self.__populate_settings_menubutton)
 
             self.__video_change_status = VideoScanStatus._scan
-            return
+            break
 
     def __populate_settings_menubutton(self):
 
@@ -680,7 +688,10 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__delayed_media_data.set_video_settings_loaded(True)
 
     @staticmethod
-    def __calculate_cached_emitted_position(vlc_position, position_precision, end_position, cached_position):
+    def __calculate_cached_emitted_position(vlc_position,
+                                            position_precision,
+                                            end_position,
+                                            cached_position):
 
         if vlc_position < VideoPosition._start:
             return cached_position
@@ -714,6 +725,31 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__thread_player_activity.do_run = False
         self.__thread_player_activity.join()
         self.__thread_player_activity = None
+
+    def __set_volume(self, value, display_label=True, update_vbutton=True, update_player=True):
+
+        if self.__volume != value:
+
+            self.__volume = value
+
+            if value > 0:
+                self.__label_volume.set_text(_VOLUME_LABEL.format(value))
+            else:
+                self.__label_volume.set_text(_VOLUME_LABEL_NONE)
+
+            if update_player:
+                self.__vlc_widget.player.audio_set_volume(value)
+
+            if update_vbutton:
+                if value <= 0:
+                    value = 0
+                else:
+                    value = value / 100
+                self.__volumebutton.set_value(value)
+
+        if display_label:
+            self.__motion_time = time()
+            self.__label_volume.show()
 
     def __set_cursor_empty(self):
         window = self.get_window()
@@ -781,20 +817,6 @@ class MediaPlayerWidget(Gtk.VBox):
                     self.__video_change_status = VideoScanStatus._scan
 
                 case VideoScanStatus._scan:
-
-                    #
-                    #    Update the volume. Is this necessary?
-                    #
-                    vlc_volume = self.__vlc_widget.player.audio_get_volume()
-                    scale_volume_value = int(self.__volumebutton.get_value() * 100)
-                    if vlc_volume <= 100 and vlc_volume != scale_volume_value:
-                        GLib.idle_add(self.__volumebutton.set_value, vlc_volume / 100.000)
-                        GLib.idle_add(self.__label_volume.set_text, " Vol: {}% ".format(vlc_volume))
-                        GLib.idle_add(self.__label_volume.show)
-
-                        self.__motion_time = time()
-                        self.__widgets_shown = WidgetsShown._volume
-
                     #
                     # Check if the video ended.
                     # Note, this can not be done with the position. For example, for videos with a duration
@@ -848,7 +870,6 @@ class MediaPlayerWidget(Gtk.VBox):
             self.__set_fullscreen(True)
 
         elif gtk_utils.window_is_fullscreen(self.__window_root):
-
             match event.keyval:
                 # display the toolbox if the arrows are pressed?
                 case EventCodes.Keyboard._arrow_left | EventCodes.Keyboard._arrow_right:
@@ -968,20 +989,16 @@ class MediaPlayerWidget(Gtk.VBox):
 
         return False
 
-    def __on_scale_volume_changed(self, _, value):
-        value = int(value * 100)
-        if self.__vlc_widget.player.audio_get_volume() != value:
-            self.__motion_time = time()
-            self.__label_volume.set_text(" Vol: {}% ".format(value))
-            self.__label_volume.show()
-            self.__vlc_widget.player.audio_set_volume(value)
+    def __on_volumebutton_changed(self, _, value):
+        self.__set_volume(int(value*100), display_label=False, update_vbutton=False)
 
     def __on_scale_volume_press(self, *_):
+        print("__on_scale_volume_press")
         pass
-        # self.__scale_progress_pressed = True
 
     def __on_scale_volume_release(self, *_):
-        self.__scale_progress_pressed = False
+        print("__on_scale_volume_release")
+        pass
 
     def __on_scale_progress_press(self, *_):
 
