@@ -16,6 +16,22 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+"""
+    Bugs:
+        + When selecting multiple videos to re-order with drag-and-drop, only the fist one is moved.
+        + Fix dialog, paths, display how may valid videos, how many missing videos in the liststore.
+
+    To do:
+        + Create the playlist cellrender
+        + Display the duplicated (excluded videos) at startup.
+        + Finish the option "end at"
+        + Improve user messages. Example: if path not added, or video not added, explain why.
+        + Create the "delete video" option (instead of clean)
+        + Create a dialog to rename videos.
+        + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
+"""
+
+
 import os
 from time import sleep
 from threading import Thread
