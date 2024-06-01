@@ -28,11 +28,6 @@ Author: Rafael Senties Martinelli
   <!-- interface-description This package allows you to create and reproduce playlists from folders containing videos. -->
   <!-- interface-copyright 2014-2015, 2024 Rafael Senties Martinelli -->
   <!-- interface-authors Rafael Senties Martinelli -->
-  <object class="GtkImage" id="image_add">
-    <property name="visible">True</property>
-    <property name="can-focus">False</property>
-    <property name="icon-name">list-add</property>
-  </object>
   <object class="GtkImage" id="image_back">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
@@ -307,6 +302,22 @@ Author: Rafael Senties Martinelli
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <child>
+      <object class="GtkMenuItem" id="menuitem_open_file">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Open Video</property>
+        <property name="use-underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="menuitem_new_playlist">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">New Playlist</property>
+        <property name="use-underline">True</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkMenuItem">
         <property name="use-action-appearance">False</property>
         <property name="visible">True</property>
@@ -363,14 +374,6 @@ Author: Rafael Senties Martinelli
       </object>
     </child>
     <child>
-      <object class="GtkMenuItem" id="menuitem_open_file">
-        <property name="visible">True</property>
-        <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Open File</property>
-        <property name="use-underline">True</property>
-      </object>
-    </child>
-    <child>
       <object class="GtkMenuItem" id="menuitem_about">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
@@ -382,6 +385,7 @@ Author: Rafael Senties Martinelli
     <property name="visible">True</property>
     <property name="can-focus">False</property>
     <property name="hexpand">True</property>
+    <property name="has-subtitle">False</property>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>
@@ -403,21 +407,6 @@ Author: Rafael Senties Martinelli
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="button_playlist_new">
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">New Playlist</property>
-            <property name="image">image_add</property>
-            <property name="always-show-image">True</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
           </packing>
         </child>
         <child>
