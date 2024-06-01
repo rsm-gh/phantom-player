@@ -269,7 +269,7 @@ class PhantomPlayer:
         self.__window_root.maximize()
         self.__window_root.show_all()
         self.__mp_widget.hide_volume_label()
-        self.__playlists_display(True)
+        self.__set_view(playlists_menu=True)
 
         #
         #    Load the existent playlist
@@ -307,7 +307,7 @@ class PhantomPlayer:
         # Play the video without a playlist
         #
         self.__current_media = CurrentMedia()
-        self.__playlists_display(False, only_player=True)
+        self.__set_view(False, only_player=True)
         self.__mp_widget.set_video(file_path)
         return True
 
@@ -393,6 +393,70 @@ class PhantomPlayer:
             self.__mp_widget.set_keep_playing(self.__current_media._playlist.get_keep_playing())
 
         self.__liststore_videos_select_current()
+
+    def __set_view(self, playlists_menu, only_player=False):
+
+        if playlists_menu:
+            self.__headerbar.props.title = Texts.GUI._title
+            self.__current_media = CurrentMedia()
+            self.__mp_widget.stop()
+
+            if self.__paned is None:
+                self.__box_window.remove(self.__mp_widget)
+            else:
+                self.__paned.hide()
+
+            self.__button_playlist_settings.hide()
+            self.__button_display_playlists.hide()
+
+            self.__scrolledwindow_playlists.show()
+            self.__button_playlist_new.show()
+            self.__entry_playlist_search.show()
+            self.__menubutton_main.show()
+            self.__statusbar.show()
+        else:
+
+            self.__button_playlist_new.hide()
+            self.__entry_playlist_search.hide()
+            self.__menubutton_main.hide()
+            self.__scrolledwindow_playlists.hide()
+
+            self.__button_playlist_settings.show()
+            self.__button_display_playlists.show()
+
+            if only_player:
+                self.__button_playlist_settings.set_sensitive(False)
+                self.__statusbar.hide()
+                self.__button_playlist_settings.hide()
+
+                if self.__paned is not None:
+                    self.__paned.remove(self.__mp_widget)
+                    self.__paned.remove(self.__media_box)
+                    self.__paned.destroy()
+                    self.__paned = None
+
+                self.__mp_widget.display_playlist_controls(False)
+                self.__box_window.pack_start(self.__mp_widget, True, True, 0)
+
+            else:
+                self.__statusbar.hide()
+                self.__treeview_videos.show()
+                self.__button_playlist_settings.show()
+                self.__button_playlist_settings.set_sensitive(
+                    self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
+
+                self.__mp_widget.display_playlist_controls(True)
+
+                if self.__paned is None:
+                    self.__box_window.remove(self.__mp_widget)
+                    self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
+                    self.__paned.add1(self.__mp_widget)
+                    self.__paned.add2(self.__media_box)
+                    self.__box_window.pack_start(self.__paned, True, True, 0)
+
+                self.__paned.show_all()
+                _, window_height = self.__window_root.get_size()
+                self.__paned.set_position(window_height / 2)
 
     def __fonts_reload(self):
         _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default,
@@ -485,71 +549,9 @@ class PhantomPlayer:
         else:
             print("Load playlist ended.")
 
-    def __playlists_display(self, value, only_player=False):
-
-        if value:
-            self.__headerbar.props.title = Texts.GUI._title
-            self.__current_media = CurrentMedia()
-            self.__mp_widget.stop()
-
-            if self.__paned is None:
-                self.__box_window.remove(self.__mp_widget)
-            else:
-                self.__paned.hide()
-
-            self.__button_playlist_settings.hide()
-            self.__button_display_playlists.hide()
-
-            self.__scrolledwindow_playlists.show()
-            self.__button_playlist_new.show()
-            self.__entry_playlist_search.show()
-            self.__menubutton_main.show()
-            self.__statusbar.show()
-        else:
-
-            self.__button_playlist_new.hide()
-            self.__entry_playlist_search.hide()
-            self.__menubutton_main.hide()
-            self.__scrolledwindow_playlists.hide()
-
-            self.__button_playlist_settings.show()
-            self.__button_display_playlists.show()
-
-            if only_player:
-                self.__button_playlist_settings.set_sensitive(False)
-                self.__statusbar.hide()
-
-                if self.__paned is not None:
-                    self.__paned.remove(self.__mp_widget)
-                    self.__paned.remove(self.__media_box)
-                    self.__paned.destroy()
-                    self.__paned = None
-
-                self.__mp_widget.display_playlist_controls(False)
-                self.__box_window.pack_start(self.__mp_widget, True, True, 0)
-
-            else:
-                self.__statusbar.hide()
-                self.__treeview_videos.show()
-                self.__button_playlist_settings.set_sensitive(
-                    self.__current_media._playlist.get_load_status() == PlaylistLoadStatus._loaded)
-
-                self.__mp_widget.display_playlist_controls(True)
-
-                if self.__paned is None:
-                    self.__box_window.remove(self.__mp_widget)
-                    self.__paned = Gtk.Paned(orientation=Gtk.Orientation.VERTICAL)
-                    self.__paned.add1(self.__mp_widget)
-                    self.__paned.add2(self.__media_box)
-                    self.__box_window.pack_start(self.__paned, True, True, 0)
-
-                self.__paned.show_all()
-                _, window_height = self.__window_root.get_size()
-                self.__paned.set_position(window_height / 2)
-
     def __playlist_open(self, playlist, video=None):
         self.__current_media = CurrentMedia(playlist)
-        self.__playlists_display(False)
+        self.__set_view(playlists_menu=False)
         self.__liststore_videos_populate()
         self.__liststore_videos_select_current()
 
@@ -774,7 +776,7 @@ class PhantomPlayer:
             #
 
             if event.keyval == EventCodes.Keyboard._back:
-                self.__playlists_display(True)
+                self.__set_view(playlists_menu=True)
                 return True
 
             elif not (Gdk.ModifierType.CONTROL_MASK & event.state):
@@ -909,7 +911,7 @@ class PhantomPlayer:
                 self.__liststore_playlists.remove(row.iter)
                 break
 
-        self.__playlists_display(True)
+        self.__set_view(playlists_menu=True)
 
     def __on_window_psettings_close(self, closed_playlist):
         self.__liststore_playlists_update(closed_playlist)
@@ -940,7 +942,7 @@ class PhantomPlayer:
         self.__window_playlist_settings.show(self.__current_media._playlist, is_new=False)
 
     def __on_button_display_playlists_clicked(self, *_):
-        self.__playlists_display(True)
+        self.__set_view(playlists_menu=True)
 
     def __on_iconview_playlists_item_activated(self, _, path):
 

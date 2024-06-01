@@ -174,7 +174,8 @@ class MediaPlayerWidget(Gtk.VBox):
                  root_window,
                  random_button=False,
                  keep_playing_button=False,
-                 un_max_fixed_toolbar=True):
+                 un_max_fixed_toolbar=True,
+                 volume_level=35):
         """
              un_max_fixed_toolbar: Automatically hide the toolbar when the window is un-maximized
         """
@@ -315,7 +316,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_volume.set_margin_end(5)
         gtk_utils.set_css(self.__label_volume, _DEFAULT_CSS)
         self.__overlay.add_overlay(self.__label_volume)
-        self.__set_volume(0, update_player=False)
+        self.__set_volume(volume_level)
 
         #
         # Add the toolbar
@@ -432,13 +433,11 @@ class MediaPlayerWidget(Gtk.VBox):
 
     def volume_up(self):
         new_volume = self.__volume + 1
-        print("volume_up", self.__volume, new_volume)
         if new_volume <= 100:
             self.__set_volume(new_volume)
 
     def volume_down(self):
         new_volume = self.__volume - 1
-        print("volume_down", self.__volume, new_volume)
         if new_volume >= 0:
             self.__set_volume(new_volume)
 
@@ -547,6 +546,7 @@ class MediaPlayerWidget(Gtk.VBox):
             return
 
         GLib.idle_add(self.__vlc_widget.player.set_media, self.__media)
+        GLib.idle_add(self.__vlc_widget.player.audio_set_volume, self.__volume)
 
         if play:
             GLib.idle_add(self.__vlc_widget.player.play)
@@ -726,7 +726,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__thread_player_activity.join()
         self.__thread_player_activity = None
 
-    def __set_volume(self, value, display_label=True, update_vbutton=True, update_player=True):
+    def __set_volume(self, value=None, display_label=True, update_vbutton=True):
 
         if self.__volume != value:
 
@@ -737,8 +737,7 @@ class MediaPlayerWidget(Gtk.VBox):
             else:
                 self.__label_volume.set_text(_VOLUME_LABEL_NONE)
 
-            if update_player:
-                self.__vlc_widget.player.audio_set_volume(value)
+            self.__vlc_widget.player.audio_set_volume(value)
 
             if update_vbutton:
                 if value <= 0:
