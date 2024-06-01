@@ -45,6 +45,9 @@ def format_img(read_path, write_path, width=None, height=None, max_width=None, e
         Code taken from www.cad-viewer.org
         Either fill width & height, or max_width
     """
+    print("READ", read_path)
+    print("WRITE", write_path)
+
 
     image = Image.open(read_path)
 

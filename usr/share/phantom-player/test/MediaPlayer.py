@@ -27,14 +27,14 @@
             To fix it, I created `self.__media`.
 
     Remarks:
-        + The player uses `set_position()` instead of `set_time()` because:
+        + Careful when using `player.pause()`, because if the player is already paused, it may (randomly) start playing.
+
+        + The widget uses `set_position()` instead of `set_time()` because:
             + The VLC API says that `time` is not supported for all the formats. This makes the code more complex, but it works good.
             + Saving/Applying the position is pretty easy.
             + `start_at`, `end_at`, and `end_position` are more complex because they depend on the media duration:
                 + `start_at` and `end_at` must be saved in `time` format, because it is an input given by the user and, it must be a constant across all media.
                 + `end_position` is used to detect when a video has ended. Normally it should be `1`, but the value may change based on a numeric approach. For example, for a very long video, it may be `.9999999`, and for a shorter `.9`.
-
-        + Careful when using `player.pause()`, because if the player is already paused, it may (randomly) start playing.
 
     Bugs:
         + Test/Fix (when cancel) the option to choose the subtitles' file...
@@ -47,7 +47,7 @@
 
     To do:
         + Enable video tracks?
-        + on left right arrows?
+        + On left right arrows?
         + Set custom title? Ex: video name? not video full name?
         + When the media changes, display a label. I think it can be done with the VLC API.
         + When using the +/- signs of the volume button, only change of 1.
