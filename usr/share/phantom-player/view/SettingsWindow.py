@@ -26,7 +26,8 @@ _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
 import settings
-from Paths import *
+import system_utils
+import Paths
 from Texts import Texts
 from view import gtk_utils
 from model.PlaylistPath import PlaylistPath
@@ -88,6 +89,7 @@ class SettingsWindow:
         self.__window_settings = builder.get_object('settings_window')
         self.__entry_playlist_name = builder.get_object('entry_playlist_name')
         self.__togglebutton_edit_name = builder.get_object('togglebutton_edit_name')
+        self.__eventbox_image = builder.get_object('eventbox_image')
         self.__image_playlist = builder.get_object('image_playlist')
         self.__switch_keep_playing = builder.get_object('switch_keep_playing')
         self.__switch_random_playing = builder.get_object('switch_random_playing')
@@ -97,7 +99,6 @@ class SettingsWindow:
         self.__spinbutton_start_at_sec = builder.get_object('spinbutton_start_at_sec')
 
         self.__liststore_paths = builder.get_object('liststore_paths')
-        self.__button_set_image = builder.get_object('button_set_image')
 
         self.__treeselection_path = builder.get_object('treeselection_path')
         self.__button_path_add = builder.get_object('button_path_add')
@@ -133,7 +134,7 @@ class SettingsWindow:
 
         self.__entry_playlist_name.connect('changed', self.__on_entry_playlist_name_changed)
         self.__togglebutton_edit_name.connect('button-press-event', self.__on_togglebutton_edit_name_press_event)
-        self.__button_set_image.connect('clicked', self.__on_button_set_image_clicked)
+        self.__eventbox_image.connect('button-press-event', self.__on_eventbox_image_button_press)
         self.__switch_keep_playing.connect('button-press-event', self.__on_switch_random_playing_press_event)
         self.__switch_random_playing.connect('button-press-event', self.__on_switch_random_playing_press_event)
         self.__spinbutton_audio.connect('value-changed', self.__on_spinbutton_audio_value_changed)
@@ -160,6 +161,15 @@ class SettingsWindow:
 
         # Paths
         self.__button_path_close.connect('clicked', self.__on_button_path_close)
+
+        #
+        # Remove any image left by a new playlist instead of crash
+        #
+        if not os.path.exists(Paths._SERIES_DIR):
+            os.makedirs(Paths._SERIES_DIR)
+
+        elif os.path.exists(Paths._NEW_PLAYLIST_IMG_PATH):
+            os.remove(Paths._NEW_PLAYLIST_IMG_PATH)
 
         #
         # Extra
@@ -269,7 +279,7 @@ class SettingsWindow:
         self.__switch_keep_playing.set_active(self.__current_playlist.get_keep_playing())
         self.__switch_random_playing.set_active(self.__current_playlist.get_random())
 
-        pixbuf = Pixbuf.new_from_file_at_size(self.__current_playlist.get_icon_path(), -1, 30)
+        pixbuf = Pixbuf.new_from_file_at_size(self.__current_playlist.get_icon_path(), settings._DEFAULT_IMG_WIDTH, settings._DEFAULT_IMG_HEIGHT)
         self.__image_playlist.set_from_pixbuf(pixbuf)
         self.__button_delete.set_sensitive(not self.__is_new_playlist)
         self.__button_restart.set_sensitive(not self.__is_new_playlist)
@@ -384,24 +394,37 @@ class SettingsWindow:
 
         self.__window_settings.set_title(playlist_name)
 
-    def __on_button_set_image_clicked(self, *_):
+    def __on_eventbox_image_button_press(self, _, event):
         """
             Add a picture to a playlist.
             Note: set_icon_path shall not be called here,
                    because the playlist must be named / renamed first.
         """
+        if event.button != system_utils.EventCodes.Cursor._left_click:
+            return False
+
         file_filter = Gtk.FileFilter()
         file_filter.set_name('Image')
 
         for img_format in settings._IMAGE_FORMATS:
             file_filter.add_pattern('*.' + img_format)
 
-        file = gtk_utils.dialog_select_file(self.__window_settings, file_filter)
-        if file is None:
+        file_path = gtk_utils.dialog_select_file(self.__window_settings, file_filter)
+        if file_path is None:
             return
 
-        self.__current_playlist.set_icon_path(file)
-        pixbuf = Pixbuf.new_from_file_at_size(self.__current_playlist.get_icon_path(), -1, 30)
+        if self.__is_new_playlist:
+            write_path = Paths._NEW_PLAYLIST_IMG_PATH
+            system_utils.format_img(read_path=file_path,
+                                    write_path=write_path,
+                                    width=settings._DEFAULT_IMG_WIDTH,
+                                    height=settings._DEFAULT_IMG_HEIGHT,
+                                    extension="png")
+        else:
+            write_path = self.__current_playlist.get_icon_path()
+            self.__current_playlist.set_icon_path(file_path)
+
+        pixbuf = Pixbuf.new_from_file_at_size(write_path, settings._DEFAULT_IMG_WIDTH, settings._DEFAULT_IMG_HEIGHT)
         self.__image_playlist.set_from_pixbuf(pixbuf)
 
     def __on_togglebutton_edit_name_press_event(self, widget, *_):
@@ -625,9 +648,8 @@ class SettingsWindow:
     def __on_button_close_clicked(self, *_):
 
         if self.__is_new_playlist:
-            icon_path = self.__current_playlist.get_icon_path(allow_default=False)
-            if icon_path is not None and os.path.exists(icon_path):
-                os.remove(icon_path)
+            if os.path.exists(Paths._NEW_PLAYLIST_IMG_PATH):
+                os.remove(Paths._NEW_PLAYLIST_IMG_PATH)
 
         else:
             self.__save_playlist_changes()
@@ -657,6 +679,13 @@ class SettingsWindow:
                                   Texts.DialogPlaylist._name_exist.format(playlist_name))
             return
 
+        # Set the name (important for the icon)
         self.__current_playlist.set_name(playlist_name)
+
+        # Set the icon if it exists
+        if os.path.exists(Paths._NEW_PLAYLIST_IMG_PATH):
+            self.__current_playlist.set_icon_path(Paths._NEW_PLAYLIST_IMG_PATH)
+            os.remove(Paths._NEW_PLAYLIST_IMG_PATH)
+
         self.__window_settings.hide()
         self.__add_function(self.__current_playlist)

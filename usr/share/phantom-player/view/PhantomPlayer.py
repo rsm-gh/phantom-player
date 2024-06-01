@@ -20,6 +20,7 @@
     Bugs:
         + When selecting multiple videos to re-order with drag-and-drop, only the fist one is moved.
         + Fix dialog, paths, display how may valid videos, how many missing videos in the liststore.
+        + Sometimes the process is not being correctly closed, and it remains in the background.
 
     To do:
         + Create the playlist cellrender
