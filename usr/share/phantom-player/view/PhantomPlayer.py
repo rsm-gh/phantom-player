@@ -118,7 +118,7 @@ class PhantomPlayer:
         self.__window_about = builder.get_object('window_about')
         self.__headerbar = builder.get_object('headerbar')
         self.__menubutton_main = builder.get_object('menubutton_main')
-        self.__button_playlist_new = builder.get_object('button_playlist_new')
+        self.__menuitem_new_playlist = builder.get_object('menuitem_new_playlist')
         self.__button_playlist_settings = builder.get_object('button_playlist_settings')
         self.__entry_playlist_search = builder.get_object('entry_playlist_search')
         self.__menubar = builder.get_object('menubar')
@@ -173,9 +173,10 @@ class PhantomPlayer:
         self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
 
         self.__entry_playlist_search.connect("changed", self.__on_entry_playlist_search_changed)
-        self.__button_playlist_new.connect("clicked", self.__on_button_playlist_new_clicked)
+
         self.__button_playlist_settings.connect("clicked", self.__on_button_playlist_settings_clicked)
 
+        self.__menuitem_new_playlist.connect("activate", self.__on_menuitem_new_playlist_activate)
         self.__menuitem_open_file.connect("activate", self.__on_menuitem_open_file)
         self.__menuitem_about.connect("activate", self.__on_menuitem_about_activate)
         self.__checkbox_dark_theme.connect('toggled', self.__on_checkbox_dark_theme_toggled)
@@ -281,7 +282,7 @@ class PhantomPlayer:
         #    Display the window
         #
         self.__fonts_reload()
-        self.__button_playlist_new.set_sensitive(False)
+        self.__menuitem_new_playlist.set_sensitive(False)
         self.__button_playlist_settings.set_sensitive(False)
         self.__window_root.maximize()
         self.__window_root.show_all()
@@ -427,13 +428,10 @@ class PhantomPlayer:
             self.__button_display_playlists.hide()
 
             self.__scrolledwindow_playlists.show()
-            self.__button_playlist_new.show()
             self.__entry_playlist_search.show()
             self.__menubutton_main.show()
             self.__statusbar.show()
         else:
-
-            self.__button_playlist_new.hide()
             self.__entry_playlist_search.hide()
             self.__menubutton_main.hide()
             self.__scrolledwindow_playlists.hide()
@@ -521,7 +519,7 @@ class PhantomPlayer:
                     GLib.idle_add(self.__liststore_playlists_append, playlist)
 
         # Once the playlists headers are loaded, it is possible to create new playlists.
-        GLib.idle_add(self.__button_playlist_new.set_sensitive, True)
+        GLib.idle_add(self.__menuitem_new_playlist.set_sensitive, True)
         self.__playlist_headers_are_loaded = True
 
         #
@@ -773,8 +771,8 @@ class PhantomPlayer:
                     self.__entry_playlist_search.grab_focus()
 
                 case EventCodes.Keyboard._letter_n:  # New Playlists
-                    if self.__button_playlist_new.get_sensitive():
-                        self.__on_button_playlist_new_clicked()
+                    if self.__menuitem_new_playlist.get_sensitive():
+                        self.__on_menuitem_new_playlist_activate()
 
                 case EventCodes.Keyboard._letter_o:  # Open file
                     self.__on_menuitem_open_file()
@@ -949,7 +947,7 @@ class PhantomPlayer:
     def __on_entry_playlist_search_changed(self, *_):
         self.__liststore_playlists_populate()
 
-    def __on_button_playlist_new_clicked(self, *_):
+    def __on_menuitem_new_playlist_activate(self, *_):
         new_playlist = Playlist()
         new_playlist.set_guid(len(self.__playlists))
         new_playlist.set_load_status(PlaylistLoadStatus._loaded)
