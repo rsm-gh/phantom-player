@@ -293,10 +293,10 @@ class PhantomPlayer:
                                                         Gtk.AccelFlags.VISIBLE)
 
         self.__menuitem_videos_ignore.add_accelerator('activate',
-                                                        self.__accelgroup_videos,
-                                                        ord("i"),
-                                                        Gdk.ModifierType.CONTROL_MASK,
-                                                        Gtk.AccelFlags.VISIBLE)
+                                                      self.__accelgroup_videos,
+                                                      ord("i"),
+                                                      Gdk.ModifierType.CONTROL_MASK,
+                                                      Gtk.AccelFlags.VISIBLE)
 
         self.__menuitem_videos_unignore.add_accelerator('activate',
                                                         self.__accelgroup_videos,
@@ -376,6 +376,20 @@ class PhantomPlayer:
             self.__configuration.get_bool_defval(GlobalConfigTags._video_cprog, True))
         self.__checkbox_video_rhidden.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._video_rhidden, True))
+
+        # Fix: GUI initialization
+        # I was expecting that connecting the checkbox.toggled before calling set_active() would activate the
+        # signal, but it is not happening. This seems to be an easy fix:
+        for checkbox in [self.__checkbox_video_cnumber,
+                         self.__checkbox_video_cpath,
+                         self.__checkbox_video_cname,
+                         self.__checkbox_video_cextension,
+                         self.__checkbox_video_cprogress,
+                         # self.__checkbox_dark_theme,
+                         # self.__checkbox_playlist_missing
+                         # __checkbox_video_rhidden are not necessary
+                         ]:
+            checkbox.toggled()
 
         #
         #    Display the window
@@ -817,7 +831,6 @@ class PhantomPlayer:
             if row[VideosListstoreColumnsIndex._id] == video_guid:
                 self.__liststore_videos.remove(row.iter)
                 break
-
 
     def __treeselection_videos_get_selected(self):
 
