@@ -39,6 +39,7 @@ from view.cellrenderers.CellRendererTimeStamp import CellRendererTimeStamp
 from view.cellrenderers.CellRendererURI import CellRendererURI
 from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
 
+
 class Window(Gtk.Window):
 
     def __init__(self):

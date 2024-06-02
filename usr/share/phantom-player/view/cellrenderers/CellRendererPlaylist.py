@@ -16,14 +16,13 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 
-import os
-from math import pi
-
 from gi.repository import Gtk, Gdk, GObject, PangoCairo
 from gi.repository.GdkPixbuf import Pixbuf
 
 from settings import _DEFAULT_IMG_WIDTH, _DEFAULT_IMG_HEIGHT
 from view.cellrenderers.constants import FONT_COLOR, GENERAL_FONT_DESCRIPTION
+
+_PROGRESS_BAR_HEIGHT = 4
 
 
 class CellRendererPlaylist(Gtk.CellRenderer):
@@ -51,6 +50,12 @@ class CellRendererPlaylist(Gtk.CellRenderer):
                    "Image of the playlist",  # blurb
                    GObject.PARAM_READWRITE,  # flags
                    ),
+
+        'color': (Gdk.RGBA,  # type
+                  "text color",  # nick
+                  "Text color of the name",  # blurb
+                  GObject.PARAM_READWRITE,  # flags
+                  ),
     }
 
     def __init__(self):
@@ -58,6 +63,7 @@ class CellRendererPlaylist(Gtk.CellRenderer):
         self.progress = 0
         self.name = ""
         self.pixbuf = Pixbuf()
+        self.color = Gdk.RGBA()
         self.__formated_text = ""
 
     def do_set_property(self, pspec, value):
@@ -67,49 +73,33 @@ class CellRendererPlaylist(Gtk.CellRenderer):
     def do_get_property(self, pspec):
         return getattr(self, pspec.name)
 
-    def do_get_size(self, widget, cell_area):
-        #return (0, 0, cell_area.width, cell_area.height)
-        return 0, 0, _DEFAULT_IMG_WIDTH, _DEFAULT_IMG_HEIGHT + 27
+    def do_get_size(self, _widget, _cell_area):
+        #  return (0, 0, cell_area.width, cell_area.height)
+        return 0, 0, _DEFAULT_IMG_WIDTH, _DEFAULT_IMG_HEIGHT + _PROGRESS_BAR_HEIGHT
 
-    def do_render(self, cr, widget, background_area, cell_area, flags):
+    def do_render(self, cr, _widget, _background_area, cell_area, _flags):
 
-        cr.set_source_rgba(.149, .149, .149, 1)
-        cr.set_line_width(1)
-        cr.rectangle(cell_area.x, cell_area.y, _DEFAULT_IMG_WIDTH, _DEFAULT_IMG_HEIGHT + 27)
-        cr.fill()
-
-        #self.__draw_rectangle(cr, [cell_area.y,
-        #                                cell_area.x,
-        #                                cell_area.x+20,
-        #                                cell_area.x-20], 10)
+        self.__draw_name(cr, cell_area)
 
         Gdk.cairo_set_source_pixbuf(cr, self.pixbuf, cell_area.x, cell_area.y)
         cr.paint()
 
         self.__draw_progress(cr, cell_area)
-        self.__draw_name(cr, cell_area)
-
-        cr.set_source_rgba(.149, .149, .149, 1)
-        cr.set_line_width(5)
-        cr.rectangle(cell_area.x, cell_area.y, _DEFAULT_IMG_WIDTH, _DEFAULT_IMG_HEIGHT + 27)
-        cr.stroke()
 
     def __draw_name(self, cr, cell_area):
-        cr.set_source_rgb(1, 1, 1)
+        cr.set_source_rgb(self.color.red, self.color.green, self.color.blue)
         layout = PangoCairo.create_layout(cr)
         layout.set_font_description(GENERAL_FONT_DESCRIPTION)
         layout.set_text(self.__formated_text, -1)
         cr.save()
-        #PangoCairo.update_layout(cr, layout)
-        cr.move_to(cell_area.x + 4, cell_area.y + _DEFAULT_IMG_HEIGHT + 5)
+        #  PangoCairo.update_layout(cr, layout)
+        cr.move_to(cell_area.x+2, cell_area.y + _DEFAULT_IMG_HEIGHT - 25)
         PangoCairo.show_layout(cr, layout)
         cr.restore()
 
     def __draw_progress(self, cr, cell_area):
-        progress_height = cell_area.y + _DEFAULT_IMG_HEIGHT
-
-        cr.set_line_width(4)
-
+        progress_height = cell_area.y + _DEFAULT_IMG_HEIGHT + _PROGRESS_BAR_HEIGHT - (_PROGRESS_BAR_HEIGHT / 2)
+        cr.set_line_width(_PROGRESS_BAR_HEIGHT)
         cr.set_source_rgba(1, .9, .9, 1)
         cr.move_to(cell_area.x, progress_height)
         cr.line_to(cell_area.x + _DEFAULT_IMG_WIDTH, progress_height)
@@ -125,26 +115,7 @@ class CellRendererPlaylist(Gtk.CellRenderer):
         cr.stroke()
 
     @staticmethod
-    def __draw_rectangle(cr, top, bottom, left, right, radius, fill=True):
-        """ draws rectangles with rounded (circular arc) corners """
-        cr.set_source_rgba(0, 0, 0, 1)
-        cr.set_line_width(3)
-
-        cr.rectangle(left, 300, 400, 800)
-
-        #cr.arc(top + radius, left + radius, radius, 2 * (pi / 2), 3 * (pi / 2))
-        #cr.arc(bottom - radius, left + radius, radius, 3 * (pi / 2), 4 * (pi / 2))
-        #cr.arc(bottom - radius, right - radius, radius, 0 * (pi / 2), 1 * (pi / 2))  # ;o)
-        #cr.arc(top + radius, right - radius, radius, 1 * (pi / 2), 2 * (pi / 2))
-        #cr.close_path()
-
-        #if fill:
-        #    cr.fill()
-        #else:
-        cr.stroke()
-
-    @staticmethod
-    def format_long_text(text, length=11):
+    def format_long_text(text, length=12):
         """
             Ex: "Anticonstitutionellement" to "Anticonstitu…"
         """
