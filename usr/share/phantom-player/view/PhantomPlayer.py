@@ -23,6 +23,7 @@
         + Sometimes the process is not being correctly closed, and it remains in the background.
 
     To do:
+        + Option to modify the size of the playlist icons
         + Display the duplicated (excluded videos) at startup.
         + Finish the option "end at"
         + Improve user messages. Example: if path not added, or video not added, explain why.
@@ -61,8 +62,9 @@ from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
 class PlaylistListstoreColumnsIndex:
     _id = 0
     _icon = 1
-    _name = 2
-    _percent = 3
+    _color = 2
+    _name = 3
+    _percent = 4
 
 
 class VideosListstoreColumnsIndex:
@@ -328,6 +330,7 @@ class PhantomPlayer:
         cellrenderer = CellRendererPlaylist()
         self.__iconview_playlists.pack_start(cellrenderer, True)
         self.__iconview_playlists.add_attribute(cellrenderer, 'pixbuf', PlaylistListstoreColumnsIndex._icon)
+        self.__iconview_playlists.add_attribute(cellrenderer, 'color', PlaylistListstoreColumnsIndex._color)
         self.__iconview_playlists.add_attribute(cellrenderer, 'name', PlaylistListstoreColumnsIndex._name)
         self.__iconview_playlists.add_attribute(cellrenderer, 'progress', PlaylistListstoreColumnsIndex._percent)
 
@@ -734,7 +737,9 @@ class PhantomPlayer:
                 pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(),
                                                       settings._DEFAULT_IMG_WIDTH,
                                                       settings._DEFAULT_IMG_HEIGHT)
+
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._icon] = pixbuf
+                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._color] = self.__fontcolor_default
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._name] = playlist.get_name()
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = playlist.get_progress()
                 break
@@ -749,6 +754,7 @@ class PhantomPlayer:
                                               settings._DEFAULT_IMG_HEIGHT)
         self.__liststore_playlists.append([playlist.get_guid(),
                                            pixbuf,
+                                           self.__fontcolor_default,
                                            playlist.get_name(),
                                            playlist.get_progress()])
 
@@ -1167,6 +1173,9 @@ class PhantomPlayer:
 
         self.__fonts_reload()
         self.__liststore_videos_populate()
+
+        for row in self.__liststore_playlists:
+            row[PlaylistListstoreColumnsIndex._color] = self.__fontcolor_default
 
     def __on_checkbox_playlist_missing_toggled(self, checkbox, *_):
         self.__liststore_playlists_populate()

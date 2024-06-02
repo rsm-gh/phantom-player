@@ -44,6 +44,8 @@ Author: Rafael Senties Martinelli
       <column type="gint"/>
       <!-- column-name image -->
       <column type="GdkPixbuf"/>
+      <!-- column-name color -->
+      <column type="GdkRGBA"/>
       <!-- column-name name -->
       <column type="gchararray"/>
       <!-- column-name progress -->
@@ -88,7 +90,7 @@ Author: Rafael Senties Martinelli
                 <property name="margin">6</property>
                 <property name="selection-mode">none</property>
                 <property name="model">liststore_playlists</property>
-                <property name="tooltip-column">2</property>
+                <property name="tooltip-column">3</property>
                 <property name="activate-on-single-click">True</property>
               </object>
             </child>
