@@ -44,7 +44,7 @@ Author: Rafael Senties Martinelli
       <column type="gint"/>
       <!-- column-name image -->
       <column type="GdkPixbuf"/>
-      <!-- column-name string -->
+      <!-- column-name name -->
       <column type="gchararray"/>
       <!-- column-name progress -->
       <column type="gint"/>
@@ -90,21 +90,6 @@ Author: Rafael Senties Martinelli
                 <property name="model">liststore_playlists</property>
                 <property name="tooltip-column">2</property>
                 <property name="activate-on-single-click">True</property>
-                <child>
-                  <object class="GtkCellRendererPixbuf"/>
-                  <attributes>
-                    <attribute name="pixbuf">1</attribute>
-                  </attributes>
-                </child>
-                <child>
-                  <object class="GtkCellRendererText">
-                    <property name="width">90</property>
-                    <property name="alignment">center</property>
-                  </object>
-                  <attributes>
-                    <attribute name="text">2</attribute>
-                  </attributes>
-                </child>
               </object>
             </child>
           </object>
