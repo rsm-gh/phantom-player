@@ -46,6 +46,7 @@
         + If paused, on button restart, the position is not sent.
 
     To do:
+        + Add mute shortcut
         + Enable video tracks?
         + On left right arrows?
         + Set custom title? Ex: video name? not video full name?
