@@ -519,42 +519,42 @@ Author: Rafael Senties Martinelli
       <object class="GtkCheckMenuItem" id="checkbox_video_cnumber">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Number</property>
+        <property name="label" translatable="yes">Number Column</property>
       </object>
     </child>
     <child>
       <object class="GtkCheckMenuItem" id="checkbox_video_cpath">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Path</property>
+        <property name="label" translatable="yes">Path Column</property>
       </object>
     </child>
     <child>
       <object class="GtkCheckMenuItem" id="checkbox_video_cname">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Name</property>
+        <property name="label" translatable="yes">Name Column</property>
       </object>
     </child>
     <child>
       <object class="GtkCheckMenuItem" id="checkbox_video_cextension">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Extension</property>
+        <property name="label" translatable="yes">Extension Column</property>
       </object>
     </child>
     <child>
       <object class="GtkCheckMenuItem" id="checkbox_video_cprogress">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Progress</property>
+        <property name="label" translatable="yes">Progress Column</property>
       </object>
     </child>
     <child>
       <object class="GtkCheckMenuItem" id="checkbox_video_rhidden">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Hidden Items</property>
+        <property name="label" translatable="yes">Hidden Videos</property>
         <property name="active">True</property>
       </object>
     </child>
