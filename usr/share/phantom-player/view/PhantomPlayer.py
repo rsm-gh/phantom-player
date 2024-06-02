@@ -23,12 +23,11 @@
         + Sometimes the process is not being correctly closed, and it remains in the background.
 
     To do:
-        + Create the playlist cellrender
         + Display the duplicated (excluded videos) at startup.
         + Finish the option "end at"
         + Improve user messages. Example: if path not added, or video not added, explain why.
         + Create the "delete video" option (instead of clean)
-        + Create a dialog to rename videos.
+        + Create a dialog to rename multiple videos.
         + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
 """
 
@@ -56,6 +55,7 @@ from model.Video import VideoPosition, VideoProgress
 from view.SettingsWindow import SettingsWindow
 from view.DialogRenameSingle import DialogRenameSingle
 from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
+from view.CellRenderers.CellRendererPlaylist import CellRendererPlaylist
 
 
 class PlaylistListstoreColumnsIndex:
@@ -321,6 +321,15 @@ class PhantomPlayer:
                                                       ord("d"),
                                                       Gdk.ModifierType.CONTROL_MASK,
                                                       Gtk.AccelFlags.VISIBLE)
+
+        #
+        # Iconview Cellrender
+        #
+        cellrenderer = CellRendererPlaylist()
+        self.__iconview_playlists.pack_start(cellrenderer, True)
+        self.__iconview_playlists.add_attribute(cellrenderer, 'pixbuf', PlaylistListstoreColumnsIndex._icon)
+        self.__iconview_playlists.add_attribute(cellrenderer, 'name', PlaylistListstoreColumnsIndex._name)
+        self.__iconview_playlists.add_attribute(cellrenderer, 'progress', PlaylistListstoreColumnsIndex._percent)
 
         #
         # Extra dialogs
