@@ -62,15 +62,6 @@ class Texts:
         _playlist_path_cant_recursive = "To make this path recursive, you need first remove the other ones that will be included by this one."
         _playlist_path_cant_add = "The path is already in the added (or recursively included)."
 
-    class MenuItemVideos:
-        _open_dir = "Open Directory"
-        _ignore = "Ignore"
-        _dont_ignore = "Un-Ignore"
-        _progress_reset = "Un-View (0%)"
-        _progress_fill = "View (100%)"
-        _rename = "Rename"
-        _remove = "Delete"
-
     class DialogVideos:
         _delete = '''Are you sure that you want to delete the selected videos?\n\nThey won't be removed from your hard drive.'''
         _missing = 'The file is missing.'
