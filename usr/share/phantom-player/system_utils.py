@@ -22,7 +22,34 @@ from PIL import Image
 
 
 def open_directory(path):
-    os.system('''exo-open "{0}" '''.format(os.path.dirname(path)))
+    if not os.path.exists(path):
+        raise ValueError('Path does not exist', path)
+
+    elif not os.path.isdir(path):
+        raise ValueError('Path is not a directory', path)
+
+    # Put the most popular (robust) at the beginning
+    file_managers = ['exo-open',
+                     'nautilus',
+                     'dolphin',
+                     'konqueror',
+                     'nemo',
+                     'pcmanfm',
+                     'doublecmd-gtk',
+                     'nnn',
+                     'krusader']
+
+    # Check if a file manager exist in the system (to avoid un-necessary commands)
+    for file_manager in file_managers:
+        if os.path.exists("/usr/bin/{}".format(file_manager)):
+            file_managers = [file_manager]
+            break
+
+    # Try to open the directory
+    for program_name in file_managers:
+        exit_code = os.system('''{} "{}" &'''.format(program_name, path))
+        if exit_code == 0:
+            break
 
 
 def turn_off_screensaver(state):
@@ -45,9 +72,6 @@ def format_img(read_path, write_path, width=None, height=None, max_width=None, e
         Code taken from www.cad-viewer.org
         Either fill width & height, or max_width
     """
-    print("READ", read_path)
-    print("WRITE", write_path)
-
 
     image = Image.open(read_path)
 
@@ -125,15 +149,5 @@ class EventCodes:
         _arrow_right = 65363
         _arrow_left = 65361
         _back = 65288
-        _letter_a = 97
-        _letter_d = 100
-        _letter_e = 101
         _letter_f = 102
-        _letter_h = 104
-        _letter_i = 105
-        _letter_n = 110
-        _letter_o = 111
-        _letter_r = 114
         _letter_s = 115
-        _letter_u = 117
-        _letter_v = 118

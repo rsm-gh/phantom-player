@@ -399,7 +399,6 @@ class MediaPlayerWidget(Gtk.VBox):
             self.emit(CustomSignals._play)
 
     def pause(self, emit=True):
-        print("PAUSE CALLED")
         self.__stop_player_scan()
         self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._play, Gtk.IconSize.BUTTON))
         self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
@@ -407,7 +406,6 @@ class MediaPlayerWidget(Gtk.VBox):
         turn_off_screensaver(False)
         if emit:
             self.emit(CustomSignals._paused)
-        print("PAUSE ENDED")
 
     def stop(self):
         self.__stop_player_scan()
@@ -895,7 +893,7 @@ class MediaPlayerWidget(Gtk.VBox):
                     self.__set_fullscreen(False)
 
                 case EventCodes.Keyboard._space_bar | EventCodes.Keyboard._enter:
-                    self.__on_menubutton_play_clicked(None, None)
+                    self.__on_menubutton_play_clicked()
 
                 case EventCodes.Keyboard._arrow_up:
                     self.volume_up()
@@ -953,9 +951,9 @@ class MediaPlayerWidget(Gtk.VBox):
         self.emit(CustomSignals._video_restart)
         button.set_active(False)
 
-    def __on_menubutton_play_clicked(self, button):
+    def __on_menubutton_play_clicked(self, *_):
 
-        if not button.get_active():
+        if not self.__menubutton_play.get_active():
             return
 
         if self.is_playing():
@@ -963,11 +961,11 @@ class MediaPlayerWidget(Gtk.VBox):
         else:
             self.play()
 
-        button.set_active(False)
+        self.__menubutton_play.set_active(False)
 
-    def __on_menubutton_end_clicked(self, button):
+    def __on_menubutton_end_clicked(self, *_):
 
-        if not button.get_active():
+        if not self.__menubutton_next.get_active():
             return
 
         self.__stop_player_scan()
@@ -982,7 +980,7 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.emit(CustomSignals._video_end)
 
-        button.set_active(False)
+        self.__menubutton_next.set_active(False)
 
     def __on_menubutton_keep_playing_toggled(self, widget):
         self.emit(CustomSignals._btn_keep_playing_toggled, widget.get_active())

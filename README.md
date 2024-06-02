@@ -74,7 +74,6 @@ about the controls & behaviour.
 
 + Keyboard shortcuts:
   + `ctrl+o` to open a file.
-  + `ctrl+a` display the about dialog.
   + `ctrl+f` find/filter playlists by name.
   + `ctrl+h` hide/display missing playlists.
   + `ctrl+n` create a new playlist.
@@ -88,13 +87,14 @@ about the controls & behaviour.
 + Keyboard shortcuts:
   + `back` to return to the playlists' menu.
   + `ctrl+s` open the settings menu.
-  + `ctrl+u` mark video as un-viewed (0% progress).
-  + `ctrl+v` mark video as viewed (100% progress).
-  + `ctrl+d` delete videos.
   + `ctrl+h` hide/show missing videos.
-  + `ctrl+i` ignore/un-ignore videos.
-  + `ctrl+o` open the video location.
+  + `ctrl+v` Fill progress (mark as viewed).
+  + `ctrl+u` Reset progress (mark as un-viewed).
+  + `ctrl+i` ignore videos.
+  + `ctrl+j` un-ignore videos.
   + `ctrl+r` rename videos.
+  + `ctrl+o` open the video directory.
+  + `ctrl+d` delete the video.
 
 #### Media Player
 + Controls:

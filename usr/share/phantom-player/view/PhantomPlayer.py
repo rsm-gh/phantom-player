@@ -32,7 +32,6 @@
         + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
 """
 
-
 import os
 from time import sleep
 from threading import Thread
@@ -154,6 +153,15 @@ class PhantomPlayer:
         self.__box_window = builder.get_object('box_window')
         self.__paned = None
 
+        self.__menu_videos = builder.get_object('menu_videos')
+        self.__menuitem_videos_restart_prg = builder.get_object('menuitem_videos_restart_prg')
+        self.__menuitem_videos_fill_prg = builder.get_object('menuitem_videos_fill_prg')
+        self.__menuitem_videos_ignore = builder.get_object('menuitem_videos_ignore')
+        self.__menuitem_videos_unignore = builder.get_object('menuitem_videos_unignore')
+        self.__menuitem_videos_rename = builder.get_object('menuitem_videos_rename')
+        self.__menuitem_videos_open = builder.get_object('menuitem_videos_open')
+        self.__menuitem_videos_delete = builder.get_object('menuitem_videos_delete')
+
         self.__box_window.remove(self.__media_box)
 
         #
@@ -213,6 +221,7 @@ class PhantomPlayer:
         self.__treeview_videos.connect('drag-end', self.__on_treeview_videos_drag_end)
         self.__treeview_videos.connect("row-activated", self.__on_treeview_videos_row_activated)
         self.__treeview_videos.connect('button-press-event', self.__on_treeview_videos_press_event)
+        self.__treeselection_videos.connect('changed', self.__on_treeselection_videos_changed)
 
         self.__button_display_playlists.connect('clicked', self.__on_button_display_playlists_clicked)
 
@@ -222,6 +231,96 @@ class PhantomPlayer:
                        self.__column_extension,
                        self.__column_progress):
             gtk_utils.bind_header_click(widget, self.__on_treeviewcolumn_videos_header_clicked)
+
+        self.__menuitem_videos_restart_prg.connect('activate',
+                                                   self.__on_menuitem_videos_set_progress,
+                                                   VideoProgress._start)
+
+        self.__menuitem_videos_fill_prg.connect('activate',
+                                                self.__on_menuitem_videos_set_progress,
+                                                VideoProgress._end)
+
+        self.__menuitem_videos_ignore.connect('activate', self.__on_menuitem_videos_ignore_changed, True)
+        self.__menuitem_videos_unignore.connect('activate', self.__on_menuitem_videos_ignore_changed, False)
+        self.__menuitem_videos_rename.connect('activate', self.__on_menuitem_videos_rename_single)
+        self.__menuitem_videos_open.connect('activate', self.__on_menuitem_videos_open)
+        self.__menuitem_videos_delete.connect('activate', self.__on_menuitem_videos_delete)
+
+        #
+        # Playlist Accelerators
+        #
+        self.__accelgroup_playlists = Gtk.AccelGroup()
+
+        self.__menuitem_open_file.add_accelerator('activate',
+                                                  self.__accelgroup_playlists,
+                                                  ord("o"),
+                                                  Gdk.ModifierType.CONTROL_MASK,
+                                                  Gtk.AccelFlags.VISIBLE)
+
+        self.__menuitem_new_playlist.add_accelerator('activate',
+                                                     self.__accelgroup_playlists,
+                                                     ord("n"),
+                                                     Gdk.ModifierType.CONTROL_MASK,
+                                                     Gtk.AccelFlags.VISIBLE)
+
+        self.__checkbox_playlist_missing.add_accelerator('activate',
+                                                         self.__accelgroup_playlists,
+                                                         ord("h"),
+                                                         Gdk.ModifierType.CONTROL_MASK,
+                                                         Gtk.AccelFlags.VISIBLE)
+
+        #
+        # Videos Accelerators
+        #
+
+        self.__accelgroup_videos = Gtk.AccelGroup()
+        self.__checkbox_video_rhidden.add_accelerator('activate',
+                                                      self.__accelgroup_videos,
+                                                      ord("h"),
+                                                      Gdk.ModifierType.CONTROL_MASK,
+                                                      Gtk.AccelFlags.VISIBLE)
+
+        self.__menuitem_videos_restart_prg.add_accelerator('activate',
+                                                           self.__accelgroup_videos,
+                                                           ord("u"),
+                                                           Gdk.ModifierType.CONTROL_MASK,
+                                                           Gtk.AccelFlags.VISIBLE)
+
+        self.__menuitem_videos_fill_prg.add_accelerator('activate',
+                                                        self.__accelgroup_videos,
+                                                        ord("v"),
+                                                        Gdk.ModifierType.CONTROL_MASK,
+                                                        Gtk.AccelFlags.VISIBLE)
+
+        self.__menuitem_videos_ignore.add_accelerator('activate',
+                                                        self.__accelgroup_videos,
+                                                        ord("i"),
+                                                        Gdk.ModifierType.CONTROL_MASK,
+                                                        Gtk.AccelFlags.VISIBLE)
+
+        self.__menuitem_videos_unignore.add_accelerator('activate',
+                                                        self.__accelgroup_videos,
+                                                        ord("j"),
+                                                        Gdk.ModifierType.CONTROL_MASK,
+                                                        Gtk.AccelFlags.VISIBLE)
+
+        self.__menuitem_videos_rename.add_accelerator('activate',
+                                                      self.__accelgroup_videos,
+                                                      ord("r"),
+                                                      Gdk.ModifierType.CONTROL_MASK,
+                                                      Gtk.AccelFlags.VISIBLE)
+
+        self.__menuitem_videos_open.add_accelerator('activate',
+                                                    self.__accelgroup_videos,
+                                                    ord("o"),
+                                                    Gdk.ModifierType.CONTROL_MASK,
+                                                    Gtk.AccelFlags.VISIBLE)
+
+        self.__menuitem_videos_delete.add_accelerator('activate',
+                                                      self.__accelgroup_videos,
+                                                      ord("d"),
+                                                      Gdk.ModifierType.CONTROL_MASK,
+                                                      Gtk.AccelFlags.VISIBLE)
 
         #
         # Extra dialogs
@@ -414,7 +513,13 @@ class PhantomPlayer:
 
     def __set_view(self, playlists_menu, only_player=False):
 
+        self.__window_root.remove_accel_group(self.__accelgroup_playlists)
+        self.__window_root.remove_accel_group(self.__accelgroup_videos)
+
         if playlists_menu:
+
+            self.__window_root.add_accel_group(self.__accelgroup_playlists)
+
             self.__headerbar.props.title = Texts.GUI._title
             self.__current_media = CurrentMedia()
             self.__mp_widget.stop()
@@ -454,6 +559,8 @@ class PhantomPlayer:
                 self.__box_window.pack_start(self.__mp_widget, True, True, 0)
 
             else:
+                self.__window_root.add_accel_group(self.__accelgroup_videos)
+
                 self.__statusbar.hide()
                 self.__treeview_videos.show()
                 self.__button_playlist_settings.show()
@@ -704,6 +811,26 @@ class PhantomPlayer:
                 self.__treeview_videos.set_cursor(i)
                 break
 
+    def __liststore_videos_remove(self, video):
+        video_guid = video.get_guid()
+        for row in self.__liststore_videos:
+            if row[VideosListstoreColumnsIndex._id] == video_guid:
+                self.__liststore_videos.remove(row.iter)
+                break
+
+
+    def __treeselection_videos_get_selected(self):
+
+        # Get the selected videos
+        model, treepaths = self.__treeselection_videos.get_selected_rows()
+        if not treepaths:
+            return []
+
+        selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
+                        treepaths]
+
+        return self.__current_media._playlist.get_videos_by_guid(selected_ids)
+
     def __on_media_player_btn_random_toggled(self, _, state):
         self.__current_media._playlist.set_random(state)
 
@@ -752,43 +879,20 @@ class PhantomPlayer:
         return False
 
     def __on_window_root_key_pressed(self, _, event):
-
+        """
+            Keyboard shortcuts not in accel paths.
+        """
         if self.__scrolledwindow_playlists.is_visible():
 
             if not (Gdk.ModifierType.CONTROL_MASK & event.state):
                 return False
 
-            #
-            # Playlists shortcuts
-            #
             match event.keyval:
-                case EventCodes.Keyboard._letter_h:  # Hide playlists
-                    self.__checkbox_playlist_missing.set_active(
-                        not self.__checkbox_playlist_missing.get_active()
-                    )
-
-                case EventCodes.Keyboard._letter_f:  # Search playlists
+                case EventCodes.Keyboard._letter_f:
                     self.__entry_playlist_search.grab_focus()
-
-                case EventCodes.Keyboard._letter_n:  # New Playlists
-                    if self.__menuitem_new_playlist.get_sensitive():
-                        self.__on_menuitem_new_playlist_activate()
-
-                case EventCodes.Keyboard._letter_o:  # Open file
-                    self.__on_menuitem_open_file()
-
-                case EventCodes.Keyboard._letter_a:  # About dialog
-                    self.__on_menuitem_about_activate()
-
-                case _:
-                    return False
-
-            return True
+                    return True
 
         elif not gtk_utils.window_is_fullscreen(self.__window_root):
-            #
-            # Videos shortcuts
-            #
 
             if event.keyval == EventCodes.Keyboard._back:
                 self.__set_view(playlists_menu=True)
@@ -798,69 +902,12 @@ class PhantomPlayer:
                 return False
 
             match event.keyval:
-                case EventCodes.Keyboard._letter_h:  # hide/un-hide rows
-                    self.__checkbox_video_rhidden.set_active(not self.__checkbox_video_rhidden.get_active())
-                    return True
-
                 case EventCodes.Keyboard._letter_s:  # display the settings
                     if self.__button_playlist_settings.get_sensitive():
                         self.__on_button_playlist_settings_clicked()
                     return True
 
-            # Get the selected videos
-            model, treepaths = self.__treeselection_videos.get_selected_rows()
-            if not treepaths:
-                return False
-
-            selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
-                            treepaths]
-
-            selected_videos = self.__current_media._playlist.get_videos_by_guid(selected_ids)
-
-            match event.keyval:
-                case EventCodes.Keyboard._letter_u:  # Un-View
-                    self.__on_menuitem_video_set_progress(None, VideoProgress._start, selected_videos)
-
-                case EventCodes.Keyboard._letter_v:  # Un-View
-                    self.__on_menuitem_video_set_progress(None, VideoProgress._end, selected_videos)
-
-                case EventCodes.Keyboard._letter_i:  # Ignore/Un-Ignore
-                    if all(video.get_ignore() for video in selected_videos):
-                        ignore = False
-                    else:
-                        ignore = True
-
-                    self.__on_menuitem_video_ignore_changed(None, ignore, selected_videos)
-
-                case EventCodes.Keyboard._letter_v:  # Un-View
-                    self.__on_menuitem_video_set_progress(None, VideoProgress._end, selected_videos)
-
-                case EventCodes.Keyboard._letter_i:  # Ignore/Un-Ignore
-                    if all(video.get_ignore() for video in selected_videos):
-                        ignore = False
-                    else:
-                        ignore = True
-
-                    self.__on_menuitem_video_ignore_changed(None, ignore, selected_videos)
-
-                case EventCodes.Keyboard._letter_d:  # delete
-                    if self.__current_media._playlist.get_load_status() != PlaylistLoadStatus._loaded:
-                        self.__on_menuitem_video_remove(None, selected_videos)
-
-                case EventCodes.Keyboard._letter_o if len(selected_videos) == 1:
-                    video = selected_videos[0]
-                    if video.exists():
-                        self.__on_menuitem_video_open_dir(None, video.get_path())
-
-                case EventCodes.Keyboard._letter_r if len(selected_videos) == 1:
-                    video = selected_videos[0]
-                    if video.exists():
-                        self.__on_menuitem_video_rename_single(None, video)
-
-                case _:
-                    return False
-
-            return True
+            return False
 
     def __on_window_root_configure_event(self, *_):
 
@@ -980,7 +1027,6 @@ class PhantomPlayer:
 
         # Update the CSV file
         self.__current_media._playlist.reorder(new_order)
-        self.__treeselection_videos.unselect_all()
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
     def __on_treeview_videos_row_activated(self, _treeview, treepath, _column):
@@ -1019,39 +1065,29 @@ class PhantomPlayer:
         self.__menu_videos_header.popup(None, None, None, None, event.button, event.time)
         return True
 
-    def __on_treeview_videos_press_event(self, _widget, event):
-
-        if event.button != EventCodes.Cursor._right_click:
-            return False
-
+    def __on_treeselection_videos_changed(self, *_):
+        """
+            Update the menuitems sensitive property because it will have an impact
+            in the accel groups (keyboard shortcuts).
+        """
         model, treepaths = self.__treeselection_videos.get_selected_rows()
         if not treepaths:
-            return False
-
-        # get the iter where the user is pointing
-        # if the iter is not in the selected iters, remove the previous selection
-        try:
-            pointing_treepath = self.__treeview_videos.get_path_at_pos(event.x, event.y)[0]
-        except Exception:
-            return False
-        model, treepaths = self.__treeselection_videos.get_selected_rows()
-        if pointing_treepath not in treepaths:
-            self.__treeselection_videos.unselect_all()
-            self.__treeselection_videos.select_path(pointing_treepath)
-
-        #
-        # Get the video objects
-        #
+            self.__menuitem_videos_restart_prg.set_sensitive(False)
+            self.__menuitem_videos_fill_prg.set_sensitive(False)
+            self.__menuitem_videos_ignore.set_sensitive(False)
+            self.__menuitem_videos_unignore.set_sensitive(False)
+            self.__menuitem_videos_rename.set_sensitive(False)
+            self.__menuitem_videos_open.set_sensitive(False)
+            self.__menuitem_videos_delete.set_sensitive(False)
+            return
 
         selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
                         treepaths]
-
         selected_videos = self.__current_media._playlist.get_videos_by_guid(selected_ids)
 
         #
-        # Create the GTK menu
+        # Enable/Disable the menuitems
         #
-        menu = Gtk.Menu()
 
         # If only 1 video is selected, and it is loaded in the player.
         # the progress buttons shall not be displayed.
@@ -1062,55 +1098,44 @@ class PhantomPlayer:
                 can_fill_progress = False
                 can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
 
-        # Reset Progress
-        if any(video.get_position() > VideoPosition._start for video in selected_videos) and can_reset_progress:
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_reset)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_video_set_progress, VideoProgress._start, selected_videos)
+        self.__menuitem_videos_restart_prg.set_sensitive(
+            any(video.get_position() > VideoPosition._start for video in selected_videos) and can_reset_progress)
+        self.__menuitem_videos_fill_prg.set_sensitive(
+            any(video.get_position() < VideoPosition._end for video in selected_videos) and can_fill_progress)
+        self.__menuitem_videos_ignore.set_sensitive(any(not video.get_ignore() for video in selected_videos))
+        self.__menuitem_videos_unignore.set_sensitive(any(video.get_ignore() for video in selected_videos))
 
-        # Fill progress
-        if any(video.get_position() < VideoPosition._end for video in selected_videos) and can_fill_progress:
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._progress_fill)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_video_set_progress, VideoProgress._end, selected_videos)
-
-        # ignore videos
-        if any(not video.get_ignore() for video in selected_videos):
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._ignore)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_video_ignore_changed, True, selected_videos)
-
-        # don't ignore videos
-        if any(video.get_ignore() for video in selected_videos):
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._dont_ignore)
-            menu.append(menuitem)
-            menuitem.connect('activate', self.__on_menuitem_video_ignore_changed, False, selected_videos)
-
+        rename_and_open_video = False
         if len(selected_videos) == 1:
             video = selected_videos[0]
-
             if os.path.exists(video.get_path()):
-                # Rename dialog
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._rename)
-                menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_video_rename_single, video)
+                rename_and_open_video = True
 
-                # Open the containing folder (only if the user selected one video)
-                menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._open_dir)
-                menu.append(menuitem)
-                menuitem.connect('activate', self.__on_menuitem_video_open_dir, video.get_path())
+        self.__menuitem_videos_rename.set_sensitive(rename_and_open_video)
+        self.__menuitem_videos_open.set_sensitive(rename_and_open_video)
 
-        # Remove items from the list
-        if not any(video.exists() for video in selected_videos):
-            menuitem = Gtk.ImageMenuItem(label=Texts.MenuItemVideos._remove)
-            if self.__current_media._playlist.get_load_status() != PlaylistLoadStatus._loaded:
-                menuitem.set_sensitive(False)
-            menuitem.connect('activate', self.__on_menuitem_video_remove, selected_videos)
+        self.__menuitem_videos_delete.set_sensitive(not any(video.exists() for video in selected_videos))
 
-            menu.append(menuitem)
+    def __on_treeview_videos_press_event(self, _widget, event):
 
-        menu.show_all()
-        menu.popup(None, None, None, None, event.button, event.time)
+        if event.button != EventCodes.Cursor._right_click:
+            return False
+
+        model, treepaths = self.__treeselection_videos.get_selected_rows()
+
+        # get the iter where the user is pointing
+        # if the iter is not in the selected iters, remove the previous selection
+        try:
+            pointing_treepath = self.__treeview_videos.get_path_at_pos(event.x, event.y)[0]
+        except Exception:
+            return False
+
+        if pointing_treepath not in treepaths:
+            self.__treeselection_videos.unselect_all()
+            self.__treeselection_videos.select_path(pointing_treepath)
+            self.__on_treeselection_videos_changed()  # to ensure that it is applied before the menu pops-up
+
+        self.__menu_videos.popup(None, None, None, None, event.button, event.time)
         return True
 
     def __on_checkbox_dark_theme_toggled(self, checkbox, *_):
@@ -1143,7 +1168,11 @@ class PhantomPlayer:
         _ = self.__window_about.run()
         self.__window_about.hide()
 
-    def __on_menuitem_video_set_progress(self, _, progress, videos):
+    def __on_menuitem_videos_set_progress(self, _, progress):
+
+        videos = self.__treeselection_videos_get_selected()
+        if not videos:
+            return
 
         id_to_skip = None
         if progress == VideoProgress._start and self.__current_media.get_video_progress() == VideoProgress._end:
@@ -1164,25 +1193,44 @@ class PhantomPlayer:
 
         self.__liststore_playlists_update_progress(self.__current_media._playlist)
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
+        self.__on_treeselection_videos_changed()  # To reload the shortcuts
 
-    def __on_menuitem_video_ignore_changed(self, _, ignore, videos):
+    def __on_menuitem_videos_ignore_changed(self, _, ignore):
 
-        for video in videos:
+        rhidden = self.__checkbox_video_rhidden.get_active()
+        for video in self.__treeselection_videos_get_selected():
             video.set_ignore(ignore)
-            self.__liststore_videos_update(video, progress=False, path=False)
+            if rhidden:
+                self.__liststore_videos_update(video, progress=False, path=False)
+            elif ignore:
+                self.__liststore_videos_remove(video)
 
-        self.__treeselection_videos.unselect_all()
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
+        self.__on_treeselection_videos_changed()  # To reload the shortcuts
 
-    def __on_menuitem_video_remove(self, _, selected_videos):
-        self.__current_media._playlist.remove_videos([video for video in selected_videos if video.exists()])
-        self.__liststore_videos_populate()
+    def __on_menuitem_videos_delete(self, *_):
+        valid_videos = [video for video in self.__treeselection_videos_get_selected() if not video.exists()]
+        self.__current_media._playlist.remove_videos(valid_videos)
+        for video in valid_videos:
+            self.__liststore_videos_remove(video)
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
+        self.__on_treeselection_videos_changed()  # To reload the shortcuts
 
-    def __on_menuitem_video_rename_single(self, _, video):
-        self.__dialog_rename_single.show(video, self.__current_media._playlist)
+    def __on_menuitem_videos_rename_single(self, *_):
+        selected_videos = self.__treeselection_videos_get_selected()
 
-    @staticmethod
-    def __on_menuitem_video_open_dir(_, path):
-        if os.path.exists(path):
-            open_directory(path)
+        if len(selected_videos) != 1:
+            return
+
+        self.__dialog_rename_single.show(selected_videos[0], self.__current_media._playlist)
+
+    def __on_menuitem_videos_open(self, *_):
+
+        selected_videos = self.__treeselection_videos_get_selected()
+
+        if len(selected_videos) != 1:
+            return
+
+        dir_path = os.path.dirname(selected_videos[0].get_path())
+        if os.path.exists(dir_path):
+            open_directory(dir_path)
