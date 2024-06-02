@@ -135,7 +135,7 @@ class SettingsWindow:
         self.__entry_playlist_name.connect('changed', self.__on_entry_playlist_name_changed)
         self.__togglebutton_edit_name.connect('button-press-event', self.__on_togglebutton_edit_name_press_event)
         self.__eventbox_image.connect('button-press-event', self.__on_eventbox_image_button_press)
-        self.__switch_keep_playing.connect('button-press-event', self.__on_switch_random_playing_press_event)
+        self.__switch_keep_playing.connect('button-press-event', self.__on_switch_keep_playing_press_event)
         self.__switch_random_playing.connect('button-press-event', self.__on_switch_random_playing_press_event)
         self.__spinbutton_audio.connect('value-changed', self.__on_spinbutton_audio_value_changed)
         self.__spinbutton_subtitles.connect('value-changed', self.__on_spinbutton_subtitles_value_changed)
