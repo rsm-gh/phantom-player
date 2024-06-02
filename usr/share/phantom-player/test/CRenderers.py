@@ -32,12 +32,12 @@ gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers?
 from gi.repository import Gtk
 from gi.repository.GdkPixbuf import Pixbuf
 
-from view.CellRenderers.CellRendererRating import CellRendererRating
-from view.CellRenderers.CellRendererTrackTime import CellRendererTrackTime
-from view.CellRenderers.CellRendererBytes import CellRendererBytes
-from view.CellRenderers.CellRendererTimeStamp import CellRendererTimeStamp
-from view.CellRenderers.CellRendererURI import CellRendererURI
-from view.CellRenderers.CellRendererPlaylist import CellRendererPlaylist
+from view.cellrenderers.CellRendererRating import CellRendererRating
+from view.cellrenderers.CellRendererTrackTime import CellRendererTrackTime
+from view.cellrenderers.CellRendererBytes import CellRendererBytes
+from view.cellrenderers.CellRendererTimeStamp import CellRendererTimeStamp
+from view.cellrenderers.CellRendererURI import CellRendererURI
+from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
 
 class Window(Gtk.Window):
 

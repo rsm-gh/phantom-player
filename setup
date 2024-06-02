@@ -60,4 +60,4 @@ install_files "/usr/share/phantom-player/controller"
 install_files "/usr/share/phantom-player/model"
 install_files "/usr/share/phantom-player/view"
 install_files "/usr/share/phantom-player/view/img"
-
+install_files "/usr/share/phantom-player/view/cellrenderers"
