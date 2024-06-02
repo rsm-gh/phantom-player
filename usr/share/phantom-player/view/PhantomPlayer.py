@@ -55,7 +55,7 @@ from model.Video import VideoPosition, VideoProgress
 from view.SettingsWindow import SettingsWindow
 from view.DialogRenameSingle import DialogRenameSingle
 from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
-from view.CellRenderers.CellRendererPlaylist import CellRendererPlaylist
+from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
 
 
 class PlaylistListstoreColumnsIndex:

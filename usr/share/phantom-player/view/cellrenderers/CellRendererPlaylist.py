@@ -23,7 +23,7 @@ from gi.repository import Gtk, Gdk, GObject, PangoCairo
 from gi.repository.GdkPixbuf import Pixbuf
 
 from settings import _DEFAULT_IMG_WIDTH, _DEFAULT_IMG_HEIGHT
-from view.CellRenderers.constants import FONT_COLOR, GENERAL_FONT_DESCRIPTION
+from view.cellrenderers.constants import FONT_COLOR, GENERAL_FONT_DESCRIPTION
 
 
 class CellRendererPlaylist(Gtk.CellRenderer):
