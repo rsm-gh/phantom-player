@@ -752,6 +752,7 @@ class PhantomPlayer:
         pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(),
                                               settings._DEFAULT_IMG_WIDTH,
                                               settings._DEFAULT_IMG_HEIGHT)
+
         self.__liststore_playlists.append([playlist.get_guid(),
                                            pixbuf,
                                            self.__fontcolor_default,
