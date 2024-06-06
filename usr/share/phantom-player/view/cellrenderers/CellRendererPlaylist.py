@@ -78,9 +78,7 @@ class CellRendererPlaylist(Gtk.CellRenderer):
         return 0, 0, _DEFAULT_IMG_WIDTH, _DEFAULT_IMG_HEIGHT + _PROGRESS_BAR_HEIGHT
 
     def do_render(self, cr, _widget, _background_area, cell_area, _flags):
-
         self.__draw_name(cr, cell_area)
-
         Gdk.cairo_set_source_pixbuf(cr, self.pixbuf, cell_area.x, cell_area.y)
         cr.paint()
 
@@ -98,8 +96,10 @@ class CellRendererPlaylist(Gtk.CellRenderer):
         cr.restore()
 
     def __draw_progress(self, cr, cell_area):
-        progress_height = cell_area.y + _DEFAULT_IMG_HEIGHT + _PROGRESS_BAR_HEIGHT - (_PROGRESS_BAR_HEIGHT / 2)
+
         cr.set_line_width(_PROGRESS_BAR_HEIGHT)
+        progress_height = cell_area.y + _DEFAULT_IMG_HEIGHT + _PROGRESS_BAR_HEIGHT - (_PROGRESS_BAR_HEIGHT / 2)
+
         cr.set_source_rgba(1, .9, .9, 1)
         cr.move_to(cell_area.x, progress_height)
         cr.line_to(cell_area.x + _DEFAULT_IMG_WIDTH, progress_height)
@@ -107,12 +107,10 @@ class CellRendererPlaylist(Gtk.CellRenderer):
 
         if self.progress > 0:
             cr.set_source_rgba(1, 0, 0, 1)
-
             cr.move_to(cell_area.x, progress_height)
-            width = int((cell_area.x + _DEFAULT_IMG_WIDTH) * (self.progress / 100))
-            cr.line_to(width, progress_height)
-
-        cr.stroke()
+            width = int(_DEFAULT_IMG_WIDTH * (self.progress / 100))
+            cr.line_to(cell_area.x + width, progress_height)
+            cr.stroke()
 
     @staticmethod
     def format_long_text(text, length=12):
