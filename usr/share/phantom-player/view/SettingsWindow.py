@@ -107,6 +107,7 @@ class SettingsWindow:
         self.__button_path_reload_all = builder.get_object('button_path_reload_all')
         self.__cellrenderertoggle_recursive = builder.get_object('cellrenderertoggle_recursive')
         self.__cellrenderertoggle_r_startup = builder.get_object('cellrenderertoggle_r_startup')
+        self.__button_reorder_vid_name = builder.get_object('button_reorder_vid_name')
 
         self.__button_delete = builder.get_object('button_delete')
         self.__button_restart = builder.get_object('button_restart')
@@ -149,6 +150,8 @@ class SettingsWindow:
         self.__button_path_reload_all.connect('clicked', self.__on_button_path_reload_all_clicked)
         self.__cellrenderertoggle_recursive.connect('toggled', self.__on_cellrenderertoggle_recursive_toggled)
         self.__cellrenderertoggle_r_startup.connect('toggled', self.__on_cellrenderertoggle_r_startup_toggled)
+
+        self.__button_reorder_vid_name.connect('clicked', self.__on_button_reorder_vid_name_clicked)
 
         self.__button_delete.connect('clicked', self.__on_button_delete_clicked)
         self.__button_restart.connect('clicked', self.__on_button_restart_clicked)
@@ -589,6 +592,9 @@ class SettingsWindow:
         self.__edit_path_new_value = None
         self.__liststore_edit_path.clear()
         self.__dialog_edit.hide()
+
+    def __on_button_reorder_vid_name_clicked(self, *_):
+        self.__current_playlist.reorder_by_name()
 
     def __on_cellrenderertoggle_recursive_toggled(self, _, row):
         """
