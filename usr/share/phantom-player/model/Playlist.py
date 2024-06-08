@@ -80,6 +80,18 @@ class Playlist(object):
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_guid(i)
 
+    def reorder_by_name(self):
+        """
+            It is not possible to create a dictionary only by name
+            because multiple episodes could have the same name.
+        """
+        videos_data = {"{}={}".format(video.get_name(), video.get_path()):video for video in self.__videos_instances}
+        self.__videos_instances = []
+        for key, value in sorted(videos_data.items()):
+            self.__videos_instances.append(value)
+
+        self.__recalculate_videos_guid()
+
     def remove_videos(self, videos):
         for video in videos:
             self.__videos_instances.remove(video)
