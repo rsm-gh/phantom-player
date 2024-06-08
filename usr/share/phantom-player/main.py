@@ -23,7 +23,7 @@ import gi
 os.environ["GDK_BACKEND"] = "x11"
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')  # is this necessary?
-gi.require_version('PangoCairo', '1.0') # necessary for the cell renderers?
+gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers?
 from gi.repository import Gtk, Gio
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
@@ -70,7 +70,7 @@ class PhantomApp(Gtk.Application):
             file_path = ""
             for arg in args:
                 if arg.startswith('--open-file='):
-                    file_path = arg.split("=",1)[1]
+                    file_path = arg.split("=", 1)[1]
                     break
                 else:
                     print("Error: non valid CMD argument '{}'".format(arg))
@@ -91,6 +91,7 @@ class PhantomApp(Gtk.Application):
 
 app = PhantomApp(application_id="com.senties-martinelli.PhantomPlayer")
 app.set_flags(Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
-app.run(sys.argv)
+app_status = app.run(sys.argv)
+sys.exit(app_status)
 
 print("PhantomApp Ended.")
