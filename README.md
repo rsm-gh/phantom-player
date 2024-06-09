@@ -65,7 +65,7 @@ This will allow you to:
 ## User Manual
 
 The user manual is in progress. For the moment, here you can find some details 
-about the controls & behaviour.
+about the controls & behavior.
 
 ### Playlists menu
 + Select a playlist with a single left-click.
