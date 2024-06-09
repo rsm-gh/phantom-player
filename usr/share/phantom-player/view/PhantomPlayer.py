@@ -20,9 +20,9 @@
     Bugs:
         + When selecting multiple videos to re-order with drag-and-drop, only the fist one is moved.
         + Fix dialog, paths, display how may valid videos, how many missing videos in the liststore.
+        + Fix: right click of videos header
 
     To do:
-        + Option to modify the size of the playlist icons
         + Display the duplicated (excluded videos) at startup.
         + Finish the option "end at"
         + Improve user messages. Example: if path not added, or video not added, explain why.
@@ -96,6 +96,12 @@ class GlobalConfigTags:
     _video_cprog = 'video-column-progress'
     _video_rhidden = "videos-hidden"
 
+    class IconSize:
+        _label = "icon-size"
+        _value_small = 'small'
+        _value_medium = 'medium'
+        _value_big = 'big'
+
 
 class PhantomPlayer:
 
@@ -110,6 +116,8 @@ class PhantomPlayer:
         self.__current_media = CurrentMedia()
         self.__is_full_screen = None
         self.__quit_requested = False
+
+        self.__icons_size = (settings.IconSize.Medium._width, settings.IconSize.Medium._height)
 
         self.__window_root_accel = None  # to store the window accel group and be able to remove it.
 
@@ -129,6 +137,11 @@ class PhantomPlayer:
         self.__menubutton_main = builder.get_object('menubutton_main')
         self.__menuitem_new_playlist = builder.get_object('menuitem_new_playlist')
         self.__button_playlist_settings = builder.get_object('button_playlist_settings')
+
+        self.__radio_icon_small = builder.get_object('radio_icon_small')
+        self.__radio_icon_medium = builder.get_object('radio_icon_medium')
+        self.__radio_icon_big = builder.get_object('radio_icon_big')
+
         self.__entry_playlist_search = builder.get_object('entry_playlist_search')
         self.__menubar = builder.get_object('menubar')
         self.__statusbar = builder.get_object('statusbar')
@@ -191,7 +204,6 @@ class PhantomPlayer:
         self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
 
         self.__entry_playlist_search.connect("changed", self.__on_entry_playlist_search_changed)
-
         self.__button_playlist_settings.connect("clicked", self.__on_button_playlist_settings_clicked)
 
         self.__menuitem_new_playlist.connect("activate", self.__on_menuitem_new_playlist_activate)
@@ -200,6 +212,13 @@ class PhantomPlayer:
         self.__checkbox_dark_theme.connect('toggled', self.__on_checkbox_dark_theme_toggled)
         self.__checkbox_playlist_missing.connect('toggled', self.__on_checkbox_playlist_missing_toggled)
         self.__iconview_playlists.connect('item-activated', self.__on_iconview_playlists_item_activated)
+
+        self.__radio_icon_small.connect('toggled', self.__on_radio_icon_size_toggled,
+                                        GlobalConfigTags.IconSize._value_small)
+        self.__radio_icon_medium.connect('toggled', self.__on_radio_icon_size_toggled,
+                                         GlobalConfigTags.IconSize._value_medium)
+        self.__radio_icon_big.connect('toggled', self.__on_radio_icon_size_toggled,
+                                      GlobalConfigTags.IconSize._value_big)
 
         self.__checkbox_video_cnumber.connect('toggled',
                                               self.__on_checkbox_video_column_toggled,
@@ -335,12 +354,18 @@ class PhantomPlayer:
         #
         # Iconview Cellrender
         #
-        cellrenderer = CellRendererPlaylist()
-        self.__iconview_playlists.pack_start(cellrenderer, True)
-        self.__iconview_playlists.add_attribute(cellrenderer, 'pixbuf', PlaylistListstoreColumnsIndex._icon)
-        self.__iconview_playlists.add_attribute(cellrenderer, 'color', PlaylistListstoreColumnsIndex._color)
-        self.__iconview_playlists.add_attribute(cellrenderer, 'name', PlaylistListstoreColumnsIndex._name)
-        self.__iconview_playlists.add_attribute(cellrenderer, 'progress', PlaylistListstoreColumnsIndex._percent)
+        self.__cellrenderer_playlist = CellRendererPlaylist()
+        self.__cellrenderer_playlist.set_icon_size(self.__icons_size[0], self.__icons_size[1])
+
+        self.__iconview_playlists.pack_start(self.__cellrenderer_playlist, True)
+        self.__iconview_playlists.add_attribute(self.__cellrenderer_playlist, 'pixbuf',
+                                                PlaylistListstoreColumnsIndex._icon)
+        self.__iconview_playlists.add_attribute(self.__cellrenderer_playlist, 'color',
+                                                PlaylistListstoreColumnsIndex._color)
+        self.__iconview_playlists.add_attribute(self.__cellrenderer_playlist, 'name',
+                                                PlaylistListstoreColumnsIndex._name)
+        self.__iconview_playlists.add_attribute(self.__cellrenderer_playlist, 'progress',
+                                                PlaylistListstoreColumnsIndex._percent)
 
         #
         # Extra dialogs
@@ -396,6 +421,15 @@ class PhantomPlayer:
             self.__configuration.get_bool_defval(GlobalConfigTags._video_cprog, True))
         self.__checkbox_video_rhidden.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._video_rhidden, True))
+
+        match self.__configuration.get_str(GlobalConfigTags.IconSize._label):
+            case GlobalConfigTags.IconSize._value_big:
+                radio = builder.get_object('radio_icon_big')
+            case GlobalConfigTags.IconSize._value_small:
+                radio = builder.get_object('radio_icon_small')
+            case _:
+                radio = builder.get_object('radio_icon_medium')
+        radio.set_active(True)
 
         # Fix: GUI initialization
         # I was expecting that connecting the checkbox.toggled before calling set_active() would activate the
@@ -682,8 +716,8 @@ class PhantomPlayer:
             if row[PlaylistListstoreColumnsIndex._id] == playlist.get_guid():
                 # Update the icon
                 pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(),
-                                                      settings._DEFAULT_IMG_WIDTH,
-                                                      settings._DEFAULT_IMG_HEIGHT)
+                                                      self.__icons_size[0],
+                                                      self.__icons_size[1])
 
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._icon] = pixbuf
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._color] = self.__fontcolor_default
@@ -697,8 +731,8 @@ class PhantomPlayer:
             It is not possible to call directly: GLib.idle_add(self.__liststore_playlists.append, data)
         """
         pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(),
-                                              settings._DEFAULT_IMG_WIDTH,
-                                              settings._DEFAULT_IMG_HEIGHT)
+                                              self.__icons_size[0],
+                                              self.__icons_size[1])
 
         self.__liststore_playlists.append([playlist.get_guid(),
                                            pixbuf,
@@ -1184,6 +1218,31 @@ class PhantomPlayer:
 
         self.__menu_videos.popup(None, None, None, None, event.button, event.time)
         return True
+
+    def __on_radio_icon_size_toggled(self, _, config_value):
+
+        if config_value == GlobalConfigTags.IconSize._value_small:
+            self.__icons_size = (settings.IconSize.Small._width, settings.IconSize.Small._height)
+
+        elif config_value == GlobalConfigTags.IconSize._value_medium:
+            self.__icons_size = (settings.IconSize.Medium._width, settings.IconSize.Medium._height)
+
+        elif config_value == GlobalConfigTags.IconSize._value_big:
+            self.__icons_size = (settings.IconSize.Big._width, settings.IconSize.Big._height)
+
+        else:
+            raise ValueError("WRONG size", config_value)
+
+        for i, row in enumerate(self.__liststore_playlists):
+            guid = row[PlaylistListstoreColumnsIndex._id]
+            playlist = self.__playlists[guid]
+            pixbuf = Pixbuf.new_from_file_at_size(playlist.get_icon_path(),
+                                                  self.__icons_size[0],
+                                                  self.__icons_size[1])
+            self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._icon] = pixbuf
+
+        self.__cellrenderer_playlist.set_icon_size(self.__icons_size[0], self.__icons_size[1])
+        self.__configuration.write(GlobalConfigTags.IconSize._label, config_value)
 
     def __on_checkbox_dark_theme_toggled(self, checkbox, *_):
         state = checkbox.get_active()

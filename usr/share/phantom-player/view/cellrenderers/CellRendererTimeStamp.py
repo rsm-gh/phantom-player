@@ -39,7 +39,7 @@ class CellRendererTimeStamp(Gtk.CellRenderer):
     __gproperties__ = {
         'timestamp': (  'glong', # type
                         "integer prop", # nick
-                        "A property that contains a number in miliseconds", # blurb
+                        "A property that contains a number in milliseconds", # blurb
                         0, # min
                         9223372036854775807, # max
                         0, # default
