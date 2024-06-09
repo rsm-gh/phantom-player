@@ -375,28 +375,30 @@ class MediaPlayerWidget(Gtk.VBox):
         return self.__media is not None
 
     def play(self, from_scale=True):
+        """
+            from_scale: if the video should start playing at the scale position.
+        """
 
         if self.__media is None:
             self.__menubutton_play.set_active(False)
             raise ValueError('Attempting to play without media.')
 
-        elif from_scale and self.__scale_progress.get_value() == VideoPosition._end:
-            pass
+        if from_scale and self.__scale_progress.get_value() == VideoPosition._end:
+            self.__scale_progress.set_value(VideoPosition._start)
 
+        self.__video_change_status == VideoScanStatus._hold
+        self.__start_player_scan()
+
+        if self.__vlc_widget.player.will_play() == 0 or self.__video_ended or not self.__video_is_loaded:
+            threading.Thread(target=self.__on_thread_set_video, args=[True, from_scale]).start()
         else:
-            self.__video_change_status == VideoScanStatus._hold
-            self.__start_player_scan()
+            self.__vlc_widget.player.play()
 
-            if self.__vlc_widget.player.will_play() == 0 or self.__video_ended or not self.__video_is_loaded:
-                threading.Thread(target=self.__on_thread_set_video, args=[True, from_scale]).start()
-            else:
-                self.__vlc_widget.player.play()
+        self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._pause, Gtk.IconSize.BUTTON))
+        self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._pause)
 
-            self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._pause, Gtk.IconSize.BUTTON))
-            self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._pause)
-
-            turn_off_screensaver(True)
-            self.emit(CustomSignals._play)
+        turn_off_screensaver(True)
+        self.emit(CustomSignals._play)
 
     def pause(self, emit=True):
         self.__stop_player_scan()
