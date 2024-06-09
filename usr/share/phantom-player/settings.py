@@ -17,10 +17,21 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 
-_DEFAULT_IMG_WIDTH = 90
-_DEFAULT_IMG_HEIGHT = 120
-_IMAGE_FORMATS = ["jpeg", "jpg", "png", "webp", "svg"]
+_IMAGE_FORMATS = ("jpeg", "jpg", "png", "webp", "svg")
 _VIDEO_HASH_SIZE = 64
+
+class IconSize:
+    class Small:
+        _width = 90
+        _height = 120
+
+    class Medium:
+        _width = 150
+        _height = 200
+
+    class Big:
+        _width = 250
+        _height = 333
 
 
 class ThemeButtons:
