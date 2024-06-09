@@ -20,7 +20,6 @@
     Bugs:
         + When selecting multiple videos to re-order with drag-and-drop, only the fist one is moved.
         + Fix dialog, paths, display how may valid videos, how many missing videos in the liststore.
-        + Sometimes the process is not being correctly closed, and it remains in the background.
 
     To do:
         + Option to modify the size of the playlist icons
@@ -96,6 +95,7 @@ class PhantomPlayer:
 
     def __init__(self, application):
 
+        self.__application = application
         self.__playlist_new = None
         self.__playlists = OrderedDict()
         self.__current_playlist_loaded = False
@@ -179,7 +179,7 @@ class PhantomPlayer:
         self.__window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         self.__window_root.connect('key-press-event', self.__on_window_root_key_pressed)
 
-        self.__window_root.connect('delete-event', self.__on_window_root_delete_event)
+        self.__window_root.connect('delete-event', self.quit)
         self.__window_root.connect("configure-event", self.__on_window_root_configure_event)
 
         self.__entry_playlist_search.connect("changed", self.__on_entry_playlist_search_changed)
@@ -456,6 +456,23 @@ class PhantomPlayer:
 
     def get_quit(self):
         return self.__quit_requested
+
+    def quit(self, *_):
+
+        self.__mp_widget.pause()  # faster than quit
+
+        if self.__current_media._playlist is not None:
+            playlist_factory.save(self.__current_media._playlist)
+
+        self.__quit_requested = True
+        self.__mp_widget.quit()
+        self.__thread_load_playlists.join()
+        VLC_INSTANCE.release()
+
+        if self.__application is None:
+            Gtk.main_quit()
+        else:
+            self.__application.quit()
 
     def __get_video_color(self, video):
         if video.get_ignore():
@@ -781,8 +798,6 @@ class PhantomPlayer:
 
     def __on_thread_playlists_load(self):
 
-        print("__on_thread_playlists_load START")
-
         killed = False
         current_playlist_name = self.__configuration.get_str(GlobalConfigTags._playlist_current)
         current_playlist = None
@@ -862,8 +877,6 @@ class PhantomPlayer:
         else:
             print("Load playlist ended.")
 
-        print("__on_thread_playlists_load END")
-
     def __on_media_player_btn_random_toggled(self, _, state):
         self.__current_media._playlist.set_random(state)
 
@@ -898,24 +911,6 @@ class PhantomPlayer:
             self.__set_video()
         else:
             self.__window_root.unfullscreen()
-
-    def __on_window_root_delete_event(self, *_):
-
-        print("__on_window_root_delete_event ")
-
-        self.__mp_widget.pause()  # faster than quit
-
-        if self.__current_media._playlist is not None:
-            playlist_factory.save(self.__current_media._playlist)
-
-        self.__quit_requested = True
-        self.__mp_widget.quit()
-        self.__thread_load_playlists.join()
-        VLC_INSTANCE.release()
-
-        print("__on_window_root_delete_event ENDED")
-
-        return False
 
     def __on_window_root_key_pressed(self, _, event):
         """
