@@ -29,6 +29,12 @@
         + Create the "delete video" option (instead of clean)
         + Create a dialog to rename multiple videos.
         + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
+
+    Patches:
+        + self.__window_root_accel is to store the current window root accel group and be able to
+          remove it.
+            > I did not find how to properly check if an accel group belongs to a window.
+            > calling window.remove_accel_group(accel_group) with a non-attached accel group throws critical warnings.
 """
 
 import os
@@ -104,6 +110,8 @@ class PhantomPlayer:
         self.__current_media = CurrentMedia()
         self.__is_full_screen = None
         self.__quit_requested = False
+
+        self.__window_root_accel = None # to store the window accel group and be able to remove it.
 
         self.__configuration = CCParser(_CONF_FILE, GlobalConfigTags._main_section)
 
@@ -556,12 +564,12 @@ class PhantomPlayer:
 
     def __set_view(self, playlists_menu, only_player=False):
 
-        self.__window_root.remove_accel_group(self.__accelgroup_playlists)
-        self.__window_root.remove_accel_group(self.__accelgroup_videos)
+        if self.__window_root_accel is not None:
+            self.__window_root.remove_accel_group(self.__window_root_accel)
+            self.__window_root_accel = None
 
         if playlists_menu:
-
-            self.__window_root.add_accel_group(self.__accelgroup_playlists)
+            self.__window_root_accel = self.__accelgroup_playlists
 
             self.__headerbar.props.title = Texts.GUI._title
             self.__current_media = CurrentMedia()
@@ -602,7 +610,7 @@ class PhantomPlayer:
                 self.__box_window.pack_start(self.__mp_widget, True, True, 0)
 
             else:
-                self.__window_root.add_accel_group(self.__accelgroup_videos)
+                self.__window_root_accel = self.__accelgroup_videos
 
                 self.__statusbar.hide()
                 self.__treeview_videos.show()
@@ -622,6 +630,9 @@ class PhantomPlayer:
                 self.__paned.show_all()
                 _, window_height = self.__window_root.get_size()
                 self.__paned.set_position(window_height / 2)
+
+        if self.__window_root_accel is not None:
+            self.__window_root.add_accel_group(self.__window_root_accel)
 
     def __fonts_reload(self):
         _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default,
