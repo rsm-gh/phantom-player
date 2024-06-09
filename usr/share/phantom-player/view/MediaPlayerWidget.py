@@ -344,7 +344,7 @@ class MediaPlayerWidget(Gtk.VBox):
                            self,
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
-                           ())
+                           (bool, bool)) # forced, was playing
         GObject.signal_new(CustomSignals._video_restart,
                            self, GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
@@ -848,7 +848,7 @@ class MediaPlayerWidget(Gtk.VBox):
                     # For example, for videos with a duration of 1s, the video may end at position .8
                     #
                     if self.get_state() == vlc.State.Ended:
-                        GLib.idle_add(self.__on_menubutton_end_clicked)
+                        GLib.idle_add(self.__end_video, False)
                         break  # important of the loop may continue until glib executes the previous func
                     else:
                         vlc_position = self.__vlc_widget.player.get_position()
@@ -974,10 +974,14 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__menubutton_play.set_active(False)
 
-    def __on_menubutton_end_clicked(self, *_):
+    def __end_video(self, forced):
 
-        if not self.__menubutton_next.get_active():
-            return
+        print("_END_VIDEO", forced)
+
+        if forced:
+            was_playing = self.is_playing()
+        else:
+            was_playing = True
 
         self.__stop_player_scan()
 
@@ -989,9 +993,16 @@ class MediaPlayerWidget(Gtk.VBox):
 
         GLib.idle_add(self.__set_scale_progress_end)
 
-        self.emit(CustomSignals._video_end)
+        self.emit(CustomSignals._video_end, forced, was_playing)
 
         self.__menubutton_next.set_active(False)
+
+    def __on_menubutton_end_clicked(self, *_):
+
+        if not self.__menubutton_next.get_active():
+            return
+
+        self.__end_video(forced=True)
 
     def __on_menubutton_keep_playing_toggled(self, widget):
         self.emit(CustomSignals._btn_keep_playing_toggled, widget.get_active())
@@ -1070,7 +1081,7 @@ class MediaPlayerWidget(Gtk.VBox):
                 self.__on_menubutton_restart_clicked()
 
             case VideoPosition._end:
-                self.__on_menubutton_end_clicked()
+                self.__end_video(forced=True)
 
             case _:
                 self.__vlc_widget.player.set_position(widget.get_value())

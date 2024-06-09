@@ -111,7 +111,7 @@ class PhantomPlayer:
         self.__is_full_screen = None
         self.__quit_requested = False
 
-        self.__window_root_accel = None # to store the window accel group and be able to remove it.
+        self.__window_root_accel = None  # to store the window accel group and be able to remove it.
 
         self.__configuration = CCParser(_CONF_FILE, GlobalConfigTags._main_section)
 
@@ -907,7 +907,7 @@ class PhantomPlayer:
     def __on_media_player_video_restart(self, *_):
         self.__on_media_player_position_changed(None, VideoPosition._start)
 
-    def __on_media_player_video_end(self, *_):
+    def __on_media_player_video_end(self, _widget, _forced, was_playing):
 
         if self.__current_media._playlist is None:
             return
@@ -919,7 +919,7 @@ class PhantomPlayer:
         self.__liststore_videos_update(self.__current_media._video, color=False, path=False)
 
         if self.__current_media._playlist.get_keep_playing():
-            self.__set_video()
+            self.__set_video(play=was_playing)
         else:
             self.__window_root.unfullscreen()
 
