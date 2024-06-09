@@ -93,5 +93,3 @@ app = PhantomApp(application_id="com.senties-martinelli.PhantomPlayer")
 app.set_flags(Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
 app_status = app.run(sys.argv)
 sys.exit(app_status)
-
-print("PhantomApp Ended.")
