@@ -302,7 +302,7 @@ class Playlist(object):
                 return icon_path
 
         if allow_default:
-            return Paths._ICON_LOGO_MEDIUM
+            return Paths._ICON_LOGO_BIG
 
         return None
 
@@ -528,6 +528,6 @@ class Playlist(object):
         #
         format_img(read_path=src_path,
                    write_path=self.get_icon_path(allow_default=False),
-                   width=settings._DEFAULT_IMG_WIDTH,
-                   height=settings._DEFAULT_IMG_HEIGHT,
+                   width=settings.IconSize.Big._width,
+                   height=settings.IconSize.Big._height,
                    extension="png")

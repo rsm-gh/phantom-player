@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 
-#  Copyright (C) 2016  Rafael Senties Martinelli 
+#  Copyright (C) 2016 Rafael Senties Martinelli
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 #   along with this program; if not, write to the Free Software Foundation,
-#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
+#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
 """
@@ -29,7 +29,7 @@ import gi
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers?
-from gi.repository import Gtk
+from gi.repository import Gtk, Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
 from view.cellrenderers.CellRendererRating import CellRendererRating
@@ -38,6 +38,8 @@ from view.cellrenderers.CellRendererBytes import CellRendererBytes
 from view.cellrenderers.CellRendererTimeStamp import CellRendererTimeStamp
 from view.cellrenderers.CellRendererURI import CellRendererURI
 from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
+
+from settings import IconSize
 
 
 class Window(Gtk.Window):
@@ -71,7 +73,7 @@ class Window(Gtk.Window):
         treeviewcolumn.set_resizable(True)
         cellrenderer = CellRendererTrackTime()
         treeviewcolumn.pack_start(cellrenderer, True)
-        treeviewcolumn.add_attribute(cellrenderer, 'miliseconds', 1)
+        treeviewcolumn.add_attribute(cellrenderer, 'milliseconds', 1)
         treeview.append_column(treeviewcolumn)
 
         treeviewcolumn = Gtk.TreeViewColumn("Bytes")
@@ -102,11 +104,11 @@ class Window(Gtk.Window):
         iconview = Gtk.IconView.new()
         iconview.set_model(liststore)
 
-        cellrenderer = CellRendererPlaylist()
-        iconview.pack_start(cellrenderer, True)
-        iconview.add_attribute(cellrenderer, 'pixbuf', 1)
-        iconview.add_attribute(cellrenderer, 'name', 2)
-        iconview.add_attribute(cellrenderer, 'progress', 3)
+        cellrenderer_playlist = CellRendererPlaylist()
+        iconview.pack_start(cellrenderer_playlist, True)
+        iconview.add_attribute(cellrenderer_playlist, 'pixbuf', 1)
+        iconview.add_attribute(cellrenderer_playlist, 'name', 2)
+        iconview.add_attribute(cellrenderer_playlist, 'progress', 3)
 
         playlist_data = (
             ('playlist toto', 30),
@@ -115,7 +117,11 @@ class Window(Gtk.Window):
             ('last value', 50)
         )
 
-        default_pixbuf = Pixbuf.new_from_file("/home/rsm/.local/share/phantom-player/Breaking Bad.png")
+        default_pixbuf = Pixbuf.new_from_file_at_scale("/home/rsm/.local/share/phantom-player/Breaking Bad.png",
+                                                       IconSize.Big._width,
+                                                       IconSize.Big._height)
+
+        cellrenderer_playlist.set_icon_size(IconSize.Big._width, IconSize.Big._height)
 
         for name, percent in playlist_data:
             liststore.append([-1, default_pixbuf, name, percent])
@@ -125,10 +131,10 @@ class Window(Gtk.Window):
         self.add(box)
         self.show_all()
 
-    def on_quit(self, widget, data=None):
+    def on_quit(self, *_):
         Gtk.main_quit()
 
-    def on_rating_changed(self, liststore, treepath, rating):
+    def on_rating_changed(self, _liststore, treepath, rating):
         print('rating changed', treepath, rating)
 
 

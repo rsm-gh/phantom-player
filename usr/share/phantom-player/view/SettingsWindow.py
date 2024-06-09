@@ -282,7 +282,9 @@ class SettingsWindow:
         self.__switch_keep_playing.set_active(self.__current_playlist.get_keep_playing())
         self.__switch_random_playing.set_active(self.__current_playlist.get_random())
 
-        pixbuf = Pixbuf.new_from_file_at_size(self.__current_playlist.get_icon_path(), settings._DEFAULT_IMG_WIDTH, settings._DEFAULT_IMG_HEIGHT)
+        pixbuf = Pixbuf.new_from_file_at_size(self.__current_playlist.get_icon_path(),
+                                              settings.IconSize.Medium._width,
+                                              settings.IconSize.Medium._height)
         self.__image_playlist.set_from_pixbuf(pixbuf)
         self.__button_delete.set_sensitive(not self.__is_new_playlist)
         self.__button_restart.set_sensitive(not self.__is_new_playlist)
@@ -420,14 +422,16 @@ class SettingsWindow:
             write_path = Paths._NEW_PLAYLIST_IMG_PATH
             system_utils.format_img(read_path=file_path,
                                     write_path=write_path,
-                                    width=settings._DEFAULT_IMG_WIDTH,
-                                    height=settings._DEFAULT_IMG_HEIGHT,
+                                    width=settings.IconSize.Big._width,
+                                    height=settings.IconSize.Big._height,
                                     extension="png")
         else:
             write_path = self.__current_playlist.get_icon_path()
             self.__current_playlist.set_icon_path(file_path)
 
-        pixbuf = Pixbuf.new_from_file_at_size(write_path, settings._DEFAULT_IMG_WIDTH, settings._DEFAULT_IMG_HEIGHT)
+        pixbuf = Pixbuf.new_from_file_at_size(write_path,
+                                              settings.IconSize.Medium._width,
+                                              settings.IconSize.Medium._height)
         self.__image_playlist.set_from_pixbuf(pixbuf)
 
     def __on_togglebutton_edit_name_press_event(self, widget, *_):

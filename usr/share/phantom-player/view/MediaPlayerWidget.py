@@ -294,7 +294,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__volumebutton.connect('value_changed', self.__on_volumebutton_changed)
         self.__buttons_box.pack_start(self.__volumebutton, expand=False, fill=False, padding=3)
 
-        # this is being called when the button is pressed, not the scale...
+        # This is being called when the button is pressed, not the scale...
         # It important to detect the long press...
         self.__volumebutton.connect('button-press-event', self.__on_scale_volume_press)
         self.__volumebutton.connect('button-release-event', self.__on_scale_volume_release)
@@ -344,7 +344,7 @@ class MediaPlayerWidget(Gtk.VBox):
                            self,
                            GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
-                           (bool, bool)) # forced, was playing
+                           (bool, bool))  # forced, was playing
         GObject.signal_new(CustomSignals._video_restart,
                            self, GObject.SignalFlags.RUN_LAST,
                            GObject.TYPE_NONE,
@@ -975,8 +975,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__menubutton_play.set_active(False)
 
     def __end_video(self, forced):
-
-        print("_END_VIDEO", forced)
 
         if forced:
             was_playing = self.is_playing()
