@@ -20,8 +20,9 @@
 """
     Patch:
         + The control buttons had different sized, and It seems that in GTK3 it was not possible to use
-          `ToolButton.set_image`, so in order to properly size all the images, I used a MenuButton().
-          The sizing works, but it's needed then to: 1) only listen when the button is active. 2) de-active the button.
+          `ToolButton.set_image`, to properly size all the images, I used a MenuButton(). The sizing works, but it's needed then to:
+            1) only listen when the button is active.
+            2) de-active the button.
 """
 
 import os
@@ -238,9 +239,9 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__buttons_box.set_halign(Gtk.Align.FILL)
         self.__buttons_box.set_sensitive(False)
 
-        self.__menubutton_previous = self.__add_menu_button(ThemeButtons._previous,
-                                                            Texts.MediaPlayer.Tooltip._start,
-                                                            self.__on_menubutton_restart_clicked)
+        self.__menubutton_restart = self.__add_menu_button(ThemeButtons._previous,
+                                                           Texts.MediaPlayer.Tooltip._start,
+                                                           self.__on_menubutton_restart_clicked)
 
         self.__menubutton_play = self.__add_menu_button(ThemeButtons._play,
                                                         Texts.MediaPlayer.Tooltip._play,
@@ -386,7 +387,7 @@ class MediaPlayerWidget(Gtk.VBox):
         if from_scale and self.__scale_progress.get_value() == VideoPosition._end:
             self.__scale_progress.set_value(VideoPosition._start)
 
-        self.__video_change_status == VideoScanStatus._hold
+        self.__video_change_status = VideoScanStatus._hold
         self.__start_player_scan()
 
         if self.__vlc_widget.player.will_play() == 0 or self.__video_ended or not self.__video_is_loaded:
@@ -843,8 +844,8 @@ class MediaPlayerWidget(Gtk.VBox):
                 case VideoScanStatus._scan:
                     #
                     # Check if the video ended.
-                    # Note, this can not be done with the position. For example, for videos with a duration
-                    # of 1s, the video may end at position .8
+                    # Note, this cannot be done with the position.
+                    # For example, for videos with a duration of 1s, the video may end at position .8
                     #
                     if self.get_state() == vlc.State.Ended:
                         GLib.idle_add(self.__on_menubutton_end_clicked)
@@ -951,15 +952,15 @@ class MediaPlayerWidget(Gtk.VBox):
                     self.__vlc_widget.player.play()
                     turn_off_screensaver(True)
 
-    def __on_menubutton_restart_clicked(self, button):
+    def __on_menubutton_restart_clicked(self, *_):
 
-        if not button.get_active():
+        if not self.__menubutton_restart.get_active():
             return
 
         self.__vlc_widget.player.set_position(VideoPosition._start)
         self.__scale_progress.set_value(VideoPosition._start)  # Necessary if the video is paused.
         self.emit(CustomSignals._video_restart)
-        button.set_active(False)
+        self.__menubutton_restart.set_active(False)
 
     def __on_menubutton_play_clicked(self, *_):
 
