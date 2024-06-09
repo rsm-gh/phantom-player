@@ -26,14 +26,12 @@ It is possible to simply play a video directly from the hard-drive:
 *If the video is in a playlist, the playlist will be selected.
 
 ### Reproducing videos from torrents
-When it comes to torrents, the most important is to do not modify the data
-in order to continue seeding.  
-
-With this software you can:
+When it comes to torrents, the most important is to do not modify the data to 
+continue seeding. With this software, you can:
 + Add a parent directory and create a recursive playlist.
 + Add multiple directories to a play list.
 
-And the software will filter only the fully downloaded video files,
+And it will filter only the fully downloaded video files and
 display them nicely in the interface, and give you a streaming platform feeling.   
 
 Also, if there are multiple seasons, or you have many episodes to download,
@@ -113,7 +111,9 @@ about the controls & behaviour.
 
 ## Extra
 
-+ All paths (and video names) containing the pipe "|" character will be excluded from the software.
-+ If a video has a "*.srt" file with the same name and same location, it will be used as default subtitles.
-+ "*.part" files will always be excluded since they break the hashing system.
++ All paths (and video names) containing the pipe `|` character will be excluded from the software.
++ If a video has a `*.srt` file with the same name and same location, it will be used as default subtitles.
 + It is not possible to remove videos while the playlist is loading/discovering videos.
++ You shall not add partially downloaded files to the software since they break the hashing system. The software
+will automatically exclude `*.part` files, but if they do not have this extension, the software will not be 
+able to detect that the file is incomplete.
