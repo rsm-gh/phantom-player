@@ -999,11 +999,8 @@ class PhantomPlayer:
                 self.__mp_widget.play_pause()
                 return True
 
-            elif not (Gdk.ModifierType.CONTROL_MASK & event.state):
-                return False
-
-            match event.keyval:
-                case EventCodes.Keyboard._letter_s:  # display the settings
+            elif Gdk.ModifierType.CONTROL_MASK & event.state:
+                if event.keyval == EventCodes.Keyboard._letter_s:  # display the settings
                     if self.__button_playlist_settings.get_sensitive():
                         self.__on_button_playlist_settings_clicked()
                     return True
