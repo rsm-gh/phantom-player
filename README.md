@@ -80,7 +80,7 @@ about the controls & behavior.
 + Play a video with a double left-click.
 + Open a video's menu with a right-click.
 + Order the videos with drag and drop.
-+ Modify the columns to display, by doing a middle-click in the videos-list header.
++ Modify the columns to display by doing a right-click in the videos-list header.
 + Resize the player by grabbing the separator with and moving it up or down.
 + Keyboard shortcuts:
   + `back` to return to the playlists' menu.
