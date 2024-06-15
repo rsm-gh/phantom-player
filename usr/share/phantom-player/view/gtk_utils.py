@@ -47,7 +47,7 @@ def bind_header_click(treeview_column, bind_func):
     while not isinstance(widget, Gtk.Button):
         widget = widget.get_parent()
 
-    widget.connect('button-release-event', bind_func)
+    widget.connect('button-press-event', bind_func)
 
 
 def get_default_color(text_type='theme_text_color', widget=None, on_error='#000000'):

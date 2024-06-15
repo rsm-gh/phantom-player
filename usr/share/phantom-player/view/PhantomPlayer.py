@@ -259,7 +259,7 @@ class PhantomPlayer:
                        self.__column_name,
                        self.__column_extension,
                        self.__column_progress):
-            gtk_utils.bind_header_click(widget, self.__on_treeviewcolumn_videos_header_clicked)
+            gtk_utils.bind_header_click(widget, self.__on_treeview_videos_header_clicked)
 
         self.__menuitem_videos_restart_prg.connect('activate',
                                                    self.__on_menuitem_videos_set_progress,
@@ -1114,38 +1114,6 @@ class PhantomPlayer:
         video_guid = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
         self.__set_video(video_guid, replay=True)
 
-    def __on_treeviewcolumn_videos_header_clicked(self, _widget, event):
-        """
-            The event button must be different from __on_treeview_videos_press_event,
-            or this signal will be overridden.
-        """
-
-        if event.button != EventCodes.Cursor._middle_click:
-            return False
-
-        #
-        # Prevent that the users de-activate all the columns
-        #
-        column_checkboxes = (self.__checkbox_video_cnumber,
-                             self.__checkbox_video_cpath,
-                             self.__checkbox_video_cname,
-                             self.__checkbox_video_cextension,
-                             self.__checkbox_video_cprogress)
-        active_checks = []
-        for checkbox in column_checkboxes:
-            checkbox.set_sensitive(True)
-
-            if checkbox.get_active():
-                active_checks.append(checkbox)
-
-        if len(active_checks) == 1:
-            active_checks[0].set_sensitive(False)
-
-        # Show the menu
-        self.__menu_videos_header.show_all()
-        self.__menu_videos_header.popup(None, None, None, None, event.button, event.time)
-        return True
-
     def __on_treeselection_videos_changed(self, *_):
         """
             Update the menuitems sensitive property because it will have an impact
@@ -1197,6 +1165,38 @@ class PhantomPlayer:
 
         self.__menuitem_videos_delete.set_sensitive(not any(video.exists() for video in selected_videos))
 
+    def __on_treeview_videos_header_clicked(self, _widget, event):
+        """
+            The event button must be different from __on_treeview_videos_press_event,
+            or this signal will be overridden.
+        """
+
+        if event.button != EventCodes.Cursor._right_click:
+            return False
+
+        #
+        # Prevent that the users deactivate all the columns
+        #
+        column_checkboxes = (self.__checkbox_video_cnumber,
+                             self.__checkbox_video_cpath,
+                             self.__checkbox_video_cname,
+                             self.__checkbox_video_cextension,
+                             self.__checkbox_video_cprogress)
+        active_checks = []
+        for checkbox in column_checkboxes:
+            checkbox.set_sensitive(True)
+
+            if checkbox.get_active():
+                active_checks.append(checkbox)
+
+        if len(active_checks) == 1:
+            active_checks[0].set_sensitive(False)
+
+        # Show the menu
+        self.__menu_videos_header.show_all()
+        self.__menu_videos_header.popup(None, None, None, None, event.button, event.time)
+        return True
+
     def __on_treeview_videos_press_event(self, _widget, event):
 
         if event.button != EventCodes.Cursor._right_click:
@@ -1212,7 +1212,9 @@ class PhantomPlayer:
             return False
 
         if pointing_treepath not in treepaths:
-            self.__treeselection_videos.unselect_all()
+            if not (Gdk.ModifierType.CONTROL_MASK & event.state):
+                self.__treeselection_videos.unselect_all()
+
             self.__treeselection_videos.select_path(pointing_treepath)
             self.__on_treeselection_videos_changed()  # to ensure that it is applied before the menu pops-up
 
