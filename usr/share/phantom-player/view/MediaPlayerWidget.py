@@ -375,6 +375,12 @@ class MediaPlayerWidget(Gtk.VBox):
     def has_media(self):
         return self.__media is not None
 
+    def play_pause(self):
+        if self.is_playing():
+            self.pause()
+        else:
+            self.play()
+
     def play(self, from_scale=True):
         """
             from_scale: if the video should start playing at the scale position.
@@ -904,7 +910,7 @@ class MediaPlayerWidget(Gtk.VBox):
                     self.__set_fullscreen(False)
 
                 case EventCodes.Keyboard._space_bar | EventCodes.Keyboard._enter:
-                    self.__on_menubutton_play_clicked()
+                    self.play_pause()
 
                 case EventCodes.Keyboard._arrow_up:
                     self.volume_up()
@@ -967,10 +973,7 @@ class MediaPlayerWidget(Gtk.VBox):
         if not self.__menubutton_play.get_active():
             return
 
-        if self.is_playing():
-            self.pause()
-        else:
-            self.play()
+        self.play_pause()
 
         self.__menubutton_play.set_active(False)
 

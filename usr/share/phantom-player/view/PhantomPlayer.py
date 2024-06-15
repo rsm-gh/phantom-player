@@ -103,6 +103,13 @@ class GlobalConfigTags:
         _value_big = 'big'
 
 
+class GUIView:
+    _none = -1
+    _playlists = 0
+    _videos = 1
+    _single_video = 2
+
+
 class PhantomPlayer:
 
     def __init__(self, application):
@@ -116,6 +123,8 @@ class PhantomPlayer:
         self.__current_media = CurrentMedia()
         self.__is_full_screen = None
         self.__quit_requested = False
+
+        self.__view_status = GUIView._none
 
         self.__icons_size = (settings.IconSize.Medium._width, settings.IconSize.Medium._height)
 
@@ -603,6 +612,9 @@ class PhantomPlayer:
             self.__window_root_accel = None
 
         if playlists_menu:
+
+            self.__view_status = GUIView._playlists
+
             self.__window_root_accel = self.__accelgroup_playlists
 
             self.__mp_widget.stop()
@@ -633,6 +645,7 @@ class PhantomPlayer:
             self.__button_display_playlists.show()
 
             if only_player:
+                self.__view_status = GUIView._single_video
                 self.__button_playlist_settings.set_sensitive(False)
                 self.__statusbar.hide()
                 self.__button_playlist_settings.hide()
@@ -647,6 +660,7 @@ class PhantomPlayer:
                 self.__box_window.pack_start(self.__mp_widget, True, True, 0)
 
             else:
+                self.__view_status = GUIView._videos
                 self.__window_root_accel = self.__accelgroup_videos
 
                 self.__statusbar.hide()
@@ -978,6 +992,11 @@ class PhantomPlayer:
 
             if event.keyval == EventCodes.Keyboard._back:
                 self.__set_view(playlists_menu=True)
+                return True
+
+            elif event.keyval in (EventCodes.Keyboard._enter, EventCodes.Keyboard._space_bar) and \
+                    self.__view_status == GUIView._single_video:
+                self.__mp_widget.play_pause()
                 return True
 
             elif not (Gdk.ModifierType.CONTROL_MASK & event.state):
