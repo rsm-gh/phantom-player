@@ -605,10 +605,13 @@ class PhantomPlayer:
         if playlists_menu:
             self.__window_root_accel = self.__accelgroup_playlists
 
-            self.__headerbar.props.title = Texts.GUI._title
-            self.__current_media = CurrentMedia()
             self.__mp_widget.stop()
+            if self.__current_media._playlist is not None:  # This can happen on single file mode
+                playlist_factory.save(self.__current_media._playlist)
 
+            self.__current_media = CurrentMedia()
+
+            self.__headerbar.props.title = Texts.GUI._title
             if self.__paned is None:
                 self.__box_window.remove(self.__mp_widget)
             else:
@@ -974,7 +977,6 @@ class PhantomPlayer:
         elif not gtk_utils.window_is_fullscreen(self.__window_root):
 
             if event.keyval == EventCodes.Keyboard._back:
-                playlist_factory.save(self.__current_media._playlist)
                 self.__set_view(playlists_menu=True)
                 return True
 
@@ -1084,7 +1086,6 @@ class PhantomPlayer:
         self.__window_playlist_settings.show(self.__current_media._playlist, is_new=False)
 
     def __on_button_display_playlists_clicked(self, *_):
-        playlist_factory.save(self.__current_media._playlist)
         self.__set_view(playlists_menu=True)
 
     def __on_iconview_playlists_item_activated(self, _, path):
