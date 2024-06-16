@@ -466,6 +466,15 @@ class PhantomPlayer:
         self.__set_view(playlists_menu=True)
 
         #
+        # Set the default cursor. This is important because if the software crashed with another cursor,
+        # it will remain when restarting.
+        #
+        display = self.__window_root.get_display()
+        window = self.__window_root.get_root_window()
+        self.__default_cursor = Gdk.Cursor.new_from_name(display, 'default')
+        window.set_cursor(self.__default_cursor)
+
+        #
         #    Load the existent playlist
         #
         self.__thread_load_playlists = Thread(target=self.__on_thread_playlists_load)
