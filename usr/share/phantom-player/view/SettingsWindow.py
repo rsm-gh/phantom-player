@@ -336,8 +336,7 @@ class SettingsWindow:
 
     def __thread_reload_paths(self):
         video_factory.discover(self.__current_playlist,
-                               is_startup=False,
-                               update_func=self.__liststore_videos_update_glib)
+                               update_func=self.__liststore_videos_path_add_glib)
         self.__unfreeze_all()
 
     def __unfreeze_all(self):
@@ -354,8 +353,10 @@ class SettingsWindow:
         GLib.idle_add(self.__window_settings.set_sensitive, True)
 
         # Root Window
-        cursor = Gdk.Cursor.new_from_name(self.__parent.get_display(), 'default')
-        GLib.idle_add(self.__parent.get_root_window().set_cursor, cursor)
+        display = self.__parent.get_display()
+        window = self.__parent.get_root_window()
+        cursor = Gdk.Cursor.new_from_name(display, 'default')
+        GLib.idle_add(window.set_cursor, cursor)
 
     def __freeze_all(self):
 
