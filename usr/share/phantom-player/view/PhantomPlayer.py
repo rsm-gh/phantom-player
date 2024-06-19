@@ -725,6 +725,13 @@ class PhantomPlayer:
                          ignore_none=True,
                          ignore_missing=True)
 
+    def __playlist_update_gui(self, playlist):
+        self.__liststore_playlists_update(playlist)
+        if self.__current_media.is_playlist(playlist):
+            self.__liststore_videos_populate()
+            self.__mp_widget.set_keep_playing(playlist.get_keep_playing())
+            self.__mp_widget.set_random(playlist.get_random())
+
     def __statusbar_push(self, status):
         self.__statusbar.push(0, status)
 
@@ -828,6 +835,14 @@ class PhantomPlayer:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_progress()
                 return
 
+    def __liststore_videos_add_glib(self, playlist, video):
+        """To be called from a thread"""
+
+        if not self.__current_media.is_playlist(playlist):
+            return
+
+        GLib.idle_add(self.__liststore_videos_add, video)
+
     def __liststore_videos_update_glib(self, playlist, video):
         """To be called from a thread"""
 
@@ -874,7 +889,7 @@ class PhantomPlayer:
         current_playlist = None
 
         #
-        # Load the playlists
+        # Load the playlist's files
         #
         if os.path.exists(_SERIES_DIR):
             for file_name in sorted(os.listdir(_SERIES_DIR)):
@@ -902,14 +917,15 @@ class PhantomPlayer:
                 if not playlist.is_missing() or self.__checkbox_playlist_missing.get_active():
                     GLib.idle_add(self.__liststore_playlists_append, playlist)
 
-        # Once the playlists headers are loaded, it is possible to create new playlists.
+        #
+        # Once the playlist's files are loaded, it is possible to create new playlists.
+        #
         GLib.idle_add(self.__menuitem_new_playlist.set_sensitive, True)
         self.__playlist_headers_are_loaded = True
 
         #
-        #    Load the playlists (starting by the saved playlist)
+        #    Discover new videos of the playlists (starting by the saved playlist)
         #
-
         playlists = list(self.__playlists.values())
         if current_playlist is not None:
             playlists.remove(current_playlist)
@@ -921,18 +937,21 @@ class PhantomPlayer:
                 killed = True
                 break
 
-            GLib.idle_add(self.__on_window_psettings_close, playlist)
+            # Do not call here:
+            #     GLib.idle_add(self.__playlist_update_gui, playlist)
+            # The GUI shall be updated only if the user selects the playlist, and for that
+            # there is a different trigger.
 
             if playlist.requires_discover(is_startup=True):
-                GLib.idle_add(self.__statusbar_push,
-                              Texts.StatusBar._load_playlist_discover.format(playlist.get_name()))
+                GLib.idle_add(self.__statusbar_push, Texts.StatusBar._load_playlist_discover.format(playlist.get_name()))
                 video_factory.discover(playlist,
+                                       add_func=self.__liststore_videos_add_glib,
                                        update_func=self.__liststore_videos_update_glib,
-                                       quit_func=self.get_quit)  # No add_func because the GUI is frozen on the first playlist
+                                       quit_func=self.get_quit)
 
-            GLib.idle_add(self.__liststore_playlists_update_progress, playlist)
-            playlist.set_load_status(PlaylistLoadStatus._loaded)
+                GLib.idle_add(self.__liststore_playlists_update_progress, playlist)
 
+            GLib.idle_add(playlist.set_load_status, PlaylistLoadStatus._loaded)
             if self.__current_media.is_playlist(playlist) and playlist.get_load_status() == PlaylistLoadStatus._loaded:
                 GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
 
@@ -957,7 +976,7 @@ class PhantomPlayer:
     def __on_media_player_position_changed(self, _, position):
 
         if self.__current_media.get_video_position() == VideoPosition._end:
-            # To is to avoid updating progress on videos that went already played.
+            # To avoid updating progress on videos that went already played.
             return
 
         self.__current_media.set_video_position(position)
@@ -1083,12 +1102,7 @@ class PhantomPlayer:
         self.__set_view(playlists_menu=True)
 
     def __on_window_psettings_close(self, closed_playlist):
-        self.__liststore_playlists_update(closed_playlist)
-
-        if self.__current_media.is_playlist(closed_playlist):
-            self.__liststore_videos_populate()
-            self.__mp_widget.set_keep_playing(closed_playlist.get_keep_playing())
-            self.__mp_widget.set_random(closed_playlist.get_random())
+        self.__playlist_update_gui(closed_playlist)
 
     def __on_window_psettings_change(self, new_playlist):
         self.__current_media = CurrentMedia(new_playlist)
