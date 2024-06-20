@@ -409,10 +409,14 @@ class PhantomPlayer:
         self.__window_playlist_settings = SettingsWindow(parent=self.__window_root,
                                                          playlists=self.__playlists,
                                                          add_playlist_func=self.__on_window_psettings_playlist_add,
-                                                         delete_playlist_func=self.____on_window_psettings_playlist_delete,
+                                                         delete_playlist_func=self.__on_window_psettings_playlist_delete,
                                                          restart_playlist_func=self.__on_window_psettings_playlist_restart,
                                                          close_playlist_func=self.__on_window_psettings_playlist_close,
-                                                         change_playlist_func=self.__on_window_psettings_playlist_change)
+                                                         change_playlist_func=self.__on_window_psettings_playlist_change,
+                                                         add_video_glib_func=self.__liststore_videos_add_glib,
+                                                         update_video_glib_func=self.__liststore_videos_update_glib,
+                                                         remove_video_glib_func=self.__liststore_videos_remove_glib,
+                                                         reorder_videos_func=self.__liststore_videos_populate)
 
         self.__checkbox_dark_theme.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._dark_theme, True))
@@ -726,10 +730,12 @@ class PhantomPlayer:
                          ignore_none=True,
                          ignore_missing=True)
 
-    def __playlist_update_gui(self, playlist):
+    def __playlist_update_gui(self, playlist, liststore_videos=True):
+        self.__headerbar.props.title = playlist.get_name()
         self.__liststore_playlists_update(playlist)
         if self.__current_media.is_playlist(playlist):
-            self.__liststore_videos_populate()
+            if liststore_videos:
+                self.__liststore_videos_populate()
             self.__mp_widget.set_keep_playing(playlist.get_keep_playing())
             self.__mp_widget.set_random(playlist.get_random())
 
@@ -796,7 +802,7 @@ class PhantomPlayer:
             if not playlist.is_missing() or self.__checkbox_playlist_missing.get_active():
                 self.__liststore_playlists_append(playlist)
 
-    def __liststore_videos_populate(self):
+    def __liststore_videos_populate(self, *_):
 
         self.__liststore_videos.clear()
         self.__column_name.set_spacing(0)
@@ -836,22 +842,6 @@ class PhantomPlayer:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_progress()
                 return
 
-    def __liststore_videos_add_glib(self, playlist, video):
-        """To be called from a thread"""
-
-        if not self.__current_media.is_playlist(playlist):
-            return
-
-        GLib.idle_add(self.__liststore_videos_add, video)
-
-    def __liststore_videos_update_glib(self, playlist, video):
-        """To be called from a thread"""
-
-        if not self.__current_media.is_playlist(playlist):
-            return
-
-        GLib.idle_add(self.__liststore_videos_update, video)
-
     def __liststore_videos_select_current(self):
         """
             Select the current video from the videos liststore.
@@ -870,6 +860,34 @@ class PhantomPlayer:
             if row[VideosListstoreColumnsIndex._id] == video_guid:
                 self.__liststore_videos.remove(row.iter)
                 break
+
+
+    def __liststore_videos_add_glib(self, playlist, video):
+        """To be called from a thread"""
+
+        if not self.__current_media.is_playlist(playlist):
+            return
+
+        GLib.idle_add(self.__liststore_videos_add, video)
+
+    def __liststore_videos_update_glib(self, playlist, video):
+        """To be called from a thread"""
+
+        if not self.__current_media.is_playlist(playlist):
+            return
+
+        GLib.idle_add(self.__liststore_videos_update, video)
+
+    def __liststore_videos_remove_glib(self, playlist, video):
+        """To be called from a thread"""
+
+        if not self.__current_media.is_playlist(playlist):
+            return
+
+        elif self.__current_media.get_video_guid() == video.get_guid():
+            self.__mp_widget.stop()
+
+        GLib.idle_add(self.__liststore_videos_remove, video)
 
     def __treeselection_videos_get_selected(self):
 
@@ -944,7 +962,8 @@ class PhantomPlayer:
             # there is a different trigger.
 
             if playlist.requires_discover(is_startup=True):
-                GLib.idle_add(self.__statusbar_push, Texts.StatusBar._load_playlist_discover.format(playlist.get_name()))
+                GLib.idle_add(self.__statusbar_push,
+                              Texts.StatusBar._load_playlist_discover.format(playlist.get_name()))
                 video_factory.discover(playlist,
                                        add_func=self.__liststore_videos_add_glib,
                                        update_func=self.__liststore_videos_update_glib,
@@ -1077,7 +1096,7 @@ class PhantomPlayer:
         if self.__current_media.is_playlist(playlist):
             self.__liststore_videos_populate()
 
-    def ____on_window_psettings_playlist_delete(self, playlist):
+    def __on_window_psettings_playlist_delete(self, playlist):
 
         self.__playlists.pop(playlist.get_guid())
 
@@ -1103,15 +1122,15 @@ class PhantomPlayer:
         self.__set_view(playlists_menu=True)
 
     def __on_window_psettings_playlist_close(self, closed_playlist):
-        self.__playlist_update_gui(closed_playlist)
+        self.__playlist_update_gui(closed_playlist, liststore_videos=False)
 
     def __on_window_psettings_playlist_change(self, new_playlist):
-        self.__current_media = CurrentMedia(new_playlist)
-        self.__headerbar.props.title = new_playlist.get_name()
-        self.__liststore_videos_populate()
         self.__mp_widget.stop()
-        self.__mp_widget.set_keep_playing(new_playlist.get_keep_playing())
-        self.__mp_widget.set_random(new_playlist.get_random())
+        if self.__current_media._playlist is not None:
+            playlist_factory.save(self.__current_media._playlist)
+
+        self.__current_media = CurrentMedia(new_playlist)
+        self.__playlist_update_gui(new_playlist)
 
     def __on_entry_playlist_search_changed(self, *_):
         self.__liststore_playlists_populate()
