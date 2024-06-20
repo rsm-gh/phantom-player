@@ -50,14 +50,14 @@ class Texts:
         _add_path_error = 'It is not possible to add a path (or recursive path) that contains the following character "{}"'
         _add_path_title = "Discovering Videos"
         _add_path_videos = _LONG_TIME_PLEASE_WAIT
-        _add_path_videos_done = "Inspection done, the following videos will be added:"
+        _add_path_videos_done = "Scan done, the following videos went added:"
 
         _add_recursive_title = "Discovering recursive videos"
         _adding_recursive_videos = _LONG_TIME_PLEASE_WAIT
         _adding_recursive_videos_done = "Recursive inspection done, the following videos will be added:"
 
         _remove_recursive_title = "Removing recursive videos"
-        _remove_videos = "The following videos will be removed:"
+        _remove_videos = "The following videos went removed:"
 
         _playlist_path_cant_recursive = "To make this path recursive, you need first remove the other ones that will be included by this one."
         _playlist_path_cant_add = "The path is already in the added (or recursively included)."

@@ -55,7 +55,11 @@ class SettingsWindow:
                  delete_playlist_func,
                  restart_playlist_func,
                  close_playlist_func,
-                 change_playlist_func):
+                 change_playlist_func,
+                 add_video_glib_func,
+                 update_video_glib_func,
+                 remove_video_glib_func,
+                 reorder_videos_func):
 
         self.__parent = parent
         self.__is_new_playlist = False
@@ -66,14 +70,21 @@ class SettingsWindow:
         self.__selected_path = None
         self.__edit_path_new_value = None
 
+        self.__fontcolor_default = None
+        self.__fontcolor_error = None
+
         self.__parent_add_playlist_func = add_playlist_func
         self.__parent_delete_playlist_func = delete_playlist_func
         self.__parent_restart_playlist_func = restart_playlist_func
         self.__parent_close_playlist_func = close_playlist_func
         self.__parent_change_playlist_func = change_playlist_func
 
-        self.__fontcolor_default = None
-        self.__fontcolor_error = None
+        # These parent functions are to avoid reloading the liststore (and blinking)
+        # when the settings are closed.
+        self.__parent_add_video_glib_func = add_video_glib_func
+        self.__parent_update_video_glib_func = update_video_glib_func
+        self.__parent_remove_video_glib_func = remove_video_glib_func
+        self.__parent_reorder_videos_func = reorder_videos_func
 
         #
         # Get the GTK objects
@@ -320,16 +331,26 @@ class SettingsWindow:
                                        ignored,
                                        missing])
 
-    def __liststore_videos_path_glib_add(self, path):
+    def __liststore_videos_path_append(self, path):
+        """
+            This is only to avoid a bug when performing
+            GLib.idle_add(self.__liststore_videos_path.append, items)
+        """
         self.__liststore_videos_path.append([path])
 
-    def __liststore_videos_path_add_glib(self, _, video):
-        GLib.idle_add(self.__liststore_videos_path_glib_add, video.get_path())
+    def __liststore_videos_path_add_glib(self, playlist, video):
+        GLib.idle_add(self.__liststore_videos_path_append, video.get_path())
+        self.__parent_add_video_glib_func(playlist, video)
+
+    def __liststore_videos_path_update_glib(self, playlist, video):
+        GLib.idle_add(self.__liststore_videos_path_append, video.get_path())
+        self.__parent_update_video_glib_func(playlist, video)
 
     def __thread_discover_paths(self, playlist_path, end_label, end_text):
         video_factory.discover(self.__current_playlist,
                                [playlist_path],
-                               add_func=self.__liststore_videos_path_add_glib)
+                               add_func=self.__liststore_videos_path_add_glib,
+                               update_func=self.__liststore_videos_path_update_glib)
         GLib.idle_add(end_label.set_text, end_text)
         GLib.idle_add(self.__liststore_paths_update_or_add, playlist_path)
         self.__unfreeze_all()
@@ -526,14 +547,13 @@ class SettingsWindow:
         self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
         self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
 
-        print(self.__selected_path.get_path())
-
         removed_videos = self.__current_playlist.remove_playlist_path(self.__selected_path)
 
         if len(removed_videos) > 0:
             self.__dialog_paths.show()
             for video in removed_videos:
                 self.__liststore_videos_path.append([video.get_path()])
+                self.__parent_remove_video_glib_func(self.__current_playlist, video)
 
         for row in self.__liststore_paths:
             if row[PathsListstoreColumns._path] == self.__selected_path.get_path():
@@ -600,6 +620,7 @@ class SettingsWindow:
 
     def __on_button_reorder_vid_name_clicked(self, *_):
         self.__current_playlist.reorder_by_name()
+        self.__parent_reorder_videos_func(self.__current_playlist)
 
     def __on_cellrenderertoggle_recursive_toggled(self, _, row):
         """
