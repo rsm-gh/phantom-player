@@ -29,6 +29,7 @@
         + Create the "delete video" option (instead of clean)
         + Create a dialog to rename multiple videos.
         + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
+        + Add video size, video rating
 
     Patches:
         + self.__window_root_accel is to store the current window root accel group and be able to
@@ -407,11 +408,11 @@ class PhantomPlayer:
 
         self.__window_playlist_settings = SettingsWindow(parent=self.__window_root,
                                                          playlists=self.__playlists,
-                                                         add_function=self.__on_window_psettings_add,
-                                                         delete_function=self.__on_window_psettings_delete,
-                                                         restart_function=self.__on_window_psettings_restart,
-                                                         close_function=self.__on_window_psettings_close,
-                                                         change_function=self.__on_window_psettings_change)
+                                                         add_playlist_func=self.__on_window_psettings_playlist_add,
+                                                         delete_playlist_func=self.____on_window_psettings_playlist_delete,
+                                                         restart_playlist_func=self.__on_window_psettings_playlist_restart,
+                                                         close_playlist_func=self.__on_window_psettings_playlist_close,
+                                                         change_playlist_func=self.__on_window_psettings_playlist_change)
 
         self.__checkbox_dark_theme.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._dark_theme, True))
@@ -1051,14 +1052,14 @@ class PhantomPlayer:
             else:
                 self.__media_box.show()
 
-    def __on_window_psettings_add(self, playlist):
+    def __on_window_psettings_playlist_add(self, playlist):
 
         self.__playlists[playlist.get_guid()] = playlist
 
         if not playlist.is_missing() or self.__checkbox_playlist_missing.get_active():
             self.__liststore_playlists_append(playlist)
 
-    def __on_window_psettings_restart(self, playlist):
+    def __on_window_psettings_playlist_restart(self, playlist):
         # This is done before to avoid updating the playlist data
         was_playing = False
         if self.__current_media.is_playlist(playlist):
@@ -1076,7 +1077,7 @@ class PhantomPlayer:
         if self.__current_media.is_playlist(playlist):
             self.__liststore_videos_populate()
 
-    def __on_window_psettings_delete(self, playlist):
+    def ____on_window_psettings_playlist_delete(self, playlist):
 
         self.__playlists.pop(playlist.get_guid())
 
@@ -1101,10 +1102,10 @@ class PhantomPlayer:
 
         self.__set_view(playlists_menu=True)
 
-    def __on_window_psettings_close(self, closed_playlist):
+    def __on_window_psettings_playlist_close(self, closed_playlist):
         self.__playlist_update_gui(closed_playlist)
 
-    def __on_window_psettings_change(self, new_playlist):
+    def __on_window_psettings_playlist_change(self, new_playlist):
         self.__current_media = CurrentMedia(new_playlist)
         self.__headerbar.props.title = new_playlist.get_name()
         self.__liststore_videos_populate()
