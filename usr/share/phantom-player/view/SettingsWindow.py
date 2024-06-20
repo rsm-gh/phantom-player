@@ -51,11 +51,11 @@ class SettingsWindow:
     def __init__(self,
                  parent,
                  playlists,
-                 add_function,
-                 delete_function,
-                 restart_function,
-                 close_function,
-                 change_function):
+                 add_playlist_func,
+                 delete_playlist_func,
+                 restart_playlist_func,
+                 close_playlist_func,
+                 change_playlist_func):
 
         self.__parent = parent
         self.__is_new_playlist = False
@@ -66,11 +66,11 @@ class SettingsWindow:
         self.__selected_path = None
         self.__edit_path_new_value = None
 
-        self.__add_function = add_function
-        self.__delete_function = delete_function
-        self.__restart_function = restart_function
-        self.__close_function = close_function
-        self.__change_function = change_function
+        self.__parent_add_playlist_func = add_playlist_func
+        self.__parent_delete_playlist_func = delete_playlist_func
+        self.__parent_restart_playlist_func = restart_playlist_func
+        self.__parent_close_playlist_func = close_playlist_func
+        self.__parent_change_playlist_func = change_playlist_func
 
         self.__fontcolor_default = None
         self.__fontcolor_error = None
@@ -380,13 +380,13 @@ class SettingsWindow:
         self.__save_playlist_changes()
         self.__current_playlist = self.__get_previous_playlist()
         self.__load_playlist()
-        self.__change_function(self.__current_playlist)
+        self.__parent_change_playlist_func(self.__current_playlist)
 
     def __on_button_next_playlist(self, *_):
         self.__save_playlist_changes()
         self.__current_playlist = self.__get_next_playlist()
         self.__load_playlist()
-        self.__change_function(self.__current_playlist)
+        self.__parent_change_playlist_func(self.__current_playlist)
 
     def __on_entry_playlist_name_changed(self, *_):
 
@@ -654,7 +654,7 @@ class SettingsWindow:
         if gtk_utils.dialog_yes_no(self.__window_settings,
                                    Texts.DialogPlaylist._confirm_delete.format(self.__current_playlist.get_name())):
             self.__window_settings.hide()
-            self.__delete_function(self.__current_playlist)
+            self.__parent_delete_playlist_func(self.__current_playlist)
 
     def __on_button_close_clicked(self, *_):
 
@@ -667,7 +667,7 @@ class SettingsWindow:
 
         self.__window_settings.hide()
 
-        self.__close_function(self.__current_playlist)
+        self.__parent_close_playlist_func(self.__current_playlist)
 
     def __on_button_restart_clicked(self, *_):
 
@@ -675,7 +675,7 @@ class SettingsWindow:
 
         if gtk_utils.dialog_yes_no(self.__window_settings,
                                    Texts.DialogPlaylist._confirm_reset.format(selected_playlist_name)):
-            self.__restart_function(self.__current_playlist)
+            self.__parent_restart_playlist_func(self.__current_playlist)
 
     def __on_button_add_clicked(self, *_):
 
@@ -699,4 +699,4 @@ class SettingsWindow:
             os.remove(Paths._NEW_PLAYLIST_IMG_PATH)
 
         self.__window_settings.hide()
-        self.__add_function(self.__current_playlist)
+        self.__parent_add_playlist_func(self.__current_playlist)
