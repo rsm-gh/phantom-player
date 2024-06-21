@@ -54,8 +54,9 @@ class Texts:
 
         _add_recursive_title = "Discovering recursive videos"
         _adding_recursive_videos = _LONG_TIME_PLEASE_WAIT
-        _adding_recursive_videos_done = "Recursive inspection done, the following videos will be added:"
+        _adding_recursive_videos_done = "Recursive scan done, the following videos will be added:"
 
+        _remove_path_title = "Removing sources path"
         _remove_recursive_title = "Removing recursive videos"
         _remove_videos = "The following videos went removed:"
 
