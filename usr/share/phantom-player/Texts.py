@@ -45,7 +45,8 @@ class Texts:
 
     class WindowSettings:
         _new_title = "New Playlist"
-        _playlist_name_empty = "The name can not be empty."
+        # it is important to specify "the name" in case that the user switched the settings tab.
+        _playlist_name_empty = "The playlist name can not be empty."
 
         _add_path_error = 'It is not possible to add a path (or recursive path) that contains the following character "{}"'
         _add_path_title = "Discovering Videos"

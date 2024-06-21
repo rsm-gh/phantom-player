@@ -524,7 +524,7 @@ class SettingsWindow:
 
         playlist_path = PlaylistPath(path=path,
                                      recursive=False,
-                                     startup_discover=False)
+                                     startup_discover=True)
         added = self.__current_playlist.add_playlist_path(playlist_path)
         if not added:
             gtk_utils.dialog_info(self.__window_settings, Texts.WindowSettings._playlist_path_cant_add)
