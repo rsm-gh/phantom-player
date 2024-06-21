@@ -22,6 +22,7 @@ import random
 import settings
 import Paths
 from model.Video import VideoPosition
+from model.PlaylistPath import PlaylistPath
 from system_utils import format_img
 
 _SAVE_EXTENSION = '.cfg'
@@ -68,126 +69,6 @@ class Playlist(object):
         self.__videos_instances = []
         self.__active_videos_nb = 0
 
-    def restart(self):
-        for video in self.__videos_instances:
-            video.set_position(VideoPosition._start)
-
-    def reorder(self, new_order_indexes):
-        """ Choices are "up" or "down" """
-
-        self.__videos_instances = [self.__videos_instances[i - 1] for i in new_order_indexes]
-
-        for i, video in enumerate(self.__videos_instances, 1):
-            video.set_guid(i)
-
-    def reorder_by_name(self):
-        """
-            It is not possible to create a dictionary only by name
-            because multiple episodes could have the same name.
-        """
-        videos_data = {"{}={}".format(video.get_name(), video.get_path()):video for video in self.__videos_instances}
-        self.__videos_instances = []
-        for key, value in sorted(videos_data.items()):
-            self.__videos_instances.append(value)
-
-        self.__recalculate_videos_guid()
-
-    def remove_videos(self, videos):
-        for video in videos:
-            self.__videos_instances.remove(video)
-
-        self.__recalculate_videos_guid()
-
-    def __recalculate_videos_guid(self):
-        for i, video in enumerate(self.__videos_instances, 1):
-            video.set_guid(i)
-
-    def requires_discover(self, is_startup):
-
-        auto_discover = False
-        for playlist_path in self.get_playlist_paths():
-            if playlist_path.get_startup_discover():
-                auto_discover = True
-                break
-
-        if not is_startup or (is_startup and auto_discover):
-            return True
-
-        return False
-
-    def remove_playlist_path(self, playlist_path):
-
-        path = playlist_path.get_path()
-        recursive = playlist_path.get_recursive()
-
-        if path not in self.__playlist_paths.keys():
-            return []
-
-        self.__playlist_paths.pop(path)
-
-        removed_videos = []
-        for video in self.__videos_instances:
-            video_dirname = os.path.dirname(video.get_path())
-            if recursive:
-                if video_dirname.startswith(path):
-                    removed_videos.append(video)
-
-            elif path == video_dirname:
-                removed_videos.append(video)
-
-        for video in removed_videos:
-            self.__videos_instances.remove(video)
-
-        self.__recalculate_videos_guid()
-
-        return removed_videos
-
-    def remove_recursive_videos(self, playlist_path):
-
-        path = playlist_path.get_path()
-
-        if path not in self.__playlist_paths.keys():
-            return []
-
-        removed_videos = []
-        for video in self.__videos_instances:
-
-            video_dirname = os.path.dirname(video.get_path())
-
-            if video_dirname == path:
-                pass  # only children shall be removed
-
-            elif video_dirname.startswith(path):
-                removed_videos.append(video)
-
-        for video in removed_videos:
-            self.__videos_instances.remove(video)
-
-        self.__recalculate_videos_guid()
-
-        return removed_videos
-
-    def add_playlist_path(self, new_playlist_path):
-
-        for playlist_path in self.__playlist_paths.values():
-
-            # if the path already exists
-            if new_playlist_path.get_path() == playlist_path.get_path():
-                return False
-
-            # if the path is already included in a recursive path
-            elif playlist_path.get_recursive() and new_playlist_path.get_path().startswith(playlist_path.get_path()):
-                return False
-
-        self.__playlist_paths[new_playlist_path.get_path()] = new_playlist_path
-
-        return True
-
-    def add_video(self, video):
-        video.set_guid(len(self.__videos_instances) + 1)
-        self.__videos_instances.append(video)
-        self.__active_videos_nb += 1
-
     def is_missing(self):
 
         if len(self.__playlist_paths) == 0:
@@ -210,6 +91,97 @@ class Playlist(object):
                 return False
 
         return True
+
+    def restart(self):
+        for video in self.__videos_instances:
+            video.set_position(VideoPosition._start)
+
+    def reorder(self, new_order_indexes):
+        """ Choices are "up" or "down" """
+
+        self.__videos_instances = [self.__videos_instances[i - 1] for i in new_order_indexes]
+
+        for i, video in enumerate(self.__videos_instances, 1):
+            video.set_guid(i)
+
+    def reorder_by_name(self):
+        """
+            It is not possible to create a dictionary only by name
+            because multiple episodes could have the same name.
+        """
+        videos_data = {"{}={}".format(video.get_name(), video.get_path()): video for video in self.__videos_instances}
+        self.__videos_instances = []
+        for key, value in sorted(videos_data.items()):
+            self.__videos_instances.append(value)
+
+        self.__recalculate_videos_guid()
+
+    def requires_discover(self, is_startup):
+
+        auto_discover = False
+        for playlist_path in self.get_playlist_paths():
+            if playlist_path.get_startup_discover():
+                auto_discover = True
+                break
+
+        if not is_startup or (is_startup and auto_discover):
+            return True
+
+        return False
+
+    def remove_videos(self, videos):
+        for video in videos:
+            self.__videos_instances.remove(video)
+
+        self.__recalculate_videos_guid()
+
+    def update_playlist_path(self, playlist_path, new_path):
+        self.__playlist_paths.pop(playlist_path.get_path())
+
+        new_playlist_path = PlaylistPath(new_path,
+                                         playlist_path.get_recursive(),
+                                         playlist_path.get_startup_discover())
+        self.__playlist_paths[new_playlist_path.get_path()] = new_playlist_path
+
+        return new_playlist_path
+
+    def remove_playlist_path(self, playlist_path, only_recursive_children=False):
+        """
+            only_recursive_children is used to remove the list of
+            videos when the user deactivates "Recursive".
+        """
+        remove_videos = self.get_videos_by_playlist_path(playlist_path, only_recursive_children)
+        for video in remove_videos:
+            self.__videos_instances.remove(video)
+
+        self.__recalculate_videos_guid()
+
+        if not only_recursive_children:
+            # The playlist path must be removed AFTER removing the videos.
+            self.__playlist_paths.pop(playlist_path.get_path())
+
+        return remove_videos
+
+    def add_playlist_path(self, new_playlist_path):
+
+        for playlist_path in self.__playlist_paths.values():
+
+            # if the path already exists
+            if new_playlist_path.get_path() == playlist_path.get_path():
+                return False
+
+            # if the path is already included in a recursive path
+            elif playlist_path.get_recursive() and new_playlist_path.get_path().startswith(playlist_path.get_path()):
+                return False
+
+        self.__playlist_paths[new_playlist_path.get_path()] = new_playlist_path
+
+        return True
+
+    def add_video(self, video):
+        video.set_guid(len(self.__videos_instances) + 1)
+        self.__videos_instances.append(video)
+        self.__active_videos_nb += 1
 
     def get_path_stats(self, playlist_path):
 
@@ -247,27 +219,6 @@ class Playlist(object):
 
     def get_guid(self):
         return self.__guid
-
-    def get_linked_videos(self, path):
-
-        try:
-            playlist_path = self.__playlist_paths[path]
-        except KeyError:
-            return []
-
-        recursive = playlist_path.get_recursive()
-        media_path = playlist_path.get_path()
-
-        linked_videos = []
-        for video in self.__videos_instances:
-
-            if recursive and video.get_path().startswith(media_path):
-                linked_videos.append(video)
-
-            elif os.path.dirname(video.get_path()) == media_path:
-                linked_videos.append(video)
-
-        return linked_videos
 
     def get_playlist_path(self, path):
         try:
@@ -411,6 +362,32 @@ class Playlist(object):
 
         return videos
 
+    def get_videos_by_playlist_path(self, playlist_path, only_recursive_children=False):
+        """
+            only_recursive_children is used to obtain the list of
+            videos when the user deactivates "Recursive".
+        """
+        path = playlist_path.get_path()
+        recursive = playlist_path.get_recursive()
+
+        if path not in self.__playlist_paths.keys():
+            return []
+
+        videos = []
+        for video in self.__videos_instances:
+            video_dirname = os.path.dirname(video.get_path())
+
+            if video_dirname.startswith(path):
+
+                if path == video_dirname:
+                    if not only_recursive_children:
+                        videos.append(video)
+
+                elif recursive:
+                    videos.append(video)
+
+        return videos
+
     def get_last_played_video_guid(self):
 
         if self.__current_video_hash == "":
@@ -531,3 +508,7 @@ class Playlist(object):
                    width=settings.IconSize.Big._width,
                    height=settings.IconSize.Big._height,
                    extension="png")
+
+    def __recalculate_videos_guid(self):
+        for i, video in enumerate(self.__videos_instances, 1):
+            video.set_guid(i)

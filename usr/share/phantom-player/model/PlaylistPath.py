@@ -20,6 +20,10 @@
 class PlaylistPath:
 
     def __init__(self, path, recursive, startup_discover):
+        """
+            The PlaylistPaths are stored in a dictionary with the path as key, so
+            once created, this attribute shall not be modified.
+        """
 
         while path.endswith('/'):  # Linux
             path = path[:-1]
@@ -39,9 +43,6 @@ class PlaylistPath:
 
     def get_startup_discover(self):
         return self.__startup_discover
-
-    def set_path(self, path):
-        self.__path = path
 
     def set_recursive(self, value):
         self.__recursive = value
