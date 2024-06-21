@@ -416,7 +416,7 @@ class PhantomPlayer:
                                                          add_video_glib_func=self.__liststore_videos_add_glib,
                                                          update_video_glib_func=self.__liststore_videos_update_glib,
                                                          remove_video_glib_func=self.__liststore_videos_remove_glib,
-                                                         reorder_videos_func=self.__liststore_videos_populate)
+                                                         reload_all_videos_func=self.__liststore_videos_populate)
 
         self.__checkbox_dark_theme.set_active(
             self.__configuration.get_bool_defval(GlobalConfigTags._dark_theme, True))
@@ -540,14 +540,15 @@ class PhantomPlayer:
             self.__application.quit()
 
     def __get_video_color(self, video):
-        if video.get_ignore():
+
+        if not video.exists():
+            return self.__fontcolor_error
+
+        elif video.get_ignore():
             return self.__fontcolor_warning
 
         elif video.get_is_new():
             return self.__fontcolor_success
-
-        elif not video.exists():
-            return self.__fontcolor_error
 
         return self.__fontcolor_default
 

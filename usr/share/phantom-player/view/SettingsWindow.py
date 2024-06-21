@@ -59,7 +59,7 @@ class SettingsWindow:
                  add_video_glib_func,
                  update_video_glib_func,
                  remove_video_glib_func,
-                 reorder_videos_func):
+                 reload_all_videos_func):
 
         self.__parent = parent
         self.__is_new_playlist = False
@@ -67,7 +67,7 @@ class SettingsWindow:
         self.__playlists = playlists
         self.__current_playlist = None
         self.__icon_path = None
-        self.__selected_path = None
+        self.__selected_playlist_path = None
         self.__edit_path_new_value = None
 
         self.__fontcolor_default = None
@@ -84,7 +84,7 @@ class SettingsWindow:
         self.__parent_add_video_glib_func = add_video_glib_func
         self.__parent_update_video_glib_func = update_video_glib_func
         self.__parent_remove_video_glib_func = remove_video_glib_func
-        self.__parent_reorder_videos_func = reorder_videos_func
+        self.__parent_reload_all_videos_func = reload_all_videos_func
 
         #
         # Get the GTK objects
@@ -496,18 +496,16 @@ class SettingsWindow:
 
     def __on_treeselection_path_changed(self, treeselection):
         if treeselection.count_selected_rows() <= 0:
-            selection = False
-            self.__selected_path = None
+            self.__selected_playlist_path = None
         else:
-            selection = True
             path = gtk_utils.treeselection_get_first_cell(treeselection, PathsListstoreColumns._path)
             if self.__current_playlist is None:
-                self.__selected_path = None
+                self.__selected_playlist_path = None
             else:
-                self.__selected_path = self.__current_playlist.get_playlist_path(path)
+                self.__selected_playlist_path = self.__current_playlist.get_playlist_path(path)
 
-        self.__button_path_remove.set_sensitive(selection)
-        self.__button_path_edit.set_sensitive(selection)
+        self.__button_path_remove.set_sensitive(self.__selected_playlist_path is not None)
+        self.__button_path_edit.set_sensitive(self.__selected_playlist_path is not None)
 
     def __on_button_path_close(self, *_):
         self.__liststore_videos_path.clear()  # to free memory
@@ -544,10 +542,10 @@ class SettingsWindow:
                                                           Texts.WindowSettings._add_path_videos_done]).start()
 
     def __on_button_path_remove_clicked(self, *_):
-        self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
+        self.__dialog_paths.set_title(Texts.WindowSettings._remove_path_title)
         self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
 
-        removed_videos = self.__current_playlist.remove_playlist_path(self.__selected_path)
+        removed_videos = self.__current_playlist.remove_playlist_path(self.__selected_playlist_path)
 
         if len(removed_videos) > 0:
             self.__dialog_paths.show()
@@ -556,7 +554,7 @@ class SettingsWindow:
                 self.__parent_remove_video_glib_func(self.__current_playlist, video)
 
         for row in self.__liststore_paths:
-            if row[PathsListstoreColumns._path] == self.__selected_path.get_path():
+            if row[PathsListstoreColumns._path] == self.__selected_playlist_path.get_path():
                 self.__liststore_paths.remove(row.iter)
                 break
 
@@ -568,9 +566,9 @@ class SettingsWindow:
 
         self.__liststore_edit_path.clear()
 
-        current_path = self.__selected_path.get_path()
+        current_path = self.__selected_playlist_path.get_path()
 
-        for video in self.__current_playlist.get_linked_videos(current_path):
+        for video in self.__current_playlist.get_videos_by_playlist_path(self.__selected_playlist_path):
 
             old_video_path = video.get_path()
 
@@ -602,14 +600,22 @@ class SettingsWindow:
 
         self.__liststore_edit_path.clear()  # To free memory
 
-        current_path = self.__selected_path.get_path()
+        old_path = self.__selected_playlist_path.get_path()
 
-        for video in self.__current_playlist.get_linked_videos(current_path):
-            new_path = video.get_path().replace(current_path, self.__edit_path_new_value, 1)
+        for video in self.__current_playlist.get_videos_by_playlist_path(self.__selected_playlist_path):
+            new_path = video.get_path().replace(old_path, self.__edit_path_new_value, 1)
             video.set_path(new_path)
+            self.__parent_update_video_glib_func(self.__current_playlist, video)
 
-        self.__selected_path.set_path(self.__edit_path_new_value)
-        self.__liststore_paths_update_or_add(self.__selected_path, current_path)
+        # Update the playlist dictionary
+        new_playlist_path = self.__current_playlist.update_playlist_path(self.__selected_playlist_path,
+                                                                         self.__edit_path_new_value)
+
+        # update the GUI
+        self.__liststore_paths_update_or_add(new_playlist_path, old_path)
+        # very important, or if the user re-edits the path, the selection-changed
+        # will not be called, and it will use the old value.
+        self.__treeselection_path.unselect_all()
 
         self.__dialog_edit.hide()
 
@@ -620,7 +626,7 @@ class SettingsWindow:
 
     def __on_button_reorder_vid_name_clicked(self, *_):
         self.__current_playlist.reorder_by_name()
-        self.__parent_reorder_videos_func(self.__current_playlist)
+        self.__parent_reload_all_videos_func(self.__current_playlist)
 
     def __on_cellrenderertoggle_recursive_toggled(self, _, row):
         """
@@ -628,6 +634,7 @@ class SettingsWindow:
         """
 
         path = self.__liststore_paths[row][PathsListstoreColumns._path]
+        print("SELECTING", path)
 
         current_state = self.__liststore_paths[row][PathsListstoreColumns._recursive]
         new_state = not current_state
@@ -637,13 +644,13 @@ class SettingsWindow:
             gtk_utils.dialog_info(self.__window_settings, Texts.WindowSettings._playlist_path_cant_recursive)
             return
 
-        playlist_path.set_recursive(new_state)
-
         if new_state:
+
             self.__dialog_paths.show()
             self.__freeze_all()
             self.__dialog_paths.set_title(Texts.WindowSettings._add_recursive_title)
             self.__label_dialog_paths.set_text(Texts.WindowSettings._adding_recursive_videos)
+            playlist_path.set_recursive(new_state) # Important to change the state BEFORE the discovery
             Thread(target=self.__thread_discover_paths, args=[playlist_path,
                                                               self.__label_dialog_paths,
                                                               Texts.WindowSettings._adding_recursive_videos_done]).start()
@@ -651,13 +658,17 @@ class SettingsWindow:
             self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
             self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
 
-            removed_videos = self.__current_playlist.remove_recursive_videos(playlist_path)
+            removed_videos = self.__current_playlist.remove_playlist_path(playlist_path, only_recursive_children=True)
             if len(removed_videos) > 0:
                 self.__dialog_paths.show()
                 for video in removed_videos:
                     self.__liststore_videos_path.append([video.get_path()])
+                    self.__parent_remove_video_glib_func(self.__current_playlist, video)
 
+            playlist_path.set_recursive(new_state)  # Important to change the state AFTER getting the list of videos
             self.__liststore_paths_update_or_add(playlist_path)
+
+
 
     def __on_cellrenderertoggle_r_startup_toggled(self, _, row):
         """
