@@ -125,6 +125,7 @@ class PhantomPlayer:
         self.__playlist_headers_are_loaded = False
 
         self.__current_media = CurrentMedia()
+        self.__selected_videos = []
         self.__is_full_screen = None
         self.__quit_requested = False
 
@@ -624,6 +625,8 @@ class PhantomPlayer:
 
     def __set_view(self, playlists_menu, only_player=False):
 
+        self.__selected_videos = []
+
         if self.__window_root_accel is not None:
             self.__window_root.remove_accel_group(self.__window_root_accel)
             self.__window_root_accel = None
@@ -892,18 +895,6 @@ class PhantomPlayer:
 
         GLib.idle_add(self.__liststore_videos_remove, video)
 
-    def __treeselection_videos_get_selected(self):
-
-        # Get the selected videos
-        model, treepaths = self.__treeselection_videos.get_selected_rows()
-        if not treepaths:
-            return []
-
-        selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
-                        treepaths]
-
-        return self.__current_media._playlist.get_videos_by_guid(selected_ids)
-
     def __on_thread_playlists_load(self):
 
         killed = False
@@ -1171,6 +1162,7 @@ class PhantomPlayer:
         """
         model, treepaths = self.__treeselection_videos.get_selected_rows()
         if not treepaths:
+            self.__selected_videos = []
             self.__menuitem_videos_restart_prg.set_sensitive(False)
             self.__menuitem_videos_fill_prg.set_sensitive(False)
             self.__menuitem_videos_ignore.set_sensitive(False)
@@ -1182,7 +1174,7 @@ class PhantomPlayer:
 
         selected_ids = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id] for treepath in
                         treepaths]
-        selected_videos = self.__current_media._playlist.get_videos_by_guid(selected_ids)
+        self.__selected_videos = self.__current_media._playlist.get_videos_by_guid(selected_ids)
 
         #
         # Enable/Disable the menuitems
@@ -1192,28 +1184,28 @@ class PhantomPlayer:
         # the progress buttons shall not be displayed.
         can_fill_progress = True
         can_reset_progress = True
-        if len(selected_videos) == 1:
+        if len(self.__selected_videos) == 1:
             if self.__current_media.get_video_guid() == selected_ids[0]:
                 can_fill_progress = False
                 can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
 
         self.__menuitem_videos_restart_prg.set_sensitive(
-            any(video.get_position() > VideoPosition._start for video in selected_videos) and can_reset_progress)
+            any(video.get_position() > VideoPosition._start for video in self.__selected_videos) and can_reset_progress)
         self.__menuitem_videos_fill_prg.set_sensitive(
-            any(video.get_position() < VideoPosition._end for video in selected_videos) and can_fill_progress)
-        self.__menuitem_videos_ignore.set_sensitive(any(not video.get_ignore() for video in selected_videos))
-        self.__menuitem_videos_unignore.set_sensitive(any(video.get_ignore() for video in selected_videos))
+            any(video.get_position() < VideoPosition._end for video in self.__selected_videos) and can_fill_progress)
+        self.__menuitem_videos_ignore.set_sensitive(any(not video.get_ignore() for video in self.__selected_videos))
+        self.__menuitem_videos_unignore.set_sensitive(any(video.get_ignore() for video in self.__selected_videos))
 
         rename_and_open_video = False
-        if len(selected_videos) == 1:
-            video = selected_videos[0]
+        if len(self.__selected_videos) == 1:
+            video = self.__selected_videos[0]
             if os.path.exists(video.get_path()):
                 rename_and_open_video = True
 
         self.__menuitem_videos_rename.set_sensitive(rename_and_open_video)
         self.__menuitem_videos_open.set_sensitive(rename_and_open_video)
 
-        self.__menuitem_videos_delete.set_sensitive(not any(video.exists() for video in selected_videos))
+        self.__menuitem_videos_delete.set_sensitive(not any(video.exists() for video in self.__selected_videos))
 
     def __on_treeview_videos_header_clicked(self, _widget, event):
         """
@@ -1331,8 +1323,7 @@ class PhantomPlayer:
 
     def __on_menuitem_videos_set_progress(self, _, progress):
 
-        videos = self.__treeselection_videos_get_selected()
-        if not videos:
+        if not self.__selected_videos:
             return
 
         id_to_skip = None
@@ -1341,7 +1332,7 @@ class PhantomPlayer:
         else:
             id_to_skip = self.__current_media.get_video_guid()
 
-        for video in videos:
+        for video in self.__selected_videos:
             if video.get_guid() == id_to_skip:
                 continue
 
@@ -1358,8 +1349,11 @@ class PhantomPlayer:
 
     def __on_menuitem_videos_ignore_changed(self, _, ignore):
 
+        if not self.__selected_videos:
+            return
+
         rhidden = self.__checkbox_video_rhidden.get_active()
-        for video in self.__treeselection_videos_get_selected():
+        for video in self.__selected_videos:
             video.set_ignore(ignore)
             if rhidden:
                 self.__liststore_videos_update(video, progress=False, path=False)
@@ -1370,7 +1364,11 @@ class PhantomPlayer:
         self.__on_treeselection_videos_changed()  # To reload the shortcuts
 
     def __on_menuitem_videos_delete(self, *_):
-        valid_videos = [video for video in self.__treeselection_videos_get_selected() if not video.exists()]
+
+        if not self.__selected_videos:
+            return
+
+        valid_videos = [video for video in self.__selected_videos if not video.exists()]
         self.__current_media._playlist.remove_videos(valid_videos)
         for video in valid_videos:
             self.__liststore_videos_remove(video)
@@ -1378,20 +1376,17 @@ class PhantomPlayer:
         self.__on_treeselection_videos_changed()  # To reload the shortcuts
 
     def __on_menuitem_videos_rename_single(self, *_):
-        selected_videos = self.__treeselection_videos_get_selected()
 
-        if len(selected_videos) != 1:
+        if len(self.__selected_videos) != 1:
             return
 
-        self.__dialog_rename_single.show(selected_videos[0], self.__current_media._playlist)
+        self.__dialog_rename_single.show(self.__selected_videos[0], self.__current_media._playlist)
 
     def __on_menuitem_videos_open(self, *_):
 
-        selected_videos = self.__treeselection_videos_get_selected()
-
-        if len(selected_videos) != 1:
+        if len(self.__selected_videos) != 1:
             return
 
-        dir_path = os.path.dirname(selected_videos[0].get_path())
+        dir_path = os.path.dirname(self.__selected_videos[0].get_path())
         if os.path.exists(dir_path):
             open_directory(dir_path)
