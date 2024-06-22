@@ -104,6 +104,43 @@ class Playlist(object):
         for i, video in enumerate(self.__videos_instances, 1):
             video.set_guid(i)
 
+    def reorder_down(self, videos):
+        """
+            Move to the first indexes of the list.
+        """
+        if len(self.__videos_instances) == 0:
+            return
+
+        # already in the last position
+        elif videos[0].get_guid() <= self.__videos_instances[0].get_guid():
+            return
+
+        for video in videos:
+            index = self.__videos_instances.index(video)
+            self.__videos_instances.remove(video)
+            self.__videos_instances.insert(index - 1, video)
+
+        self.__recalculate_videos_guid()
+
+    def reorder_up(self, videos):
+        """
+            Move to the last indexes of the list.
+        """
+
+        if len(self.__videos_instances) == 0:
+            return
+
+        # already in the last position
+        elif videos[-1].get_guid() >= self.__videos_instances[-1].get_guid():
+            return
+
+        for video in reversed(videos):
+            index = self.__videos_instances.index(video)
+            self.__videos_instances.remove(video)
+            self.__videos_instances.insert(index + 1, video)
+
+        self.__recalculate_videos_guid()
+
     def reorder_by_name(self):
         """
             It is not possible to create a dictionary only by name
@@ -338,13 +375,6 @@ class Playlist(object):
 
         return None
 
-    def get_video_by_guid(self, video_guid):
-        for video in self.__videos_instances:
-            if video.get_guid() == video_guid:
-                return video
-
-        return None
-
     def get_video_by_hash(self, video_hash):
         for video in self.__videos_instances:
             if video.get_hash() == video_hash:
@@ -352,11 +382,11 @@ class Playlist(object):
 
         return None
 
-    def get_videos_by_guid(self, videos_guid):
+    def get_videos_by_hash(self, videos_hashes):
         videos = []
 
-        for video_guid in videos_guid:
-            video = self.get_video_by_guid(video_guid)
+        for video_hash in videos_hashes:
+            video = self.get_video_by_hash(video_hash)
             if video is not None:
                 videos.append(video)
 
@@ -388,14 +418,14 @@ class Playlist(object):
 
         return videos
 
-    def get_last_played_video_guid(self):
+    def get_last_played_video(self):
 
         if self.__current_video_hash == "":
             return None
 
         for video in self.__videos_instances:
             if video.get_hash() == self.__current_video_hash:
-                return video.get_guid()
+                return video
 
         return None
 
