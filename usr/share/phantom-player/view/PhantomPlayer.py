@@ -18,9 +18,7 @@
 
 """
     Bugs:
-        + When selecting multiple videos to re-order with drag-and-drop, only the fist one is moved.
         + Fix dialog, paths, display how may valid videos, how many missing videos in the liststore.
-        + Fix: right click of videos header
 
     To do:
         + Display the duplicated (excluded videos) at startup.
@@ -36,6 +34,11 @@
           remove it.
             > I did not find how to properly check if an accel group belongs to a window.
             > calling window.remove_accel_group(accel_group) with a non-attached accel group throws critical warnings.
+
+    Extra:
+        + It is not advisable to have "drag-drop" in the videos liststore:
+            > Sometimes the videos may be moved by accident.
+            > It doesn't seem to work well when having a multiple selection. Is it really allowed by GTK3?
 """
 
 import os
@@ -257,7 +260,6 @@ class PhantomPlayer:
 
         self.__checkbox_video_rhidden.connect('toggled', self.__on_checkbox_video_rhidden_toggled)
 
-        self.__treeview_videos.connect('drag-end', self.__on_treeview_videos_drag_end)
         self.__treeview_videos.connect("row-activated", self.__on_treeview_videos_row_activated)
         self.__treeview_videos.connect('button-press-event', self.__on_treeview_videos_press_event)
         self.__treeselection_videos.connect('changed', self.__on_treeselection_videos_changed)
@@ -1157,19 +1159,6 @@ class PhantomPlayer:
             return
 
         self.__playlist_open(playlist)
-
-    def __on_treeview_videos_drag_end(self, *_):
-
-        # Get the new order
-        new_order = [row[VideosListstoreColumnsIndex._id] for row in self.__liststore_videos]
-
-        # Update the treeview
-        for i, row in enumerate(self.__liststore_videos, 1):
-            row[VideosListstoreColumnsIndex._id] = i
-
-        # Update the CSV file
-        self.__current_media._playlist.reorder(new_order)
-        playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
     def __on_treeview_videos_row_activated(self, _treeview, treepath, _column):
         video_guid = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._id]
