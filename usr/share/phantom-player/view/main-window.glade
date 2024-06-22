@@ -115,7 +115,6 @@ Author: Rafael Senties Martinelli
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="model">liststore_videos</property>
-                <property name="reorderable">True</property>
                 <property name="search-column">1</property>
                 <child internal-child="selection">
                   <object class="GtkTreeSelection" id="treeselection_videos">
