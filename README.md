@@ -86,13 +86,15 @@ about the controls & behavior.
   + `back` to return to the playlists' menu.
   + `ctrl+s` open the settings menu.
   + `ctrl+h` hide/show missing videos.
-  + `ctrl+v` Fill progress (mark as viewed).
-  + `ctrl+u` Reset progress (mark as un-viewed).
-  + `ctrl+i` ignore videos.
-  + `ctrl+j` un-ignore videos.
-  + `ctrl+r` rename videos.
-  + `ctrl+o` open the video directory.
-  + `ctrl+d` delete the video.
+  + `ctrl+v` Fill the progress of the selected (mark as viewed).
+  + `ctrl+u` Reset the progress of the selected (mark as un-viewed).
+  + `ctrl+i` ignore the selected videos.
+  + `ctrl+j` un-ignore the selected videos.
+  + `ctrl+r` rename the selected video.
+  + `ctrl+o` open the directory of the selected video.
+  + `ctrl+d` delete the selected video.
+  + `ctrl+l` move the selected videos one place down.
+  + `ctrl+t` move the selected videos one place up.
 
 #### Media Player
 + Controls:
