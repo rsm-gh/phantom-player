@@ -18,6 +18,7 @@
 
 
 import gi
+
 gi.require_version('Gtk', '3.0')
 gi.require_version('PangoCairo', '1.0')
 from gi.repository import Gtk, PangoCairo, GObject
@@ -28,51 +29,51 @@ from .constants import FONT_COLOR, GENERAL_FONT_DESCRIPTION
 
 
 def FORMAT_milliseconds(milliseconds):
-    time_string=str(timedelta(milliseconds=milliseconds)).split('.')[0]
+    time_string = str(timedelta(milliseconds=milliseconds)).split('.')[0]
 
     # remove the hours if they are not necessary.
     try:
-        if int(time_string.split(':',1)[0]) == 0:  
-            time_string=time_string.split(':',1)[1]
+        if int(time_string.split(':', 1)[0]) == 0:
+            time_string = time_string.split(':', 1)[1]
     except:
         pass
-    
+
     return time_string
+
 
 class CellRendererTrackTime(Gtk.CellRenderer):
     """ CellRenderer to display milliseconds to time, ex: 234234 -> 03:54 """
-    
+
     __gproperties__ = {
-        'milliseconds': (    'glong', # type
-                            "integer prop", # nick
-                            "A property that contains a number in milliseconds", # blurb
-                            0, # min
-                            9223372036854775807, # max
-                            0, # default
-                            GObject.PARAM_READWRITE # flags
-                            ),
+        'milliseconds': ('glong',  # type
+                         "integer prop",  # nick
+                         "A property that contains a number in milliseconds",  # blurb
+                         0,  # min
+                         9223372036854775807,  # max
+                         0,  # default
+                         GObject.PARAM_READWRITE  # flags
+                         ),
     }
 
     def __init__(self):
         super().__init__()
         self.milliseconds = 0
-        
+
     def activate(self, event, widget, path, background_area, cell_area, flags):
         print(flags)
-        
+
     def do_set_property(self, pspec, value):
         setattr(self, pspec.name, value)
 
     def do_get_property(self, pspec):
         return getattr(self, pspec.name)
-        
+
     #def do_get_size(self, widget, cell_area):
-        #return (0, 0, cell_area.width, cell_area.height)
-        #return (0, 0, self.milliseconds.get_width(), self.milliseconds.get_height())
+    #return (0, 0, cell_area.width, cell_area.height)
+    #return (0, 0, self.milliseconds.get_width(), self.milliseconds.get_height())
 
     def do_render(self, cr, widget, background_area, cell_area, flags):
-        
-        cr.set_source_rgb (FONT_COLOR[0], FONT_COLOR[1], FONT_COLOR[2])
+        cr.set_source_rgb(FONT_COLOR[0], FONT_COLOR[1], FONT_COLOR[2])
         layout = PangoCairo.create_layout(cr)
         layout.set_font_description(GENERAL_FONT_DESCRIPTION)
         layout.set_text(FORMAT_milliseconds(self.milliseconds), -1)
@@ -82,5 +83,5 @@ class CellRendererTrackTime(Gtk.CellRenderer):
         PangoCairo.show_layout(cr, layout)
         cr.restore()
 
-GObject.type_register(CellRendererTrackTime)
 
+GObject.type_register(CellRendererTrackTime)

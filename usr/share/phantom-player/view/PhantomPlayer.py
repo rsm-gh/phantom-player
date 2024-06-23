@@ -17,13 +17,10 @@
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 """
-    Bugs:
-        + Fix dialog, paths, display how may valid videos, how many missing videos in the liststore.
-
     To do:
         + Display the duplicated (excluded videos) at startup.
         + Finish the option "end at"
-        + Improve user messages. Example: if path not added, or video not added, explain why.
+        + Improve user messages. Example: if a path is not added, or video not added, explain why.
         + Create the "delete video" option (instead of clean)
         + Create a dialog to rename multiple videos.
         + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
@@ -359,16 +356,16 @@ class PhantomPlayer:
                                                       Gtk.AccelFlags.VISIBLE)
 
         self.__menuitem_videos_move_up.add_accelerator('activate',
-                                                      self.__accelgroup_videos,
-                                                      ord("t"),
-                                                      Gdk.ModifierType.CONTROL_MASK,
-                                                      Gtk.AccelFlags.VISIBLE)
+                                                       self.__accelgroup_videos,
+                                                       ord("t"),
+                                                       Gdk.ModifierType.CONTROL_MASK,
+                                                       Gtk.AccelFlags.VISIBLE)
 
         self.__menuitem_videos_move_down.add_accelerator('activate',
-                                                      self.__accelgroup_videos,
-                                                      ord("l"),
-                                                      Gdk.ModifierType.CONTROL_MASK,
-                                                      Gtk.AccelFlags.VISIBLE)
+                                                         self.__accelgroup_videos,
+                                                         ord("l"),
+                                                         Gdk.ModifierType.CONTROL_MASK,
+                                                         Gtk.AccelFlags.VISIBLE)
 
         self.__menuitem_videos_open.add_accelerator('activate',
                                                     self.__accelgroup_videos,
@@ -1106,6 +1103,7 @@ class PhantomPlayer:
                     return True
 
             return False
+
     def __on_window_root_configure_event(self, *_):
 
         if Gdk.WindowState.FULLSCREEN & self.__window_root.get_window().get_state():

@@ -177,7 +177,7 @@ class SettingsWindow:
         self.__button_path_close.connect('clicked', self.__on_button_path_close)
 
         #
-        # Remove any image left by a new playlist instead of crash
+        # Remove any image left by a new playlist
         #
         if not os.path.exists(Paths._SERIES_DIR):
             os.makedirs(Paths._SERIES_DIR)
@@ -650,7 +650,7 @@ class SettingsWindow:
             self.__freeze_all()
             self.__dialog_paths.set_title(Texts.WindowSettings._add_recursive_title)
             self.__label_dialog_paths.set_text(Texts.WindowSettings._adding_recursive_videos)
-            playlist_path.set_recursive(new_state) # Important to change the state BEFORE the discovery
+            playlist_path.set_recursive(new_state)  # Important to change the state BEFORE the discovery
             Thread(target=self.__thread_discover_paths, args=[playlist_path,
                                                               self.__label_dialog_paths,
                                                               Texts.WindowSettings._adding_recursive_videos_done]).start()
@@ -667,8 +667,6 @@ class SettingsWindow:
 
             playlist_path.set_recursive(new_state)  # Important to change the state AFTER getting the list of videos
             self.__liststore_paths_update_or_add(playlist_path)
-
-
 
     def __on_cellrenderertoggle_r_startup_toggled(self, _, row):
         """

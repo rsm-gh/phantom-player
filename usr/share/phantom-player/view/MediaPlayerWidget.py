@@ -294,11 +294,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__volumebutton.connect('value_changed', self.__on_volumebutton_changed)
         self.__buttons_box.pack_start(self.__volumebutton, expand=False, fill=False, padding=3)
 
-        # This is being called when the button is pressed, not the scale...
-        # It important to detect the long press...
-        self.__volumebutton.connect('button-press-event', self.__on_scale_volume_press)
-        self.__volumebutton.connect('button-release-event', self.__on_scale_volume_release)
-
         self.__menubutton_fullscreen = self.__add_menu_button(ThemeButtons._fullscreen,
                                                               Texts.MediaPlayer.Tooltip._fullscreen,
                                                               self.__on_menubutton_fullscreen_clicked)
@@ -1050,14 +1045,6 @@ class MediaPlayerWidget(Gtk.VBox):
             return True
 
         return False
-
-    def __on_scale_volume_press(self, *_):
-        print("__on_scale_volume_press")
-        pass
-
-    def __on_scale_volume_release(self, *_):
-        print("__on_scale_volume_release")
-        pass
 
     def __on_scale_progress_press(self, *_):
 

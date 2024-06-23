@@ -39,7 +39,7 @@ def open_directory(path):
                      'nnn',
                      'krusader']
 
-    # Check if a file manager exist in the system (to avoid un-necessary commands)
+    # Check if a file manager exists in the system (to avoid unnecessary commands)
     for file_manager in file_managers:
         if os.path.exists("/usr/bin/{}".format(file_manager)):
             file_managers = [file_manager]
