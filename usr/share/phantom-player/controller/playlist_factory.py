@@ -92,14 +92,14 @@ def save(playlist):
         data += "{}={}\n".format(attr_name, value)
 
     #
-    # Add the sources data
+    # Add the source's data
     #
     data += "\n\n{}\n\n".format(SaveParams.Section._sources)
     for playlist_path in playlist.get_playlist_paths():
         data += __join_line_attrs(playlist_path.get_path(), playlist_path, _PLAYLIST_PATH_ATTR)
 
     #
-    # Add the videos data
+    # Add the video's data
     #
     data += "\n\n{}\n\n".format(SaveParams.Section._videos)
     for video in playlist.get_videos():
@@ -297,7 +297,7 @@ def __load_videos(playlist, file_lines):
             continue
 
         # This test was removed to improve the time when starting the software.
-        # Normally this filter it was already applied when importing the videos
+        # Normally, this filter was already applied when importing the videos
         # for the first time.
         #
         # elif os.path.exists(path) and not __file_is_video(path, True):
