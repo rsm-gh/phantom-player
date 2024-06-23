@@ -24,6 +24,7 @@ _PROGRESS_BAR_HEIGHT = 4
 
 from settings import IconSize
 
+
 class CellRendererPlaylist(Gtk.CellRenderer):
     """ CellRenderer to display the Playlist images """
 

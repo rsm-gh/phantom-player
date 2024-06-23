@@ -20,6 +20,7 @@
 _IMAGE_FORMATS = ("jpeg", "jpg", "png", "webp", "svg")
 _VIDEO_HASH_SIZE = 64
 
+
 class IconSize:
     class Small:
         _width = 90

@@ -90,7 +90,7 @@ class DialogRenameSingle:
             return
 
         elif new_name == self.__video.get_name() and not modify_hdrive:
-            # If the file name is the same, but different in the hdrive (the user just changed the option)
+            # If the file name is the same, but different in the hdrive (the user just changed the option).
             # the code should not quit here.
             self.__dialog_rename.hide()
             return
