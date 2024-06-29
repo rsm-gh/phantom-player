@@ -119,7 +119,8 @@ class Window(Gtk.Window):
 
         default_pixbuf = Pixbuf.new_from_file_at_scale("/home/rsm/.local/share/phantom-player/Breaking Bad.png",
                                                        IconSize.Big._width,
-                                                       IconSize.Big._height)
+                                                       IconSize.Big._height,
+                                                       True)
 
         cellrenderer_playlist.set_icon_size(IconSize.Big._width, IconSize.Big._height)
 
