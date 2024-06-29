@@ -203,6 +203,8 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__was_playing_before_press = False
         self.__video_status_before_press = VideoScanStatus._none
         self.__video_change_status = VideoScanStatus._none  # Patch 001
+        self.__menuitem_subtitles_activated = None
+        self.__menuitem_subtitles_file = None
 
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
         self.__widgets_shown = WidgetsShown._toolbox
@@ -489,6 +491,8 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__video_duration = 0
         self.__video_ended = False
         self.__video_is_loaded = False
+        self.__menuitem_subtitles_activated = None
+        self.__menuitem_subtitles_file = None
 
         GLib.idle_add(self.__buttons_box.set_sensitive, False),
         GLib.idle_add(self.__menubutton_settings.set_sensitive, False)
@@ -612,6 +616,7 @@ class MediaPlayerWidget(Gtk.VBox):
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
             default_item.set_active(True)
+            self.__menuitem_subtitles_activated = default_item
         default_item.connect('activate', self.__on_menuitem_track_activate, Track.Type._subtitles, -1)
         submenu.append(default_item)
 
@@ -630,16 +635,16 @@ class MediaPlayerWidget(Gtk.VBox):
             item.join_group(default_item)
             if selected_track == track[0]:
                 item.set_active(True)
+                self.__menuitem_subtitles_activated = item
             item.connect('activate', self.__on_menuitem_track_activate, Track.Type._subtitles, track[0])
             submenu.append(item)
 
-        item = Gtk.RadioMenuItem(label="From file...")
-        item.join_group(default_item)
-        item.connect('activate', self.__on_menuitem_file_subs_activate)
-        submenu.append(item)
+        self.__menuitem_subtitles_file = Gtk.RadioMenuItem(label="From file...")
+        self.__menuitem_subtitles_file.join_group(default_item)
+        self.__menuitem_subtitles_file.connect('activate', self.__on_menuitem_file_subs_activate)
+        submenu.append(self.__menuitem_subtitles_file)
 
         menu.show_all()
-
         self.__menubutton_settings.set_sensitive(True)
         self.__delayed_media_data.set_video_settings_loaded(True)
 
@@ -1018,7 +1023,11 @@ class MediaPlayerWidget(Gtk.VBox):
     def __on_volumebutton_changed(self, _, value):
         self.__set_volume(int(value * 100), display_label=False, update_vbutton=False)
 
-    def __on_menuitem_track_activate(self, _, track_type, track):
+    def __on_menuitem_track_activate(self, menuitem, track_type, track):
+
+        # To filter duplicated signals, only listen to the active one.
+        if not menuitem.get_active():
+            return
 
         if track_type == Track.Type._audio:
             self.__vlc_widget.player.audio_set_track(track)
@@ -1027,11 +1036,16 @@ class MediaPlayerWidget(Gtk.VBox):
         elif track_type == Track.Type._subtitles:
             self.__vlc_widget.player.video_set_spu(track)
             self.__delayed_media_data.set_sub_track(track)
+            self.__menuitem_subtitles_activated = menuitem
 
         elif track_type == Track.Type._video:
             self.__vlc_widget.player.video_set_track(track)
 
-    def __on_menuitem_file_subs_activate(self, *_):
+    def __on_menuitem_file_subs_activate(self, menuitem, *_):
+
+        # Filter to only when the menuitem was activated.
+        if not menuitem.get_active():
+            return
 
         file_filter = Gtk.FileFilter()
         file_filter.set_name('*.srt')
@@ -1040,11 +1054,13 @@ class MediaPlayerWidget(Gtk.VBox):
         path = gtk_utils.dialog_select_file(parent=self.__window_root,
                                             file_filter=file_filter)
 
-        if path is not None:
+        if path is None:
+            # The action as canceled so, reselect the previous item
+            if self.__menuitem_subtitles_activated != self.__menuitem_subtitles_file:
+                self.__menuitem_subtitles_activated.set_active(True)
+        else:
             self.__vlc_widget.player.video_set_subtitle_file(path)
-            return True
-
-        return False
+            self.__menuitem_subtitles_activated = self.__menuitem_subtitles_file
 
     def __on_scale_progress_press(self, *_):
 
