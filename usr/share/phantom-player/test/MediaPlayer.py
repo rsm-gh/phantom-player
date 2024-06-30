@@ -30,7 +30,7 @@
         + Careful when using `player.pause()`, because if the player is already paused, it may (randomly) start playing.
 
         + The widget uses `set_position()` instead of `set_time()` because:
-            + The VLC API says that `time` is not supported for all the formats. This makes the code more complex, but it works good.
+            + The VLC API says that `time` is not supported for all the formats. This makes the code more complex, but it works fine.
             + Saving/Applying the position is pretty easy.
             + `start_at`, `end_at`, and `end_position` are more complex because they depend on the media duration:
                 + `start_at` and `end_at` must be saved in `time` format, because it is an input given by the user and, it must be a constant across all media.

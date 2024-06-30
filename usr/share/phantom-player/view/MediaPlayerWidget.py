@@ -259,7 +259,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__scale_progress.set_hexpand(True)
         self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
         self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
-        self.__scale_progress.connect('value_changed', self.__on_scale_progress_changed)
+        self.__scale_progress.connect('value-changed', self.__on_scale_progress_changed)
         self.__buttons_box.pack_start(child=self.__scale_progress, expand=True, fill=True, padding=3)
 
         self.__label_progress = Gtk.Label()
@@ -293,7 +293,8 @@ class MediaPlayerWidget(Gtk.VBox):
 
         self.__volumebutton = Gtk.VolumeButton()
         self.__volumebutton.set_icons(ThemeButtons._volume)
-        self.__volumebutton.connect('value_changed', self.__on_volumebutton_changed)
+        self.__volumebutton.connect('value-changed', self.__on_volumebutton_changed)
+
         self.__buttons_box.pack_start(self.__volumebutton, expand=False, fill=False, padding=3)
 
         self.__menubutton_fullscreen = self.__add_menu_button(ThemeButtons._fullscreen,
@@ -1102,6 +1103,7 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__video_change_status = self.__video_status_before_press
 
     def __on_scale_progress_changed(self, widget, *_):
+
         if self.__media is None:
             return
 
