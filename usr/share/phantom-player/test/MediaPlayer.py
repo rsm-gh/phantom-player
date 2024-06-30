@@ -49,7 +49,6 @@
         + When the media changes, display a label. I think it can be done with the VLC API.
         + When using the +/- signs of the volume button, only change of 1.
         + `player.set_track()` returns a status. It would be good to read the status and display a message in case of error.
-        + Is it possible to remove the thread `on_thread_player_activity` and replaced by VLC signals?
 """
 
 import os
