@@ -31,12 +31,15 @@ class VideoProgress:
 
 class Video(object):
 
-    def __init__(self, path, name="", vhash=""):
+    def __init__(self, vhash, path, name=""):
+
+        if vhash == "":
+            raise ValueError("Can not add a video with an empty hash.")
 
         self.__path = path
         self.__name = name
         self.__extension = ""
-        self.__guid = -1
+        self.__number = -1
         self.__is_new = False
         self.__position = VideoPosition._start
         self.__ignore = False
@@ -57,6 +60,9 @@ class Video(object):
         elif self.__name == "":
             self.__name = path_basename
 
+    def exists(self):
+        return os.path.exists(self.__path)
+
     def get_extension(self):
         return self.__extension
 
@@ -66,8 +72,8 @@ class Video(object):
     def get_full_name(self):
         return self.__name + "." + self.__extension
 
-    def get_guid(self):
-        return self.__guid
+    def get_number(self):
+        return self.__number
 
     def get_ignore(self):
         return self.__ignore
@@ -103,12 +109,6 @@ class Video(object):
         if self.__name == "":
             self.__name = os.path.basename(path)
 
-    def exists(self):
-        return os.path.exists(self.__path)
-
-    def set_hash(self, value):
-        self.__hash = value
-
     def set_is_new(self, value):
         self.__is_new = value
 
@@ -121,11 +121,11 @@ class Video(object):
     def set_ignore(self, bool_value):
         self.__ignore = bool_value
 
-    def set_guid(self, integer):
+    def set_number(self, integer):
         if int(integer) < 0:
-            print("video id error " + self.__name)
+            raise ValueError("video number error " + self.__name)
         else:
-            self.__guid = int(integer)
+            self.__number = int(integer)
 
     def set_name(self, name):
         self.__name = name
