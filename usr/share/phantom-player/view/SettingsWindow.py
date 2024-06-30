@@ -634,8 +634,6 @@ class SettingsWindow:
         """
 
         path = self.__liststore_paths[row][PathsListstoreColumns._path]
-        print("SELECTING", path)
-
         current_state = self.__liststore_paths[row][PathsListstoreColumns._recursive]
         new_state = not current_state
         playlist_path = self.__current_playlist.get_playlist_path(path)
