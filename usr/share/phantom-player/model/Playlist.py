@@ -21,6 +21,7 @@ import random
 
 import settings
 import Paths
+from copy import copy
 from model.Video import VideoPosition
 from model.PlaylistPath import PlaylistPath
 from system_utils import format_img
@@ -54,7 +55,7 @@ class Playlist(object):
 
     def __init__(self):
 
-        self.__guid = -1
+        self.__number = -1
         self.__name = ""
         self.__playlist_paths = {}
         self.__random = False
@@ -66,7 +67,8 @@ class Playlist(object):
         self.__current_video_hash = ""
 
         # Variables
-        self.__videos_instances = []
+        self.__videos_list = []
+        self.__videos_dict = {}
         self.__active_videos_nb = 0
 
     def is_missing(self):
@@ -93,65 +95,65 @@ class Playlist(object):
         return True
 
     def restart(self):
-        for video in self.__videos_instances:
+        for video in self.__videos_list:
             video.set_position(VideoPosition._start)
 
     def reorder(self, new_order_indexes):
         """ Choices are "up" or "down" """
 
-        self.__videos_instances = [self.__videos_instances[i - 1] for i in new_order_indexes]
+        self.__videos_list = [self.__videos_list[i - 1] for i in new_order_indexes]
 
-        for i, video in enumerate(self.__videos_instances, 1):
-            video.set_guid(i)
+        for i, video in enumerate(self.__videos_list, 1):
+            video.set_number(i)
 
     def reorder_down(self, videos):
         """
             Move to the first indexes of the list.
         """
-        if len(self.__videos_instances) == 0:
+        if len(self.__videos_list) == 0 or len(videos) == 0:
             return
 
         # already in the last position
-        elif videos[0].get_guid() <= self.__videos_instances[0].get_guid():
+        elif videos[0].get_number() <= self.__videos_list[0].get_number():
             return
 
         for video in videos:
-            index = self.__videos_instances.index(video)
-            self.__videos_instances.remove(video)
-            self.__videos_instances.insert(index - 1, video)
+            index = self.__videos_list.index(video)
+            self.__videos_list.remove(video)
+            self.__videos_list.insert(index - 1, video)
 
-        self.__recalculate_videos_guid()
+        self.__recalculate_videos_nb()
 
     def reorder_up(self, videos):
         """
             Move to the last indexes of the list.
         """
 
-        if len(self.__videos_instances) == 0:
+        if len(self.__videos_list) == 0 or len(videos) == 0:
             return
 
         # already in the last position
-        elif videos[-1].get_guid() >= self.__videos_instances[-1].get_guid():
+        elif videos[-1].get_number() >= self.__videos_list[-1].get_number():
             return
 
         for video in reversed(videos):
-            index = self.__videos_instances.index(video)
-            self.__videos_instances.remove(video)
-            self.__videos_instances.insert(index + 1, video)
+            index = self.__videos_list.index(video)
+            self.__videos_list.remove(video)
+            self.__videos_list.insert(index + 1, video)
 
-        self.__recalculate_videos_guid()
+        self.__recalculate_videos_nb()
 
     def reorder_by_name(self):
         """
             It is not possible to create a dictionary only by name
             because multiple episodes could have the same name.
         """
-        videos_data = {"{}={}".format(video.get_name(), video.get_path()): video for video in self.__videos_instances}
-        self.__videos_instances = []
+        videos_data = {"{}={}".format(video.get_name(), video.get_path()): video for video in self.__videos_list}
+        self.__videos_list = []
         for key, value in sorted(videos_data.items()):
-            self.__videos_instances.append(value)
+            self.__videos_list.append(value)
 
-        self.__recalculate_videos_guid()
+        self.__recalculate_videos_nb()
 
     def requires_discover(self, is_startup):
 
@@ -168,9 +170,10 @@ class Playlist(object):
 
     def remove_videos(self, videos):
         for video in videos:
-            self.__videos_instances.remove(video)
+            self.__videos_list.remove(video)
+            del self.__videos_dict[video.get_hash()]
 
-        self.__recalculate_videos_guid()
+        self.__recalculate_videos_nb()
 
     def update_playlist_path(self, playlist_path, new_path):
         self.__playlist_paths.pop(playlist_path.get_path())
@@ -189,9 +192,10 @@ class Playlist(object):
         """
         remove_videos = self.get_videos_by_playlist_path(playlist_path, only_recursive_children)
         for video in remove_videos:
-            self.__videos_instances.remove(video)
+            self.__videos_list.remove(video)
+            del self.__videos_dict[video.get_hash()]
 
-        self.__recalculate_videos_guid()
+        self.__recalculate_videos_nb()
 
         if not only_recursive_children:
             # The playlist path must be removed AFTER removing the videos.
@@ -216,8 +220,13 @@ class Playlist(object):
         return True
 
     def add_video(self, video):
-        video.set_guid(len(self.__videos_instances) + 1)
-        self.__videos_instances.append(video)
+
+        if video.get_hash() in self.__videos_dict:
+            raise ValueError("Attempting to add a duplicated video hash "+video.get_hash())
+
+        video.set_number(len(self.__videos_list) + 1)
+        self.__videos_list.append(video)
+        self.__videos_dict[video.get_hash()] = video
         self.__active_videos_nb += 1
 
     def get_path_stats(self, playlist_path):
@@ -229,7 +238,7 @@ class Playlist(object):
         path = playlist_path.get_path()
         recursive = playlist_path.get_recursive()
 
-        for video in self.__videos_instances:
+        for video in self.__videos_list:
 
             video_dirname = os.path.dirname(video.get_path())
 
@@ -255,7 +264,7 @@ class Playlist(object):
         return self.__load_status
 
     def get_guid(self):
-        return self.__guid
+        return self.__number
 
     def get_playlist_path(self, path):
         try:
@@ -301,7 +310,7 @@ class Playlist(object):
 
         total_of_videos = 0
         total_percent = 0
-        for video in self.__videos_instances:
+        for video in self.__videos_list:
             if not video.get_ignore():
                 total_percent += video.get_progress()
                 total_of_videos += 1
@@ -321,7 +330,7 @@ class Playlist(object):
 
         after_found = False
 
-        for video in self.__videos_instances:
+        for video in self.__videos_list:
 
             if after is not None:
                 if video == after:
@@ -343,7 +352,7 @@ class Playlist(object):
     def get_next_random_video(self):
 
         videos = []
-        for video in self.__videos_instances:
+        for video in self.__videos_list:
             if not video.get_played() and video.exists() and not video.get_ignore():
                 videos.append(video)
 
@@ -369,26 +378,29 @@ class Playlist(object):
         return self.__current_video_hash
 
     def get_video_by_path(self, path):
-        for video in self.__videos_instances:
+        for video in self.__videos_list:
             if video.get_path() == path:
                 return video
 
         return None
 
     def get_video_by_hash(self, video_hash):
-        for video in self.__videos_instances:
-            if video.get_hash() == video_hash:
-                return video
+        try:
+            video = self.__videos_dict[video_hash]
+        except KeyError:
+            video = None
 
-        return None
+        return video
 
     def get_videos_by_hash(self, videos_hashes):
         videos = []
 
         for video_hash in videos_hashes:
-            video = self.get_video_by_hash(video_hash)
-            if video is not None:
+            try:
+                video = self.__videos_dict[video_hash]
                 videos.append(video)
+            except KeyError:
+                pass
 
         return videos
 
@@ -404,7 +416,7 @@ class Playlist(object):
             return []
 
         videos = []
-        for video in self.__videos_instances:
+        for video in self.__videos_list:
             video_dirname = os.path.dirname(video.get_path())
 
             if video_dirname.startswith(path):
@@ -419,24 +431,16 @@ class Playlist(object):
         return videos
 
     def get_last_played_video(self):
-
-        if self.__current_video_hash == "":
-            return None
-
-        for video in self.__videos_instances:
-            if video.get_hash() == self.__current_video_hash:
-                return video
-
-        return None
+        return self.get_video_by_hash(self.__current_video_hash)
 
     def get_videos(self):
-        return self.__videos_instances
+        return copy(self.__videos_list)
 
     def get_keep_playing(self):
         return self.__keep_playing
 
     def set_guid(self, value):
-        self.__guid = value
+        self.__number = value
 
     def set_load_status(self, value):
         if value not in (LoadStatus._waiting_load, LoadStatus._loading, LoadStatus._loaded):
@@ -539,6 +543,6 @@ class Playlist(object):
                    height=settings.IconSize.Big._height,
                    extension="png")
 
-    def __recalculate_videos_guid(self):
-        for i, video in enumerate(self.__videos_instances, 1):
-            video.set_guid(i)
+    def __recalculate_videos_nb(self):
+        for i, video in enumerate(self.__videos_list, 1):
+            video.set_number(i)

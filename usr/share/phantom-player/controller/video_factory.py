@@ -134,9 +134,8 @@ def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=
             print("\t\t\tSkipped path:", file_path)
             return
 
-    new_video = Video(file_path)
+    new_video = Video(video_hash, file_path)
     new_video.set_is_new(True)
-    new_video.set_hash(video_hash)
     playlist.add_video(new_video)
     current_data[video_hash] = file_path
     print("\t\tAdding...", file_path)

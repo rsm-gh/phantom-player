@@ -77,7 +77,7 @@ class PlaylistListstoreColumnsIndex:
 class VideosListstoreColumnsIndex:
     _hash = 0
     _color = 1
-    _id = 2
+    _nb = 2
     _path = 3
     _name = 4
     _ext = 5
@@ -848,7 +848,7 @@ class PhantomPlayer:
         if not video.get_ignore() or self.__checkbox_video_rhidden.get_active():
             self.__liststore_videos.append([video.get_hash(),
                                             self.__get_video_color(video),
-                                            video.get_guid(),
+                                            video.get_number(),
                                             video.get_path(),
                                             video.get_name(),
                                             video.get_extension(),
@@ -873,7 +873,7 @@ class PhantomPlayer:
 
             self.__liststore_videos[index][VideosListstoreColumnsIndex._hash] = video.get_hash()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._color] = self.__get_video_color(video)
-            self.__liststore_videos[index][VideosListstoreColumnsIndex._id] = video.get_guid()
+            self.__liststore_videos[index][VideosListstoreColumnsIndex._nb] = video.get_number()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._path] = video.get_path()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._name] = video.get_name()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._ext] = video.get_extension()
@@ -881,7 +881,7 @@ class PhantomPlayer:
 
     def __liststore_videos_update(self,
                                   video,
-                                  guid=True,
+                                  number=True,
                                   progress=True,
                                   color=True,
                                   path=True):
@@ -895,8 +895,8 @@ class PhantomPlayer:
                 if color:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._color] = self.__get_video_color(video)
 
-                if guid:
-                    self.__liststore_videos[i][VideosListstoreColumnsIndex._id] = video.get_guid()
+                if number:
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex._nb] = video.get_number()
 
                 if path:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._path] = video.get_path()
