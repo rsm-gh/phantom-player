@@ -314,10 +314,9 @@ def __load_videos(playlist, file_lines):
             print("\t\tSkipped path:", path)
             continue
 
-        video = Video(path, name)
+        video = Video(hash_file, path, name)
         video.set_position(position)
         video.set_ignore(ignore)
-        video.set_hash(hash_file)
         playlist.add_video(video)
         imported_hash_paths[hash_file] = path
 
