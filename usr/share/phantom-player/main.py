@@ -23,7 +23,7 @@ import gi
 os.environ["GDK_BACKEND"] = "x11"
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit2', '4.0')  # is this necessary?
-gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers?
+gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers
 from gi.repository import Gtk, Gio
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
