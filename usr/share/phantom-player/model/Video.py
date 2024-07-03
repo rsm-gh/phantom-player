@@ -95,6 +95,9 @@ class Video(object):
             print("Warning: un-valid percent", percent, self.__duration, self.__progress, self.__path)
             percent = 100
 
+        elif percent == 100 and not self.ended():
+            percent = 99
+
         return percent
 
     def get_is_new(self):
