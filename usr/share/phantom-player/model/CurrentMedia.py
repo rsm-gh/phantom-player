@@ -56,23 +56,24 @@ class CurrentMedia:
 
         return self._video.get_hash()
 
-    def set_video_position(self, pos):
+    def set_video_progress(self, value):
 
         if self._video is None:
             return
 
-        self._video.set_position(pos)
+        self._video.set_progress(value)
 
-    def get_video_progress(self):
-
-        if self._video is None:
-            return
-
-        return self._video.get_progress()
-
-    def get_video_position(self):
+    def get_video_percent(self):
 
         if self._video is None:
             return
 
-        return self._video.get_position()
+        return self._video.get_percent()
+
+    def get_video_ended(self):
+
+        if self._video is None:
+            return True
+
+        return self._video.ended()
+
