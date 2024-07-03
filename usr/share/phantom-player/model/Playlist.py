@@ -22,7 +22,6 @@ import random
 import settings
 import Paths
 from copy import copy
-from model.Video import VideoPosition
 from model.PlaylistPath import PlaylistPath
 from system_utils import format_img
 
@@ -96,7 +95,7 @@ class Playlist(object):
 
     def restart(self):
         for video in self.__videos_list:
-            video.set_position(VideoPosition._start)
+            video.set_progress(0)
 
     def reorder(self, new_order_indexes):
         """ Choices are "up" or "down" """
@@ -306,13 +305,13 @@ class Playlist(object):
     def get_name(self):
         return self.__name
 
-    def get_progress(self):
+    def get_percent(self):
 
         total_of_videos = 0
         total_percent = 0
         for video in self.__videos_list:
             if not video.get_ignore():
-                total_percent += video.get_progress()
+                total_percent += video.get_percent()
                 total_of_videos += 1
 
         if total_of_videos <= 0:
@@ -340,7 +339,7 @@ class Playlist(object):
                 elif not after_found:
                     continue
 
-            if video.exists() and not video.get_played() and not video.get_ignore():
+            if video.exists() and not video.ended() and not video.get_ignore():
                 return video
 
         # Try to return a video from the beginning
@@ -353,7 +352,7 @@ class Playlist(object):
 
         videos = []
         for video in self.__videos_list:
-            if not video.get_played() and video.exists() and not video.get_ignore():
+            if not video.ended() and video.exists() and not video.get_ignore():
                 videos.append(video)
 
         if not videos:

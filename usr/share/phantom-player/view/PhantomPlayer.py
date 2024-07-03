@@ -59,7 +59,6 @@ from model.Playlist import Playlist
 from model.Playlist import _SAVE_EXTENSION as _PLAYLIST_EXTENSION
 from model.Playlist import LoadStatus as PlaylistLoadStatus
 from model.CurrentMedia import CurrentMedia
-from model.Video import VideoPosition, VideoProgress
 from view.SettingsWindow import SettingsWindow
 from view.DialogRenameSingle import DialogRenameSingle
 from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
@@ -277,11 +276,11 @@ class PhantomPlayer:
 
         self.__menuitem_videos_restart_prg.connect('activate',
                                                    self.__on_menuitem_videos_set_progress,
-                                                   VideoProgress._start)
+                                                   0)
 
         self.__menuitem_videos_fill_prg.connect('activate',
                                                 self.__on_menuitem_videos_set_progress,
-                                                VideoProgress._end)
+                                                None)
 
         self.__menuitem_videos_ignore.connect('activate', self.__on_menuitem_videos_ignore_changed, True)
         self.__menuitem_videos_unignore.connect('activate', self.__on_menuitem_videos_ignore_changed, False)
@@ -411,7 +410,7 @@ class PhantomPlayer:
         # a file video instead of a playlist.
         self.__box_window.pack_start(self.__mp_widget, True, True, 0)
 
-        self.__mp_widget.connect(CustomSignals._position_changed, self.__on_media_player_position_changed)
+        self.__mp_widget.connect(CustomSignals._time_changed, self.__on_media_player_time_changed)
         self.__mp_widget.connect(CustomSignals._btn_keep_playing_toggled,
                                  self.__on_media_player_btn_keep_playing_toggled)
         self.__mp_widget.connect(CustomSignals._btn_random_toggled, self.__on_media_player_btn_random_toggled)
@@ -616,17 +615,16 @@ class PhantomPlayer:
         #
         # Play the video
         #
-        if video.get_position() == VideoPosition._end and replay:
-            video_position = VideoPosition._start
+        if video.ended() and replay:
+            video_progress = 0
         else:
-            video_position = video.get_position()
+            video_progress = video.get_progress()
 
         self.__mp_widget.set_video(video.get_path(),
-                                   position=video_position,
-                                   start_at=self.__current_media._playlist.get_start_at(),
+                                   play=play,
+                                   start_at=max(video_progress, self.__current_media._playlist.get_start_at()),
                                    subtitles_track=self.__current_media._playlist.get_subtitles_track(),
-                                   audio_track=self.__current_media._playlist.get_audio_track(),
-                                   play=play)
+                                   audio_track=self.__current_media._playlist.get_audio_track())
 
         if self.__mp_widget.get_random() != self.__current_media._playlist.get_random():
             self.__mp_widget.set_random(self.__current_media._playlist.get_random())
@@ -778,7 +776,7 @@ class PhantomPlayer:
 
         for i, row in enumerate(self.__liststore_playlists):
             if row[PlaylistListstoreColumnsIndex._id] == playlist.get_guid():
-                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = playlist.get_progress()
+                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = playlist.get_percent()
                 return
 
     def __liststore_playlists_update(self, playlist):
@@ -792,7 +790,7 @@ class PhantomPlayer:
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._icon] = pixbuf
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._color] = self.__fontcolor_default
                 self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._name] = playlist.get_name()
-                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = playlist.get_progress()
+                self.__liststore_playlists[i][PlaylistListstoreColumnsIndex._percent] = playlist.get_percent()
                 break
 
     def __liststore_playlists_append(self, playlist):
@@ -808,7 +806,7 @@ class PhantomPlayer:
                                            pixbuf,
                                            self.__fontcolor_default,
                                            playlist.get_name(),
-                                           playlist.get_progress()])
+                                           playlist.get_percent()])
 
     def __liststore_playlists_populate(self):
 
@@ -852,7 +850,7 @@ class PhantomPlayer:
                                             video.get_path(),
                                             video.get_name(),
                                             video.get_extension(),
-                                            video.get_progress()])
+                                            video.get_percent()])
 
     def __liststore_videos_refresh(self):
 
@@ -877,7 +875,7 @@ class PhantomPlayer:
             self.__liststore_videos[index][VideosListstoreColumnsIndex._path] = video.get_path()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._name] = video.get_name()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._ext] = video.get_extension()
-            self.__liststore_videos[index][VideosListstoreColumnsIndex._progress] = video.get_progress()
+            self.__liststore_videos[index][VideosListstoreColumnsIndex._progress] = video.get_percent()
 
     def __liststore_videos_update(self,
                                   video,
@@ -903,7 +901,7 @@ class PhantomPlayer:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._name] = video.get_name()
 
                 if progress:
-                    self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_progress()
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_percent()
                 return
 
     def __liststore_videos_select(self, videos):
@@ -1041,25 +1039,25 @@ class PhantomPlayer:
     def __on_media_player_btn_keep_playing_toggled(self, _, state):
         self.__current_media._playlist.set_keep_playing(state)
 
-    def __on_media_player_position_changed(self, _, position):
+    def __on_media_player_time_changed(self, _, time):
 
-        if self.__current_media.get_video_position() == VideoPosition._end:
+        if self.__current_media.get_video_ended():
             # To avoid updating progress on videos that went already played.
             return
 
-        self.__current_media.set_video_position(position)
+        self.__current_media.set_video_progress(time)
         self.__liststore_playlists_update_progress(self.__current_media._playlist)
         self.__liststore_videos_update(self.__current_media._video, color=False, path=False)
 
     def __on_media_player_video_restart(self, *_):
-        self.__on_media_player_position_changed(None, VideoPosition._start)
+        self.__on_media_player_time_changed(None, 0)
 
     def __on_media_player_video_end(self, _widget, _forced, was_playing):
 
         if self.__current_media._playlist is None:
             return
 
-        self.__current_media.set_video_position(VideoPosition._end)
+        self.__current_media.set_video_progress(None)
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
         self.__liststore_playlists_update_progress(self.__current_media._playlist)
@@ -1243,12 +1241,12 @@ class PhantomPlayer:
         if len(self.__selected_videos) == 1:
             if self.__current_media.get_video_hash() == selected_hashes[0]:
                 can_fill_progress = False
-                can_reset_progress = self.__current_media.get_video_progress() == VideoProgress._end
+                can_reset_progress = self.__current_media.get_video_ended()
 
         self.__menuitem_videos_restart_prg.set_sensitive(
-            any(video.get_position() > VideoPosition._start for video in self.__selected_videos) and can_reset_progress)
+            any(video.get_progress() > 0 for video in self.__selected_videos) and can_reset_progress)
         self.__menuitem_videos_fill_prg.set_sensitive(
-            any(video.get_position() < VideoPosition._end for video in self.__selected_videos) and can_fill_progress)
+            any(not video.ended() for video in self.__selected_videos) and can_fill_progress)
         self.__menuitem_videos_ignore.set_sensitive(any(not video.get_ignore() for video in self.__selected_videos))
         self.__menuitem_videos_unignore.set_sensitive(any(video.get_ignore() for video in self.__selected_videos))
 
@@ -1378,12 +1376,15 @@ class PhantomPlayer:
         self.__window_about.hide()
 
     def __on_menuitem_videos_set_progress(self, _, progress):
+        """
+            :progress: integer or None. if filled with none, it will be set to the maximum.
+        """
 
         if not self.__selected_videos:
             return
 
         hash_to_skip = None
-        if progress == VideoProgress._start and self.__current_media.get_video_progress() == VideoProgress._end:
+        if progress == 0 and self.__current_media.get_video_ended():
             pass
         else:
             hash_to_skip = self.__current_media.get_video_hash()
@@ -1392,11 +1393,7 @@ class PhantomPlayer:
             if video.get_hash() == hash_to_skip:
                 continue
 
-            if progress == VideoProgress._start:
-                video.set_position(VideoPosition._start)
-            else:
-                video.set_position(progress / VideoProgress._end)
-
+            video.set_progress(progress)
             self.__liststore_videos_update(video, color=False, path=False)
 
         self.__liststore_playlists_update_progress(self.__current_media._playlist)

@@ -19,22 +19,11 @@
 
 """
     Patches:
-        + Patch 001: `media.get_duration()` is not correctly parsed if the video was not played.
-            This is strange, because the VLC API says that `parse()` is synchronous, and it should work.
-            To fix it, all the properties depending on the media duration are loaded in `self.__on_thread_player_activity()`
-
         + Patch 002: `self.__vlc_widget.player.get_media()` is always returning `None`. Why?
             To fix it, I created `self.__media`.
 
     Remarks:
         + Careful when using `player.pause()`, because if the player is already paused, it may (randomly) start playing.
-
-        + The widget uses `set_position()` instead of `set_time()` because:
-            + The VLC API says that `time` is not supported for all the formats. This makes the code more complex, but it works fine.
-            + Saving/Applying the position is pretty easy.
-            + `start_at`, `end_at`, and `end_position` are more complex because they depend on the media duration:
-                + `start_at` and `end_at` must be saved in `time` format, because it is an input given by the user and, it must be a constant across all media.
-                + `end_position` is used to detect when a video has ended. Normally it should be `1`, but the value may change based on a numeric approach. For example, for a very long video, it may be `.9999999`, and for a shorter `.9`.
 
     Bugs:
         + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
@@ -81,8 +70,8 @@ class MediaPlayer(Gtk.Window):
 
     def play_video(self, path):
         self.__mp_widget.set_video(path,
-                                   position=.5,
                                    play=False,
+                                   start_at=68,
                                    subtitles_track=2)
 
 

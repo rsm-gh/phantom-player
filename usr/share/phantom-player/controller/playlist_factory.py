@@ -15,11 +15,12 @@
 
 import os
 
+from Paths import _SERIES_DIR
 from settings import _VIDEO_HASH_SIZE
 from model.Playlist import Playlist, LoadStatus
 from model.PlaylistPath import PlaylistPath
-from model.Video import VideoPosition, Video
-from Paths import _SERIES_DIR
+from model.Video import Video
+from vlc_utils import video_duration
 
 _COLUMN_SEPARATOR = "|"
 _VALUE_SEPARATOR = "="
@@ -33,7 +34,7 @@ _PLAYLIST_ATTR = ('random',
                   'current_video_hash')
 
 _PLAYLIST_PATH_ATTR = ('recursive', 'startup_discover')
-_VIDEO_ATTR = ('position', 'ignore', 'path', 'name')
+_VIDEO_ATTR = ('duration', 'progress', 'ignore', 'path', 'name')
 
 
 class SaveParams:
@@ -113,7 +114,7 @@ def save(playlist):
 def __load_settings(playlist, file_lines):
     random = False
     keep_playing = False
-    start_at = VideoPosition._start
+    start_at = 0
     audio_track = 0
     subtitles_track = 0
     current_video_hash = ""
@@ -238,7 +239,8 @@ def __load_videos(playlist, file_lines):
 
         path = ""
         name = ""
-        position = VideoPosition._start
+        progress = 0
+        duration = 0
         ignore = False
 
         #
@@ -274,11 +276,17 @@ def __load_videos(playlist, file_lines):
                 case "name":
                     name = value
 
-                case "position":
+                case "progress":
                     try:
-                        position = float(value)
+                        progress = int(value)
                     except Exception:
-                        print("\tWarning: Video with invalid position.", line)
+                        print("\tWarning: Video with invalid progress.", line)
+
+                case "duration":
+                    try:
+                        duration = int(value)
+                    except Exception:
+                        print("\tWarning: Video with invalid duration.", line)
 
                 case "ignore":
                     try:
@@ -314,8 +322,11 @@ def __load_videos(playlist, file_lines):
             print("\t\tSkipped path:", path)
             continue
 
-        video = Video(hash_file, path, name)
-        video.set_position(position)
+        if duration <= 0 and os.path.exists(path):
+            duration = video_duration(path)
+
+        video = Video(hash_file, path, duration, name)
+        video.set_progress(progress)
         video.set_ignore(ignore)
         playlist.add_video(video)
         imported_hash_paths[hash_file] = path

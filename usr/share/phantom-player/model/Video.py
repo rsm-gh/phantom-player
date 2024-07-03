@@ -19,19 +19,9 @@
 import os
 
 
-class VideoPosition:
-    _start = 0
-    _end = 1
-
-
-class VideoProgress:
-    _start = 0
-    _end = 100
-
-
 class Video(object):
 
-    def __init__(self, vhash, path, name=""):
+    def __init__(self, vhash, path, duration, name=""):
 
         if vhash == "":
             raise ValueError("Can not add a video with an empty hash.")
@@ -41,9 +31,10 @@ class Video(object):
         self.__extension = ""
         self.__number = -1
         self.__is_new = False
-        self.__position = VideoPosition._start
+        self.__progress = 0
         self.__ignore = False
         self.__hash = vhash
+        self.__duration = int(duration)
 
         #
         # Initialize the attributes
@@ -62,6 +53,12 @@ class Video(object):
 
     def exists(self):
         return os.path.exists(self.__path)
+
+    def ended(self):
+        return self.__progress >= self.__duration
+
+    def get_duration(self):
+        return self.__duration
 
     def get_extension(self):
         return self.__extension
@@ -84,25 +81,24 @@ class Video(object):
     def get_hash(self):
         return self.__hash
 
-    def get_position(self):
-        return self.__position
-
     def get_progress(self):
+        return self.__progress
 
-        progress = round(self.__position * VideoProgress._end)
+    def get_percent(self):
 
-        if progress == 100 and self.__position < 1:
-            progress = 99
+        if self.__duration <= 0:
+            return 0
 
-        return progress
+        percent = int(self.__progress / self.__duration * 100)
+
+        if percent > 100:
+            print("Warning: un-valid percent", percent, self.__duration, self.__progress, self.__path)
+            percent = 100
+
+        return percent
 
     def get_is_new(self):
         return self.__is_new
-
-    def get_played(self):
-        # It is better to use the progress here to avoid having approximation
-        # issues with the position.
-        return self.get_progress() >= VideoProgress._end
 
     def set_path(self, path):
         self.__path = path
@@ -112,11 +108,15 @@ class Video(object):
     def set_is_new(self, value):
         self.__is_new = value
 
-    def set_position(self, pos):
-        if VideoPosition._end >= pos >= VideoPosition._start:
-            self.__position = pos
-        else:
-            print(self.__name, "wrong set_position", pos)
+    def set_progress(self, value):
+        """
+            :value: integer or None. if filled with none, it will be set to the maximum.
+        """
+
+        if value is None:
+            value = self.__duration
+
+        self.__progress = int(value)
 
     def set_ignore(self, bool_value):
         self.__ignore = bool_value

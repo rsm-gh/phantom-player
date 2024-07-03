@@ -20,11 +20,12 @@ import magic
 import hashlib
 
 from model.Video import Video
+from vlc_utils import video_duration
 from controller.playlist_factory import _COLUMN_SEPARATOR
+
 
 _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
-
 
 def discover(playlist, playlist_paths=None, add_func=None, update_func=None, quit_func=None):
     print("Discovering new videos of '{}'...".format(playlist.get_name()))
@@ -134,7 +135,7 @@ def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=
             print("\t\t\tSkipped path:", file_path)
             return
 
-    new_video = Video(video_hash, file_path)
+    new_video = Video(video_hash, file_path, video_duration(file_path))
     new_video.set_is_new(True)
     playlist.add_video(new_video)
     current_data[video_hash] = file_path
