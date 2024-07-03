@@ -68,6 +68,8 @@ Author: Rafael Senties Martinelli
       <column type="gchararray"/>
       <!-- column-name progress -->
       <column type="gint"/>
+      <!-- column-name duration -->
+      <column type="gint"/>
     </columns>
   </object>
   <object class="GtkWindow" id="window_root">
@@ -198,8 +200,12 @@ Author: Rafael Senties Martinelli
                   </object>
                 </child>
                 <child>
-                  <object class="GtkTreeViewColumn" id="column_progress">
-                    <property name="resizable">True</property>
+                  <object class="GtkTreeViewColumn" id="column_duration">
+                    <property name="title" translatable="yes">Duration</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="column_percent">
                     <property name="title" translatable="yes">Progress</property>
                     <property name="clickable">True</property>
                     <property name="reorderable">True</property>
@@ -389,6 +395,14 @@ Author: Rafael Senties Martinelli
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Extension</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="checkbox_video_cduration">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Duration</property>
+        <property name="use-underline">True</property>
       </object>
     </child>
     <child>
