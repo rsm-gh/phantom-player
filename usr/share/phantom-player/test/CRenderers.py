@@ -28,12 +28,12 @@
 import gi
 
 gi.require_version('Gtk', '3.0')
-gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers?
+gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers
 from gi.repository import Gtk, Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
 from view.cellrenderers.CellRendererRating import CellRendererRating
-from view.cellrenderers.CellRendererTrackTime import CellRendererTrackTime
+from view.cellrenderers.CellRendererTime import CellRendererTime
 from view.cellrenderers.CellRendererBytes import CellRendererBytes
 from view.cellrenderers.CellRendererTimeStamp import CellRendererTimeStamp
 from view.cellrenderers.CellRendererURI import CellRendererURI
@@ -71,9 +71,9 @@ class Window(Gtk.Window):
 
         treeviewcolumn = Gtk.TreeViewColumn("Time")
         treeviewcolumn.set_resizable(True)
-        cellrenderer = CellRendererTrackTime()
+        cellrenderer = CellRendererTime()
         treeviewcolumn.pack_start(cellrenderer, True)
-        treeviewcolumn.add_attribute(cellrenderer, 'milliseconds', 1)
+        treeviewcolumn.add_attribute(cellrenderer, 'time', 1)
         treeview.append_column(treeviewcolumn)
 
         treeviewcolumn = Gtk.TreeViewColumn("Bytes")
@@ -99,7 +99,7 @@ class Window(Gtk.Window):
 
         box.add(treeview)
 
-        #self.set_default_size(200, 200)        
+        #self.set_default_size(200, 200)
         liststore = Gtk.ListStore(int, Pixbuf, str, int)
         iconview = Gtk.IconView.new()
         iconview.set_model(liststore)
@@ -117,7 +117,7 @@ class Window(Gtk.Window):
             ('last value', 50)
         )
 
-        default_pixbuf = Pixbuf.new_from_file_at_scale("/home/rsm/.local/share/phantom-player/Breaking Bad.png",
+        default_pixbuf = Pixbuf.new_from_file_at_scale("/home/rsm/Pictures/c1019_chip_lg.jpg",
                                                        IconSize.Big._width,
                                                        IconSize.Big._height,
                                                        True)
@@ -139,5 +139,6 @@ class Window(Gtk.Window):
         print('rating changed', treepath, rating)
 
 
-w = Window()
-Gtk.main()
+if __name__ == "__main__":
+    _ = Window()
+    Gtk.main()

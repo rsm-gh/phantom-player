@@ -63,6 +63,7 @@ from view.SettingsWindow import SettingsWindow
 from view.DialogRenameSingle import DialogRenameSingle
 from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
 from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
+from view.cellrenderers.CellRendererTime import CellRendererTime
 
 
 class PlaylistListstoreColumnsIndex:
@@ -81,6 +82,7 @@ class VideosListstoreColumnsIndex:
     _name = 4
     _ext = 5
     _progress = 6
+    _duration = 7
 
 
 class GlobalConfigTags:
@@ -95,6 +97,7 @@ class GlobalConfigTags:
     _video_cpath = 'video-column-path'
     _video_cname = 'video-column-name'
     _video_cext = 'video-column-extension'
+    _video_cduration = 'video-column-duration'
     _video_cprog = 'video-column-progress'
     _video_rhidden = "videos-hidden"
 
@@ -175,6 +178,7 @@ class PhantomPlayer:
         self.__checkbox_video_cpath = builder.get_object('checkbox_video_cpath')
         self.__checkbox_video_cname = builder.get_object('checkbox_video_cname')
         self.__checkbox_video_cextension = builder.get_object('checkbox_video_cextension')
+        self.__checkbox_video_cduration = builder.get_object('checkbox_video_cduration')
         self.__checkbox_video_cprogress = builder.get_object('checkbox_video_cprogress')
         self.__checkbox_video_rhidden = builder.get_object('checkbox_video_rhidden')
 
@@ -182,7 +186,8 @@ class PhantomPlayer:
         self.__column_path = builder.get_object('column_path')
         self.__column_name = builder.get_object('column_name')
         self.__column_extension = builder.get_object('column_extension')
-        self.__column_progress = builder.get_object('column_progress')
+        self.__column_percent = builder.get_object('column_percent')
+        self.__column_duration = builder.get_object('column_duration')
         self.__liststore_playlists = builder.get_object('liststore_playlists')
         self.__liststore_videos = builder.get_object('liststore_videos')
         self.__box_window = builder.get_object('box_window')
@@ -254,9 +259,14 @@ class PhantomPlayer:
                                                  self.__column_extension,
                                                  GlobalConfigTags._video_cext)
 
+        self.__checkbox_video_cduration.connect('toggled',
+                                                self.__on_checkbox_video_column_toggled,
+                                                self.__column_duration,
+                                                GlobalConfigTags._video_cduration)
+
         self.__checkbox_video_cprogress.connect('toggled',
                                                 self.__on_checkbox_video_column_toggled,
-                                                self.__column_progress,
+                                                self.__column_percent,
                                                 GlobalConfigTags._video_cprog)
 
         self.__checkbox_video_rhidden.connect('toggled', self.__on_checkbox_video_rhidden_toggled)
@@ -271,7 +281,8 @@ class PhantomPlayer:
                        self.__column_path,
                        self.__column_name,
                        self.__column_extension,
-                       self.__column_progress):
+                       self.__column_duration,
+                       self.__column_percent):
             gtk_utils.bind_header_click(widget, self.__on_treeview_videos_header_clicked)
 
         self.__menuitem_videos_restart_prg.connect('activate',
@@ -384,7 +395,7 @@ class PhantomPlayer:
         self.__cellrenderer_playlist = CellRendererPlaylist()
         self.__cellrenderer_playlist.set_icon_size(self.__icons_size[0], self.__icons_size[1])
 
-        self.__iconview_playlists.pack_start(self.__cellrenderer_playlist, True)
+        self.__iconview_playlists.pack_start(self.__cellrenderer_playlist, expand=True)
         self.__iconview_playlists.add_attribute(self.__cellrenderer_playlist, 'pixbuf',
                                                 PlaylistListstoreColumnsIndex._icon)
         self.__iconview_playlists.add_attribute(self.__cellrenderer_playlist, 'color',
@@ -393,6 +404,16 @@ class PhantomPlayer:
                                                 PlaylistListstoreColumnsIndex._name)
         self.__iconview_playlists.add_attribute(self.__cellrenderer_playlist, 'progress',
                                                 PlaylistListstoreColumnsIndex._percent)
+
+
+        #
+        # Liststore videos cellrencerer
+        #
+        cellrenderer_time = CellRendererTime()
+
+        self.__column_duration.pack_start(cellrenderer_time, expand=True)
+        self.__column_duration.add_attribute(cellrenderer_time, 'time', VideosListstoreColumnsIndex._duration)
+        self.__column_duration.add_attribute(cellrenderer_time, 'color', VideosListstoreColumnsIndex._color)
 
         #
         # Extra dialogs
@@ -850,7 +871,8 @@ class PhantomPlayer:
                                             video.get_path(),
                                             video.get_name(),
                                             video.get_extension(),
-                                            video.get_percent()])
+                                            video.get_percent(),
+                                            video.get_duration()])
 
     def __liststore_videos_refresh(self):
 
@@ -876,13 +898,15 @@ class PhantomPlayer:
             self.__liststore_videos[index][VideosListstoreColumnsIndex._name] = video.get_name()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._ext] = video.get_extension()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._progress] = video.get_percent()
+            self.__liststore_videos[index][VideosListstoreColumnsIndex._duration] = video.get_duration()
 
     def __liststore_videos_update(self,
                                   video,
                                   number=True,
                                   progress=True,
                                   color=True,
-                                  path=True):
+                                  path=True,
+                                  duration=True):
 
         if video is None:
             return
@@ -902,6 +926,10 @@ class PhantomPlayer:
 
                 if progress:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_percent()
+
+                if duration:
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex._duration] = video.get_duration()
+
                 return
 
     def __liststore_videos_select(self, videos):
@@ -1047,7 +1075,7 @@ class PhantomPlayer:
 
         self.__current_media.set_video_progress(time)
         self.__liststore_playlists_update_progress(self.__current_media._playlist)
-        self.__liststore_videos_update(self.__current_media._video, color=False, path=False)
+        self.__liststore_videos_update(self.__current_media._video, color=False, path=False, duration=False)
 
     def __on_media_player_video_restart(self, *_):
         self.__on_media_player_time_changed(None, 0)
@@ -1061,7 +1089,7 @@ class PhantomPlayer:
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
         self.__liststore_playlists_update_progress(self.__current_media._playlist)
-        self.__liststore_videos_update(self.__current_media._video, color=False, path=False)
+        self.__liststore_videos_update(self.__current_media._video, color=False, path=False, duration=False)
 
         if self.__current_media._playlist.get_keep_playing():
             self.__set_video(play=was_playing)
@@ -1277,6 +1305,7 @@ class PhantomPlayer:
                              self.__checkbox_video_cpath,
                              self.__checkbox_video_cname,
                              self.__checkbox_video_cextension,
+                             self.__checkbox_video_cduration,
                              self.__checkbox_video_cprogress)
         active_checks = []
         for checkbox in column_checkboxes:
@@ -1394,7 +1423,7 @@ class PhantomPlayer:
                 continue
 
             video.set_progress(progress)
-            self.__liststore_videos_update(video, color=False, path=False)
+            self.__liststore_videos_update(video, color=False, path=False, duration=False)
 
         self.__liststore_playlists_update_progress(self.__current_media._playlist)
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
@@ -1409,7 +1438,7 @@ class PhantomPlayer:
         for video in self.__selected_videos:
             video.set_ignore(ignore)
             if rhidden:
-                self.__liststore_videos_update(video, progress=False, path=False)
+                self.__liststore_videos_update(video, progress=False, path=False, duration=False)
             elif ignore:
                 self.__liststore_videos_remove(video)
 

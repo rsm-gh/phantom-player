@@ -16,14 +16,13 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 
-from gi.repository import Gtk, Gdk, GObject, PangoCairo
 from gi.repository.GdkPixbuf import Pixbuf
+from gi.repository import Gtk, Gdk, GObject, PangoCairo
+
+from settings import IconSize
 from view.cellrenderers.constants import GENERAL_FONT_DESCRIPTION
 
 _PROGRESS_BAR_HEIGHT = 4
-
-from settings import IconSize
-
 
 class CellRendererPlaylist(Gtk.CellRenderer):
     """ CellRenderer to display the Playlist images """

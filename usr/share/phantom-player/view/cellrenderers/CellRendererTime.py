@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 
-#  Copyright (C) 2016  Rafael Senties Martinelli 
+#  Copyright (C) 2016, 2024 Rafael Senties Martinelli
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -16,20 +16,14 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
 
-
-import gi
-
-gi.require_version('Gtk', '3.0')
-gi.require_version('PangoCairo', '1.0')
-from gi.repository import Gtk, PangoCairo, GObject
-
 from datetime import timedelta
+from gi.repository import Gtk, Gdk, PangoCairo, GObject
 
-from .constants import FONT_COLOR, GENERAL_FONT_DESCRIPTION
+from .constants import GENERAL_FONT_DESCRIPTION
 
 
-def FORMAT_milliseconds(milliseconds):
-    time_string = str(timedelta(milliseconds=milliseconds)).split('.')[0]
+def format_seconds(seconds):
+    time_string = str(timedelta(seconds=seconds)).split('.')[0]
 
     # remove the hours if they are not necessary.
     try:
@@ -41,26 +35,30 @@ def FORMAT_milliseconds(milliseconds):
     return time_string
 
 
-class CellRendererTrackTime(Gtk.CellRenderer):
+class CellRendererTime(Gtk.CellRenderer):
     """ CellRenderer to display milliseconds to time, ex: 234234 -> 03:54 """
 
     __gproperties__ = {
-        'milliseconds': ('glong',  # type
-                         "integer prop",  # nick
-                         "A property that contains a number in milliseconds",  # blurb
-                         0,  # min
-                         9223372036854775807,  # max
-                         0,  # default
-                         GObject.PARAM_READWRITE  # flags
-                         ),
+        'time': ('glong',  # type
+                 "integer prop",  # nick
+                 "A property that contains a number in seconds",  # blurb
+                 0,  # min
+                 9223372036854775807,  # max
+                 0,  # default
+                 GObject.PARAM_READWRITE  # flags
+                 ),
+
+        'color': (Gdk.RGBA,  # type
+                  "text color",  # nick
+                  "Text color of the name",  # blurb
+                  GObject.PARAM_READWRITE,  # flags
+                  ),
     }
 
     def __init__(self):
         super().__init__()
-        self.milliseconds = 0
-
-    def activate(self, event, widget, path, background_area, cell_area, flags):
-        print(flags)
+        self.time = 0
+        self.color = Gdk.RGBA()
 
     def do_set_property(self, pspec, value):
         setattr(self, pspec.name, value)
@@ -68,15 +66,11 @@ class CellRendererTrackTime(Gtk.CellRenderer):
     def do_get_property(self, pspec):
         return getattr(self, pspec.name)
 
-    #def do_get_size(self, widget, cell_area):
-    #return (0, 0, cell_area.width, cell_area.height)
-    #return (0, 0, self.milliseconds.get_width(), self.milliseconds.get_height())
-
-    def do_render(self, cr, widget, background_area, cell_area, flags):
-        cr.set_source_rgb(FONT_COLOR[0], FONT_COLOR[1], FONT_COLOR[2])
+    def do_render(self, cr, _widget, _background_area, cell_area, _flags):
+        cr.set_source_rgb(self.color.red, self.color.green, self.color.blue)
         layout = PangoCairo.create_layout(cr)
         layout.set_font_description(GENERAL_FONT_DESCRIPTION)
-        layout.set_text(FORMAT_milliseconds(self.milliseconds), -1)
+        layout.set_text(format_seconds(self.time), -1)
         cr.save()
         #PangoCairo.update_layout(cr, layout)
         cr.move_to(cell_area.x, cell_area.y)
@@ -84,4 +78,4 @@ class CellRendererTrackTime(Gtk.CellRenderer):
         cr.restore()
 
 
-GObject.type_register(CellRendererTrackTime)
+GObject.type_register(CellRendererTime)
