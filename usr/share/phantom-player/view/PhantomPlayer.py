@@ -883,7 +883,6 @@ class PhantomPlayer:
 
     def __liststore_videos_add(self, video):
         if not video.get_ignore() or self.__checkbox_video_rhidden.get_active():
-            print("POPULATING", video.get_path(), video.get_rating())
             self.__liststore_videos.append([video.get_hash(),
                                             self.__get_video_color(video),
                                             video.get_number(),
@@ -1089,7 +1088,6 @@ class PhantomPlayer:
             return
 
         video.set_rating(rating)
-        print(video.get_path(), rating)
         playlist_factory.save(self.__current_media._playlist)
 
     def __on_media_player_btn_random_toggled(self, _, state):
@@ -1266,7 +1264,6 @@ class PhantomPlayer:
     def __on_treeview_videos_row_activated(self, _treeview, treepath, _column):
         video_hash = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._hash]
         video = self.__current_media.set_video_by_hash(video_hash)
-        print("SELECTED", video.get_path(), video.get_rating())
         self.__set_video(video, replay=True)
 
     def __on_treeselection_videos_changed(self, *_):
