@@ -18,7 +18,7 @@
 #
 
 import os
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, Pango
 
 from Texts import Texts
 from Paths import _ICON_LOGO_SMALL, _HOME_DIR
@@ -48,6 +48,23 @@ def bind_header_click(treeview_column, bind_func):
         widget = widget.get_parent()
 
     widget.connect('button-press-event', bind_func)
+
+
+def get_general_font_description():
+    settings = Gtk.Settings.get_default()
+    font_string = settings.get_property('gtk-font-name')
+    return Pango.font_description_from_string(font_string)
+
+
+def get_cellrender_font_description():
+    settings = Gtk.Settings.get_default()
+    font_string = settings.get_property('gtk-font-name')
+
+    font_type = font_string.rsplit(' ', 1)[0]
+    font_size = font_string.rsplit(' ', 1)[1]
+
+    font_cell = '{} {}'.format(font_type, int(font_size) + 5)
+    return Pango.font_description_from_string(font_cell)
 
 
 def get_default_color(text_type='theme_text_color', widget=None, on_error='#000000'):

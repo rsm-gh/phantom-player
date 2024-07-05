@@ -34,7 +34,7 @@ _PLAYLIST_ATTR = ('random',
                   'current_video_hash')
 
 _PLAYLIST_PATH_ATTR = ('recursive', 'startup_discover')
-_VIDEO_ATTR = ('duration', 'progress', 'ignore', 'path', 'name')
+_VIDEO_ATTR = ('duration', 'progress', 'ignore', 'path', 'name','rating')
 
 
 class SaveParams:
@@ -166,6 +166,7 @@ def __load_settings(playlist, file_lines):
                     current_video_hash = value
                 except Exception:
                     print("\tError getting 'current_video_hash'")
+
             case _:
                 print("Error: wrong attr name on line=", line)
 
@@ -241,6 +242,7 @@ def __load_videos(playlist, file_lines):
         name = ""
         progress = 0
         duration = 0
+        rating = 0
         ignore = False
 
         #
@@ -288,6 +290,12 @@ def __load_videos(playlist, file_lines):
                     except Exception:
                         print("\tWarning: Video with invalid duration.", line)
 
+                case 'rating':
+                    try:
+                        rating = int(value)
+                    except Exception:
+                        print("\tError getting 'rating'")
+
                 case "ignore":
                     try:
                         ignore = str_to_boolean(value)
@@ -328,6 +336,7 @@ def __load_videos(playlist, file_lines):
         video = Video(hash_file, path, duration, name)
         video.set_progress(progress)
         video.set_ignore(ignore)
+        video.set_rating(rating)
         playlist.add_video(video)
         imported_hash_paths[hash_file] = path
 
