@@ -29,9 +29,11 @@ import gi
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk
 from gi.repository.GdkPixbuf import Pixbuf
 
+
+from view import gtk_utils
 from view.cellrenderers.CellRendererRating import CellRendererRating
 from view.cellrenderers.CellRendererTime import CellRendererTime
 from view.cellrenderers.CellRendererBytes import CellRendererBytes
@@ -50,6 +52,8 @@ class Window(Gtk.Window):
 
         box = Gtk.Box()
 
+        _, default_color = gtk_utils.get_default_color()
+
         liststore = Gtk.ListStore(int, 'glong', str)
         liststore.append([0, 100, '/home/rsm/desktop/abc.ogg'])
         liststore.append([1, 23400, '/home/rsm/desktop/abc.ogg'])
@@ -58,20 +62,22 @@ class Window(Gtk.Window):
         liststore.append([4, 83994234, '/home/rsm/desktop/abc.ogg'])
         liststore.append([5, 9223375807, '/home/rsm/desktop/abc.ogg'])
 
-        treeview = Gtk.TreeView(liststore)
+        treeview = Gtk.TreeView(model=liststore)
 
         treeviewcolumn = Gtk.TreeViewColumn("Rating")
         treeviewcolumn.set_resizable(True)
         cellrenderer = CellRendererRating()
+        cellrenderer.color = default_color
 
         treeviewcolumn.pack_start(cellrenderer, True)
         treeviewcolumn.add_attribute(cellrenderer, 'rating', 0)
         treeview.append_column(treeviewcolumn)
-        cellrenderer.connect_rating(treeviewcolumn, 0, self.on_rating_changed)
+        cellrenderer.connect_rating(treeview, column=0, func=self.on_rating_changed)
 
         treeviewcolumn = Gtk.TreeViewColumn("Time")
         treeviewcolumn.set_resizable(True)
         cellrenderer = CellRendererTime()
+        cellrenderer.color = default_color
         treeviewcolumn.pack_start(cellrenderer, True)
         treeviewcolumn.add_attribute(cellrenderer, 'time', 1)
         treeview.append_column(treeviewcolumn)
@@ -79,6 +85,7 @@ class Window(Gtk.Window):
         treeviewcolumn = Gtk.TreeViewColumn("Bytes")
         treeviewcolumn.set_resizable(True)
         cellrenderer = CellRendererBytes()
+        cellrenderer.color = default_color
         treeviewcolumn.pack_start(cellrenderer, True)
         treeviewcolumn.add_attribute(cellrenderer, 'bytes', 1)
         treeview.append_column(treeviewcolumn)
@@ -86,6 +93,7 @@ class Window(Gtk.Window):
         treeviewcolumn = Gtk.TreeViewColumn("Time Stamp")
         treeviewcolumn.set_resizable(True)
         cellrenderer = CellRendererTimeStamp()
+        cellrenderer.color = default_color
         treeviewcolumn.pack_start(cellrenderer, True)
         treeviewcolumn.add_attribute(cellrenderer, 'timestamp', 1)
         treeview.append_column(treeviewcolumn)
@@ -93,13 +101,14 @@ class Window(Gtk.Window):
         treeviewcolumn = Gtk.TreeViewColumn("URI")
         treeviewcolumn.set_resizable(True)
         cellrenderer = CellRendererURI()
+        cellrenderer.color = default_color
         treeviewcolumn.pack_start(cellrenderer, True)
         treeviewcolumn.add_attribute(cellrenderer, 'uri', 2)
         treeview.append_column(treeviewcolumn)
 
         box.add(treeview)
 
-        #self.set_default_size(200, 200)
+        #  self.set_default_size(200, 200)
         liststore = Gtk.ListStore(int, Pixbuf, str, int)
         iconview = Gtk.IconView.new()
         iconview.set_model(liststore)
@@ -132,11 +141,13 @@ class Window(Gtk.Window):
         self.add(box)
         self.show_all()
 
-    def on_quit(self, *_):
+    @staticmethod
+    def on_quit(*_):
         Gtk.main_quit()
 
-    def on_rating_changed(self, _liststore, treepath, rating):
-        print('rating changed', treepath, rating)
+    @staticmethod
+    def on_rating_changed(liststore, treepath, rating):
+        print('CRenderers.on_rating_changed', liststore, treepath, rating)
 
 
 if __name__ == "__main__":

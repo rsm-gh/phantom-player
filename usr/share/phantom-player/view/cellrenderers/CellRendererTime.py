@@ -14,12 +14,12 @@
 #
 # You should have received a copy of the GNU General Public License
 #   along with this program; if not, write to the Free Software Foundation,
-#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
+#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from datetime import timedelta
 from gi.repository import Gtk, Gdk, PangoCairo, GObject
 
-from .constants import GENERAL_FONT_DESCRIPTION
+from view.gtk_utils import get_general_font_description
 
 
 def format_seconds(seconds):
@@ -29,7 +29,7 @@ def format_seconds(seconds):
     try:
         if int(time_string.split(':', 1)[0]) == 0:
             time_string = time_string.split(':', 1)[1]
-    except:
+    except Exception:
         pass
 
     return time_string
@@ -50,7 +50,7 @@ class CellRendererTime(Gtk.CellRenderer):
 
         'color': (Gdk.RGBA,  # type
                   "text color",  # nick
-                  "Text color of the name",  # blurb
+                  "Text color of the time",  # blurb
                   GObject.PARAM_READWRITE,  # flags
                   ),
     }
@@ -59,6 +59,7 @@ class CellRendererTime(Gtk.CellRenderer):
         super().__init__()
         self.time = 0
         self.color = Gdk.RGBA()
+        self.font_description = get_general_font_description()
 
     def do_set_property(self, pspec, value):
         setattr(self, pspec.name, value)
@@ -69,10 +70,10 @@ class CellRendererTime(Gtk.CellRenderer):
     def do_render(self, cr, _widget, _background_area, cell_area, _flags):
         cr.set_source_rgb(self.color.red, self.color.green, self.color.blue)
         layout = PangoCairo.create_layout(cr)
-        layout.set_font_description(GENERAL_FONT_DESCRIPTION)
+        layout.set_font_description(self.font_description)
         layout.set_text(format_seconds(self.time), -1)
         cr.save()
-        #PangoCairo.update_layout(cr, layout)
+        #  PangoCairo.update_layout(cr, layout)
         cr.move_to(cell_area.x, cell_area.y)
         PangoCairo.show_layout(cr, layout)
         cr.restore()

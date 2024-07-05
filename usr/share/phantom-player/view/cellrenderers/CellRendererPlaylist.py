@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 
-#  Copyright (C) 2016, 2024  Rafael Senties Martinelli
+#  Copyright (C) 2016, 2024 Rafael Senties Martinelli.
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -14,15 +14,16 @@
 #
 # You should have received a copy of the GNU General Public License
 #   along with this program; if not, write to the Free Software Foundation,
-#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
+#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from gi.repository.GdkPixbuf import Pixbuf
 from gi.repository import Gtk, Gdk, GObject, PangoCairo
 
 from settings import IconSize
-from view.cellrenderers.constants import GENERAL_FONT_DESCRIPTION
+from view.gtk_utils import get_general_font_description
 
 _PROGRESS_BAR_HEIGHT = 4
+
 
 class CellRendererPlaylist(Gtk.CellRenderer):
     """ CellRenderer to display the Playlist images """
@@ -63,8 +64,9 @@ class CellRendererPlaylist(Gtk.CellRenderer):
         self.name = ""
         self.pixbuf = Pixbuf()
         self.color = Gdk.RGBA()
-        self.__formated_text = ""
+        self.font_description = get_general_font_description()
 
+        self.__formated_text = ""
         self.__icon_width = IconSize.Small._width
         self.__icon_height = IconSize.Small._height
 
@@ -93,7 +95,7 @@ class CellRendererPlaylist(Gtk.CellRenderer):
     def __draw_name(self, cr, cell_area):
         cr.set_source_rgb(self.color.red, self.color.green, self.color.blue)
         layout = PangoCairo.create_layout(cr)
-        layout.set_font_description(GENERAL_FONT_DESCRIPTION)
+        layout.set_font_description(self.font_description)
         layout.set_text(self.__formated_text, -1)
         cr.save()
         #  PangoCairo.update_layout(cr, layout)

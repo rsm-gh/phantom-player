@@ -70,6 +70,8 @@ Author: Rafael Senties Martinelli
       <column type="gint"/>
       <!-- column-name duration -->
       <column type="gint"/>
+      <!-- column-name rating -->
+      <column type="gint"/>
     </columns>
   </object>
   <object class="GtkWindow" id="window_root">
@@ -197,6 +199,13 @@ Author: Rafael Senties Martinelli
                         <attribute name="foreground-rgba">1</attribute>
                       </attributes>
                     </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="column_rating">
+                    <property name="title" translatable="yes">Rating</property>
+                    <property name="clickable">True</property>
+                    <property name="sort-column-id">8</property>
                   </object>
                 </child>
                 <child>
@@ -395,6 +404,14 @@ Author: Rafael Senties Martinelli
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Extension</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="checkbox_video_crating">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Rating</property>
+        <property name="use-underline">True</property>
       </object>
     </child>
     <child>
