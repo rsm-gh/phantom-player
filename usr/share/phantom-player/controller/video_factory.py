@@ -23,9 +23,9 @@ from model.Video import Video
 from vlc_utils import video_duration
 from controller.playlist_factory import _COLUMN_SEPARATOR
 
-
 _MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
 _MAGIC_MIMETYPE.load()
+
 
 def discover(playlist, playlist_paths=None, add_func=None, update_func=None, quit_func=None):
     print("Discovering new videos of '{}'...".format(playlist.get_name()))

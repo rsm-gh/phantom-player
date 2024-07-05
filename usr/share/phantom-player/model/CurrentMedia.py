@@ -49,6 +49,13 @@ class CurrentMedia:
         self._video = self._playlist.get_video_by_hash(video_hash)
         return self._video
 
+    def get_video_by_hash(self, video_hash):
+
+        if self._playlist is None:
+            return None
+
+        return self._playlist.get_video_by_hash(video_hash)
+
     def get_video_hash(self):
 
         if self._video is None:

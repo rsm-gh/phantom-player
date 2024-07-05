@@ -35,6 +35,7 @@ class Video(object):
         self.__ignore = False
         self.__hash = vhash
         self.__duration = int(duration)
+        self.__rating = 0
 
         #
         # Initialize the attributes
@@ -56,6 +57,9 @@ class Video(object):
 
     def ended(self):
         return self.__progress >= self.__duration
+
+    def get_rating(self):
+        return self.__rating
 
     def get_duration(self):
         return self.__duration
@@ -102,6 +106,9 @@ class Video(object):
 
     def get_is_new(self):
         return self.__is_new
+
+    def set_rating(self, value):
+        self.__rating = value
 
     def set_path(self, path):
         self.__path = path

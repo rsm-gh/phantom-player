@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 
-#  Copyright (C) 2016  Rafael Senties Martinelli 
+#  Copyright (C) 2016, 2024 Rafael Senties Martinelli.
 #
 #  This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
@@ -14,20 +14,12 @@
 #
 # You should have received a copy of the GNU General Public License
 #   along with this program; if not, write to the Free Software Foundation,
-#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA.
+#   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
-import gi
+from gi.repository import Gtk, Gdk, PangoCairo, GObject
 
-gi.require_version('Gtk', '3.0')
-gi.require_version('PangoCairo', '1.0')
-from gi.repository import Gtk, PangoCairo, GObject
-
-from .constants import FONT_CELLRATING_DESCRIPTION
-
-"""
-    I'm currently stuck for detecting the mouse-click/mouse-over so I can change the stars.
-"""
+from view.gtk_utils import get_cellrender_font_description
 
 
 class CellRendererRating(Gtk.CellRenderer):
@@ -42,80 +34,86 @@ class CellRendererRating(Gtk.CellRenderer):
                    0,  # default
                    GObject.PARAM_READWRITE  # flags
                    ),
+
+        'color': (Gdk.RGBA,  # type
+                  "text color",  # nick
+                  "Text color of the rating",  # blurb
+                  GObject.PARAM_READWRITE,  # flags
+                  ),
+
     }
 
-    def __init__(self, treeview=False):
+    def __init__(self):
         super().__init__()
         self.font_size = 15
-        self.font = "Sans Bold {}".format(self.font_size)
         self.rating = 0
+        self.color = Gdk.RGBA()
+        self.font_description = get_cellrender_font_description()
 
-        self._clicked = ()
-        self._clicked_function = False
+        self.__cursor_changed_pointer = None
+        self.__liststore = None
+        self.__rating_column_nb = None
+        self.__rating_changed_func = None
 
-        if treeview:
-            self.connect_treeview(treeview)
-
-    def connect_rating(self, treeviewcolumn, column=0, func=False):
+    def connect_rating(self, treeview, column=0, func=None):
         """
-            This should be conected once the cellrendere has been
-            added to the treeviewcolumn.
+            This should be connected once the cellrenderer has been added to the treeviewcolumn.
             
-            column=0, is the number of the rating column at the
-            treeview liststore.
+            column=0 is the number of the rating column at the treeview liststore.
             
-            func is a function to be called when a rating is edited,
-            it must accept the arguments (treeview, treepath, rating)
-            
+            func is a function to be called when a rating is edited.
+            It must accept the arguments (treeview, treepath, rating)
         """
-        treeview = treeviewcolumn.get_tree_view()
-        treeview.connect('cursor-changed', self.update_from_click)
-        self._column = column
-        self._liststore = treeview.get_model()
-        self._clicked_function = func
+        treeview.connect('cursor-changed', self.__on_cursor_changed)
+        self.__rating_column_nb = column
+        self.__liststore = treeview.get_model()
+        self.__rating_changed_func = func
 
-    def do_render(self, cr, treeview, background_area, cell_area, flags):
-        mouse_x, mouse_y = treeview.get_pointer()
-        cell_render_x = mouse_x - cell_area.x
+    def do_render(self, cr, treeview, _background_area, cell_area, flags):
 
         #
         # Update the rating if it was clicked (the liststore is updated too)
         #
-        if self._clicked != ():
-            x_click_coord = self._clicked[0]
-            self._clicked = ()
+        if self.__cursor_changed_pointer is not None:
+            clicked_x, clicked_y = self.__cursor_changed_pointer
+            self.__cursor_changed_pointer = None
 
             # Check if the click was inside the cell
             #
-            if x_click_coord >= cell_area.x and x_click_coord <= cell_area.x + self.font_size * 5 and 'SELECTED' in str(
-                    flags):
-                rating = round(cell_render_x / self.font_size)
+            if cell_area.x <= clicked_x <= cell_area.x + self.font_size * 5 and (Gtk.CellRendererState.SELECTED & flags):
+                rating = round((clicked_x - cell_area.x) / self.font_size)
 
-                if rating >= 0 and rating <= 5 and rating != self.rating:
-                    self.rating = rating
+                if 0 <= rating <= 5 and rating != self.rating:
 
                     try:
-                        pointing_treepath = treeview.get_path_at_pos(mouse_x, mouse_y - self.font_size)[0]
-                        self._liststore[pointing_treepath][self._column] = self.rating
-
+                        pointing_treepath = treeview.get_path_at_pos(clicked_x, clicked_y - self.font_size)[0]
                     except Exception as e:
                         print(e)
+                    else:
 
-                    if self._clicked_function:
-                        self._clicked_function(self._liststore, pointing_treepath, rating)
+                        self.rating = rating
+
+                        if None not in (self.__liststore, self.__rating_column_nb):
+                            self.__liststore[pointing_treepath][self.__rating_column_nb] = rating
+
+                        if self.__rating_changed_func is not None:
+                            self.__rating_changed_func(self.__liststore, pointing_treepath, rating)
 
         #
         # Draw the rating
         #
-        cr.translate(0, 0)
+        cr.set_source_rgb(self.color.red, self.color.green, self.color.blue)
         layout = PangoCairo.create_layout(cr)
-        layout.set_font_description(FONT_CELLRATING_DESCRIPTION)
+        layout.set_font_description(self.font_description)
 
         y_height_correction = self.font_size / 3
         cell_height = self.font_size + 1
 
-        if 'GTK_CELL_RENDERER_FOCUSED' in str(flags) and self.rating < 5:
+        if Gtk.CellRendererState.FOCUSED & flags:
             for i in range(5):
+
+                cr.move_to(cell_area.x + i * cell_height, cell_area.y - y_height_correction)
+
                 if i < self.rating:
                     layout.set_text("★", -1)
                 else:
@@ -123,21 +121,17 @@ class CellRendererRating(Gtk.CellRenderer):
 
                 cr.save()
                 PangoCairo.update_layout(cr, layout)
-                cr.move_to(cell_area.x + i * cell_height, cell_area.y - y_height_correction)
                 PangoCairo.show_layout(cr, layout)
                 cr.restore()
 
         else:
             for i in range(self.rating):
+                cr.move_to(cell_area.x + i * cell_height, cell_area.y - y_height_correction)
                 layout.set_text("★", -1)
                 cr.save()
                 PangoCairo.update_layout(cr, layout)
-                cr.move_to(cell_area.x + i * cell_height, cell_area.y - y_height_correction)
                 PangoCairo.show_layout(cr, layout)
                 cr.restore()
-
-    def update_from_click(self, treeview, data=None):
-        self._clicked = treeview.get_pointer()
 
     def do_set_property(self, pspec, value):
         setattr(self, pspec.name, value)
@@ -145,8 +139,11 @@ class CellRendererRating(Gtk.CellRenderer):
     def do_get_property(self, pspec):
         return getattr(self, pspec.name)
 
-    def do_get_size(self, widget, cell_area):
-        return (0, 0, self.font_size * 5, self.font_size + 5)
+    def do_get_size(self, _widget, _cell_area):
+        return 0, 0, self.font_size * 5, self.font_size + 5
+
+    def __on_cursor_changed(self, treeview, *_):
+        self.__cursor_changed_pointer = treeview.get_pointer()
 
 
 GObject.type_register(CellRendererRating)

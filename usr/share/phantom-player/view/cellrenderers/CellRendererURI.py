@@ -16,16 +16,10 @@
 #   along with this program; if not, write to the Free Software Foundation,
 #   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-
-import gi
-
-gi.require_version('Gtk', '3.0')
-gi.require_version('PangoCairo', '1.0')
-from gi.repository import Gtk, PangoCairo, GObject
-
 from urllib.parse import unquote
+from gi.repository import Gtk, Gdk, PangoCairo, GObject
 
-from .constants import FONT_COLOR, GENERAL_FONT_DESCRIPTION
+from view.gtk_utils import get_general_font_description
 
 
 def format_uri(uri: str):
@@ -45,11 +39,20 @@ class CellRendererURI(Gtk.CellRenderer):
                 '',  # default
                 GObject.PARAM_READWRITE  # flags
                 ),
+
+        'color': (Gdk.RGBA,  # type
+                  "text color",  # nick
+                  "Text color of the rating",  # blurb
+                  GObject.PARAM_READWRITE,  # flags
+                  ),
+
     }
 
     def __init__(self):
         super().__init__()
         self.uri = ''
+        self.color = Gdk.RGBA()
+        self.font_description = get_general_font_description()
 
         # the formatted value is stored to gain in performance when calling do_render().
         self.__formated_uri = ''
@@ -62,9 +65,9 @@ class CellRendererURI(Gtk.CellRenderer):
         return getattr(self, pspec.name)
 
     def do_render(self, cr, _widget, _background_area, cell_area, _flags):
-        cr.set_source_rgb(FONT_COLOR[0], FONT_COLOR[1], FONT_COLOR[2])
+        cr.set_source_rgb(self.color.red, self.color.green, self.color.blue)
         layout = PangoCairo.create_layout(cr)
-        layout.set_font_description(GENERAL_FONT_DESCRIPTION)
+        layout.set_font_description(self.font_description)
         layout.set_text(self.__formated_uri, -1)
         cr.save()
         # PangoCairo.update_layout(cr, layout)
@@ -72,13 +75,13 @@ class CellRendererURI(Gtk.CellRenderer):
         PangoCairo.show_layout(cr, layout)
         cr.restore()
 
+    """
+    def activate(self, event, widget, path, background_area, cell_area, flags):
+        print(flags)
 
-#     def activate(self, event, widget, path, background_area, cell_area, flags):
-#         print(flags)
-
-# def do_get_size(self, widget, cell_area):
-# return (0, 0, cell_area.width, cell_area.height)
-# return (0, 0, self.kilobytes.get_width(), self.kilobytes.get_height())
-
+    def do_get_size(self, widget, cell_area):
+        return (0, 0, cell_area.width, cell_area.height)
+        return (0, 0, self.kilobytes.get_width(), self.kilobytes.get_height())
+    """
 
 GObject.type_register(CellRendererURI)
