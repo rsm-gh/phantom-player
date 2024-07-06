@@ -36,6 +36,7 @@ class Video(object):
         self.__hash = vhash
         self.__duration = int(duration)
         self.__rating = 0
+        self.__size = 0
 
         #
         # Initialize the attributes
@@ -106,6 +107,13 @@ class Video(object):
 
     def get_is_new(self):
         return self.__is_new
+
+    def get_size(self):
+        return self.__size
+
+    def set_size(self, bytes_nb):
+        if bytes_nb >= 0:
+            self.__size = bytes_nb
 
     def set_rating(self, value):
         self.__rating = value

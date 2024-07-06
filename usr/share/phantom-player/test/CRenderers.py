@@ -24,6 +24,7 @@
         - http://python-gtk-3-tutorial.readthedocs.org/en/latest/objects.html
         - http://zetcode.com/gui/pygtk/signals/ https://lazka.github.io/pgi-docs/Gtk-3.0/classes/CellRenderer.html
 """
+import os.path
 
 import gi
 

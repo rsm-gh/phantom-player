@@ -72,6 +72,8 @@ Author: Rafael Senties Martinelli
       <column type="gint"/>
       <!-- column-name rating -->
       <column type="gint"/>
+      <!-- column-name size -->
+      <column type="gint"/>
     </columns>
   </object>
   <object class="GtkWindow" id="window_root">
@@ -135,7 +137,6 @@ Author: Rafael Senties Martinelli
                     <property name="title" translatable="yes">N°</property>
                     <property name="clickable">True</property>
                     <property name="reorderable">True</property>
-                    <property name="sort-indicator">True</property>
                     <property name="sort-column-id">2</property>
                     <child>
                       <object class="GtkCellRendererText" id="cellrenderertext1"/>
@@ -152,7 +153,6 @@ Author: Rafael Senties Martinelli
                     <property name="title" translatable="yes">Path</property>
                     <property name="clickable">True</property>
                     <property name="reorderable">True</property>
-                    <property name="sort-indicator">True</property>
                     <property name="sort-column-id">3</property>
                     <child>
                       <object class="GtkCellRendererText"/>
@@ -172,7 +172,6 @@ Author: Rafael Senties Martinelli
                     <property name="expand">True</property>
                     <property name="clickable">True</property>
                     <property name="reorderable">True</property>
-                    <property name="sort-indicator">True</property>
                     <property name="sort-column-id">4</property>
                     <child>
                       <object class="GtkCellRendererText" id="cellrenderertext2"/>
@@ -187,10 +186,9 @@ Author: Rafael Senties Martinelli
                   <object class="GtkTreeViewColumn" id="column_extension">
                     <property name="sizing">fixed</property>
                     <property name="fixed-width">60</property>
-                    <property name="title" translatable="yes">Ext</property>
+                    <property name="title" translatable="yes">Ext.</property>
                     <property name="clickable">True</property>
                     <property name="reorderable">True</property>
-                    <property name="sort-indicator">True</property>
                     <property name="sort-column-id">5</property>
                     <child>
                       <object class="GtkCellRendererText" id="cellrenderertext3"/>
@@ -202,15 +200,26 @@ Author: Rafael Senties Martinelli
                   </object>
                 </child>
                 <child>
-                  <object class="GtkTreeViewColumn" id="column_rating">
-                    <property name="title" translatable="yes">Rating</property>
+                  <object class="GtkTreeViewColumn" id="column_duration">
+                    <property name="title" translatable="yes">Duration</property>
                     <property name="clickable">True</property>
-                    <property name="sort-column-id">8</property>
+                    <property name="reorderable">True</property>
                   </object>
                 </child>
                 <child>
-                  <object class="GtkTreeViewColumn" id="column_duration">
-                    <property name="title" translatable="yes">Duration</property>
+                  <object class="GtkTreeViewColumn" id="column_size">
+                    <property name="title" translatable="yes">Size</property>
+                    <property name="clickable">True</property>
+                    <property name="reorderable">True</property>
+                    <property name="sort-column-id">9</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="column_rating">
+                    <property name="title" translatable="yes">Rating</property>
+                    <property name="clickable">True</property>
+                    <property name="reorderable">True</property>
+                    <property name="sort-column-id">8</property>
                   </object>
                 </child>
                 <child>
@@ -218,7 +227,6 @@ Author: Rafael Senties Martinelli
                     <property name="title" translatable="yes">Progress</property>
                     <property name="clickable">True</property>
                     <property name="reorderable">True</property>
-                    <property name="sort-indicator">True</property>
                     <property name="sort-column-id">6</property>
                     <child>
                       <object class="GtkCellRendererProgress"/>
@@ -419,6 +427,14 @@ Author: Rafael Senties Martinelli
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Duration</property>
+        <property name="use-underline">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="checkbox_video_csize">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Size</property>
         <property name="use-underline">True</property>
       </object>
     </child>

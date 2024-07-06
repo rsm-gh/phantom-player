@@ -34,7 +34,7 @@ _PLAYLIST_ATTR = ('random',
                   'current_video_hash')
 
 _PLAYLIST_PATH_ATTR = ('recursive', 'startup_discover')
-_VIDEO_ATTR = ('duration', 'progress', 'ignore', 'path', 'name','rating')
+_VIDEO_ATTR = ('duration', 'progress', 'ignore', 'path', 'name', 'size', 'rating')
 
 
 class SaveParams:
@@ -68,7 +68,6 @@ def load(file_path):
 
 
 def save(playlist):
-
     if playlist.get_load_status() == LoadStatus._waiting_load:
         return
 
@@ -243,6 +242,7 @@ def __load_videos(playlist, file_lines):
         progress = 0
         duration = 0
         rating = 0
+        size = 0
         ignore = False
 
         #
@@ -290,6 +290,12 @@ def __load_videos(playlist, file_lines):
                     except Exception:
                         print("\tWarning: Video with invalid duration.", line)
 
+                case "size":
+                    try:
+                        size = int(value)
+                    except Exception:
+                        print("\tWarning: Video with invalid size.", line)
+
                 case 'rating':
                     try:
                         rating = int(value)
@@ -330,13 +336,21 @@ def __load_videos(playlist, file_lines):
             print("\t\tSkipped path:", path)
             continue
 
-        if duration <= 0 and os.path.exists(path):
-            duration = video_duration(path)
+        if os.path.exists(path):
+            # This is only to have backwards compatibility with the new columns
+            # while developing the software.
+
+            if duration <= 0:
+                duration = video_duration(path)
+
+            if size <= 0:
+                size = os.path.getsize(path)
 
         video = Video(hash_file, path, duration, name)
         video.set_progress(progress)
         video.set_ignore(ignore)
         video.set_rating(rating)
+        video.set_size(size)
         playlist.add_video(video)
         imported_hash_paths[hash_file] = path
 

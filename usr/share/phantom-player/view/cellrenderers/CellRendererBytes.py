@@ -21,15 +21,22 @@ from gi.repository import Gtk, Gdk, PangoCairo, GObject
 from view.gtk_utils import get_general_font_description
 
 
-def format_bytes(num):
+def format_bytes(num, binary=False):
     """ Format a byte number into a human-readable string."""
 
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
-        if abs(num) < 1024:
-            return '{0} {1}{2}'.format(round(num, 0), unit, 'B')
-        num /= 1024
+    if binary:
+        multiple = 1024
+        suffix = 'i'
+    else:
+        multiple = 1000
+        suffix = ""
 
-    return '{0} {1}{2}'.format(round(num, 0), 'Yi', 'B')
+    for unit in ('', 'K', 'M', 'G', 'T', 'P', 'E', 'Z'):
+        if abs(num) < multiple:
+            return '{0} {1}{2}'.format(round(num, 1), unit + suffix, 'B')
+        num /= multiple
+
+    return '{0} {1}{2}'.format(round(num, 1), 'Y' + suffix, 'B')
 
 
 class CellRendererBytes(Gtk.CellRenderer):
@@ -56,6 +63,7 @@ class CellRendererBytes(Gtk.CellRenderer):
     def __init__(self):
         super().__init__()
         self.bytes = 0
+        self.binary = False
         self.color = Gdk.RGBA()
 
         self.font_description = get_general_font_description()
@@ -64,7 +72,7 @@ class CellRendererBytes(Gtk.CellRenderer):
         self.__formated_bytes = ''
 
     def do_set_property(self, pspec, value):
-        self.__formated_bytes = format_bytes(self.bytes)
+        self.__formated_bytes = format_bytes(self.bytes, self.binary)
         setattr(self, pspec.name, value)
 
     def do_get_property(self, pspec):
