@@ -24,7 +24,7 @@
         + Create the "delete video" option (instead of clean)
         + Create a dialog to rename multiple videos.
         + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
-        + Add video size
+        + Add video: added & last played datetime
 
     Patches:
         + self.__window_root_accel is to store the current window root accel group and be able to
@@ -65,6 +65,7 @@ from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignal
 from view.cellrenderers.CellRendererTime import CellRendererTime
 from view.cellrenderers.CellRendererRating import CellRendererRating
 from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
+from view.cellrenderers.CellRendererBytes import CellRendererBytes
 
 
 class PlaylistListstoreColumnsIndex:
@@ -85,6 +86,7 @@ class VideosListstoreColumnsIndex:
     _progress = 6
     _duration = 7
     _rating = 8
+    _size = 9
 
 
 class GlobalConfigTags:
@@ -102,6 +104,7 @@ class GlobalConfigTags:
     _video_cduration = 'video-column-duration'
     _video_crating = 'video-column-rating'
     _video_cprog = 'video-column-progress'
+    _video_csize = 'video-column-size'
     _video_rhidden = "videos-hidden"
 
     class IconSize:
@@ -184,6 +187,7 @@ class PhantomPlayer:
         self.__checkbox_video_cduration = builder.get_object('checkbox_video_cduration')
         self.__checkbox_video_crating = builder.get_object('checkbox_video_crating')
         self.__checkbox_video_cprogress = builder.get_object('checkbox_video_cprogress')
+        self.__checkbox_video_csize = builder.get_object('checkbox_video_csize')
         self.__checkbox_video_rhidden = builder.get_object('checkbox_video_rhidden')
 
         self.__column_number = builder.get_object('column_number')
@@ -193,6 +197,7 @@ class PhantomPlayer:
         self.__column_percent = builder.get_object('column_percent')
         self.__column_duration = builder.get_object('column_duration')
         self.__column_rating = builder.get_object('column_rating')
+        self.__column_size = builder.get_object('column_size')
         self.__liststore_playlists = builder.get_object('liststore_playlists')
         self.__liststore_videos = builder.get_object('liststore_videos')
         self.__box_window = builder.get_object('box_window')
@@ -274,6 +279,11 @@ class PhantomPlayer:
                                               self.__column_rating,
                                               GlobalConfigTags._video_crating)
 
+        self.__checkbox_video_csize.connect('toggled',
+                                            self.__on_checkbox_video_column_toggled,
+                                            self.__column_size,
+                                            GlobalConfigTags._video_csize)
+
         self.__checkbox_video_cprogress.connect('toggled',
                                                 self.__on_checkbox_video_column_toggled,
                                                 self.__column_percent,
@@ -293,6 +303,7 @@ class PhantomPlayer:
                        self.__column_extension,
                        self.__column_duration,
                        self.__column_rating,
+                       self.__column_size,
                        self.__column_percent):
             gtk_utils.bind_header_click(widget, self.__on_treeview_videos_header_clicked)
 
@@ -420,7 +431,6 @@ class PhantomPlayer:
         # Liststore videos cellrenderer
         #
         cellrenderer_time = CellRendererTime()
-
         self.__column_duration.pack_start(cellrenderer_time, expand=True)
         self.__column_duration.add_attribute(cellrenderer_time, 'time', VideosListstoreColumnsIndex._duration)
         self.__column_duration.add_attribute(cellrenderer_time, 'color', VideosListstoreColumnsIndex._color)
@@ -432,6 +442,12 @@ class PhantomPlayer:
         cellrenderer_rating.connect_rating(self.__treeview_videos,
                                            VideosListstoreColumnsIndex._rating,
                                            self.__on_cellrenderer_rating_changed)
+
+
+        cellrenderer_bytes = CellRendererBytes()
+        self.__column_size.pack_start(cellrenderer_bytes, expand=True)
+        self.__column_size.add_attribute(cellrenderer_bytes, 'bytes', VideosListstoreColumnsIndex._size)
+        self.__column_size.add_attribute(cellrenderer_bytes, 'color', VideosListstoreColumnsIndex._color)
 
         #
         # Extra dialogs
@@ -891,7 +907,8 @@ class PhantomPlayer:
                                             video.get_extension(),
                                             video.get_percent(),
                                             video.get_duration(),
-                                            video.get_rating()])
+                                            video.get_rating(),
+                                            video.get_size()])
 
     def __liststore_videos_refresh(self):
 
@@ -926,7 +943,8 @@ class PhantomPlayer:
                                   progress=True,
                                   color=True,
                                   path=True,
-                                  duration=True):
+                                  duration=True,
+                                  size=True):
 
         if video is None:
             return
@@ -949,6 +967,9 @@ class PhantomPlayer:
 
                 if duration:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._duration] = video.get_duration()
+
+                if size:
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex._size] = video.get_size()
 
                 return
 
