@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Generated with glade 3.40.0 
 
-Copyright (C) 2014-2015, 2024 Rafael Senties Martinelli
+The MIT License (MIT)
 
-This file is part of phantom-player.
+Copyright (c) 2024 Rafael Senties Martinelli.
 
-phantom-player is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-phantom-player is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
 
-You should have received a copy of the GNU General Public License
-along with phantom-player.  If not, see <http://www.gnu.org/licenses/>.
-
-Author: Rafael Senties Martinelli
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 
 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
-  <!-- interface-license-type gplv3 -->
-  <!-- interface-name phantom-player -->
-  <!-- interface-description This package allows you to create and reproduce playlists from folders containing videos. -->
-  <!-- interface-copyright 2014-2015, 2024 Rafael Senties Martinelli -->
-  <!-- interface-authors Rafael Senties Martinelli -->
+  <!-- interface-license-type mit -->
+  <!-- interface-copyright 2024 Rafael Senties Martinelli. -->
   <object class="GtkAdjustment" id="adjustment_audio">
     <property name="lower">-1</property>
     <property name="upper">99</property>
@@ -525,8 +525,6 @@ Author: Rafael Senties Martinelli
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <property name="margin-left">3</property>
-                            <property name="margin-right">3</property>
                             <property name="margin-start">3</property>
                             <property name="margin-end">3</property>
                             <property name="label" translatable="yes">:</property>
