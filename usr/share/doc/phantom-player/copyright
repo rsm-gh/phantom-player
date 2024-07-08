@@ -2,13 +2,32 @@ Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: phantom-player
 Source: Interpreted Language
 
-Files: movie icon
+Files:
+    /view/img/movie-icon-big.png
+    /view/img/movie-icon-medium.png
+    /view/img/movie-icon-small.png
 Copyright: http://www.iconarchive.com/show/atrous-icons-by-iconleak/movie-icon.html  
 License: Linkware (Backlink to http://iconleak.com required)
 
-Files: *
-Copyright: Copyright (c) 2014-2016, 2024 Rafael Senties Martinelli.
+
+Files:
+    /setup
+    /remove
+Copyright: Copyright (c) 2015, 2024 Rafael Senties Martinelli.
 License: GPL3
+
+
+Files: /share/phantom-player/view/VLCWidget.py
+Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli.
+              2017 Olivier Aubert.
+              2009-2010 the VideoLAN team.
+License: GPL3
+
+
+Files: *
+Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli.
+License: MIT
+
 
 GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
