@@ -46,6 +46,12 @@ _PLAYLIST_ATTR = ('random',
 _PLAYLIST_PATH_ATTR = ('recursive', 'startup_discover')
 _VIDEO_ATTR = ('duration', 'progress', 'ignore', 'path', 'name', 'size', 'rating')
 
+_PLAYLIST_SETTINGS_HEADER = """
+#
+# Playlist file for Phantom-Player
+# https://www.phantom-player.com
+#
+"""
 
 class SaveParams:
     class Section:
@@ -86,12 +92,7 @@ def save(playlist):
     if not os.path.exists(_SERIES_DIR):
         os.mkdir(_SERIES_DIR)
 
-    data = """
-#
-# Playlist file for Phantom-Player
-# https://github.com/rsm-gh/phantom-player
-#
-"""
+    data = _PLAYLIST_SETTINGS_HEADER
 
     #
     # Add the playlist data
@@ -120,6 +121,24 @@ def save(playlist):
         f.write(data)
 
 
+def __load_value_boolean(value, default, param_name):
+    try:
+        return str_to_boolean(value)
+    except Exception:
+        print("\tError getting '{}'".format(param_name))
+
+    return default
+
+
+def __load_value_int(value, default, param_name):
+    try:
+        return int(value)
+    except Exception:
+        print("\tError getting '{}'".format(param_name))
+
+    return default
+
+
 def __load_settings(playlist, file_lines):
     random = False
     keep_playing = False
@@ -140,41 +159,22 @@ def __load_settings(playlist, file_lines):
         match param_name:
 
             case "random":
-                try:
-                    random = str_to_boolean(value)
-                except Exception:
-                    print("\tError getting 'random'")
+                random = __load_value_boolean(value, random, param_name)
 
             case "keep_playing":
-                try:
-                    keep_playing = str_to_boolean(value)
-                except Exception:
-                    print("\tError getting 'keep_playing'")
+                keep_playing = __load_value_boolean(value, keep_playing, param_name)
 
             case 'start_at':
-                try:
-                    start_at = float(value)
-                except Exception:
-                    print("\tError getting 'start_at'")
+                start_at = __load_value_int(value, start_at, param_name)
 
             case 'audio_track':
-                try:
-                    audio_track = int(value)
-                except Exception:
-                    print("\tError getting 'audio_track'")
+                audio_track = __load_value_int(value, audio_track, param_name)
 
             case 'subtitles_track':
-                try:
-                    subtitles_track = int(value)
-                except Exception:
-                    print("\tError getting 'subtitles_track'")
-                    subtitles_track = 0
+                subtitles_track = __load_value_int(value, subtitles_track, param_name)
 
             case 'current_video_hash':
-                try:
-                    current_video_hash = value
-                except Exception:
-                    print("\tError getting 'current_video_hash'")
+                current_video_hash = value
 
             case _:
                 print("Error: wrong attr name on line=", line)
