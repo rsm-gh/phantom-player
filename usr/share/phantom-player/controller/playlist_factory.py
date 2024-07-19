@@ -53,11 +53,13 @@ _PLAYLIST_SETTINGS_HEADER = """
 #
 """
 
+
 class SaveParams:
     class Section:
         _settings = "[SETTINGS]"
         _sources = "[SOURCES]"
         _videos = "[VIDEOS]"
+
 
 def load(file_path):
     print("Loading...", file_path)
@@ -128,6 +130,7 @@ def __load_value_boolean(value, default, param_name):
 def __load_value_int(value, default, param_name):
     try:
         return int(value)
+
     except Exception:
         print("\tError getting '{}'".format(param_name))
 
