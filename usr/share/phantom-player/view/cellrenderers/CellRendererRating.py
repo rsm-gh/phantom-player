@@ -33,7 +33,7 @@ class CellRendererRating(Gtk.CellRenderer):
     """ Cellrenderer to display ratings from 0 to 5: ★★★★★, ★★★☆☆, etc """
 
     __gproperties__ = {
-        'rating': (int,  # type
+        'rating': ('gint',  # type
                    "integer prop",  # nick
                    "A property that contains an integer",  # blurb
                    0,  # min
