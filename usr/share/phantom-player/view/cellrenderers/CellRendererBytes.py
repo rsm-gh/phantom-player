@@ -40,10 +40,26 @@ def format_bytes(num, binary=False):
 
     for unit in ('', 'K', 'M', 'G', 'T', 'P', 'E', 'Z'):
         if abs(num) < multiple:
-            return '{0} {1}{2}'.format(round(num, 1), unit + suffix, 'B')
+
+            str_nb = str(num)
+            if "." in str_nb:
+                str_nb = str_nb.split(".")[0]
+
+                if len(str_nb) > 2:
+                    num = int(round(num, 0))
+                else:
+                    num = round(num, 1)
+
+            return '{0} {1}{2}'.format(num, unit + suffix, 'B')
+
         num /= multiple
 
-    return '{0} {1}{2}'.format(round(num, 1), 'Y' + suffix, 'B')
+
+    print(num)
+
+
+
+    return '{0} {1}{2}'.format(num, 'Y' + suffix, 'B')
 
 
 class CellRendererBytes(Gtk.CellRenderer):
