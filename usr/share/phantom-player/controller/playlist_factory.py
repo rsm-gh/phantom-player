@@ -59,11 +59,6 @@ class SaveParams:
         _sources = "[SOURCES]"
         _videos = "[VIDEOS]"
 
-
-def str_to_boolean(value):
-    return value.lower().strip() == "true"
-
-
 def load(file_path):
     print("Loading...", file_path)
     file_lines = __get_lines(file_path)
@@ -123,7 +118,7 @@ def save(playlist):
 
 def __load_value_boolean(value, default, param_name):
     try:
-        return str_to_boolean(value)
+        return value.lower().strip() == "true"
     except Exception:
         print("\tError getting '{}'".format(param_name))
 
@@ -214,21 +209,15 @@ def __load_paths(file_lines):
             if _VALUE_SEPARATOR not in column:
                 print("\tWarning: Path with invalid column.", line)
 
-            parameter = column.split(_VALUE_SEPARATOR)[0].strip()
+            param_name = column.split(_VALUE_SEPARATOR)[0].strip()
             value = column.split(_VALUE_SEPARATOR)[1].strip()
 
-            match parameter:
+            match param_name:
                 case "recursive":
-                    try:
-                        recursive = str_to_boolean(value)
-                    except Exception:
-                        print("\tEWarning: Path with invalid recursive", line)
+                    recursive = __load_value_boolean(value, recursive, param_name)
 
                 case "startup_discover":
-                    try:
-                        r_startup = str_to_boolean(value)
-                    except Exception:
-                        print("\tWarning: Path with invalid startup_discover", line)
+                    r_startup = __load_value_boolean(value, r_startup, param_name)
 
                 case _:
                     print("\tWarning: Path with ignored parameter", line)
@@ -274,10 +263,10 @@ def __load_videos(playlist, file_lines):
             if _VALUE_SEPARATOR not in column:
                 print("\tWarning: Video with invalid column.", line)
 
-            parameter = column.split(_VALUE_SEPARATOR)[0].strip()
+            param_name = column.split(_VALUE_SEPARATOR)[0].strip()
             value = column.split(_VALUE_SEPARATOR)[1].strip()
 
-            match parameter:
+            match param_name:
                 case "path":
                     if "/" in value or "\\" in value:
                         path = value
@@ -289,34 +278,19 @@ def __load_videos(playlist, file_lines):
                     name = value
 
                 case "progress":
-                    try:
-                        progress = int(value)
-                    except Exception:
-                        print("\tWarning: Video with invalid progress.", line)
+                    progress = __load_value_int(value, progress, param_name)
 
                 case "duration":
-                    try:
-                        duration = int(value)
-                    except Exception:
-                        print("\tWarning: Video with invalid duration.", line)
+                    duration = __load_value_int(value, duration, param_name)
 
                 case "size":
-                    try:
-                        size = int(value)
-                    except Exception:
-                        print("\tWarning: Video with invalid size.", line)
+                    size = __load_value_int(value, size, param_name)
 
                 case 'rating':
-                    try:
-                        rating = int(value)
-                    except Exception:
-                        print("\tError getting 'rating'")
+                    rating = __load_value_int(value, rating, param_name)
 
                 case "ignore":
-                    try:
-                        ignore = str_to_boolean(value)
-                    except Exception:
-                        print("\tWarning: Video with invalid ignore state", line)
+                    ignore = __load_value_boolean(value, ignore, param_name)
 
                 case _:
                     print("\tWarning: Video with ignored parameter", line)
