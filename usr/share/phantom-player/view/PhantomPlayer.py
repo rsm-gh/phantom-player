@@ -451,7 +451,6 @@ class PhantomPlayer:
                                            VideosListstoreColumnsIndex._rating,
                                            self.__on_cellrenderer_rating_changed)
 
-
         cellrenderer_bytes = CellRendererBytes()
         self.__column_size.pack_start(cellrenderer_bytes, expand=True)
         self.__column_size.add_attribute(cellrenderer_bytes, 'bytes', VideosListstoreColumnsIndex._size)
@@ -1502,6 +1501,7 @@ class PhantomPlayer:
 
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
         self.__on_treeselection_videos_changed()  # To reload the shortcuts
+        self.__liststore_playlists_update(self.__current_media._playlist)  # to upload the progress
 
     def __on_menuitem_videos_delete(self, *_):
 
@@ -1514,6 +1514,7 @@ class PhantomPlayer:
             self.__liststore_videos_remove(video)
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
         self.__on_treeselection_videos_changed()  # To reload the shortcuts
+        self.__liststore_playlists_update(self.__current_media._playlist)  # to upload the progress
 
     def __on_menuitem_videos_rename_single(self, *_):
 
