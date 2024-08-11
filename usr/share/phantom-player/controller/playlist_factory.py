@@ -31,6 +31,7 @@ from model.Playlist import Playlist, LoadStatus
 from model.PlaylistPath import PlaylistPath
 from model.Video import Video
 from vlc_utils import video_duration
+from console_printer import print_debug, print_error
 
 _COLUMN_SEPARATOR = "|"
 _VALUE_SEPARATOR = "="
@@ -62,7 +63,7 @@ class SaveParams:
 
 
 def load(file_path):
-    print("Loading...", file_path)
+    print_debug(f"Path={file_path}")
     file_lines = __get_lines(file_path)
 
     playlist = Playlist()
@@ -73,7 +74,7 @@ def load(file_path):
     for playlist_path in __load_paths(file_lines):
         added = playlist.add_playlist_path(playlist_path)
         if not added:
-            print('\tError rejected path=' + file_path)
+            print_error(f'rejected path={file_path}')
 
     __load_videos(playlist, file_lines)
 
@@ -84,7 +85,7 @@ def save(playlist):
     if playlist.get_load_status() == LoadStatus._waiting_load:
         return
 
-    print("Saving... {}".format(playlist.get_name()))
+    print_debug(f"Saving... {playlist.get_name()}")
 
     if not os.path.exists(_SERIES_DIR):
         os.mkdir(_SERIES_DIR)
@@ -97,19 +98,19 @@ def save(playlist):
     data += "\n\n{}\n\n".format(SaveParams.Section._settings)
     for attr_name in _PLAYLIST_ATTR:
         value = getattr(playlist, "get_" + attr_name)()
-        data += "{}={}\n".format(attr_name, value)
+        data += f"{attr_name}={value}\n"
 
     #
     # Add the source's data
     #
-    data += "\n\n{}\n\n".format(SaveParams.Section._sources)
+    data += f"\n\n{SaveParams.Section._sources}\n\n"
     for playlist_path in playlist.get_playlist_paths():
         data += __join_line_attrs(playlist_path.get_path(), playlist_path, _PLAYLIST_PATH_ATTR)
 
     #
     # Add the video's data
     #
-    data += "\n\n{}\n\n".format(SaveParams.Section._videos)
+    data += f"\n\n{SaveParams.Section._videos}\n\n"
     for video in playlist.get_videos():
         data += __join_line_attrs(video.get_hash(), video, _VIDEO_ATTR)
 
@@ -122,7 +123,7 @@ def __load_value_boolean(value, default, param_name):
     try:
         return value.lower().strip() == "true"
     except Exception:
-        print("\tError getting '{}'".format(param_name))
+        print_error(f"\tError getting {param_name}")
 
     return default
 
@@ -132,7 +133,7 @@ def __load_value_int(value, default, param_name):
         return int(value)
 
     except Exception:
-        print("\tError getting '{}'".format(param_name))
+        print_error(f"\tError getting {param_name}")
 
     return default
 
@@ -148,7 +149,7 @@ def __load_settings(playlist, file_lines):
     for line in __get_section_content(file_lines, SaveParams.Section._settings):
 
         if _VALUE_SEPARATOR not in line:
-            print("Error parsing header, line=", line)
+            print_error(f"Error parsing header, line={line}")
             continue
 
         param_name = line.split(_VALUE_SEPARATOR)[0].strip()
@@ -175,7 +176,7 @@ def __load_settings(playlist, file_lines):
                 current_video_hash = value
 
             case _:
-                print("Error: wrong attr name on line=", line)
+                print_error(f"Error: wrong attr name on line={line}")
 
     #
     # Create the playlist (without loading the videos)
