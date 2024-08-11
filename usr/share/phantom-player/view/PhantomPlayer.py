@@ -60,7 +60,7 @@ from Texts import Texts
 from view import gtk_utils
 from Paths import _SERIES_DIR, _CONF_FILE
 from system_utils import EventCodes, open_directory
-from controller.CCParser import CCParser
+from CCParser import CCParser
 from controller import video_factory
 from controller import playlist_factory
 from model.Playlist import Playlist
