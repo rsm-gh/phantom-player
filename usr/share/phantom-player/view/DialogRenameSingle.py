@@ -29,6 +29,7 @@ from gi.repository import Gtk
 from Texts import Texts
 from controller.playlist_factory import _COLUMN_SEPARATOR
 from controller.playlist_factory import save as save_playlist
+from console_printer import print_error
 
 
 class DialogRenameSingle:
@@ -93,7 +94,7 @@ class DialogRenameSingle:
             return
 
         elif _COLUMN_SEPARATOR in new_name:
-            print("ERROR, _COLUMN_SEPARATOR in new name", new_name)
+            print_error(f"_COLUMN_SEPARATOR in new name {new_name}")
             return
 
         elif new_name == self.__video.get_name() and not modify_hdrive:
@@ -112,13 +113,13 @@ class DialogRenameSingle:
         if self.__switch_hardrive.get_active() and new_path != current_path:
 
             if os.path.exists(new_path):
-                print("ERROR: already existent path", new_path)
+                print_error(f"already existent path {new_path}")
                 return
 
             try:
                 os.rename(current_path, new_path)
             except Exception as e:
-                print(e)
+                print_error(str(e))
                 return
 
             self.__video.set_path(new_path)
