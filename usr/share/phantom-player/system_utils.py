@@ -26,13 +26,15 @@
 import os
 from PIL import Image
 
+from console_printer import print_warning
+
 
 def open_directory(path):
     if not os.path.exists(path):
-        raise ValueError('Path does not exist', path)
+        print_warning('Path does not exist', path)
 
     elif not os.path.isdir(path):
-        raise ValueError('Path is not a directory', path)
+        print_warning('Path is not a directory', path)
 
     # Put the most popular (robust) at the beginning
     file_managers = ['exo-open',
@@ -65,12 +67,12 @@ def turn_off_screensaver(state):
         try:
             os.system('''xset s off''')
         except Exception:
-            print("It wasn't possible to turn off the screensaver")
+            print_warning("It wasn't possible to turn off the screensaver")
     else:
         try:
             os.system('''xset s on''')
         except Exception:
-            print("It wasn't possible to turn on the screensaver")
+            print_warning("It wasn't possible to turn on the screensaver")
 
 
 def format_img(read_path, write_path, width=None, height=None, max_width=None, extension=None):

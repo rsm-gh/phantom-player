@@ -74,6 +74,7 @@ from view.cellrenderers.CellRendererTime import CellRendererTime
 from view.cellrenderers.CellRendererRating import CellRendererRating
 from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
 from view.cellrenderers.CellRendererBytes import CellRendererBytes
+from console_printer import print_debug
 
 
 class PlaylistListstoreColumnsIndex:
@@ -1105,9 +1106,9 @@ class PhantomPlayer:
         GLib.idle_add(self.__statusbar_push, Texts.StatusBar._load_playlists_ended)
 
         if killed:
-            print("Load playlist killed.")
+            print_debug("Load playlist killed.")
         else:
-            print("Load playlist ended.")
+            print_debug("Load playlist ended.")
 
     def __on_cellrenderer_rating_changed(self, liststore, treepath, rating):
         video_hash = liststore[treepath][VideosListstoreColumnsIndex._hash]
