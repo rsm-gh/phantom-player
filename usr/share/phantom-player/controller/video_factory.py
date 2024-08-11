@@ -102,7 +102,7 @@ def __discover_playlist_path(playlist,
 
 
 def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=None, update_func=None):
-    print_debug()
+    print_debug(f"playlist name={playlist.get_name()}, file_path={file_path}")
 
     if file_path in exclude_paths:
         return
