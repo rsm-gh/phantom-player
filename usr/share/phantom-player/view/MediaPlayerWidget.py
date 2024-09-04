@@ -242,7 +242,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_video_progress.set_text(_EMPTY__VIDEO_LENGTH)
         self.__label_video_progress.set_margin_start(5)
         self.__label_video_progress.set_margin_end(0)
-        self.__label_video_progress.set_size_request(100, -1)
         self.__label_video_progress.set_xalign(1)
         self.__buttons_box.pack_start(self.__label_video_progress, expand=False, fill=False, padding=0)
 
@@ -250,7 +249,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_video_length.set_text(" / " + _EMPTY__VIDEO_LENGTH)
         self.__label_video_length.set_margin_start(0)
         self.__label_video_length.set_margin_end(5)
-        self.__label_video_length.set_size_request(100, -1)
         self.__label_video_length.set_xalign(0)
         self.__buttons_box.pack_start(self.__label_video_length, expand=False, fill=False, padding=0)
 
