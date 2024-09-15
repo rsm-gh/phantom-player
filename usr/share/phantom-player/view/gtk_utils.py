@@ -225,9 +225,12 @@ def dialog_info(parent, text1, text2=None):
     _ = dialog.run()
     dialog.destroy()
 
+"""
+OLD: use window.is_fullscreen()
 
 def window_is_fullscreen(gtk_window):
-    window = gtk_window.get_window()
+    # OLD: window = gtk_window.get_window()
+    window = gtk_window.get_surface()
 
     if window is None:
         return False
@@ -236,3 +239,4 @@ def window_is_fullscreen(gtk_window):
         return True
 
     return False
+"""

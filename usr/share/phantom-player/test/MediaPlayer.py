@@ -51,7 +51,7 @@ import gi
 import sys
 
 os.environ["GDK_BACKEND"] = "x11"
-gi.require_version('Gtk', '3.0')
+gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -60,30 +60,36 @@ from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE
 
 class MediaPlayer(Gtk.Window):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, application):
+        super().__init__(application=application)
 
         self.__mp_widget = MediaPlayerWidget(root_window=self)
-        self.add(self.__mp_widget)
-        self.connect('delete-event', self.quit)
+        # OLD: self.add(self.__mp_widget)
+        self.set_child(child=self.__mp_widget)
+        # OLD: self.connect('delete-event', self.quit)
+        self.connect('close-request', self.quit)
 
         self.set_size_request(600, 300)
-        self.show_all()
+        # OLD: self.show_all()
 
     def quit(self, *_):
         self.__mp_widget.quit()
-        Gtk.main_quit()
+        # OLD: Gtk.main_quit()
 
     def play_video(self, path):
-        self.__mp_widget.set_video(path,
+        self.__mp_widget.set_video(file_path=path,
                                    play=False,
                                    start_at=68,
                                    subtitles_track=2)
 
 
 if __name__ == '__main__':
-    player = MediaPlayer()
-    player.play_video('/home/rsm/Videos/The Best Of Scotty Cranmer.mp4')
-    #player.play_video('/run/media/rsm/media/Videos/Ink Master/Season15/Ink.Master.S15E03.1080p.HEVC.x265-MeGusta[eztv.re].mkv')
-    Gtk.main()
+    def on_activate(application):
+        player = MediaPlayer(application=application)
+        player.play_video('/home/rsm/Videos/The Best Of Scotty Cranmer.mp4')
+        player.present()
+
+    APP = Gtk.Application(application_id='com.senties-martinelli.MediaPlayer')
+    APP.connect('activate', on_activate)
+    APP.run(argv=None)
     VLC_INSTANCE.release()
