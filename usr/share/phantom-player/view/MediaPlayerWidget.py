@@ -410,15 +410,18 @@ class MediaPlayerWidget(Gtk.Box):
 
     def stop(self):
         self.__vlc_widget.player.stop()
+
         # OLD: self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._play, Gtk.IconSize.BUTTON))
         self.__menubutton_play.set_icon_name(icon_name=ThemeButtons._play)
+
         self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
         self.__scale_progress.set_range(0, 0)  # If no video loaded, disable the scale
+        self.__scale_progress.set_value(0)
         self.__buttons_box.set_sensitive(False)
         self.__label_video_progress.set_text(_EMPTY__VIDEO_LENGTH)
         self.__label_video_length.set_text(" / " + _EMPTY__VIDEO_LENGTH)
         self.__label_volume.hide()
-        self.__scale_progress.set_value(0)
+
         self.__media = None
         self.__emitted_time = -1
         self.emit(CustomSignals._stop)
@@ -443,7 +446,6 @@ class MediaPlayerWidget(Gtk.Box):
             self.__set_volume(new_volume)
 
     def hide_controls(self):
-        self.__buttons_box.hide()
         self.__buttons_box.hide()
         self.__label_volume.hide()
         self.__widgets_shown = WidgetsShown._none
@@ -558,7 +560,10 @@ class MediaPlayerWidget(Gtk.Box):
             set_image will miss, and the icons will have different sizes
             than the VolumeButton.
         """
-        button = Gtk.MenuButton()
+        # Todo: re-use menu button? that was for having the same icon size,
+        #       but it seems that if used, the buttons are not enabled.
+        # OLD: button = Gtk.MenuButton()
+        button = Gtk.ToggleButton()
         button.set_tooltip_text(tooltip)
 
         # OLD: button.set_relief(Gtk.ReliefStyle.NONE)
@@ -567,9 +572,7 @@ class MediaPlayerWidget(Gtk.Box):
         # OLD: button.set_image(Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.BUTTON))
         button.set_icon_name(icon_name=icon_name)
 
-        # TODO: button.connect('toggled', on_toggle)
-        button.connect('activate', on_toggle)
-
+        button.connect('toggled', on_toggle)
         button.set_sensitive(True)
 
         # OLD: self.__buttons_box.pack_start(button, expand=False, fill=False, padding=3)
@@ -578,8 +581,8 @@ class MediaPlayerWidget(Gtk.Box):
         return button
 
     def __populate_settings_menubutton(self):
+
         return
-        # TODO
 
         menu = Gtk.Menu()
         self.__menubutton_settings.set_popup(menu)
@@ -690,26 +693,32 @@ class MediaPlayerWidget(Gtk.Box):
 
     def __set_fullscreen(self, fullscreen):
 
-        if self.__un_maximized_fixed_toolbar:
-            parent = self.__buttons_box.get_parent()
-            if parent is not None:
-                parent.remove(self.__buttons_box)
-
         if fullscreen:
             self.__window_root.fullscreen()
             # OLD: self.__menubutton_fullscreen.set_image(
             #    Gtk.Image.new_from_icon_name(ThemeButtons._un_fullscreen, Gtk.IconSize.BUTTON))
             self.__menubutton_fullscreen.set_icon_name(icon_name=ThemeButtons._un_fullscreen)
             self.__menubutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._unfullscreen)
-            if self.__un_maximized_fixed_toolbar:
-                self.__overlay.add_overlay(self.__buttons_box)
+
         else:
             self.__window_root.unfullscreen()
             # OLD: self.__menubutton_fullscreen.set_image(
             #    Gtk.Image.new_from_icon_name(ThemeButtons._fullscreen, Gtk.IconSize.BUTTON))
             self.__menubutton_fullscreen.set_icon_name(icon_name=ThemeButtons._fullscreen)
             self.__menubutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._fullscreen)
-            if self.__un_maximized_fixed_toolbar:
+
+        if self.__un_maximized_fixed_toolbar:
+            parent = self.__buttons_box.get_parent()
+            if parent is None:
+                pass
+            elif isinstance(parent, Gtk.Overlay):
+                parent.remove_overlay(self.__buttons_box)
+            else:
+                parent.remove(self.__buttons_box)
+
+            if fullscreen:
+                self.__overlay.add_overlay(self.__buttons_box)
+            else:
                 # OLD: self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
                 self.append(child=self.__buttons_box)
 
@@ -825,13 +834,13 @@ class MediaPlayerWidget(Gtk.Box):
 
             sleep(.5)
 
-    def __on_key_pressed(self, _, event):
+    def __on_key_pressed(self, _event, keyval, _keycode, _state):
 
-        if event.keyval == EventCodes.Keyboard._f11 and self.__media is not None:
+        if keyval == EventCodes.Keyboard._f11 and self.__media is not None:
             self.__set_fullscreen(True)
 
         elif self.__window_root.is_fullscreen():
-            match event.keyval:
+            match keyval:
                 # display the toolbox if the arrows are pressed?
                 case EventCodes.Keyboard._arrow_left | EventCodes.Keyboard._arrow_right:
                     self.__motion_time = time()
@@ -857,7 +866,7 @@ class MediaPlayerWidget(Gtk.Box):
             self.__buttons_box.show()
             self.set_cursor_from_name(name="default")
 
-    def __on_mouse_scroll(self, controller, dx, dy):
+    def __on_mouse_scroll(self, _controller, _dx, dy):
 
         if self.__media is None:
             return

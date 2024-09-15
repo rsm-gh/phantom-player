@@ -63,7 +63,10 @@ class MediaPlayer(Gtk.Window):
     def __init__(self, application):
         super().__init__(application=application)
 
-        self.__mp_widget = MediaPlayerWidget(root_window=self)
+        self.__mp_widget = MediaPlayerWidget(root_window=self,
+                                             random_button=True,
+                                             keep_playing_button=True,
+                                             un_max_fixed_toolbar=True)
         # OLD: self.add(self.__mp_widget)
         self.set_child(child=self.__mp_widget)
         # OLD: self.connect('delete-event', self.quit)
@@ -86,7 +89,7 @@ class MediaPlayer(Gtk.Window):
 if __name__ == '__main__':
     def on_activate(application):
         player = MediaPlayer(application=application)
-        player.play_video('/home/rsm/Videos/The Best Of Scotty Cranmer.mp4')
+        player.play_video('/home/rsm/Videos/test.mkv')
         player.present()
 
     APP = Gtk.Application(application_id='com.senties-martinelli.MediaPlayer')
