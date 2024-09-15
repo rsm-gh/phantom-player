@@ -638,6 +638,7 @@ class PhantomPlayer:
                     replay=False,
                     ignore_none=False,
                     ignore_missing=False):
+        print_debug()
 
         if self.__current_media._playlist is None:
             return
@@ -678,6 +679,8 @@ class PhantomPlayer:
         #
         # Play the video
         #
+        print_debug(video.get_path(), direct_output=True)
+
         if video.ended() and replay:
             video_progress = 0
         else:
