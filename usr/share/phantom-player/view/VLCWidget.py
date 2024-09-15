@@ -37,8 +37,11 @@ class VLCWidget(Gtk.DrawingArea):
     def __init__(self):
         super().__init__()
         self.player = VLC_INSTANCE.media_player_new()
+
+        # old: self.connect("draw", self.__on_draw)
+        self.set_draw_func(self.__on_draw)
+
         self.connect('realize', self.__on_realize)
-        # todo: self.connect("draw", self.__on_draw)
 
     def __on_realize(self, *_):
 
@@ -62,7 +65,7 @@ class VLCWidget(Gtk.DrawingArea):
         return True
 
     @staticmethod
-    def __on_draw(_, cairo_ctx):
+    def __on_draw(_drawing_area, cairo_ctx, width, height):
         """To redraw the black background when resized"""
         cairo_ctx.set_source_rgb(0, 0, 0)
         cairo_ctx.paint()
