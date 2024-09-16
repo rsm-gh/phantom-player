@@ -40,6 +40,8 @@ from datetime import timedelta
 from threading import Thread, current_thread
 from gi.repository import Gtk, GObject, Gdk, GLib
 
+from test.FakeVLCWidget import FakeVLCWidget
+
 from model.Playlist import Track, TimeValue
 from view import gtk_utils
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
@@ -180,13 +182,21 @@ class MediaPlayerWidget(Gtk.Box):
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
         self.__widgets_shown = WidgetsShown._toolbox
 
-        self.__vlc_widget = VLCWidget()
+        self.set_orientation(orientation=Gtk.Orientation.VERTICAL)
 
         self.__overlay = Gtk.Overlay()
-        self.__overlay.add_overlay(self.__vlc_widget)
+        self.__overlay.set_vexpand(expand=True)
+        self.__overlay.set_hexpand(expand=True)
 
         # OLD: self.pack_start(self.__overlay, expand=True, fill=True, padding=0)
         self.append(self.__overlay)
+
+        self.__vlc_widget = VLCWidget()
+        #self.__vlc_widget = FakeVLCWidget()
+        self.__vlc_widget.set_vexpand(expand=True)
+        self.__vlc_widget.set_hexpand(expand=True)
+        self.__overlay.set_child(child=self.__vlc_widget)
+
 
         if un_max_fixed_toolbar:
             # It is important to add the motion_notify to the root_window,

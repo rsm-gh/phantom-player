@@ -66,7 +66,7 @@ class MediaPlayer(Gtk.Window):
         self.__mp_widget = MediaPlayerWidget(root_window=self,
                                              random_button=True,
                                              keep_playing_button=True,
-                                             un_max_fixed_toolbar=True)
+                                             un_max_fixed_toolbar=False)
         # OLD: self.add(self.__mp_widget)
         self.set_child(child=self.__mp_widget)
         # OLD: self.connect('delete-event', self.quit)

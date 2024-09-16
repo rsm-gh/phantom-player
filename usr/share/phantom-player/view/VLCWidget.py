@@ -65,7 +65,7 @@ class VLCWidget(Gtk.DrawingArea):
         return True
 
     @staticmethod
-    def __on_draw(_drawing_area, cairo_ctx, width, height):
+    def __on_draw(_drawing_area, cairo_ctx, _width, _height):
         """To redraw the black background when resized"""
         cairo_ctx.set_source_rgb(0, 0, 0)
         cairo_ctx.paint()
