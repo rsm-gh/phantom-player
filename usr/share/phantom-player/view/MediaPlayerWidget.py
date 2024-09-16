@@ -27,7 +27,10 @@
 
     Bugs:
         + GTK4: It seems that it is not possible to get an X11 ID of the Gtk.DrawingArea(), so VLC
-          is rendering the video in the whole window.
+            is rendering the video in the whole window.
+
+        + GTK4: Gtk.GestureClick(), is not working over the VLC rendering. The video can
+            not be paused with a click in full screen.
 
     Patch:
         + The control buttons had different sized, and It seems that in GTK3 it was not possible to use
@@ -48,7 +51,7 @@ import threading
 from time import time, sleep
 from datetime import timedelta
 from threading import Thread, current_thread
-from gi.repository import Gtk, GObject, Gdk, GLib
+from gi.repository import Gtk, GObject, GLib
 
 from Texts import Texts
 from settings import ThemeButtons
@@ -201,7 +204,6 @@ class MediaPlayerWidget(Gtk.Box):
         self.append(self.__overlay)
 
         self.__vlc_widget = VLCWidget()
-        #self.__vlc_widget = FakeVLCWidget()
         self.__vlc_widget.set_vexpand(expand=True)
         self.__vlc_widget.set_hexpand(expand=True)
         self.__overlay.set_child(child=self.__vlc_widget)
@@ -226,19 +228,24 @@ class MediaPlayerWidget(Gtk.Box):
         self.add_controller(scroll_controller)  # The signal is not working in self.__vlc_widget
 
         # KEY PRESSED: OLD
+        # self.__window_root.connect('key-press-event', self.__on_key_pressed)
+        controller = Gtk.EventControllerKey.new()
+        controller.connect("key-pressed", self.__on_key_pressed)
+        self.__window_root.add_controller(controller)
+
+        # VLC CLICK: OLD
         # self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         # self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
-        # self.__window_root.connect('key-press-event', self.__on_key_pressed)
+        gesture = Gtk.GestureClick.new()
+        gesture.connect("pressed", self.__on_mouse_button_press)
+        self.__vlc_widget.add_controller(controller=gesture)
 
-        key_controller = Gtk.EventControllerKey.new()
-        key_controller.connect("key-pressed", self.__on_key_pressed)
-        self.__window_root.add_controller(key_controller)  # add to window
-
-        # TODO: POINTER MOTION
-        motion_controller = Gtk.EventControllerMotion.new()
-        motion_controller.connect("motion", self.__on_motion_notify_event)
+        # Pointer Motion: OLD
         # event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         # event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
+        controller = Gtk.EventControllerMotion.new()
+        controller.connect("motion", self.__on_motion_notify_event)
+        self.add_controller(controller=controller)
 
         # Buttons Box
         self.__buttons_box = Gtk.Box()
@@ -262,8 +269,25 @@ class MediaPlayerWidget(Gtk.Box):
         self.__scale_progress.set_range(0, 0)  # If no video is loaded, disable the scale
         self.__scale_progress.set_draw_value(False)
         self.__scale_progress.set_hexpand(True)
-        # TODO: self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
-        # TODO: self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
+        # PRESS: OLD
+        # self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
+        # self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
+
+        # GTK4: released problem: https://gitlab.gnome.org/GNOME/gtk/-/issues/4939
+        gesture = None
+        for controller in self.__scale_progress.observe_controllers():
+            if isinstance(controller, Gtk.GestureClick):
+                gesture = controller
+
+        if gesture is None:
+            gesture = Gtk.GestureClick.new()
+            self.__scale_progress.add_controller(controller=gesture)
+
+        gesture.set_button(EventCodes.Cursor._left_click)
+        gesture.connect("pressed", self.__on_scale_progress_press)
+        gesture.connect("released", self.__on_scale_progress_release)
+        self.__scale_progress.add_controller(controller=gesture)
+
         self.__scale_progress.connect('value-changed', self.__on_scale_progress_value_changed)
         self.__buttons_box.append(child=self.__scale_progress)
         # OLD: self.__buttons_box.pack_start(child=self.__scale_progress, expand=True, fill=True, padding=3)
@@ -602,6 +626,7 @@ class MediaPlayerWidget(Gtk.Box):
 
     def __populate_settings_menubutton(self):
 
+        # Todo:
         return
 
         menu = Gtk.Menu()
@@ -907,7 +932,7 @@ class MediaPlayerWidget(Gtk.Box):
         elif dy < 0:
             self.volume_down()
 
-    def __on_mouse_button_press(self, _, event):
+    def __on_mouse_button_press(self, gesture, _n_press, _x, _y):
 
         if self.__media is None:
             return
@@ -918,14 +943,20 @@ class MediaPlayerWidget(Gtk.Box):
         elif not self.__window_root.is_fullscreen():
             return
 
-        elif event.type == Gdk.EventType.BUTTON_PRESS:
-            if event.button == EventCodes.Cursor._left_click:
-                if self.is_playing():
-                    self.__vlc_widget.player.pause()
-                    turn_off_screensaver(False)
-                else:
-                    self.__vlc_widget.player.play()
-                    turn_off_screensaver(True)
+        event = gesture.get_last_event()
+
+        # GTK4: The following code was removed because GestureClick()
+        # will send an GdkButtonEvent() and its events are of type BUTTON_PRESS.
+        # if event.get_event_type() != Gdk.EventType.BUTTON_PRESS:
+        #    return
+
+        if event.get_button() == EventCodes.Cursor._left_click:
+            if self.is_playing():
+                self.__vlc_widget.player.pause()
+                turn_off_screensaver(False)
+            else:
+                self.__vlc_widget.player.play()
+                turn_off_screensaver(True)
 
     def __on_menubutton_restart_clicked(self, *_):
 
@@ -1050,18 +1081,18 @@ class MediaPlayerWidget(Gtk.Box):
         if self.__scale_progress_pressed:
             GLib.idle_add(self.__vlc_widget.player.pause)
 
-    def __on_scale_progress_release(self, widget, *_):
+    def __on_scale_progress_release(self, *_):
 
-        value = int(widget.get_value())
+        value = int(self.__scale_progress.get_value())
 
         if value == 0:
             self.__on_menubutton_restart_clicked()
 
-        elif value == widget.get_adjustment().get_upper():
+        elif value == self.__scale_progress.get_adjustment().get_upper():
             self.__end_video(forced=True)
 
         else:
-            self.__vlc_widget.player.set_time(int(widget.get_value()))
+            self.__vlc_widget.player.set_time(value)
 
             if self.__was_playing_before_press:  # In case of long press
                 if self.is_paused():
