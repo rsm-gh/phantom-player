@@ -24,30 +24,38 @@
 # THE SOFTWARE.
 
 """
+
+    Bugs:
+        + GTK4: It seems that it is not possible to get an X11 ID of the Gtk.DrawingArea(), so VLC
+          is rendering the video in the whole window.
+
     Patch:
         + The control buttons had different sized, and It seems that in GTK3 it was not possible to use
           `ToolButton.set_image`, to properly size all the images, I used a MenuButton(). The sizing works, but it's needed then to:
             1) only listen when the button is active.
             2) de-active the button.
+
+    Todo:
+        + Check if __on_thread_motion_activity can be included in __on_motion_notify_event.
+            + The idea is to perform a 3 second delay before executing the motion check, to hide the interface.
+            + Executing the check in a thread should be avoided because it could create hundreds of threads.
+
 """
 
 import os
-import threading
-
 import vlc
+import threading
 from time import time, sleep
 from datetime import timedelta
 from threading import Thread, current_thread
 from gi.repository import Gtk, GObject, Gdk, GLib
 
-from test.FakeVLCWidget import FakeVLCWidget
-
+from Texts import Texts
+from settings import ThemeButtons
+from system_utils import EventCodes, turn_off_screensaver
 from model.Playlist import Track, TimeValue
 from view import gtk_utils
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
-from system_utils import EventCodes, turn_off_screensaver
-from settings import ThemeButtons
-from Texts import Texts
 
 _VOLUME_LABEL_NONE = " Muted "
 _VOLUME_LABEL = " Vol: {}% "
@@ -178,6 +186,7 @@ class MediaPlayerWidget(Gtk.Box):
         self.__menuitem_subtitles_activated = None
         self.__menuitem_subtitles_file = None
         self.__emitted_time = -1
+        self.__cursor_coords = (-1, -1)
 
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
         self.__widgets_shown = WidgetsShown._toolbox
@@ -196,7 +205,6 @@ class MediaPlayerWidget(Gtk.Box):
         self.__vlc_widget.set_vexpand(expand=True)
         self.__vlc_widget.set_hexpand(expand=True)
         self.__overlay.set_child(child=self.__vlc_widget)
-
 
         if un_max_fixed_toolbar:
             # It is important to add the motion_notify to the root_window,
@@ -227,6 +235,8 @@ class MediaPlayerWidget(Gtk.Box):
         self.__window_root.add_controller(key_controller)  # add to window
 
         # TODO: POINTER MOTION
+        motion_controller = Gtk.EventControllerMotion.new()
+        motion_controller.connect("motion", self.__on_motion_notify_event)
         # event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         # event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
@@ -867,7 +877,17 @@ class MediaPlayerWidget(Gtk.Box):
                 case EventCodes.Keyboard._arrow_down:
                     self.volume_down()
 
-    def __on_motion_notify_event(self, *_):
+    def __on_motion_notify_event(self, _controller, _x, _y):
+        #
+        # The 'new_coords' check is necessary, because when changing the cursor from 'default' to
+        # 'none', this Motion controller gets called, so this method is called a second time.
+        # It results then that the toolbar is not hidden.
+        #
+        new_coords = (int(_x), int(_y))
+        if new_coords == self.__cursor_coords:
+            return
+        self.__cursor_coords = new_coords
+
         self.__motion_time = time()
 
         if self.__hidden_controls:
