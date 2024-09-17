@@ -60,8 +60,6 @@ class FakeVLCWidget(Gtk.DrawingArea):
         super().__init__()
 
         self.player = FakePlayer()
-
-        # old: self.connect("draw", self.__on_draw)
         self.set_draw_func(self.__on_draw)
 
     @staticmethod

@@ -67,17 +67,13 @@ class MediaPlayer(Gtk.Window):
                                              random_button=True,
                                              keep_playing_button=True,
                                              un_max_fixed_toolbar=True)
-        # OLD: self.add(self.__mp_widget)
-        self.set_child(child=self.__mp_widget)
-        # OLD: self.connect('delete-event', self.quit)
-        self.connect('close-request', self.quit)
 
+        self.set_child(child=self.__mp_widget)
+        self.connect('close-request', self.quit)
         self.set_size_request(600, 300)
-        # OLD: self.show_all()
 
     def quit(self, *_):
         self.__mp_widget.quit()
-        # OLD: Gtk.main_quit()
 
     def play_video(self, path):
         self.__mp_widget.set_video(file_path=path,
