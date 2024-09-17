@@ -35,7 +35,7 @@ class VLCWidget(Gtk.DrawingArea):
     __gtype_name__ = 'VLCWidget'
 
     def __init__(self):
-        super().__init__()
+        super().__init__(hexpand=True, vexpand=True)
         self.player = VLC_INSTANCE.media_player_new()
 
         # old: self.connect("draw", self.__on_draw)

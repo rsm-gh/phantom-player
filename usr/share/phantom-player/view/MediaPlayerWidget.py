@@ -174,7 +174,7 @@ class MediaPlayerWidget(Gtk.Box):
              un_max_fixed_toolbar: Automatically hide the toolbar when the window is un-maximized
         """
 
-        super().__init__()
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
         self.__delayed_media_data = None
         self.__window_root = root_window
@@ -193,8 +193,6 @@ class MediaPlayerWidget(Gtk.Box):
         self.__cursor_coords = (-1, -1)
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
         self.__widgets_shown = WidgetsShown._toolbox
-
-        self.set_orientation(orientation=Gtk.Orientation.VERTICAL)
 
         #
         # Root Window controllers
@@ -215,10 +213,8 @@ class MediaPlayerWidget(Gtk.Box):
         # VLC Widget
         #
 
-        # self.__vlc_widget = VLCWidget()
-        self.__vlc_widget = FakeVLCWidget()
-        self.__vlc_widget.set_vexpand(expand=True)
-        self.__vlc_widget.set_hexpand(expand=True)
+        self.__vlc_widget = VLCWidget()
+        # self.__vlc_widget = FakeVLCWidget()
 
         # SCROLL: OLD
         # self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
@@ -238,13 +234,18 @@ class MediaPlayerWidget(Gtk.Box):
             controller = gtk_utils.get_or_create_controller(self.__vlc_widget, Gtk.EventControllerMotion)
             controller.connect("motion", self.__on_motion)
 
+        # Player events
+        event_manager = self.__vlc_widget.player.event_manager()
+        event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__on_player_time_changed)
+        event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__on_player_end_reached)
+        # event_manager.event_attach(vlc.EventType.MediaParsedChanged, self.__on_player_parse_changed)
+
         #
         # Buttons Box
         #
-        self.__buttons_box = Gtk.Box()
-        self.__buttons_box.set_valign(Gtk.Align.END)
-        self.__buttons_box.set_halign(Gtk.Align.FILL)
-        self.__buttons_box.set_sensitive(False)
+        self.__buttons_box = Gtk.Box(sensitive=False,
+                                     valign=Gtk.Align.END,
+                                     halign=Gtk.Align.FILL)
 
         self.__menubutton_restart = self.__add_menu_button(ThemeButtons._previous,
                                                            Texts.MediaPlayer.Tooltip._start,
@@ -258,10 +259,9 @@ class MediaPlayerWidget(Gtk.Box):
                                                         Texts.MediaPlayer.Tooltip._end,
                                                         self.__on_menubutton_end_clicked)
 
-        self.__scale_progress = Gtk.Scale()
+        self.__scale_progress = Gtk.Scale(hexpand=True, draw_value=False)
         self.__scale_progress.set_range(0, 0)  # If no video is loaded, disable the scale
-        self.__scale_progress.set_draw_value(False)
-        self.__scale_progress.set_hexpand(True)
+
         # PRESS: OLD
         # self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
         # self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
@@ -292,19 +292,19 @@ class MediaPlayerWidget(Gtk.Box):
         self.__buttons_box.append(child=self.__label_video_length)
 
         if keep_playing_button:
-            self.__toggletoolbutton_keep_playing = self.__add_menu_button(ThemeButtons._keep_playing,
-                                                                          Texts.MediaPlayer.Tooltip._keep_playing,
-                                                                          self.__on_menubutton_keep_playing_toggled)
+            self.__button_keep_playing = self.__add_menu_button(ThemeButtons._keep_playing,
+                                                                Texts.MediaPlayer.Tooltip._keep_playing,
+                                                                self.__on_menubutton_keep_playing_toggled)
         else:
-            self.__toggletoolbutton_keep_playing = None
+            self.__button_keep_playing = None
 
         if random_button:
-            self.__toggletoolbutton_random = self.__add_menu_button(ThemeButtons._random,
-                                                                    Texts.MediaPlayer.Tooltip._random,
-                                                                    self.__on_menubutton_random_toggled)
+            self.__button_random = self.__add_menu_button(ThemeButtons._random,
+                                                          Texts.MediaPlayer.Tooltip._random,
+                                                          self.__on_menubutton_random_toggled)
 
         else:
-            self.__toggletoolbutton_random = None
+            self.__button_random = None
 
         self.__menubutton_settings = Gtk.MenuButton()
         self.__menubutton_settings.set_tooltip_text(Texts.MediaPlayer.Tooltip._tracks)
@@ -319,12 +319,12 @@ class MediaPlayerWidget(Gtk.Box):
         # OLD: self.__buttons_box.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
         self.__buttons_box.append(child=self.__menubutton_settings)
 
-        self.__volumebutton = Gtk.VolumeButton()
-        self.__volumebutton.set_icons(ThemeButtons._volume)
-        self.__volumebutton.connect('value-changed', self.__on_volumebutton_changed)
+        self.__button_volume = Gtk.VolumeButton()
+        self.__button_volume.set_icons(ThemeButtons._volume)
+        self.__button_volume.connect('value-changed', self.__on_button_volume_changed)
 
-        # OLD: self.__buttons_box.pack_start(self.__volumebutton, expand=False, fill=False, padding=3)
-        self.__buttons_box.append(child=self.__volumebutton)
+        # OLD: self.__buttons_box.pack_start(self.__button_volume, expand=False, fill=False, padding=3)
+        self.__buttons_box.append(child=self.__button_volume)
 
         self.__menubutton_fullscreen = self.__add_menu_button(ThemeButtons._fullscreen,
                                                               Texts.MediaPlayer.Tooltip._fullscreen,
@@ -333,21 +333,21 @@ class MediaPlayerWidget(Gtk.Box):
         gtk_utils.set_css(self.__buttons_box, _DEFAULT_CSS)
 
         #   Extra volume label
-        self.__label_volume = Gtk.Label()
-        self.__label_volume.set_valign(Gtk.Align.START)
-        self.__label_volume.set_halign(Gtk.Align.END)
-        self.__label_volume.set_margin_start(5)
-        self.__label_volume.set_margin_end(5)
+        self.__label_volume = Gtk.Label(valign=Gtk.Align.START,
+                                        halign=Gtk.Align.END,
+                                        margin_start=5,
+                                        margin_end=5)
         gtk_utils.set_css(self.__label_volume, _DEFAULT_CSS)
         self.__set_volume(volume_level)
 
         #
         # Overlay
         #
-
-        self.__overlay = Gtk.Overlay()
-        self.__overlay.set_vexpand(expand=True)
-        self.__overlay.set_hexpand(expand=True)
+        self.__overlay = Gtk.Overlay(vexpand=True,
+                                     hexpand=True)
+        # The overlay must be added before the buttons box in case of self.__un_maximized_fixed_toolbar
+        # OLD: self.pack_start(self.__overlay, expand=True, fill=True, padding=0)
+        self.append(self.__overlay)
 
         self.__overlay.set_child(child=self.__vlc_widget)
         self.__overlay.add_overlay(self.__label_volume)
@@ -356,9 +356,6 @@ class MediaPlayerWidget(Gtk.Box):
             self.__set_fullscreen(False)
         else:
             self.__overlay.add_overlay(self.__buttons_box)
-
-        # OLD: self.pack_start(self.__overlay, expand=True, fill=True, padding=0)
-        self.append(self.__overlay)
 
         #
         # Create the custom signals
@@ -493,17 +490,17 @@ class MediaPlayerWidget(Gtk.Box):
 
     def display_playlist_controls(self, show=True):
 
-        if self.__toggletoolbutton_random is not None:
+        if self.__button_random is not None:
             if show:
-                self.__toggletoolbutton_random.show()
+                self.__button_random.show()
             else:
-                self.__toggletoolbutton_random.hide()
+                self.__button_random.hide()
 
-        if self.__toggletoolbutton_keep_playing is not None:
+        if self.__button_keep_playing is not None:
             if show:
-                self.__toggletoolbutton_keep_playing.show()
+                self.__button_keep_playing.show()
             else:
-                self.__toggletoolbutton_keep_playing.hide()
+                self.__button_keep_playing.hide()
 
     def hide_volume_label(self):
         self.__label_volume.hide()
@@ -556,25 +553,25 @@ class MediaPlayerWidget(Gtk.Box):
             threading.Thread(target=self.__on_thread_set_video, args=[False, False]).start()
 
     def set_random(self, state):
-        self.__toggletoolbutton_random.set_active(state)
+        self.__button_random.set_active(state)
 
     def set_keep_playing(self, state):
-        self.__toggletoolbutton_keep_playing.set_active(state)
+        self.__button_keep_playing.set_active(state)
 
     def get_state(self):
         return self.__vlc_widget.player.get_state()
 
     def get_random(self):
-        if self.__toggletoolbutton_random is None:
+        if self.__button_random is None:
             return False
 
-        return self.__toggletoolbutton_random.get_active()
+        return self.__button_random.get_active()
 
     def get_keep_playing(self):
-        if self.__toggletoolbutton_keep_playing is None:
+        if self.__button_keep_playing is None:
             return False
 
-        return self.__toggletoolbutton_keep_playing.get_active()
+        return self.__button_keep_playing.get_active()
 
     def __end_video(self, forced):
 
@@ -709,7 +706,7 @@ class MediaPlayerWidget(Gtk.Box):
         self.__menubutton_settings.set_sensitive(True)
         self.__delayed_media_data.set_video_settings_loaded(True)
 
-    def __set_volume(self, value=None, display_label=True, update_vbutton=True):
+    def __set_volume(self, value=None, display_label=True, update_button=True):
 
         if self.__volume != value:
 
@@ -722,12 +719,12 @@ class MediaPlayerWidget(Gtk.Box):
 
             self.__vlc_widget.player.audio_set_volume(value)
 
-            if update_vbutton:
+            if update_button:
                 if value <= 0:
                     value = 0
                 else:
                     value = value / 100
-                self.__volumebutton.set_value(value)
+                self.__button_volume.set_value(value)
 
         if display_label:
             self.__motion_time = time()
@@ -984,27 +981,8 @@ class MediaPlayerWidget(Gtk.Box):
         GLib.idle_add(self.__scale_progress.set_value, new_time)
         self.emit(CustomSignals._time_changed, seconds)
 
-    def __on_volumebutton_changed(self, _, value):
-        self.__set_volume(int(value * 100), display_label=False, update_vbutton=False)
-
-    def __on_menubutton_restart_clicked(self, *_):
-
-        if not self.__menubutton_restart.get_active():
-            return
-
-        self.__vlc_widget.player.set_time(0)
-        self.__scale_progress.set_value(0)  # Necessary if the video is paused.
-        self.emit(CustomSignals._video_restart)
-        self.__menubutton_restart.set_active(False)
-
-    def __on_menubutton_play_clicked(self, *_):
-
-        if not self.__menubutton_play.get_active():
-            return
-
-        self.play_pause()
-
-        self.__menubutton_play.set_active(False)
+    def __on_button_volume_changed(self, _, value):
+        self.__set_volume(int(value * 100), display_label=False, update_button=False)
 
     def __on_menubutton_restart_clicked(self, *_):
 
