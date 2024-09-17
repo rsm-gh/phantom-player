@@ -548,12 +548,11 @@ class MediaPlayerWidget(Gtk.Box):
             set_image will miss, and the icons will have different sizes
             than the VolumeButton.
         """
-        button = Gtk.MenuButton()
-        button.set_tooltip_text(tooltip)
+        button = Gtk.MenuButton(sensitive=True,
+                                tooltip_text=tooltip)
         button.set_relief(Gtk.ReliefStyle.NONE)
         button.set_image(Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.BUTTON))
         button.connect('toggled', on_toggle)
-        button.set_sensitive(True)
         self.__buttons_box.pack_start(button, expand=False, fill=False, padding=3)
 
         return button
