@@ -190,7 +190,6 @@ class MediaPlayerWidget(Gtk.Box):
         self.__menuitem_subtitles_file = None
         self.__emitted_time = -1
         self.__cursor_coords = (-1, -1)
-
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
         self.__widgets_shown = WidgetsShown._toolbox
 
@@ -215,39 +214,37 @@ class MediaPlayerWidget(Gtk.Box):
         else:
             event_widget = self.__vlc_widget
 
-        motion_controller = Gtk.EventControllerMotion.new()
-        motion_controller.connect("motion", self.__on_motion_notify_event)
-        event_widget.add_controller(motion_controller)
+        controller = gtk_utils.get_or_create_controller(event_widget, Gtk.EventControllerMotion)
+        controller.connect("motion", self.__on_motion_notify_event)
 
         # SCROLL: OLD
         # self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
         # self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
-
-        scroll_controller = Gtk.EventControllerScroll.new(Gtk.EventControllerScrollFlags.VERTICAL)
-        scroll_controller.connect("scroll", self.__on_mouse_scroll)
-        self.add_controller(scroll_controller)  # The signal is not working in self.__vlc_widget
+        controller = gtk_utils.get_or_create_controller(self,
+                                                        Gtk.EventControllerScroll,
+                                                        Gtk.EventControllerScrollFlags.VERTICAL)
+        controller.connect("scroll", self.__on_mouse_scroll)
 
         # KEY PRESSED: OLD
         # self.__window_root.connect('key-press-event', self.__on_key_pressed)
-        controller = Gtk.EventControllerKey.new()
+        controller = gtk_utils.get_or_create_controller(self.__window_root, Gtk.EventControllerKey)
         controller.connect("key-pressed", self.__on_key_pressed)
-        self.__window_root.add_controller(controller)
 
         # VLC CLICK: OLD
         # self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
         # self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
-        gesture = Gtk.GestureClick.new()
+        gesture = gtk_utils.get_or_create_controller(self.__vlc_widget, Gtk.GestureClick)
         gesture.connect("pressed", self.__on_mouse_button_press)
-        self.__vlc_widget.add_controller(controller=gesture)
 
         # Pointer Motion: OLD
         # event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
         # event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
-        controller = Gtk.EventControllerMotion.new()
+        controller = gtk_utils.get_or_create_controller(self.__window_root, Gtk.EventControllerMotion)
         controller.connect("motion", self.__on_motion_notify_event)
-        self.add_controller(controller=controller)
 
+        #
         # Buttons Box
+        #
         self.__buttons_box = Gtk.Box()
         self.__buttons_box.set_valign(Gtk.Align.END)
         self.__buttons_box.set_halign(Gtk.Align.FILL)
@@ -273,24 +270,14 @@ class MediaPlayerWidget(Gtk.Box):
         # self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
         # self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
 
-        # GTK4: released problem: https://gitlab.gnome.org/GNOME/gtk/-/issues/4939
-        gesture = None
-        for controller in self.__scale_progress.observe_controllers():
-            if isinstance(controller, Gtk.GestureClick):
-                gesture = controller
-
-        if gesture is None:
-            gesture = Gtk.GestureClick.new()
-            self.__scale_progress.add_controller(controller=gesture)
-
+        gesture = gtk_utils.get_or_create_controller(self.__scale_progress, Gtk.GestureClick)
         gesture.set_button(EventCodes.Cursor._left_click)
         gesture.connect("pressed", self.__on_scale_progress_press)
         gesture.connect("released", self.__on_scale_progress_release)
-        self.__scale_progress.add_controller(controller=gesture)
 
         self.__scale_progress.connect('value-changed', self.__on_scale_progress_value_changed)
-        self.__buttons_box.append(child=self.__scale_progress)
         # OLD: self.__buttons_box.pack_start(child=self.__scale_progress, expand=True, fill=True, padding=3)
+        self.__buttons_box.append(child=self.__scale_progress)
 
         self.__label_video_progress = Gtk.Label()
         self.__label_video_progress.set_text(_EMPTY__VIDEO_LENGTH)
@@ -325,17 +312,21 @@ class MediaPlayerWidget(Gtk.Box):
 
         self.__menubutton_settings = Gtk.MenuButton()
         self.__menubutton_settings.set_tooltip_text(Texts.MediaPlayer.Tooltip._tracks)
+
         # OLD: self.__menubutton_settings.set_relief(Gtk.ReliefStyle.NONE)
         self.__menubutton_settings.set_has_frame(has_frame=False)
+
         # OLD: self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._settings, Gtk.IconSize.BUTTON))
         self.__menubutton_settings.set_icon_name(icon_name=ThemeButtons._settings)
         self.__menubutton_settings.set_direction(Gtk.ArrowType.UP)
+
         # OLD: self.__buttons_box.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
         self.__buttons_box.append(child=self.__menubutton_settings)
 
         self.__volumebutton = Gtk.VolumeButton()
         self.__volumebutton.set_icons(ThemeButtons._volume)
         self.__volumebutton.connect('value-changed', self.__on_volumebutton_changed)
+
         # OLD: self.__buttons_box.pack_start(self.__volumebutton, expand=False, fill=False, padding=3)
         self.__buttons_box.append(child=self.__volumebutton)
 

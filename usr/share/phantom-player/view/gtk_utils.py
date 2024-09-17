@@ -28,6 +28,7 @@ from gi.repository import Gtk, Gdk, Pango
 
 from Texts import Texts
 from Paths import _ICON_LOGO_SMALL, _HOME_DIR
+from console_printer import print_warning
 
 
 class FontColors:
@@ -35,6 +36,31 @@ class FontColors:
     _success = 'success_color'
     _warning = 'warning_color'
     _error = 'error_color'
+
+
+def get_or_create_controller(widget, controller_class, *args):
+    """
+        Get the default controller for the given widget, or create a new controller.
+        This important because some widgets have bugs, ex: scale.
+        # GTK4: released problem: https://gitlab.gnome.org/GNOME/gtk/-/issues/493
+    """
+
+    default_controller = None
+    for controller in widget.observe_controllers():
+        if isinstance(controller, controller_class):
+            default_controller = controller
+            if default_controller is not None:
+                print_warning(f"Multiple controllers of type {controller_class} for widget {widget}")
+
+    if default_controller is None:
+        if len(args) == 0:
+            default_controller = controller_class.new()
+        else:
+            default_controller = controller_class.new(*args)
+
+        widget.add_controller(controller=default_controller)
+
+    return default_controller
 
 
 def set_css(widget, css):
@@ -224,6 +250,7 @@ def dialog_info(parent, text1, text2=None):
 
     _ = dialog.run()
     dialog.destroy()
+
 
 """
 OLD: use window.is_fullscreen()
