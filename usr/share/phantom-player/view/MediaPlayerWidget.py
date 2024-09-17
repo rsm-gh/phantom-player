@@ -39,7 +39,7 @@
             2) de-active the button.
 
     Todo:
-        + Check if __on_thread_motion_activity can be included in __on_motion_notify_event.
+        + Check if __on_thread_motion_activity can be included in __on_motion.
             + The idea is to perform a 3 second delay before executing the motion check, to hide the interface.
             + Executing the check in a thread should be avoided because it could create hundreds of threads.
 
@@ -59,6 +59,7 @@ from system_utils import EventCodes, turn_off_screensaver
 from model.Playlist import Track, TimeValue
 from view import gtk_utils
 from view.VLCWidget import VLCWidget, VLC_INSTANCE
+from test.FakeVLCWidget import FakeVLCWidget
 
 _VOLUME_LABEL_NONE = " Muted "
 _VOLUME_LABEL = " Vol: {}% "
@@ -195,52 +196,47 @@ class MediaPlayerWidget(Gtk.Box):
 
         self.set_orientation(orientation=Gtk.Orientation.VERTICAL)
 
-        self.__overlay = Gtk.Overlay()
-        self.__overlay.set_vexpand(expand=True)
-        self.__overlay.set_hexpand(expand=True)
-
-        # OLD: self.pack_start(self.__overlay, expand=True, fill=True, padding=0)
-        self.append(self.__overlay)
-
-        self.__vlc_widget = VLCWidget()
-        self.__vlc_widget.set_vexpand(expand=True)
-        self.__vlc_widget.set_hexpand(expand=True)
-        self.__overlay.set_child(child=self.__vlc_widget)
+        #
+        # Root Window controllers
+        #
 
         if un_max_fixed_toolbar:
-            # It is important to add the motion_notify to the root_window,
+            # It is important to add the motion_notify to the root_window, instead of the VLC widget
             # to avoid hiding-it on un-maximized mode.
-            event_widget = self.__window_root
-        else:
-            event_widget = self.__vlc_widget
+            controller = gtk_utils.get_or_create_controller(self.__window_root, Gtk.EventControllerMotion)
+            controller.connect("motion", self.__on_motion)
 
-        controller = gtk_utils.get_or_create_controller(event_widget, Gtk.EventControllerMotion)
-        controller.connect("motion", self.__on_motion_notify_event)
+        # KEY PRESSED: OLD
+        # self.__window_root.connect('key-press-event', self.__on_window_root_key_pressed)
+        controller = gtk_utils.get_or_create_controller(self.__window_root, Gtk.EventControllerKey)
+        controller.connect("key-pressed", self.__on_window_root_key_pressed)
+
+        #
+        # VLC Widget
+        #
+
+        # self.__vlc_widget = VLCWidget()
+        self.__vlc_widget = FakeVLCWidget()
+        self.__vlc_widget.set_vexpand(expand=True)
+        self.__vlc_widget.set_hexpand(expand=True)
 
         # SCROLL: OLD
         # self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
-        # self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
+        # self.__vlc_widget.connect('scroll_event', self.__on_player_scroll)
         controller = gtk_utils.get_or_create_controller(self,
                                                         Gtk.EventControllerScroll,
                                                         Gtk.EventControllerScrollFlags.VERTICAL)
-        controller.connect("scroll", self.__on_mouse_scroll)
-
-        # KEY PRESSED: OLD
-        # self.__window_root.connect('key-press-event', self.__on_key_pressed)
-        controller = gtk_utils.get_or_create_controller(self.__window_root, Gtk.EventControllerKey)
-        controller.connect("key-pressed", self.__on_key_pressed)
+        controller.connect("scroll", self.__on_player_scroll)
 
         # VLC CLICK: OLD
         # self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        # self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
+        # self.__vlc_widget.connect('button-press-event', self.__on_player_pressed)
         gesture = gtk_utils.get_or_create_controller(self.__vlc_widget, Gtk.GestureClick)
-        gesture.connect("pressed", self.__on_mouse_button_press)
+        gesture.connect("pressed", self.__on_player_pressed)
 
-        # Pointer Motion: OLD
-        # event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
-        # event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
-        controller = gtk_utils.get_or_create_controller(self.__window_root, Gtk.EventControllerMotion)
-        controller.connect("motion", self.__on_motion_notify_event)
+        if not un_max_fixed_toolbar:
+            controller = gtk_utils.get_or_create_controller(self.__vlc_widget, Gtk.EventControllerMotion)
+            controller.connect("motion", self.__on_motion)
 
         #
         # Buttons Box
@@ -343,16 +339,26 @@ class MediaPlayerWidget(Gtk.Box):
         self.__label_volume.set_margin_start(5)
         self.__label_volume.set_margin_end(5)
         gtk_utils.set_css(self.__label_volume, _DEFAULT_CSS)
-        self.__overlay.add_overlay(self.__label_volume)
         self.__set_volume(volume_level)
 
         #
-        # Add the toolbar
+        # Overlay
         #
+
+        self.__overlay = Gtk.Overlay()
+        self.__overlay.set_vexpand(expand=True)
+        self.__overlay.set_hexpand(expand=True)
+
+        self.__overlay.set_child(child=self.__vlc_widget)
+        self.__overlay.add_overlay(self.__label_volume)
+
         if self.__un_maximized_fixed_toolbar:
             self.__set_fullscreen(False)
         else:
             self.__overlay.add_overlay(self.__buttons_box)
+
+        # OLD: self.pack_start(self.__overlay, expand=True, fill=True, padding=0)
+        self.append(self.__overlay)
 
         #
         # Create the custom signals
@@ -870,7 +876,29 @@ class MediaPlayerWidget(Gtk.Box):
 
             sleep(.5)
 
-    def __on_key_pressed(self, _event, keyval, _keycode, _state):
+    def __on_motion(self, _controller, _x, _y):
+        """
+            This can be called either from the root window or the VLC widget.
+        """
+        #
+        # The 'new_coords' check is necessary, because when changing the cursor from 'default' to
+        # 'none', this Motion controller gets called, so this method is called a second time.
+        # It results then that the toolbar is not hidden.
+        #
+        new_coords = (int(_x), int(_y))
+        if new_coords == self.__cursor_coords:
+            return
+        self.__cursor_coords = new_coords
+
+        self.__motion_time = time()
+
+        if self.__hidden_controls:
+            self.__hidden_controls = False
+            self.__widgets_shown = WidgetsShown._toolbox
+            self.__buttons_box.show()
+            self.set_cursor_from_name(name="default")
+
+    def __on_window_root_key_pressed(self, _event, keyval, _keycode, _state):
 
         if keyval == EventCodes.Keyboard._f11 and self.__media is not None:
             self.__set_fullscreen(True)
@@ -893,26 +921,7 @@ class MediaPlayerWidget(Gtk.Box):
                 case EventCodes.Keyboard._arrow_down:
                     self.volume_down()
 
-    def __on_motion_notify_event(self, _controller, _x, _y):
-        #
-        # The 'new_coords' check is necessary, because when changing the cursor from 'default' to
-        # 'none', this Motion controller gets called, so this method is called a second time.
-        # It results then that the toolbar is not hidden.
-        #
-        new_coords = (int(_x), int(_y))
-        if new_coords == self.__cursor_coords:
-            return
-        self.__cursor_coords = new_coords
-
-        self.__motion_time = time()
-
-        if self.__hidden_controls:
-            self.__hidden_controls = False
-            self.__widgets_shown = WidgetsShown._toolbox
-            self.__buttons_box.show()
-            self.set_cursor_from_name(name="default")
-
-    def __on_mouse_scroll(self, _controller, _dx, dy):
+    def __on_player_scroll(self, _controller, _dx, dy):
 
         if self.__media is None:
             return
@@ -923,7 +932,7 @@ class MediaPlayerWidget(Gtk.Box):
         elif dy < 0:
             self.volume_down()
 
-    def __on_mouse_button_press(self, gesture, _n_press, _x, _y):
+    def __on_player_pressed(self, gesture, _n_press, _x, _y):
 
         if self.__media is None:
             return
@@ -948,25 +957,6 @@ class MediaPlayerWidget(Gtk.Box):
             else:
                 self.__vlc_widget.player.play()
                 turn_off_screensaver(True)
-
-    def __on_menubutton_restart_clicked(self, *_):
-
-        if not self.__menubutton_restart.get_active():
-            return
-
-        self.__vlc_widget.player.set_time(0)
-        self.__scale_progress.set_value(0)  # Necessary if the video is paused.
-        self.emit(CustomSignals._video_restart)
-        self.__menubutton_restart.set_active(False)
-
-    def __on_menubutton_play_clicked(self, *_):
-
-        if not self.__menubutton_play.get_active():
-            return
-
-        self.play_pause()
-
-        self.__menubutton_play.set_active(False)
 
     def __on_player_end_reached(self, _event):
         GLib.idle_add(self.__end_video, False)
@@ -994,6 +984,47 @@ class MediaPlayerWidget(Gtk.Box):
         GLib.idle_add(self.__scale_progress.set_value, new_time)
         self.emit(CustomSignals._time_changed, seconds)
 
+    def __on_volumebutton_changed(self, _, value):
+        self.__set_volume(int(value * 100), display_label=False, update_vbutton=False)
+
+    def __on_menubutton_restart_clicked(self, *_):
+
+        if not self.__menubutton_restart.get_active():
+            return
+
+        self.__vlc_widget.player.set_time(0)
+        self.__scale_progress.set_value(0)  # Necessary if the video is paused.
+        self.emit(CustomSignals._video_restart)
+        self.__menubutton_restart.set_active(False)
+
+    def __on_menubutton_play_clicked(self, *_):
+
+        if not self.__menubutton_play.get_active():
+            return
+
+        self.play_pause()
+
+        self.__menubutton_play.set_active(False)
+
+    def __on_menubutton_restart_clicked(self, *_):
+
+        if not self.__menubutton_restart.get_active():
+            return
+
+        self.__vlc_widget.player.set_time(0)
+        self.__scale_progress.set_value(0)  # Necessary if the video is paused.
+        self.emit(CustomSignals._video_restart)
+        self.__menubutton_restart.set_active(False)
+
+    def __on_menubutton_play_clicked(self, *_):
+
+        if not self.__menubutton_play.get_active():
+            return
+
+        self.play_pause()
+
+        self.__menubutton_play.set_active(False)
+
     def __on_menubutton_end_clicked(self, *_):
 
         if not self.__menubutton_next.get_active():
@@ -1015,9 +1046,6 @@ class MediaPlayerWidget(Gtk.Box):
         self.__set_fullscreen(not self.__window_root.is_fullscreen())
 
         button.set_active(False)
-
-    def __on_volumebutton_changed(self, _, value):
-        self.__set_volume(int(value * 100), display_label=False, update_vbutton=False)
 
     def __on_menuitem_track_activate(self, menuitem, track_type, track):
 

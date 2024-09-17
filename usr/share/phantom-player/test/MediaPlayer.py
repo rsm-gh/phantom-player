@@ -81,7 +81,7 @@ class MediaPlayer(Gtk.Window):
 
     def play_video(self, path):
         self.__mp_widget.set_video(file_path=path,
-                                   play=True,
+                                   play=False,
                                    start_at=200,
                                    subtitles_track=2)
 
