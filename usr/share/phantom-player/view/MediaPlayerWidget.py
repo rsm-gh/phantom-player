@@ -58,6 +58,7 @@ scale, label, box {
 
 _MAX_PARSE_TIMEOUT = 5000  # in milliseconds
 
+
 def format_milliseconds_to_time(number):
     if number <= 0:
         return _EMPTY__VIDEO_LENGTH
@@ -146,7 +147,7 @@ class VideoScanStatus:
     _scan = 2
 
 
-class MediaPlayerWidget(Gtk.VBox):
+class MediaPlayerWidget(Gtk.Box):
     __gtype_name__ = 'MediaPlayerWidget'
 
     def __init__(self,
@@ -175,7 +176,6 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__menuitem_subtitles_activated = None
         self.__menuitem_subtitles_file = None
         self.__emitted_time = -1
-
         self.__un_maximized_fixed_toolbar = un_max_fixed_toolbar
         self.__widgets_shown = WidgetsShown._toolbox
 
@@ -183,39 +183,49 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__empty_cursor = Gdk.Cursor.new_from_name(display, 'none')
         self.__default_cursor = Gdk.Cursor.new_from_name(display, 'default')
 
-        self.__overlay = Gtk.Overlay()
-        self.pack_start(self.__overlay, expand=True, fill=True, padding=0)
+        self.set_orientation(orientation=Gtk.Orientation.VERTICAL)
 
-        self.__vlc_widget = VLCWidget()
-        self.__overlay.add(self.__vlc_widget)
+        #
+        # Root Window controllers
+        #
 
         if un_max_fixed_toolbar:
-            # It is important to add the motion_notify to the root_window,
+            # It is important to add the motion_notify to the root_window, instead of the VLC widget
             # to avoid hiding-it on un-maximized mode.
-            event_widget = self.__window_root
-        else:
-            event_widget = self.__vlc_widget
-        event_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
-        event_widget.connect('motion_notify_event', self.__on_motion_notify_event)
+            self.__window_root.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
+            self.__window_root.connect('motion_notify_event', self.__on_motion_notify_event)
 
-        self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-        self.__vlc_widget.connect('button-press-event', self.__on_mouse_button_press)
-        self.__window_root.connect('key-press-event', self.__on_key_pressed)
+        self.__window_root.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.__window_root.connect('key-press-event', self.__on_window_root_key_pressed)
+
+        #
+        # VLC Widget
+        #
+        self.__vlc_widget = VLCWidget()
+        self.__vlc_widget.set_vexpand(expand=True)
+        self.__vlc_widget.set_hexpand(expand=True)
 
         self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
-        self.__vlc_widget.connect('scroll_event', self.__on_mouse_scroll)
+        self.__vlc_widget.connect('scroll_event', self.__on_player_scroll)
+
+        self.__vlc_widget.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+        self.__vlc_widget.connect('button-press-event', self.__on_player_press)
+
+        if not un_max_fixed_toolbar:
+            self.__vlc_widget.add_events(Gdk.EventMask.POINTER_MOTION_MASK)
+            self.__vlc_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
         # Player events
         event_manager = self.__vlc_widget.player.event_manager()
         event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__on_player_time_changed)
         event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__on_player_end_reached)
-        #event_manager.event_attach(vlc.EventType.MediaParsedChanged, self.__on_player_parse_changed)
+        # event_manager.event_attach(vlc.EventType.MediaParsedChanged, self.__on_player_parse_changed)
 
         # Buttons Box
-        self.__buttons_box = Gtk.Box()
-        self.__buttons_box.set_valign(Gtk.Align.END)
-        self.__buttons_box.set_halign(Gtk.Align.FILL)
-        self.__buttons_box.set_sensitive(False)
+        self.__buttons_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+                                     sensitive=False,
+                                     valign=Gtk.Align.END,
+                                     halign=Gtk.Align.FILL)
 
         self.__menubutton_restart = self.__add_menu_button(ThemeButtons._previous,
                                                            Texts.MediaPlayer.Tooltip._start,
@@ -293,12 +303,19 @@ class MediaPlayerWidget(Gtk.VBox):
         self.__label_volume.set_margin_start(5)
         self.__label_volume.set_margin_end(5)
         gtk_utils.set_css(self.__label_volume, _DEFAULT_CSS)
-        self.__overlay.add_overlay(self.__label_volume)
+
         self.__set_volume(volume_level)
 
         #
-        # Add the toolbar
+        # Overlay
         #
+        self.__overlay = Gtk.Overlay()
+        # The overlay must be added before the buttons box in case of self.__un_maximized_fixed_toolbar
+        self.pack_start(self.__overlay, expand=True, fill=True, padding=0)
+
+        self.__overlay.add(self.__vlc_widget)
+        self.__overlay.add_overlay(self.__label_volume)
+
         if self.__un_maximized_fixed_toolbar:
             self.__set_fullscreen(False)
         else:
@@ -760,7 +777,7 @@ class MediaPlayerWidget(Gtk.VBox):
         if start_time > video_length:
             start_time = video_length
 
-        if 0 < start_time <= video_length: # if start_at == 0, this is not necessary
+        if 0 < start_time <= video_length:  # if start_at == 0, this is not necessary
             GLib.idle_add(self.__vlc_widget.player.set_time, start_time)
 
         #
@@ -802,7 +819,16 @@ class MediaPlayerWidget(Gtk.VBox):
 
             sleep(.5)
 
-    def __on_key_pressed(self, _, event):
+    def __on_motion_notify_event(self, *_):
+        self.__motion_time = time()
+
+        if self.__hidden_controls:
+            self.__hidden_controls = False
+            self.__widgets_shown = WidgetsShown._toolbox
+            self.__buttons_box.show()
+            self.__set_cursor_default()
+
+    def __on_window_root_key_pressed(self, _, event):
 
         if event.keyval == EventCodes.Keyboard._f11 and self.__media is not None:
             self.__set_fullscreen(True)
@@ -825,16 +851,7 @@ class MediaPlayerWidget(Gtk.VBox):
                 case EventCodes.Keyboard._arrow_down:
                     self.volume_down()
 
-    def __on_motion_notify_event(self, *_):
-        self.__motion_time = time()
-
-        if self.__hidden_controls:
-            self.__hidden_controls = False
-            self.__widgets_shown = WidgetsShown._toolbox
-            self.__buttons_box.show()
-            self.__set_cursor_default()
-
-    def __on_mouse_scroll(self, _, event):
+    def __on_player_scroll(self, _, event):
 
         if self.__media is None:
             return
@@ -845,7 +862,7 @@ class MediaPlayerWidget(Gtk.VBox):
         elif event.direction == Gdk.ScrollDirection.DOWN:
             self.volume_down()
 
-    def __on_mouse_button_press(self, _, event):
+    def __on_player_press(self, _, event):
 
         if self.__media is None:
             return
@@ -864,25 +881,6 @@ class MediaPlayerWidget(Gtk.VBox):
                 else:
                     self.__vlc_widget.player.play()
                     turn_off_screensaver(True)
-
-    def __on_menubutton_restart_clicked(self, *_):
-
-        if not self.__menubutton_restart.get_active():
-            return
-
-        self.__vlc_widget.player.set_time(0)
-        self.__scale_progress.set_value(0)  # Necessary if the video is paused.
-        self.emit(CustomSignals._video_restart)
-        self.__menubutton_restart.set_active(False)
-
-    def __on_menubutton_play_clicked(self, *_):
-
-        if not self.__menubutton_play.get_active():
-            return
-
-        self.play_pause()
-
-        self.__menubutton_play.set_active(False)
 
     def __on_player_end_reached(self, _event):
         GLib.idle_add(self.__end_video, False)
@@ -909,6 +907,25 @@ class MediaPlayerWidget(Gtk.VBox):
 
         GLib.idle_add(self.__scale_progress.set_value, new_time)
         self.emit(CustomSignals._time_changed, seconds)
+
+    def __on_menubutton_restart_clicked(self, *_):
+
+        if not self.__menubutton_restart.get_active():
+            return
+
+        self.__vlc_widget.player.set_time(0)
+        self.__scale_progress.set_value(0)  # Necessary if the video is paused.
+        self.emit(CustomSignals._video_restart)
+        self.__menubutton_restart.set_active(False)
+
+    def __on_menubutton_play_clicked(self, *_):
+
+        if not self.__menubutton_play.get_active():
+            return
+
+        self.play_pause()
+
+        self.__menubutton_play.set_active(False)
 
     def __on_menubutton_end_clicked(self, *_):
 
