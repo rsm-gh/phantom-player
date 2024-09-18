@@ -610,13 +610,13 @@ class PhantomPlayer:
             playlist_factory.save(self.__current_media._playlist)
 
         self.__quit_requested = True
-        self.__mp_widget.quit()
-        self.__thread_load_playlists.join()
 
-        if self.__application is None:
-            Gtk.main_quit()
-        else:
-            self.__application.quit()
+        # It is better to stop the playlists threads before quitting the media player,
+        # because the VLC instance will be released.
+        self.__thread_load_playlists.join()
+        self.__mp_widget.quit()
+
+        self.__application.quit()
 
     def __get_video_color(self, video):
 
