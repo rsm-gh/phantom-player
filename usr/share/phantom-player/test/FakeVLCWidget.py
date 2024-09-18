@@ -25,6 +25,18 @@ class FakePlayer:
 
         self.__media = False
 
+    @staticmethod
+    def event_manager():
+
+        class EM:
+            def connect(self, *_):
+                pass
+
+            def event_attach(self, *_):
+                pass
+
+        return EM()
+
     def get_state(self, *_):
         pass
 

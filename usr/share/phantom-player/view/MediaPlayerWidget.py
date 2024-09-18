@@ -212,8 +212,8 @@ class MediaPlayerWidget(Gtk.Box):
         # VLC Widget
         #
 
-        self.__vlc_widget = VLCWidget()
-        # self.__vlc_widget = FakeVLCWidget()
+        #self.__vlc_widget = VLCWidget()
+        self.__vlc_widget = FakeVLCWidget()
 
         # SCROLL: OLD
         # self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
