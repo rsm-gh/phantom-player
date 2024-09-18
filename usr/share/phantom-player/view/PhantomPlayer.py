@@ -69,7 +69,7 @@ from model.Playlist import LoadStatus as PlaylistLoadStatus
 from model.CurrentMedia import CurrentMedia
 from view.SettingsWindow import SettingsWindow
 from view.DialogRenameSingle import DialogRenameSingle
-from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE, CustomSignals
+from view.MediaPlayerWidget import MediaPlayerWidget, CustomSignals
 from view.cellrenderers.CellRendererTime import CellRendererTime
 from view.cellrenderers.CellRendererRating import CellRendererRating
 from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
@@ -612,7 +612,6 @@ class PhantomPlayer:
         self.__quit_requested = True
         self.__mp_widget.quit()
         self.__thread_load_playlists.join()
-        VLC_INSTANCE.release()
 
         if self.__application is None:
             Gtk.main_quit()

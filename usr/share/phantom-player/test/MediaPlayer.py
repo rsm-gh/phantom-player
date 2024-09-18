@@ -25,7 +25,7 @@
 
 """
     Patches:
-        + Patch 002: `self.__vlc_widget.player.get_media()` is always returning `None`. Why?
+        + Patch 002: `self.__vlc_widget._player.get_media()` is always returning `None`. Why?
             To fix it, I created `self.__media`.
 
     Remarks:
@@ -55,7 +55,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-from view.MediaPlayerWidget import MediaPlayerWidget, VLC_INSTANCE
+from view.MediaPlayerWidget import MediaPlayerWidget
 
 
 class MediaPlayer(Gtk.Window):
@@ -86,4 +86,3 @@ if __name__ == '__main__':
     player.play_video('/home/rsm/Videos/test.mkv')
     #player.play_video('/run/media/rsm/media/Videos/Ink Master/Season15/Ink.Master.S15E03.1080p.HEVC.x265-MeGusta[eztv.re].mkv')
     Gtk.main()
-    VLC_INSTANCE.release()

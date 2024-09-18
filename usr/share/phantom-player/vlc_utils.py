@@ -24,20 +24,28 @@
 # THE SOFTWARE.
 
 import os
+import sys
 import vlc
 import time
 
-_VLC_SCAN = vlc.Instance()
-_VLC_PARSE_TIMEOUT = 5000
+_VLC_MAX_PARSE_TIMEOUT = 5000
+
+# Create a single vlc.Instance() to be shared by (possible) multiple players.
+# Note: this is done by default in vlc.py, but without the "--no*xlib" argument.
+# maybe this could be ignored?
+#
+if 'linux' in sys.platform:
+    # Inform libvlc that Xlib is not initialized for threads
+    _VLC_INSTANCE = vlc.Instance("--no-xlib")
+else:
+    _VLC_INSTANCE = vlc.Instance()
 
 
 def video_duration(path):
-
     if not os.path.exists(path):
         return 0
 
-    media = _VLC_SCAN.media_new(path)
-    media.parse_with_options(vlc.MediaParseFlag.local, _VLC_PARSE_TIMEOUT)
+    media = parse_media(file_path=path)
     while media.get_parsed_status() == 0:
         time.sleep(.1)
 
@@ -47,3 +55,13 @@ def video_duration(path):
         return 0
 
     return int(media.get_duration() / 1000)
+
+
+def parse_media(file_path):
+    media = _VLC_INSTANCE.media_new(file_path)
+    media.parse_with_options(vlc.MediaParseFlag.local, _VLC_MAX_PARSE_TIMEOUT)
+    return media
+
+
+def release():
+    _VLC_INSTANCE.release()
