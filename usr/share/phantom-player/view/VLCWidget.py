@@ -19,16 +19,9 @@
 #
 
 import sys
-import vlc
 import ctypes
+from vlc_utils import _VLC_INSTANCE
 from gi.repository import Gtk
-
-# Create a single vlc.Instance() to be shared by (possible) multiple players.
-if 'linux' in sys.platform:
-    # Inform libvlc that Xlib is not initialized for threads
-    VLC_INSTANCE = vlc.Instance("--no-xlib")
-else:
-    VLC_INSTANCE = vlc.Instance()
 
 
 class VLCWidget(Gtk.DrawingArea):
@@ -36,7 +29,7 @@ class VLCWidget(Gtk.DrawingArea):
 
     def __init__(self):
         super().__init__(vexpand=True, hexpand=True)
-        self.player = VLC_INSTANCE.media_player_new()
+        self._player = _VLC_INSTANCE.media_player_new()
         self.connect('realize', self.__on_realize)
         self.connect("draw", self.__on_draw)
 
@@ -46,17 +39,17 @@ class VLCWidget(Gtk.DrawingArea):
             # get the win32 handle
             gdk_dll = ctypes.CDLL('libgdk-3-0.dll')
             handle = gdk_dll.gdk_win32_window_get_handle(self.get_window_pointer(self.get_window()))
-            self.player.set_hwnd(handle)
+            self._player.set_hwnd(handle)
 
         elif sys.platform == 'darwin':
             # get the nsview pointer. NB needed to manually specify the function signature.
             gdk_dll = ctypes.CDLL('libgdk-3.0.dll')
             get_nsview = gdk_dll.gdk_quaerz_window_get_nsview
             get_nsview.restype, get_nsview.argtypes = [ctypes.c_void_p], ctypes.c_void_p
-            self.player.set_nsobject(get_nsview(self.get_window_pointer(self.get_window())))
+            self._player.set_nsobject(get_nsview(self.get_window_pointer(self.get_window())))
 
         else:
-            self.player.set_xwindow(self.get_window().get_xid())
+            self._player.set_xwindow(self.get_window().get_xid())
 
         return True
 

@@ -40,9 +40,10 @@ from datetime import timedelta
 from threading import Thread, current_thread
 from gi.repository import Gtk, GObject, Gdk, GLib
 
+import vlc_utils
 from model.Playlist import Track, TimeValue
 from view import gtk_utils
-from view.VLCWidget import VLCWidget, VLC_INSTANCE
+from view.VLCWidget import VLCWidget
 from system_utils import EventCodes, turn_off_screensaver
 from settings import ThemeButtons
 from Texts import Texts
@@ -212,7 +213,7 @@ class MediaPlayerWidget(Gtk.Box):
             self.__vlc_widget.connect('motion_notify_event', self.__on_motion_notify_event)
 
         # Player events
-        event_manager = self.__vlc_widget.player.event_manager()
+        event_manager = self.__vlc_widget._player.event_manager()
         event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__on_player_time_changed)
         event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__on_player_end_reached)
         # event_manager.event_attach(vlc.EventType.MediaParsedChanged, self.__on_player_parse_changed)
@@ -380,10 +381,10 @@ class MediaPlayerWidget(Gtk.Box):
         if from_scale and self.__scale_progress.get_value() == self.__scale_progress.get_adjustment().get_upper():
             self.__scale_progress.set_value(0)
 
-        if self.__vlc_widget.player.will_play() == 0 or self.__video_ended or not self.__video_is_loaded:
+        if self.__vlc_widget._player.will_play() == 0 or self.__video_ended or not self.__video_is_loaded:
             threading.Thread(target=self.__on_thread_set_video, args=[True, from_scale]).start()
         else:
-            self.__vlc_widget.player.play()
+            self.__vlc_widget._player.play()
 
         self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._pause, Gtk.IconSize.BUTTON))
         self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._pause)
@@ -394,13 +395,13 @@ class MediaPlayerWidget(Gtk.Box):
     def pause(self, emit=True):
         self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._play, Gtk.IconSize.BUTTON))
         self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
-        self.__vlc_widget.player.pause()
+        self.__vlc_widget._player.pause()
         turn_off_screensaver(False)
         if emit:
             self.emit(CustomSignals._paused)
 
     def stop(self):
-        self.__vlc_widget.player.stop()
+        self.__vlc_widget._player.stop()
         self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._play, Gtk.IconSize.BUTTON))
         self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
         self.__scale_progress.set_range(0, 0)  # If no video loaded, disable the scale
@@ -463,6 +464,8 @@ class MediaPlayerWidget(Gtk.Box):
         self.__thread_scan_motion.do_run = False
         self.__thread_scan_motion.join()
 
+        vlc_utils.release()
+
     def set_video(self,
                   file_path,
                   start_at=TimeValue._minium,
@@ -483,13 +486,12 @@ class MediaPlayerWidget(Gtk.Box):
         GLib.idle_add(self.__label_video_length.set_text, " / " + _EMPTY__VIDEO_LENGTH)
         #  self.__scale_progress.set_value is not updated here to avoid blinking the GUI.
 
-        GLib.idle_add(self.__vlc_widget.player.stop)  # To remove any previous video
+        GLib.idle_add(self.__vlc_widget._player.stop)  # To remove any previous video
 
         if not os.path.exists(file_path):
             return
 
-        self.__media = VLC_INSTANCE.media_new(file_path)
-        self.__media.parse_with_options(vlc.MediaParseFlag.local, _MAX_PARSE_TIMEOUT)
+        self.__media = vlc_utils.parse_media(file_path=file_path)
 
         # Patch 001: Some actions will be performed when the video length be properly parsed
         self.__delayed_media_data = DelayedMediaData(start_at=int(start_at * 1000),
@@ -509,7 +511,7 @@ class MediaPlayerWidget(Gtk.Box):
         self.__button_keep_playing.set_active(state)
 
     def get_state(self):
-        return self.__vlc_widget.player.get_state()
+        return self.__vlc_widget._player.get_state()
 
     def get_random(self):
         if self.__button_random is None:
@@ -534,7 +536,7 @@ class MediaPlayerWidget(Gtk.Box):
         self.__video_is_loaded = False
 
         self.pause()
-        self.__vlc_widget.player.stop()
+        self.__vlc_widget._player.stop()
 
         GLib.idle_add(self.__set_scale_progress_end)
 
@@ -570,13 +572,13 @@ class MediaPlayerWidget(Gtk.Box):
         submenu = Gtk.Menu()
         menuitem.set_submenu(submenu)
 
-        selected_track = self.__vlc_widget.player.audio_get_track()
+        selected_track = self.__vlc_widget._player.audio_get_track()
 
         try:
             tracks = [(audio[0], audio[1].decode('utf-8')) for audio in
-                      self.__vlc_widget.player.audio_get_track_description()]
+                      self.__vlc_widget._player.audio_get_track_description()]
         except Exception as e:
-            tracks = self.__vlc_widget.player.audio_get_track_description()
+            tracks = self.__vlc_widget._player.audio_get_track_description()
             print(str(e))
 
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
@@ -605,7 +607,7 @@ class MediaPlayerWidget(Gtk.Box):
         submenu = Gtk.Menu()
         menuitem.set_submenu(submenu)
 
-        selected_track = self.__vlc_widget.player.video_get_spu()
+        selected_track = self.__vlc_widget._player.video_get_spu()
 
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
@@ -616,9 +618,9 @@ class MediaPlayerWidget(Gtk.Box):
 
         try:
             tracks = [(video_spu[0], video_spu[1].decode('utf-8')) for video_spu in
-                      self.__vlc_widget.player.video_get_spu_description()]
+                      self.__vlc_widget._player.video_get_spu_description()]
         except Exception as e:
-            tracks = self.__vlc_widget.player.video_get_spu_description()
+            tracks = self.__vlc_widget._player.video_get_spu_description()
             print(str(e))
 
         for track in tracks:
@@ -653,7 +655,7 @@ class MediaPlayerWidget(Gtk.Box):
             else:
                 self.__label_volume.set_text(_VOLUME_LABEL_NONE)
 
-            self.__vlc_widget.player.audio_set_volume(value)
+            self.__vlc_widget._player.audio_set_volume(value)
 
             if update_button:
                 if value <= 0:
@@ -722,11 +724,11 @@ class MediaPlayerWidget(Gtk.Box):
         if self.__media is None or self.__delayed_media_data is None:
             return
 
-        GLib.idle_add(self.__vlc_widget.player.set_media, self.__media)
-        GLib.idle_add(self.__vlc_widget.player.audio_set_volume, self.__volume)
+        GLib.idle_add(self.__vlc_widget._player.set_media, self.__media)
+        GLib.idle_add(self.__vlc_widget._player.audio_set_volume, self.__volume)
 
         if play:
-            GLib.idle_add(self.__vlc_widget.player.play)
+            GLib.idle_add(self.__vlc_widget._player.play)
             self.__video_is_loaded = True
 
         while self.__media.get_parsed_status() == 0:
@@ -745,14 +747,14 @@ class MediaPlayerWidget(Gtk.Box):
         # Set the audio track
         #
         if self.__delayed_media_data._audio_track != Track.Value._undefined:
-            GLib.idle_add(self.__vlc_widget.player.audio_set_track,
+            GLib.idle_add(self.__vlc_widget._player.audio_set_track,
                           self.__delayed_media_data._audio_track)
 
         #
         # Set the subtitles' track
         #
         if self.__delayed_media_data._sub_track != Track.Value._undefined:
-            GLib.idle_add(self.__vlc_widget.player.video_set_spu,
+            GLib.idle_add(self.__vlc_widget._player.video_set_spu,
                           self.__delayed_media_data._sub_track)
 
         #
@@ -768,7 +770,7 @@ class MediaPlayerWidget(Gtk.Box):
             start_time = video_length
 
         if 0 < start_time <= video_length:  # if start_at == 0, this is not necessary
-            GLib.idle_add(self.__vlc_widget.player.set_time, start_time)
+            GLib.idle_add(self.__vlc_widget._player.set_time, start_time)
 
         #
         # Re-Activate the GUI
@@ -866,10 +868,10 @@ class MediaPlayerWidget(Gtk.Box):
         elif event.type == Gdk.EventType.BUTTON_PRESS:
             if event.button == EventCodes.Cursor._left_click:
                 if self.is_playing():
-                    self.__vlc_widget.player.pause()
+                    self.__vlc_widget._player.pause()
                     turn_off_screensaver(False)
                 else:
-                    self.__vlc_widget.player.play()
+                    self.__vlc_widget._player.play()
                     turn_off_screensaver(True)
 
     def __on_player_end_reached(self, _event):
@@ -903,7 +905,7 @@ class MediaPlayerWidget(Gtk.Box):
         if not self.__menubutton_restart.get_active():
             return
 
-        self.__vlc_widget.player.set_time(0)
+        self.__vlc_widget._player.set_time(0)
         self.__scale_progress.set_value(0)  # Necessary if the video is paused.
         self.emit(CustomSignals._video_restart)
         self.__menubutton_restart.set_active(False)
@@ -949,16 +951,16 @@ class MediaPlayerWidget(Gtk.Box):
             return
 
         if track_type == Track.Type._audio:
-            self.__vlc_widget.player.audio_set_track(track)
+            self.__vlc_widget._player.audio_set_track(track)
             self.__delayed_media_data.set_audio_track(track)
 
         elif track_type == Track.Type._subtitles:
-            self.__vlc_widget.player.video_set_spu(track)
+            self.__vlc_widget._player.video_set_spu(track)
             self.__delayed_media_data.set_sub_track(track)
             self.__menuitem_subtitles_activated = menuitem
 
         elif track_type == Track.Type._video:
-            self.__vlc_widget.player.video_set_track(track)
+            self.__vlc_widget._player.video_set_track(track)
 
     def __on_menuitem_file_subs_activate(self, menuitem, *_):
 
@@ -978,7 +980,7 @@ class MediaPlayerWidget(Gtk.Box):
             if self.__menuitem_subtitles_activated != self.__menuitem_subtitles_file:
                 self.__menuitem_subtitles_activated.set_active(True)
         else:
-            self.__vlc_widget.player.video_set_subtitle_file(path)
+            self.__vlc_widget._player.video_set_subtitle_file(path)
             self.__menuitem_subtitles_activated = self.__menuitem_subtitles_file
 
     def __on_scale_progress_press(self, *_):
@@ -993,7 +995,7 @@ class MediaPlayerWidget(Gtk.Box):
     def __on_thread_scale_progress_long_press(self):
         sleep(.25)
         if self.__scale_progress_pressed:
-            GLib.idle_add(self.__vlc_widget.player.pause)
+            GLib.idle_add(self.__vlc_widget._player.pause)
 
     def __on_scale_progress_release(self, widget, *_):
 
@@ -1006,11 +1008,11 @@ class MediaPlayerWidget(Gtk.Box):
             self.__end_video(forced=True)
 
         else:
-            self.__vlc_widget.player.set_time(int(widget.get_value()))
+            self.__vlc_widget._player.set_time(int(widget.get_value()))
 
             if self.__was_playing_before_press:  # In case of long press
                 if self.is_paused():
-                    self.__vlc_widget.player.play()
+                    self.__vlc_widget._player.play()
 
         self.__motion_time = time()
         self.__scale_progress_pressed = False
