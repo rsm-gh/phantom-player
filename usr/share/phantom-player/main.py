@@ -25,9 +25,15 @@
 
 import os
 import sys
-import gi
 
-os.environ["GDK_BACKEND"] = "x11"
+if sys.platform == 'win32':
+    #os.add_dll_directory(r"C:\msys64\ucrt64\bin") why this is not working?
+    os.chdir(r"C:\msys64\ucrt64\bin")
+
+elif 'linux' in sys.platform:
+    os.environ["GDK_BACKEND"] = "x11"
+
+import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers
 from gi.repository import Gtk, Gio

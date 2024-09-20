@@ -35,21 +35,28 @@ class VLCWidget(Gtk.DrawingArea):
 
     def __on_realize(self, *_):
 
-        if sys.platform == 'win32':
-            # get the win32 handle
-            gdk_dll = ctypes.CDLL('libgdk-3-0.dll')
-            handle = gdk_dll.gdk_win32_window_get_handle(self.get_window_pointer(self.get_window()))
-            self._player.set_hwnd(handle)
+        top_level_window = self.get_window()
 
-        elif sys.platform == 'darwin':
-            # get the nsview pointer. NB needed to manually specify the function signature.
-            gdk_dll = ctypes.CDLL('libgdk-3.0.dll')
-            get_nsview = gdk_dll.gdk_quaerz_window_get_nsview
-            get_nsview.restype, get_nsview.argtypes = [ctypes.c_void_p], ctypes.c_void_p
-            self._player.set_nsobject(get_nsview(self.get_window_pointer(self.get_window())))
-
+        if 'linux' in sys.platform:
+            self._player.set_xwindow(top_level_window.get_xid())
         else:
-            self._player.set_xwindow(self.get_window().get_xid())
+            gdk_dll = ctypes.CDLL('libgdk-3-0.dll')
+            window_pointer = self.get_window_pointer(top_level_window)
+
+            if sys.platform == 'win32':
+                # get the win32 handle
+                gdk_dll.gdk_win32_window_get_handle.argtypes = [ctypes.c_void_p]
+                gdk_dll.gdk_win32_window_get_handle.restype = ctypes.c_void_p
+                handle = gdk_dll.gdk_win32_window_get_handle(window_pointer)
+                self._player.set_hwnd(handle)
+
+            elif sys.platform == 'darwin':
+                # get the nsview pointer. NB needed to manually specify the function signature.
+                get_nsview = gdk_dll.gdk_quaerz_window_get_nsview
+                get_nsview.restype, get_nsview.argtypes = [ctypes.c_void_p], ctypes.c_void_p
+                nsview = get_nsview(window_pointer)
+                self._player.set_nsobject(nsview)
+
 
         return True
 

@@ -24,6 +24,7 @@
 # THE SOFTWARE.
 
 import os
+import sys
 from PIL import Image
 
 from console_printer import print_warning
@@ -61,7 +62,11 @@ def open_directory(path):
 
 
 def turn_off_screensaver(state):
-    """ True = Turn off screen saver """
+    """ Turn of off screen saver """
+
+    if "linux" not in sys.platform:
+        print_warning("Can not pause the screen saver.")
+        return
 
     if state:
         try:
