@@ -47,10 +47,16 @@
 """
 
 import os
-import gi
 import sys
 
-os.environ["GDK_BACKEND"] = "x11"
+if sys.platform == 'win32':
+    #os.add_dll_directory(r"C:\msys64\ucrt64\bin") why this is not working?
+    os.chdir(r"C:\msys64\ucrt64\bin")
+
+elif 'linux' in sys.platform:
+    os.environ["GDK_BACKEND"] = "x11"
+
+import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
@@ -82,7 +88,13 @@ class MediaPlayer(Gtk.Window):
 
 
 if __name__ == '__main__':
+
+    if sys.platform == 'win32':
+        video_path = r"C:\Users\rafae\Desktop\Best Of Rodney Mullen.mp4"
+    else:
+        video_path = "/home/rsm/Videos/test.mkv"
+
     player = MediaPlayer()
-    player.play_video('/home/rsm/Videos/test.mkv')
+    player.play_video(video_path)
     #player.play_video('/run/media/rsm/media/Videos/Ink Master/Season15/Ink.Master.S15E03.1080p.HEVC.x265-MeGusta[eztv.re].mkv')
     Gtk.main()
