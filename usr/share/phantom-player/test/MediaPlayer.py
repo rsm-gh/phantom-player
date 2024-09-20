@@ -47,11 +47,17 @@
 """
 
 import os
-import gi
 import sys
 
-os.environ["GDK_BACKEND"] = "x11"
-gi.require_version('Gtk', '4.0')
+if sys.platform == 'win32':
+    #os.add_dll_directory(r"C:\msys64\ucrt64\bin") why this is not working?
+    os.chdir(r"C:\msys64\ucrt64\bin")
+
+elif 'linux' in sys.platform:
+    os.environ["GDK_BACKEND"] = "x11"
+
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -83,9 +89,16 @@ class MediaPlayer(Gtk.Window):
 
 
 if __name__ == '__main__':
+
+    if sys.platform == 'win32':
+        VIDEO_PATH = r"C:\Users\rafae\Desktop\Best Of Rodney Mullen.mp4"
+    else:
+        VIDEO_PATH = "/home/rsm/Videos/test.mkv"
+
+
     def on_activate(application):
         player = MediaPlayer(application=application)
-        player.play_video('/home/rsm/Videos/test.mkv')
+        player.play_video(VIDEO_PATH)
         player.present()
 
     APP = Gtk.Application(application_id='com.senties-martinelli.MediaPlayer')
