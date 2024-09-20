@@ -57,7 +57,7 @@ elif 'linux' in sys.platform:
     os.environ["GDK_BACKEND"] = "x11"
 
 import gi
-gi.require_version('Gtk', '3.0')
+gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
