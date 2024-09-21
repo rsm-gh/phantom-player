@@ -567,13 +567,18 @@ class SettingsWindow:
 
     def __on_button_path_edit_clicked(self, *_):
 
-        self.__edit_path_new_value = gtk_utils.dialog_select_directory(self.__window_settings)
+        current_path = self.__selected_playlist_path.get_path()
+
+        parent_dir = os.path.dirname(current_path)
+        if not os.path.exists(parent_dir):
+            parent_dir = None
+
+        self.__edit_path_new_value = gtk_utils.dialog_select_directory(parent=self.__window_settings,
+                                                                       start_path=parent_dir)
         if self.__edit_path_new_value is None:
             return
 
         self.__liststore_edit_path.clear()
-
-        current_path = self.__selected_playlist_path.get_path()
 
         for video in self.__current_playlist.get_videos_by_playlist_path(self.__selected_playlist_path):
 
