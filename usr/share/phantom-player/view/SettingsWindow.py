@@ -29,6 +29,8 @@ from threading import Thread
 from gi.repository import Gtk, GLib, Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
+from system_utils import has_non_empty_dirs
+
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
@@ -654,16 +656,21 @@ class SettingsWindow:
             gtk_utils.dialog_info(self.__window_settings, Texts.WindowSettings._playlist_path_cant_recursive)
             return
 
-        if new_state:
+        has_non_empty_dirs = system_utils.has_non_empty_dirs(path)
 
-            self.__dialog_paths.show()
-            self.__freeze_all()
-            self.__dialog_paths.set_title(Texts.WindowSettings._add_recursive_title)
-            self.__label_dialog_paths.set_text(Texts.WindowSettings._adding_recursive_videos)
+        if new_state:
+            if has_non_empty_dirs:
+                self.__dialog_paths.show()
+                self.__freeze_all()
+                self.__dialog_paths.set_title(Texts.WindowSettings._add_recursive_title)
+                self.__label_dialog_paths.set_text(Texts.WindowSettings._adding_recursive_videos)
+
             playlist_path.set_recursive(new_state)  # Important to change the state BEFORE the discovery
-            Thread(target=self.__thread_discover_paths, args=[playlist_path,
-                                                              self.__label_dialog_paths,
-                                                              Texts.WindowSettings._adding_recursive_videos_done]).start()
+
+            if has_non_empty_dirs:
+                Thread(target=self.__thread_discover_paths, args=[playlist_path,
+                                                                  self.__label_dialog_paths,
+                                                                  Texts.WindowSettings._adding_recursive_videos_done]).start()
         else:
             self.__dialog_paths.set_title(Texts.WindowSettings._remove_recursive_title)
             self.__label_dialog_paths.set_text(Texts.WindowSettings._remove_videos)
@@ -676,7 +683,8 @@ class SettingsWindow:
                     self.__parent_remove_video_glib_func(self.__current_playlist, video)
 
             playlist_path.set_recursive(new_state)  # Important to change the state AFTER getting the list of videos
-            self.__liststore_paths_update_or_add(playlist_path)
+
+        self.__liststore_paths_update_or_add(playlist_path)
 
     def __on_cellrenderertoggle_r_startup_toggled(self, _, row):
         """
