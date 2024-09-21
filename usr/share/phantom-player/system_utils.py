@@ -29,6 +29,16 @@ from PIL import Image
 
 from console_printer import print_warning
 
+def has_non_empty_dirs(path: str) -> bool:
+    """Check if a directory has non-empty subdirectories (only one level)."""
+
+    for name in os.listdir(path):
+        abs_path = os.path.join(path, name)
+        if os.path.isdir(abs_path) and len(os.listdir(abs_path)) > 0:
+            return True
+
+    return False
+
 
 def open_directory(path):
     if not os.path.exists(path):
