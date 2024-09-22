@@ -616,23 +616,34 @@ You should have received a copy of the GNU General Public License along with thi
       <object class="GtkBox">
         <property name="visible">True</property>
         <property name="can-focus">False</property>
-        <property name="hexpand">True</property>
+        <property name="halign">end</property>
         <child>
-          <object class="GtkMenuButton" id="menubutton_main">
+          <object class="GtkEntry" id="entry_playlist_search">
+            <property name="name">entry_playlist_search</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
-            <property name="focus-on-click">False</property>
-            <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Home</property>
-            <property name="popup">menu_main</property>
-            <child>
-              <placeholder/>
-            </child>
+            <property name="caps-lock-warning">False</property>
+            <property name="placeholder-text" translatable="yes">Search for Playlists</property>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="button_display_playlists">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">True</property>
+            <property name="tooltip-text" translatable="yes">Back to Playlists</property>
+            <property name="image">image_back</property>
+            <property name="always-show-image">True</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
           </packing>
         </child>
         <child>
@@ -650,27 +661,16 @@ You should have received a copy of the GNU General Public License along with thi
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="button_display_playlists">
+          <object class="GtkMenuButton" id="menubutton_main">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
+            <property name="focus-on-click">False</property>
             <property name="receives-default">True</property>
-            <property name="tooltip-text" translatable="yes">Back to Playlists</property>
-            <property name="image">image_back</property>
-            <property name="always-show-image">True</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">3</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkEntry" id="entry_playlist_search">
-            <property name="name">entry_playlist_search</property>
-            <property name="visible">True</property>
-            <property name="can-focus">True</property>
-            <property name="caps-lock-warning">False</property>
-            <property name="placeholder-text" translatable="yes">Search for Playlists</property>
+            <property name="tooltip-text" translatable="yes">Main Menu</property>
+            <property name="popup">menu_main</property>
+            <child>
+              <placeholder/>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -679,6 +679,10 @@ You should have received a copy of the GNU General Public License along with thi
           </packing>
         </child>
       </object>
+      <packing>
+        <property name="pack-type">end</property>
+        <property name="position">1</property>
+      </packing>
     </child>
   </object>
 </interface>
