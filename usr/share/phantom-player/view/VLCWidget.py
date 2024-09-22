@@ -20,9 +20,9 @@
 
 import sys
 import ctypes
-from vlc_utils import _VLC_INSTANCE
 from gi.repository import Gtk
 
+from vlc_utils import _VLC_INSTANCE
 
 class VLCWidget(Gtk.DrawingArea):
     __gtype_name__ = 'VLCWidget'
@@ -44,14 +44,12 @@ class VLCWidget(Gtk.DrawingArea):
             window_pointer = self.get_window_pointer(top_level_window)
 
             if sys.platform == 'win32':
-                # get the win32 handle
                 gdk_dll.gdk_win32_window_get_handle.argtypes = [ctypes.c_void_p]
                 gdk_dll.gdk_win32_window_get_handle.restype = ctypes.c_void_p
                 handle = gdk_dll.gdk_win32_window_get_handle(window_pointer)
                 self._player.set_hwnd(handle)
 
             elif sys.platform == 'darwin':
-                # get the nsview pointer. NB needed to manually specify the function signature.
                 get_nsview = gdk_dll.gdk_quaerz_window_get_nsview
                 get_nsview.restype, get_nsview.argtypes = [ctypes.c_void_p], ctypes.c_void_p
                 nsview = get_nsview(window_pointer)
