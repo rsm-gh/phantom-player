@@ -29,14 +29,12 @@ from threading import Thread
 from gi.repository import Gtk, GLib, Gdk
 from gi.repository.GdkPixbuf import Pixbuf
 
-from system_utils import has_non_empty_dirs
-
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, os.path.dirname(_SCRIPT_DIR))
 
+import Paths
 import settings
 import system_utils
-import Paths
 from Texts import Texts
 from view import gtk_utils
 from model.PlaylistPath import PlaylistPath
