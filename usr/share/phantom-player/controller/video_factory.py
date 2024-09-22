@@ -102,7 +102,6 @@ def __discover_playlist_path(playlist,
 
 
 def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=None, update_func=None):
-    print_debug(f"playlist name={playlist.get_name()}, file_path={file_path}")
 
     if file_path in exclude_paths:
         return
@@ -120,12 +119,19 @@ def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=
     elif file_path in current_data.values():
         return  # No message on already added videos
 
+    print_debug(f"playlist name={playlist.get_name()}, file_path={file_path}")
+
     video_hash = __file_hash(file_path)
     if video_hash in current_data.keys():
 
         imported_path = current_data[video_hash]
 
-        if not os.path.exists(imported_path):
+        if os.path.exists(imported_path):
+            print_debug(f"\t\tSkipping video because hash exists... {video_hash}", direct_output=True)
+            print_debug(f"\t\t\tImported path: {imported_path}", direct_output=True)
+            print_debug(f"\t\t\tSkipped path: {file_path}", direct_output=True)
+            return
+        else:
             # The video was renamed, use the new path instead
             video = playlist.get_video_by_hash(video_hash)
             video.set_path(file_path)
@@ -139,11 +145,6 @@ def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=
             if update_func is not None:
                 update_func(playlist, video)
 
-            return
-        else:
-            print_debug(f"\t\tSkipping video because hash exists... {video_hash}", direct_output=True)
-            print_debug(f"\t\t\tImported path: {imported_path}", direct_output=True)
-            print_debug(f"\t\t\tSkipped path: {file_path}", direct_output=True)
             return
 
     new_video = Video(video_hash, file_path, video_duration(file_path))
