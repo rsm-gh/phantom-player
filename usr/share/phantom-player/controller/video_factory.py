@@ -147,6 +147,13 @@ def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=
 
             return
 
+    #
+    # Add a new video.
+    #
+    # Note it is interesting to do not save the playlist here, if a video is added.
+    # Why? because in that case, the video will always appear as "new" until the user
+    # opens the playlist.
+    #
     new_video = Video(video_hash, file_path, video_duration(file_path))
     new_video.set_is_new(True)
     playlist.add_video(new_video)
