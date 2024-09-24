@@ -28,6 +28,9 @@ import sys
 import vlc
 import time
 
+from console_printer import print_info
+print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
+
 _VLC_MAX_PARSE_TIMEOUT = 5000
 
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
