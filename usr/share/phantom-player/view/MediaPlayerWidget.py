@@ -41,6 +41,7 @@ from threading import Thread, current_thread
 from gi.repository import Gtk, GObject, Gdk, GLib
 
 import vlc_utils
+from console_printer import print_debug
 from model.Playlist import Track, TimeValue
 from view import gtk_utils
 from view.VLCWidget import VLCWidget
@@ -160,7 +161,6 @@ class MediaPlayerWidget(Gtk.Box):
         """
              un_max_fixed_toolbar: Automatically hide the toolbar when the window is un-maximized
         """
-
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
 
         self.__delayed_media_data = None
