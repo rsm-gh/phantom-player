@@ -67,8 +67,8 @@ from view.MediaPlayerWidget import MediaPlayerWidget
 class MediaPlayer(Gtk.Window):
 
     def __init__(self, application):
-        super().__init__(application=application)
-
+        super().__init__(application=application, title="Phantom Media Player")
+        self.__application = application
         self.__mp_widget = MediaPlayerWidget(root_window=self,
                                              random_button=True,
                                              keep_playing_button=True,

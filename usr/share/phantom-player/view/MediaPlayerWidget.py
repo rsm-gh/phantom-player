@@ -52,7 +52,6 @@ from datetime import timedelta
 from threading import Thread, current_thread
 from gi.repository import Gtk, GObject, GLib
 
-import vlc_utils
 from Texts import Texts
 from settings import ThemeButtons
 from system_utils import EventCodes, turn_off_screensaver
@@ -317,7 +316,7 @@ class MediaPlayerWidget(Gtk.Box):
 
         gtk_utils.set_css(self.__buttons_box, _DEFAULT_CSS)
 
-        #   Extra volume label
+        # Extra volume label
         self.__label_volume = Gtk.Label(valign=Gtk.Align.START,
                                         halign=Gtk.Align.END,
                                         margin_start=5,
@@ -495,7 +494,10 @@ class MediaPlayerWidget(Gtk.Box):
         self.__thread_scan_motion.do_run = False
         self.__thread_scan_motion.join()
 
-        vlc_utils.release()
+        # It is necessary to call release() because if the widget was never displayed
+        # to the user, the destroy signal will not be called.
+        # So if the widget was destroyed, it will be called twice, but that has no impact.
+        self.__vlc_widget.release()
 
     def set_video(self,
                   file_path,
@@ -525,7 +527,7 @@ class MediaPlayerWidget(Gtk.Box):
         if not os.path.exists(file_path):
             return
 
-        self.__media = vlc_utils.parse_media(file_path=file_path)
+        self.__media = self.__vlc_widget.parse_media(file_path=file_path)
 
         # Patch 001: Some actions will be performed when the video length be properly parsed
         self.__delayed_media_data = DelayedMediaData(start_at=int(start_at * 1000),

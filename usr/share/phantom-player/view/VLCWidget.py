@@ -19,10 +19,11 @@
 #
 
 import sys
+import vlc
 import ctypes
 from gi.repository import Gtk
 
-from vlc_utils import _VLC_INSTANCE
+from console_printer import print_info, print_debug
 
 
 class VLCWidget(Gtk.DrawingArea):
@@ -30,9 +31,43 @@ class VLCWidget(Gtk.DrawingArea):
 
     def __init__(self):
         super().__init__(hexpand=True, vexpand=True)
-        self._player = _VLC_INSTANCE.media_player_new()
+
+        #
+        # VLC Player
+        #
+        if 'linux' in sys.platform:
+            args = ["--no-xlib"]
+        else:
+            args = []
+        self.__vlc_instance = vlc.Instance(args)
+        print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
+        print_info(f"VLC instance: {self.__vlc_instance}, args={args}", direct_output=True)
+        self._player = self.__vlc_instance.media_player_new()
+
+
+        #
+        # GTK Signals
+        #
         self.set_draw_func(self.__on_draw)
         self.connect('realize', self.__on_realize)
+        self.connect('destroy', self.__on_destroy)
+
+    def parse_media(self, file_path, timeout=3000):
+        media = self.__vlc_instance.media_new_path(file_path)
+        media.parse_with_options(vlc.MediaParseFlag.local, timeout)
+        return media
+
+    def release(self):
+        print_debug()
+        if self._player is not None:
+            print_debug(f"VLC Player: {self._player}", direct_output=True)
+            self._player.stop()
+            self._player.release()
+            self._player = None
+        if self.__vlc_instance is not None:
+            print_debug(f"VLC Instance: {self.__vlc_instance}", direct_output=True)
+            self.__vlc_instance.release()
+            self.__vlc_instance = None
 
     def __on_realize(self, *_):
 
@@ -41,8 +76,13 @@ class VLCWidget(Gtk.DrawingArea):
         if 'linux' in sys.platform:
             self._player.set_xwindow(top_level_window.get_xid())
         else:
+            # Use the window.__gpointer__ PyCapsule to get the C void* pointer to the window
+            ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
+            ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
+            window_pointer = ctypes.pythonapi.PyCapsule_GetPointer(top_level_window.__gpointer__, None)
+
+            # GDK DLL
             gdk_dll = ctypes.CDLL('libgdk-3-0.dll')
-            window_pointer = self.get_window_pointer(top_level_window)
 
             if sys.platform == 'win32':
                 # get the win32 handle
@@ -67,10 +107,7 @@ class VLCWidget(Gtk.DrawingArea):
         cairo_ctx.set_source_rgb(0, 0, 0)
         cairo_ctx.paint()
 
-    @staticmethod
-    def get_window_pointer(window):
-        """ Use the window.__gpointer__ PyCapsule to get the C void* pointer to the window"""
-        # get the c gpointer of the gdk window
-        ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
-        ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
-        return ctypes.pythonapi.PyCapsule_GetPointer(window.__gpointer__, None)
+        return True
+
+    def __on_destroy(self, _widget):
+        self.release()
