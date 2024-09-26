@@ -93,7 +93,7 @@ if __name__ == '__main__':
     if sys.platform == 'win32':
         VIDEO_PATH = r"C:\Users\rafae\Desktop\Best Of Rodney Mullen.mp4"
     else:
-        VIDEO_PATH = "/home/rsm/Videos/test.mkv"
+        VIDEO_PATH = "/home/rsm/Videos/vlc/test.mkv"
 
 
     def on_activate(application):
