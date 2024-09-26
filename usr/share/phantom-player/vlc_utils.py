@@ -31,8 +31,6 @@ import time
 from console_printer import print_info
 print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
 
-_VLC_MAX_PARSE_TIMEOUT = 5000
-
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
 # Note: this is done by default in vlc.py, but without the "--no*xlib" argument.
 # maybe this could be ignored?
@@ -54,15 +52,17 @@ def video_duration(path):
 
     duration = media.get_duration()
 
+    media.release()
+
     if duration <= 0:
         return 0
 
     return int(media.get_duration() / 1000)
 
 
-def parse_media(file_path):
-    media = _VLC_INSTANCE.media_new(file_path)
-    media.parse_with_options(vlc.MediaParseFlag.local, _VLC_MAX_PARSE_TIMEOUT)
+def parse_media(file_path, timeout=3000):
+    media = _VLC_INSTANCE.media_new_path(file_path)
+    media.parse_with_options(vlc.MediaParseFlag.local, timeout)
     return media
 
 
