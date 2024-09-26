@@ -83,7 +83,7 @@ class MediaPlayer(Gtk.Window):
     def play_video(self, path):
         self.__mp_widget.set_video(path,
                                    play=False,
-                                   start_at=68,
+                                   start_at=0,
                                    subtitles_track=2)
 
 
@@ -92,9 +92,10 @@ if __name__ == '__main__':
     if sys.platform == 'win32':
         video_path = r"C:\Users\rafae\Desktop\Best Of Rodney Mullen.mp4"
     else:
-        video_path = "/home/rsm/Videos/test.mkv"
+        video_path = "/home/rsm/Videos/vlc/test.mp4"
+        #video_path = "/home/rsm/Videos/vlc/test.mkv"
+        #video_path = "/home/rsm/Videos/vlc/audio_track.mkv"
 
     player = MediaPlayer()
     player.play_video(video_path)
-    #player.play_video('/run/media/rsm/media/Videos/Ink Master/Season15/Ink.Master.S15E03.1080p.HEVC.x265-MeGusta[eztv.re].mkv')
     Gtk.main()
