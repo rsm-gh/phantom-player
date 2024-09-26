@@ -740,8 +740,6 @@ class MediaPlayerWidget(Gtk.Box):
         while self.__media.get_parsed_status() == 0:
             sleep(.1)
 
-        GLib.idle_add(self.__window_root.set_title, self.__media.get_meta(0))
-
         video_length = self.__media.get_duration()
         if video_length < 0:
             return
