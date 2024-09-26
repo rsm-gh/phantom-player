@@ -402,6 +402,10 @@ class MediaPlayerWidget(Gtk.Box):
 
     def stop(self):
         self.__vlc_widget._player.stop()
+        if self.__media is not None:
+            self.__media.release()
+            self.__media = None
+
         self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._play, Gtk.IconSize.BUTTON))
         self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
         self.__scale_progress.set_range(0, 0)  # If no video loaded, disable the scale
@@ -410,7 +414,6 @@ class MediaPlayerWidget(Gtk.Box):
         self.__label_video_length.set_text(" / " + _EMPTY__VIDEO_LENGTH)
         self.__label_volume.hide()
         self.__scale_progress.set_value(0)
-        self.__media = None
         self.__emitted_time = -1
         self.emit(CustomSignals._stop)
 
@@ -473,7 +476,10 @@ class MediaPlayerWidget(Gtk.Box):
                   audio_track=Track.Value._undefined,
                   play=True):
 
-        self.__media = None
+        if self.__media is not None:
+            self.__media.release()
+            self.__media = None
+
         self.__video_ended = False
         self.__video_is_loaded = False
         self.__menuitem_subtitles_activated = None
