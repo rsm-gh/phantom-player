@@ -665,17 +665,19 @@ class PhantomPlayer:
 
             return
 
+        # Set the window title
         #
+        self.__window_root.set_title(video.get_name())
+
         # Update the playlist current video
         #
         self.__current_media._playlist.set_current_video_hash(video.get_hash())
 
-        #
         # Update the configuration file
         #
-        self.__configuration.write(GlobalConfigTags._playlist_current, self.__current_media._playlist.get_name())
+        self.__configuration.write(GlobalConfigTags._playlist_current,
+                                   self.__current_media._playlist.get_name())
 
-        #
         # Play the video
         #
         print_debug(video.get_path(), direct_output=True)
