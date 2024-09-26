@@ -78,9 +78,9 @@ class Texts:
         _other_found = '{0} other videos have been found.'
 
     class StatusBar:
-        _load_playlist_cached = "Loading videos of '{}'..."
+        _load_playlist_cached = "Loading videos of {}..."
         _load_playlists_ended = "All the playlists are loaded."
-        _load_playlist_discover = "Discovering videos of '{}'..."
+        _load_playlist_discover = "Discovering {}, playlist {} of {}..."
 
     class DialogRenameSingle:
         _title = "Rename"

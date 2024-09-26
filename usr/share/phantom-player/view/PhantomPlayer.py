@@ -760,7 +760,7 @@ class PhantomPlayer:
                 self.__view_status = GUIView._videos
                 self.__window_root_accel = self.__accelgroup_videos
 
-                self.__statusbar.hide()
+                self.__statusbar.show()
                 self.__treeview_videos.show()
                 self.__button_playlist_settings.show()
                 self.__button_playlist_settings.set_sensitive(
@@ -1075,7 +1075,7 @@ class PhantomPlayer:
             playlists.remove(current_playlist)
             playlists.insert(0, current_playlist)
 
-        for playlist in playlists:
+        for i, playlist in enumerate(playlists, 1):
 
             if self.get_quit():
                 killed = True
@@ -1088,7 +1088,7 @@ class PhantomPlayer:
 
             if playlist.requires_discover(is_startup=True):
                 GLib.idle_add(self.__statusbar_push,
-                              Texts.StatusBar._load_playlist_discover.format(playlist.get_name()))
+                              Texts.StatusBar._load_playlist_discover.format(playlist.get_name(), i, len(playlists)))
                 video_factory.discover(playlist,
                                        add_func=self.__liststore_videos_add_glib,
                                        update_func=self.__liststore_videos_update_glib,
