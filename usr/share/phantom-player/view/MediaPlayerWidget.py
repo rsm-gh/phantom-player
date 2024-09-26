@@ -24,6 +24,9 @@
 # THE SOFTWARE.
 
 """
+    Bugs:
+        If play=false when starting, the audio tracks are not correctly loaded.
+
     Patch:
         + The control buttons had different sized, and It seems that in GTK3 it was not possible to use
           `ToolButton.set_image`, to properly size all the images, I used a MenuButton(). The sizing works, but it's needed then to:
@@ -586,6 +589,9 @@ class MediaPlayerWidget(Gtk.Box):
         except Exception as e:
             tracks = self.__vlc_widget._player.audio_get_track_description()
             print(str(e))
+
+
+        print("AUDIO TRACKS", tracks)
 
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
