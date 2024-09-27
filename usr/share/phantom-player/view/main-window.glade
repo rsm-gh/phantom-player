@@ -411,6 +411,7 @@ You should have received a copy of the GNU General Public License along with thi
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Number</property>
+        <property name="active">True</property>
       </object>
     </child>
     <child>
@@ -418,6 +419,7 @@ You should have received a copy of the GNU General Public License along with thi
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Path</property>
+        <property name="active">True</property>
       </object>
     </child>
     <child>
@@ -425,6 +427,7 @@ You should have received a copy of the GNU General Public License along with thi
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Name</property>
+        <property name="active">True</property>
       </object>
     </child>
     <child>
@@ -432,14 +435,7 @@ You should have received a copy of the GNU General Public License along with thi
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Extension</property>
-      </object>
-    </child>
-    <child>
-      <object class="GtkCheckMenuItem" id="checkbox_video_crating">
-        <property name="visible">True</property>
-        <property name="can-focus">False</property>
-        <property name="label" translatable="yes">Rating</property>
-        <property name="use-underline">True</property>
+        <property name="active">True</property>
       </object>
     </child>
     <child>
@@ -448,6 +444,7 @@ You should have received a copy of the GNU General Public License along with thi
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Duration</property>
         <property name="use-underline">True</property>
+        <property name="active">True</property>
       </object>
     </child>
     <child>
@@ -456,6 +453,16 @@ You should have received a copy of the GNU General Public License along with thi
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Size</property>
         <property name="use-underline">True</property>
+        <property name="active">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkCheckMenuItem" id="checkbox_video_crating">
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <property name="label" translatable="yes">Rating</property>
+        <property name="use-underline">True</property>
+        <property name="active">True</property>
       </object>
     </child>
     <child>
@@ -463,6 +470,7 @@ You should have received a copy of the GNU General Public License along with thi
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="label" translatable="yes">Progress</property>
+        <property name="active">True</property>
       </object>
     </child>
     <child>
