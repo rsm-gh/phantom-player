@@ -95,7 +95,8 @@ if __name__ == '__main__':
         #video_path = "/home/rsm/Videos/vlc/test.mp4"
         #video_path = "/home/rsm/Videos/vlc/test.mkv"
         #video_path = "/home/rsm/Videos/vlc/audio_track.mkv"
-        video_path = media_path = "/home/rsm/Videos/Movies/The Matrix Trilogy Complete (1999-2003) 720p 5.1 BRRiP x264 AAC [Team Nanban]/The Matrix Reloaded (2003) 720p 5.1 BRRiP x264 AAC [Team Nanban].mp4"
+        #video_path = "/home/rsm/Videos/Movies/The Matrix Trilogy Complete (1999-2003) 720p 5.1 BRRiP x264 AAC [Team Nanban]/The Matrix Reloaded (2003) 720p 5.1 BRRiP x264 AAC [Team Nanban].mp4"
+        video_path = "/home/rsm/Videos/BMX/DAKOTA ROCHE, COREY MARTINEZ, NATHAN WILLIAMS BMX VIDEO - USA.mp4"
 
     player = MediaPlayer()
     player.play_video(video_path)

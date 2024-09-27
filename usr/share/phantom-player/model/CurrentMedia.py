@@ -23,6 +23,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+from console_printer import print_error
+
 class CurrentMedia:
     def __init__(self, playlist=None):
         self._playlist = playlist
@@ -45,16 +47,16 @@ class CurrentMedia:
 
         return video
 
-    def current_video(self):
-        return self._video
-
-    def set_video_by_hash(self, video_hash):
+    def set_video(self, video):
 
         if self._playlist is None:
             return None
 
-        self._video = self._playlist.get_video_by_hash(video_hash)
-        return self._video
+        elif not self._playlist.has_video(video):
+            print_error(f"video name={video.get_name()} hash={video.get_hash()} not found in playlist={self._playlist.get_name()}")
+
+        self._video = video
+        self._playlist.set_current_video_hash(video.get_hash())
 
     def get_video_by_hash(self, video_hash):
 
