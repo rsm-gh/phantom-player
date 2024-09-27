@@ -24,29 +24,30 @@
 # THE SOFTWARE.
 
 import os
-import sys
 import vlc
 import time
 
-from console_printer import print_info
-print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
+from console_printer import print_info, print_debug
 
-# Create a single vlc.Instance() to be shared by (possible) multiple players.
-# Note: this is done by default in vlc.py, but without the "--no*xlib" argument.
-# maybe this could be ignored?
+print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date: {vlc.build_date}")
+
 #
-if 'linux' in sys.platform:
-    # Inform libvlc that Xlib is not initialized for threads
-    _VLC_INSTANCE = vlc.Instance("--no-xlib")
-else:
-    _VLC_INSTANCE = vlc.Instance()
+# This VLC instance is only fo reading metadata, so I decided to do not add the "no-xlib" argument for
+# GNU/Linux systems.
+#
+# Also, it seemed that sharing it with the playing video, caused the player to be unstable and face
+# random crashes.
+#
+__VLC_INSTANCE = vlc.Instance()
+print_info(f"VLC instance: {__VLC_INSTANCE}", direct_output=True)
 
-
-def video_duration(path):
+def video_duration(path, parse_timeout=3000):
     if not os.path.exists(path):
         return 0
 
-    media = parse_media(file_path=path)
+    media = __VLC_INSTANCE.media_new_path(path)
+    media.parse_with_options(vlc.MediaParseFlag.local, parse_timeout)
+
     while media.get_parsed_status() == 0:
         time.sleep(.1)
 
@@ -59,12 +60,12 @@ def video_duration(path):
 
     return int(media.get_duration() / 1000)
 
-
-def parse_media(file_path, timeout=3000):
-    media = _VLC_INSTANCE.media_new_path(file_path)
-    media.parse_with_options(vlc.MediaParseFlag.local, timeout)
-    return media
-
-
 def release():
-    _VLC_INSTANCE.release()
+    print_debug()
+
+    global __VLC_INSTANCE
+
+    if __VLC_INSTANCE is not None:
+        print_debug(f"VLC Instance: {__VLC_INSTANCE}", direct_output=True)
+        __VLC_INSTANCE.release()
+        __VLC_INSTANCE = None
