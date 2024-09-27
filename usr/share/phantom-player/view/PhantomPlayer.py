@@ -418,9 +418,10 @@ class PhantomPlayer:
                                      (self.__checkbox_video_crating, GlobalConfigTags._video_crating),
                                      (self.__checkbox_video_cprogress, GlobalConfigTags._video_cprog),
                                      (self.__checkbox_video_rhidden, GlobalConfigTags._video_rhidden)):
-
-            state = self.__configuration.get_bool_defval(config_tag, True)
-            checkbox.set_active(state)
+            # Note:
+            #   The state in glade is very important, because if the checkbox has the same state than the
+            #   one set by set_active, on toggle will not be called.
+            checkbox.set_active(self.__configuration.get_bool_defval(config_tag, True))
 
 
         match self.__configuration.get_str(GlobalConfigTags.IconSize._label):
@@ -431,20 +432,6 @@ class PhantomPlayer:
             case _:
                 radio = builder.get_object('radio_icon_medium')
         radio.set_active(True)
-
-        # Fix: GUI initialization
-        # I was expecting that connecting the checkbox.toggled before calling set_active() would activate the
-        # signal, but it is not happening. This seems to be an easy fix:
-        for checkbox in [self.__checkbox_video_cnumber,
-                         self.__checkbox_video_cpath,
-                         self.__checkbox_video_cname,
-                         self.__checkbox_video_cextension,
-                         self.__checkbox_video_cprogress,
-                         # self.__checkbox_dark_theme,
-                         # self.__checkbox_playlist_missing
-                         # __checkbox_video_rhidden are not necessary
-                         ]:
-            checkbox.toggled()
 
         #
         #    Display the window
