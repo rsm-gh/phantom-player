@@ -1448,10 +1448,10 @@ class PhantomPlayer:
         if not self.__selected_videos:
             return
 
-        rhidden = self.__checkbox_video_rhidden.get_active()
+        row_hidden = self.__checkbox_video_rhidden.get_active()
         for video in self.__selected_videos:
             video.set_ignore(ignore)
-            if rhidden:
+            if row_hidden:
                 self.__liststore_videos_update(video, progress=False, path=False, duration=False)
             elif ignore:
                 self.__liststore_videos_remove(video)
