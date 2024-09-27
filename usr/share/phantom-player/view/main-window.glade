@@ -552,6 +552,7 @@ You should have received a copy of the GNU General Public License along with thi
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Show Missing</property>
+                        <property name="active">True</property>
                       </object>
                     </child>
                     <child>
