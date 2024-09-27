@@ -63,11 +63,13 @@ from gi.repository import Gtk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from view.MediaPlayerWidget import MediaPlayerWidget
 
+from console_printer import print_debug
+
 
 class MediaPlayer(Gtk.Window):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(title="Phantom Media Player")
 
         self.__mp_widget = MediaPlayerWidget(root_window=self)
         self.add(self.__mp_widget)
@@ -92,9 +94,10 @@ if __name__ == '__main__':
     if sys.platform == 'win32':
         video_path = r"C:\Users\rafae\Desktop\Best Of Rodney Mullen.mp4"
     else:
-        video_path = "/home/rsm/Videos/vlc/test.mp4"
+        #video_path = "/home/rsm/Videos/vlc/test.mp4"
         #video_path = "/home/rsm/Videos/vlc/test.mkv"
         #video_path = "/home/rsm/Videos/vlc/audio_track.mkv"
+        video_path = media_path = "/home/rsm/Videos/Movies/The Matrix Trilogy Complete (1999-2003) 720p 5.1 BRRiP x264 AAC [Team Nanban]/The Matrix Reloaded (2003) 720p 5.1 BRRiP x264 AAC [Team Nanban].mp4"
 
     player = MediaPlayer()
     player.play_video(video_path)

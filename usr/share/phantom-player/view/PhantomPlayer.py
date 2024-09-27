@@ -56,6 +56,7 @@ from gi.repository import Gtk, Gdk, GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
 import settings
+import vlc_utils
 from Texts import Texts
 from view import gtk_utils
 from Paths import _SERIES_DIR, _CONF_FILE
@@ -614,8 +615,8 @@ class PhantomPlayer:
         # It is better to stop the playlists threads before quitting the media player,
         # because the VLC instance will be released.
         self.__thread_load_playlists.join()
+        vlc_utils.release()
         self.__mp_widget.quit()
-
         self.__application.quit()
 
     def __get_video_color(self, video):
