@@ -44,14 +44,14 @@
         + It is not advisable to have "drag-drop" in the videos liststore:
             > Sometimes the videos may be moved by accident.
             > It doesn't seem to work well when having a multiple selection. Is it really allowed by GTK3?
+
 """
 
 import os
+from copy import copy
 from time import sleep
 from threading import Thread
 from collections import OrderedDict
-from copy import copy
-
 from gi.repository import Gtk, Gdk, GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
@@ -60,7 +60,7 @@ import vlc_utils
 from Texts import Texts
 from view import gtk_utils
 from Paths import _SERIES_DIR, _CONF_FILE
-from console_printer import print_debug, print_error
+from console_printer import print_debug
 from system_utils import EventCodes, open_directory
 from CCParser import CCParser
 from controller import video_factory
@@ -961,6 +961,9 @@ class PhantomPlayer:
                                   path=True,
                                   duration=True,
                                   size=True):
+        # Warning:
+        #   + If the args order is changed, __liststore_videos_update_glib must be updated.
+        #   + If an additional arg is added, check for the functions that already use it.
 
         if video is None:
             return
@@ -1013,13 +1016,28 @@ class PhantomPlayer:
 
         GLib.idle_add(self.__liststore_videos_add, video)
 
-    def __liststore_videos_update_glib(self, playlist, video):
+    def __liststore_videos_update_glib(self,
+                                       playlist,
+                                       video,
+                                       number=True,
+                                       progress=True,
+                                       color=True,
+                                       path=True,
+                                       duration=True,
+                                       size=True):
         """To be called from a thread"""
 
         if not self.__current_media.is_playlist(playlist):
             return
 
-        GLib.idle_add(self.__liststore_videos_update, video)
+        GLib.idle_add(self.__liststore_videos_update,
+                      video,
+                      number,
+                      progress,
+                      color,
+                      path,
+                      duration,
+                      size)
 
     def __liststore_videos_remove_glib(self, playlist, video):
         """To be called from a thread"""
@@ -1128,28 +1146,55 @@ class PhantomPlayer:
         playlist_factory.save(self.__current_media._playlist)
 
     def __on_media_player_btn_random_toggled(self, _, state):
+        #
+        # In this method we shall not:
+        #   + Make direct calls to the GUI, use GLib.
+        #
+
         self.__current_media._playlist.set_random(state)
 
     def __on_media_player_btn_keep_playing_toggled(self, _, state):
+        #
+        # In this method we shall not:
+        #   + Make direct calls to the GUI, use GLib.
+        #
+
         self.__current_media._playlist.set_keep_playing(state)
 
     def __on_media_player_time_changed(self, _, time):
+        #
+        # In this method we shall not:
+        #   + Update the playlist GUI -> Will be performed only once, when the user switches the GUI.
+        #   + Save the playlist -> for performance.
+        #   + Make direct calls to the GUI, use GLib.
+        #
 
         if self.__current_media.get_video_ended():
             # To avoid updating progress on videos that went already played.
             return
 
-        # Note:
-        #   There is no interest in updating the liststore_playlist here.
-        #   It will be done, only once at __set_view(), when the user switches the interface.
-        self.__current_media.set_video_progress(time)
-        self.__liststore_videos_update(self.__current_media._video, color=False, path=False, duration=False)
+        self.__liststore_videos_update_glib(self.__current_media._playlist,
+                                            self.__current_media._video,
+                                            number=False,
+                                            progress=True,
+                                            color=False,
+                                            path=False,
+                                            duration=False,
+                                            size=False)
 
 
     def __on_media_player_video_restart(self, *_):
+        #
+        # In this method we shall not:
+        #   + Make direct calls to the GUI, use GLib.
+        #
         self.__on_media_player_time_changed(None, 0)
 
     def __on_media_player_video_end(self, _widget, _forced, was_playing):
+        #
+        # In this method we shall not:
+        #   + Update the playlist GUI -> Will be performed only once, when the user switches the GUI.
+        #
 
         if self.__current_media._playlist is None:
             return
@@ -1157,13 +1202,19 @@ class PhantomPlayer:
         self.__current_media.set_video_progress(None)
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
-        self.__liststore_playlists_update_progress(self.__current_media._playlist)
-        self.__liststore_videos_update(self.__current_media._video, color=False, path=False, duration=False)
+        self.__liststore_videos_update_glib(self.__current_media._playlist,
+                                            self.__current_media._video,
+                                            number=False,
+                                            progress=True,
+                                            color=False,
+                                            path=False,
+                                            duration=False,
+                                            size=False)
 
         if self.__current_media._playlist.get_keep_playing():
-            self.__set_video(play=was_playing)
+            GLib.idle_add(self.__set_video, None, was_playing)
         else:
-            self.__window_root.unfullscreen()
+            GLib.idle_add(self.__window_root.unfullscreen)
 
     def __on_window_root_key_pressed(self, _, event):
         """
