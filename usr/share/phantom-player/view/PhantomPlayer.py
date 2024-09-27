@@ -508,7 +508,7 @@ class PhantomPlayer:
         # It is better to stop the playlists threads before quitting the media player,
         # because the VLC instance will be released.
         self.__thread_load_playlists.join()
-        vlc_utils.release()
+        vlc_utils.release_instance()
         self.__mp_widget.quit()
         self.__application.quit()
 
