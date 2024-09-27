@@ -19,12 +19,11 @@
 #
 
 import sys
-import vlc
 import ctypes
 from gi.repository import Gtk
 
-from console_printer import print_info, print_debug
-
+import vlc_utils
+from console_printer import print_debug
 
 class VLCWidget(Gtk.DrawingArea):
     __gtype_name__ = 'VLCWidget'
@@ -35,16 +34,8 @@ class VLCWidget(Gtk.DrawingArea):
         #
         # VLC Player
         #
-        if 'linux' in sys.platform:
-            args = ["--no-xlib"]
-        else:
-            args = []
-
-        self.__vlc_instance = vlc.Instance(args)
-        print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
-        print_info(f"VLC instance: {self.__vlc_instance}, args={args}", direct_output=True)
-
-        self._player = self.__vlc_instance.media_player_new()
+        vlc_instance = vlc_utils.get_instance()
+        self._player = vlc_instance.media_player_new()
 
         #
         # GTK Signals
@@ -52,11 +43,6 @@ class VLCWidget(Gtk.DrawingArea):
         self.connect('realize', self.__on_realize)
         self.connect('draw', self.__on_draw)
         self.connect('destroy', self.__on_destroy)
-
-    def parse_media(self, file_path, timeout=3000):
-        media = self.__vlc_instance.media_new_path(file_path)
-        media.parse_with_options(vlc.MediaParseFlag.local, timeout)
-        return media
 
     def release(self):
         print_debug()
@@ -67,10 +53,7 @@ class VLCWidget(Gtk.DrawingArea):
             self._player.release()
             self._player = None
 
-        if self.__vlc_instance is not None:
-            print_debug(f"VLC Instance: {self.__vlc_instance}", direct_output=True)
-            self.__vlc_instance.release()
-            self.__vlc_instance = None
+        vlc_utils.release_instance()
 
 
     def __on_realize(self, *_):
