@@ -31,13 +31,6 @@ from console_printer import print_info, print_debug
 
 print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date: {vlc.build_date}")
 
-#
-# This VLC instance is only fo reading metadata, so I decided to do not add the "no-xlib" argument for
-# GNU/Linux systems.
-#
-# Also, it seemed that sharing it with the playing video, caused the player to be unstable and face
-# random crashes.
-#
 __VLC_INSTANCE = vlc.Instance()
 print_info(f"VLC instance: {__VLC_INSTANCE}", direct_output=True)
 
