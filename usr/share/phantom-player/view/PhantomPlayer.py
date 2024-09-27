@@ -704,7 +704,13 @@ class PhantomPlayer:
             self.__liststore_videos_select([self.__current_media._video])
 
     def __set_view(self, playlists_menu, only_player=False):
-
+        """
+            Set the interface view of phantom player. Either:
+                + Playlists view                        -> playlists_menu=True
+                + Video Player view                     -> playlists_menu=False
+                    - With the episodes liststore       -> only_player=False
+                    - Without the episodes liststore    -> only_player=True
+        """
         self.__selected_videos = []
 
         if self.__window_root_accel is not None:
@@ -720,6 +726,7 @@ class PhantomPlayer:
             self.__mp_widget.stop()
             if self.__current_media._playlist is not None:  # This can happen on single file mode
                 playlist_factory.save(self.__current_media._playlist)
+                self.__liststore_playlists_update_progress(self.__current_media._playlist)
 
             self.__current_media = CurrentMedia()
 
@@ -1132,13 +1139,20 @@ class PhantomPlayer:
 
     def __on_media_player_time_changed(self, _, time):
 
+        print("TIME CHANGED", _, time)
+
         if self.__current_media.get_video_ended():
             # To avoid updating progress on videos that went already played.
             return
 
+        print("\n UPDATING TIME")
+
+        # Note:
+        #   There is no interest in updating the liststore_playlist here.
+        #   It will be done, only once at __set_view(), when the user switches the interface.
         self.__current_media.set_video_progress(time)
-        self.__liststore_playlists_update_progress(self.__current_media._playlist)
         self.__liststore_videos_update(self.__current_media._video, color=False, path=False, duration=False)
+
 
     def __on_media_player_video_restart(self, *_):
         self.__on_media_player_time_changed(None, 0)
