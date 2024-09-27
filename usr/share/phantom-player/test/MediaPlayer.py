@@ -80,6 +80,7 @@ class MediaPlayer(Gtk.Window):
 
     def quit(self, *_):
         self.__mp_widget.quit()
+        self.__application.quit()
 
     def play_video(self, path):
         self.__mp_widget.set_video(file_path=path,
