@@ -259,48 +259,18 @@ class PhantomPlayer:
         self.__radio_icon_big.connect('toggled', self.__on_radio_icon_size_toggled,
                                       GlobalConfigTags.IconSize._value_big)
 
-        self.__checkbox_video_cnumber.connect('toggled',
-                                              self.__on_checkbox_video_column_toggled,
-                                              self.__column_number,
-                                              GlobalConfigTags._video_cnumb)
+        for checkbox, column, config_tag in ((self.__checkbox_video_cnumber, self.__column_number, GlobalConfigTags._video_cnumb),
+                                             (self.__checkbox_video_cpath, self.__column_path, GlobalConfigTags._video_cpath),
+                                             (self.__checkbox_video_cname, self.__column_name, GlobalConfigTags._video_cname),
+                                             (self.__checkbox_video_cextension, self.__column_extension, GlobalConfigTags._video_cext),
+                                             (self.__checkbox_video_cduration, self.__column_duration, GlobalConfigTags._video_cduration),
+                                             (self.__checkbox_video_csize, self.__column_size, GlobalConfigTags._video_csize),
+                                             (self.__checkbox_video_crating, self.__column_rating, GlobalConfigTags._video_crating),
+                                             (self.__checkbox_video_cprogress, self.__column_percent, GlobalConfigTags._video_cprog)):
+            checkbox.connect('toggled', self.__on_checkbox_video_column_toggled, column, config_tag)
 
-        self.__checkbox_video_cpath.connect('toggled',
-                                            self.__on_checkbox_video_column_toggled,
-                                            self.__column_path,
-                                            GlobalConfigTags._video_cpath)
-
-        self.__checkbox_video_cname.connect('toggled',
-                                            self.__on_checkbox_video_column_toggled,
-                                            self.__column_name,
-                                            GlobalConfigTags._video_cname)
-
-        self.__checkbox_video_cextension.connect('toggled',
-                                                 self.__on_checkbox_video_column_toggled,
-                                                 self.__column_extension,
-                                                 GlobalConfigTags._video_cext)
-
-        self.__checkbox_video_cduration.connect('toggled',
-                                                self.__on_checkbox_video_column_toggled,
-                                                self.__column_duration,
-                                                GlobalConfigTags._video_cduration)
-
-        self.__checkbox_video_crating.connect('toggled',
-                                              self.__on_checkbox_video_column_toggled,
-                                              self.__column_rating,
-                                              GlobalConfigTags._video_crating)
-
-        self.__checkbox_video_csize.connect('toggled',
-                                            self.__on_checkbox_video_column_toggled,
-                                            self.__column_size,
-                                            GlobalConfigTags._video_csize)
-
-        self.__checkbox_video_cprogress.connect('toggled',
-                                                self.__on_checkbox_video_column_toggled,
-                                                self.__column_percent,
-                                                GlobalConfigTags._video_cprog)
 
         self.__checkbox_video_rhidden.connect('toggled', self.__on_checkbox_video_rhidden_toggled)
-
         self.__treeview_videos.connect("row-activated", self.__on_treeview_videos_row_activated)
         self.__treeview_videos.connect('button-press-event', self.__on_treeview_videos_press_event)
         self.__treeselection_videos.connect('changed', self.__on_treeselection_videos_changed)
@@ -499,23 +469,21 @@ class PhantomPlayer:
                                                          remove_video_glib_func=self.__liststore_videos_remove_glib,
                                                          reload_all_videos_func=self.__liststore_videos_populate)
 
-        self.__checkbox_dark_theme.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._dark_theme, True))
+        for checkbox, config_tag in ((self.__checkbox_dark_theme, GlobalConfigTags._dark_theme),
+                                     (self.__checkbox_playlist_missing, GlobalConfigTags._playlist_missing),
+                                     (self.__checkbox_video_cnumber, GlobalConfigTags._video_cnumb),
+                                     (self.__checkbox_video_cpath, GlobalConfigTags._video_cpath),
+                                     (self.__checkbox_video_cname, GlobalConfigTags._video_cname),
+                                     (self.__checkbox_video_cextension, GlobalConfigTags._video_cext),
+                                     (self.__checkbox_video_cduration, GlobalConfigTags._video_cduration),
+                                     (self.__checkbox_video_csize, GlobalConfigTags._video_csize),
+                                     (self.__checkbox_video_crating, GlobalConfigTags._video_crating),
+                                     (self.__checkbox_video_cprogress, GlobalConfigTags._video_cprog),
+                                     (self.__checkbox_video_rhidden, GlobalConfigTags._video_rhidden)):
 
-        self.__checkbox_playlist_missing.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._playlist_missing, True))
-        self.__checkbox_video_cnumber.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._video_cnumb, True))
-        self.__checkbox_video_cpath.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._video_cpath, True))
-        self.__checkbox_video_cname.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._video_cname, True))
-        self.__checkbox_video_cextension.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._video_cext, True))
-        self.__checkbox_video_cprogress.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._video_cprog, True))
-        self.__checkbox_video_rhidden.set_active(
-            self.__configuration.get_bool_defval(GlobalConfigTags._video_rhidden, True))
+            state = self.__configuration.get_bool_defval(config_tag, True)
+            checkbox.set_active(state)
+
 
         match self.__configuration.get_str(GlobalConfigTags.IconSize._label):
             case GlobalConfigTags.IconSize._value_big:
@@ -1421,16 +1389,16 @@ class PhantomPlayer:
         #
         # Prevent that the users deactivate all the columns
         #
-        column_checkboxes = (self.__checkbox_video_cnumber,
+        active_checks = []
+        for checkbox in (self.__checkbox_video_cnumber,
                              self.__checkbox_video_cpath,
                              self.__checkbox_video_cname,
                              self.__checkbox_video_cextension,
                              self.__checkbox_video_cduration,
-                             self.__checkbox_video_cprogress)
-        active_checks = []
-        for checkbox in column_checkboxes:
+                             self.__checkbox_video_csize,
+                             self.__checkbox_video_crating,
+                             self.__checkbox_video_cprogress):
             checkbox.set_sensitive(True)
-
             if checkbox.get_active():
                 active_checks.append(checkbox)
 
