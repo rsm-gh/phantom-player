@@ -60,6 +60,7 @@ import vlc_utils
 from Texts import Texts
 from view import gtk_utils
 from Paths import _SERIES_DIR, _CONF_FILE
+from console_printer import print_debug, print_error
 from system_utils import EventCodes, open_directory
 from CCParser import CCParser
 from controller import video_factory
@@ -75,7 +76,6 @@ from view.cellrenderers.CellRendererTime import CellRendererTime
 from view.cellrenderers.CellRendererRating import CellRendererRating
 from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
 from view.cellrenderers.CellRendererBytes import CellRendererBytes
-from console_printer import print_debug
 
 
 class PlaylistListstoreColumnsIndex:
@@ -643,7 +643,7 @@ class PhantomPlayer:
         if self.__current_media._playlist is None:
             return
 
-        if video is None:
+        elif video is None:
             video = self.__current_media.get_next_video()
 
         if video is None:
@@ -667,20 +667,16 @@ class PhantomPlayer:
             return
 
         # Set the window title
-        #
         self.__window_root.set_title(video.get_name())
 
-        # Update the playlist current video
-        #
-        self.__current_media._playlist.set_current_video_hash(video.get_hash())
+        # Update current video playlist current video
+        self.__current_media.set_video(video)
 
         # Update the configuration file
-        #
         self.__configuration.write(GlobalConfigTags._playlist_current,
                                    self.__current_media._playlist.get_name())
 
         # Play the video
-        #
         print_debug(video.get_path(), direct_output=True)
 
         if video.ended() and replay:
@@ -1139,13 +1135,9 @@ class PhantomPlayer:
 
     def __on_media_player_time_changed(self, _, time):
 
-        print("TIME CHANGED", _, time)
-
         if self.__current_media.get_video_ended():
             # To avoid updating progress on videos that went already played.
             return
-
-        print("\n UPDATING TIME")
 
         # Note:
         #   There is no interest in updating the liststore_playlist here.
@@ -1311,7 +1303,7 @@ class PhantomPlayer:
 
     def __on_treeview_videos_row_activated(self, _treeview, treepath, _column):
         video_hash = self.__liststore_videos[treepath][VideosListstoreColumnsIndex._hash]
-        video = self.__current_media.set_video_by_hash(video_hash)
+        video = self.__current_media.get_video_by_hash(video_hash)
         self.__set_video(video, replay=True)
 
     def __on_treeselection_videos_changed(self, *_):

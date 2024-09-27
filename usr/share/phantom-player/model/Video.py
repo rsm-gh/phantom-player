@@ -139,9 +139,9 @@ class Video(object):
         """
 
         if value is None:
-            value = self.__duration
-
-        self.__progress = int(value)
+            self.__progress = self.__duration
+        else:
+            self.__progress = int(value)
 
     def set_ignore(self, bool_value):
         self.__ignore = bool_value

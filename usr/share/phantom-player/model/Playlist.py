@@ -77,6 +77,9 @@ class Playlist(object):
         self.__videos_dict = {}
         self.__active_videos_nb = 0
 
+    def has_video(self, video):
+        return video.get_hash() in self.__videos_dict
+
     def is_missing(self):
 
         if len(self.__playlist_paths) == 0:
