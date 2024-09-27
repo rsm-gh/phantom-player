@@ -428,14 +428,10 @@ class MediaPlayerWidget(Gtk.Box):
         return self.get_state() == vlc.State.NothingSpecial
 
     def volume_up(self):
-        new_volume = self.__volume + 1
-        if new_volume <= 100:
-            self.__set_volume(new_volume)
+        self.__set_volume(self.__volume + 1)
 
     def volume_down(self):
-        new_volume = self.__volume - 1
-        if new_volume >= 0:
-            self.__set_volume(new_volume)
+        self.__set_volume(self.__volume - 1)
 
     def hide_controls(self):
         self.__buttons_box.hide()
@@ -657,7 +653,14 @@ class MediaPlayerWidget(Gtk.Box):
         self.__menubutton_settings.set_sensitive(True)
         self.__delayed_media_data.set_video_settings_loaded(True)
 
-    def __set_volume(self, value=None, display_label=True, update_button=True):
+    def __set_volume(self, value, display_label=True, update_button=True):
+
+        # It is important to correct the value in this method and not before, because if display_label=True,
+        # the label will be shown to the user even if the volume level is already at the same value.
+        if value < 0:
+            value = 0
+        elif value > 100:
+            value = 100
 
         if self.__volume != value:
 
