@@ -48,13 +48,11 @@ def get_instance():
 
     return _VLC_INSTANCE
 
-def video_duration(path, parse_timeout=3000):
+def video_duration(path):
     if not os.path.exists(path):
         return 0
 
-    media = get_instance().media_new_path(path)
-    media.parse_with_options(vlc.MediaParseFlag.local, parse_timeout)
-
+    media = parse_file(path)
     while media.get_parsed_status() == 0:
         time.sleep(.1)
 
@@ -66,6 +64,11 @@ def video_duration(path, parse_timeout=3000):
         return 0
 
     return int(media.get_duration() / 1000)
+
+def parse_file(path, timeout=3000):
+    media = get_instance().media_new_path(path)
+    media.parse_with_options(vlc.MediaParseFlag.local, timeout)
+    return media
 
 def release_instance():
     global _VLC_INSTANCE

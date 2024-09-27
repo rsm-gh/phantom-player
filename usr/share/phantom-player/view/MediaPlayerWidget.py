@@ -60,9 +60,6 @@ scale, label, box {
 }
 """
 
-_MAX_PARSE_TIMEOUT = 3000  # in milliseconds
-
-
 def format_milliseconds_to_time(number):
     if number <= 0:
         return _EMPTY__VIDEO_LENGTH
@@ -498,8 +495,7 @@ class MediaPlayerWidget(Gtk.Box):
         if not os.path.exists(file_path):
             return
 
-        self.__media = vlc_utils.get_instance().media_new_path(file_path)
-        self.__media.parse_with_options(vlc.MediaParseFlag.local, _MAX_PARSE_TIMEOUT)
+        self.__media = vlc_utils.parse_file(file_path)
 
         # Patch 001: Some actions will be performed when the video length be properly parsed
         self.__delayed_media_data = DelayedMediaData(start_at=int(start_at * 1000),
