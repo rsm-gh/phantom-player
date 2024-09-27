@@ -1066,6 +1066,7 @@ class PhantomPlayer:
             # To avoid updating progress on videos that went already played.
             return
 
+        self.__current_media.set_video_progress(time)
         self.__liststore_videos_update_glib(self.__current_media._playlist,
                                             self.__current_media._video,
                                             number=False,
