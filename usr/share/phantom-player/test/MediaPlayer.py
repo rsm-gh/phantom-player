@@ -63,8 +63,6 @@ from gi.repository import Gtk
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from view.MediaPlayerWidget import MediaPlayerWidget
 
-from console_printer import print_debug
-
 
 class MediaPlayer(Gtk.Window):
 
