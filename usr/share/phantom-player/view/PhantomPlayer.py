@@ -304,92 +304,30 @@ class PhantomPlayer:
         self.__menuitem_videos_delete.connect('activate', self.__on_menuitem_videos_delete)
 
         #
-        # Playlist Accelerators
+        # Accelerators
         #
         self.__accelgroup_playlists = Gtk.AccelGroup()
-
-        self.__menuitem_open_file.add_accelerator('activate',
-                                                  self.__accelgroup_playlists,
-                                                  ord("o"),
-                                                  Gdk.ModifierType.CONTROL_MASK,
-                                                  Gtk.AccelFlags.VISIBLE)
-
-        self.__menuitem_new_playlist.add_accelerator('activate',
-                                                     self.__accelgroup_playlists,
-                                                     ord("n"),
-                                                     Gdk.ModifierType.CONTROL_MASK,
-                                                     Gtk.AccelFlags.VISIBLE)
-
-        self.__checkbox_playlist_missing.add_accelerator('activate',
-                                                         self.__accelgroup_playlists,
-                                                         ord("h"),
-                                                         Gdk.ModifierType.CONTROL_MASK,
-                                                         Gtk.AccelFlags.VISIBLE)
-
-        #
-        # Videos Accelerators
-        #
-
         self.__accelgroup_videos = Gtk.AccelGroup()
-        self.__checkbox_video_rhidden.add_accelerator('activate',
-                                                      self.__accelgroup_videos,
-                                                      ord("h"),
-                                                      Gdk.ModifierType.CONTROL_MASK,
-                                                      Gtk.AccelFlags.VISIBLE)
 
-        self.__menuitem_videos_restart_prg.add_accelerator('activate',
-                                                           self.__accelgroup_videos,
-                                                           ord("u"),
-                                                           Gdk.ModifierType.CONTROL_MASK,
-                                                           Gtk.AccelFlags.VISIBLE)
+        for shortcut, accel_group, menuitem in (("o", self.__accelgroup_playlists, self.__menuitem_open_file),
+                                                ("n", self.__accelgroup_playlists, self.__menuitem_new_playlist),
+                                                ("h", self.__accelgroup_playlists, self.__checkbox_playlist_missing),
+                                                ("h", self.__accelgroup_videos, self.__checkbox_video_rhidden),
+                                                ("u", self.__accelgroup_videos, self.__menuitem_videos_restart_prg),
+                                                ("v", self.__accelgroup_videos, self.__menuitem_videos_fill_prg),
+                                                ("i", self.__accelgroup_videos, self.__menuitem_videos_ignore),
+                                                ("j", self.__accelgroup_videos, self.__menuitem_videos_unignore),
+                                                ("r", self.__accelgroup_videos, self.__menuitem_videos_rename),
+                                                ("t", self.__accelgroup_videos, self.__menuitem_videos_move_up),
+                                                ("l", self.__accelgroup_videos, self.__menuitem_videos_move_down),
+                                                ("o", self.__accelgroup_videos, self.__menuitem_videos_open),
+                                                ("d", self.__accelgroup_videos, self.__menuitem_videos_delete)):
 
-        self.__menuitem_videos_fill_prg.add_accelerator('activate',
-                                                        self.__accelgroup_videos,
-                                                        ord("v"),
-                                                        Gdk.ModifierType.CONTROL_MASK,
-                                                        Gtk.AccelFlags.VISIBLE)
-
-        self.__menuitem_videos_ignore.add_accelerator('activate',
-                                                      self.__accelgroup_videos,
-                                                      ord("i"),
-                                                      Gdk.ModifierType.CONTROL_MASK,
-                                                      Gtk.AccelFlags.VISIBLE)
-
-        self.__menuitem_videos_unignore.add_accelerator('activate',
-                                                        self.__accelgroup_videos,
-                                                        ord("j"),
-                                                        Gdk.ModifierType.CONTROL_MASK,
-                                                        Gtk.AccelFlags.VISIBLE)
-
-        self.__menuitem_videos_rename.add_accelerator('activate',
-                                                      self.__accelgroup_videos,
-                                                      ord("r"),
-                                                      Gdk.ModifierType.CONTROL_MASK,
-                                                      Gtk.AccelFlags.VISIBLE)
-
-        self.__menuitem_videos_move_up.add_accelerator('activate',
-                                                       self.__accelgroup_videos,
-                                                       ord("t"),
-                                                       Gdk.ModifierType.CONTROL_MASK,
-                                                       Gtk.AccelFlags.VISIBLE)
-
-        self.__menuitem_videos_move_down.add_accelerator('activate',
-                                                         self.__accelgroup_videos,
-                                                         ord("l"),
-                                                         Gdk.ModifierType.CONTROL_MASK,
-                                                         Gtk.AccelFlags.VISIBLE)
-
-        self.__menuitem_videos_open.add_accelerator('activate',
-                                                    self.__accelgroup_videos,
-                                                    ord("o"),
-                                                    Gdk.ModifierType.CONTROL_MASK,
-                                                    Gtk.AccelFlags.VISIBLE)
-
-        self.__menuitem_videos_delete.add_accelerator('activate',
-                                                      self.__accelgroup_videos,
-                                                      ord("d"),
-                                                      Gdk.ModifierType.CONTROL_MASK,
-                                                      Gtk.AccelFlags.VISIBLE)
+            menuitem.add_accelerator('activate',
+                                  accel_group,
+                                  ord(shortcut),
+                                  Gdk.ModifierType.CONTROL_MASK,
+                                  Gtk.AccelFlags.VISIBLE)
 
         #
         # Iconview Cellrender
