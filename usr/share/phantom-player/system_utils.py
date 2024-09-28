@@ -29,6 +29,25 @@ from PIL import Image
 
 from console_printer import print_warning
 
+class EventCodes:
+    class Cursor:
+        _left_click = 1
+        _middle_click = 2
+        _right_click = 3
+
+    class Keyboard:
+        _esc = 65307
+        _f11 = 65480
+        _space_bar = 32
+        _enter = 65293
+        _arrow_up = 65362
+        _arrow_down = 65364
+        _arrow_right = 65363
+        _arrow_left = 65361
+        _back = 65288
+        _letter_f = 102
+        _letter_s = 115
+
 def has_non_empty_dirs(path: str) -> bool:
     """Check if a directory has non-empty subdirectories (only one level)."""
 
@@ -40,7 +59,7 @@ def has_non_empty_dirs(path: str) -> bool:
     return False
 
 
-def open_directory(path):
+def open_directory(path: str) -> None:
     if not os.path.exists(path):
         print_warning('Path does not exist', path)
 
@@ -48,7 +67,7 @@ def open_directory(path):
         print_warning('Path is not a directory', path)
 
     # Put the most popular (robust) at the beginning
-    file_managers = ['exo-open',
+    file_managers = ('exo-open',
                      'nautilus',
                      'dolphin',
                      'konqueror',
@@ -56,7 +75,7 @@ def open_directory(path):
                      'pcmanfm',
                      'doublecmd-gtk',
                      'nnn',
-                     'krusader']
+                     'krusader')
 
     # Check if a file manager exists in the system (to avoid unnecessary commands)
     for file_manager in file_managers:
@@ -71,7 +90,7 @@ def open_directory(path):
             break
 
 
-def turn_off_screensaver(state):
+def turn_off_screensaver(state: bool) -> None:
     """ Turn of off screen saver """
 
     if "linux" not in sys.platform:
@@ -90,10 +109,16 @@ def turn_off_screensaver(state):
             print_warning("It wasn't possible to turn on the screensaver")
 
 
-def format_img(read_path, write_path, width=None, height=None, max_width=None, extension=None):
+def format_img(read_path: str,
+               write_path: str,
+               width: None | int=None,
+               height: None | int=None,
+               max_width: None | int=None,
+               extension: str=None) -> tuple[int, int]:
     """
         Code taken from www.cad-viewer.org
         Either fill width & height, or max_width
+        The function will return the new image size (width, height)
     """
 
     image = Image.open(read_path)
@@ -154,23 +179,3 @@ def format_img(read_path, write_path, width=None, height=None, max_width=None, e
     image.save(write_path, format=extension)
 
     return image.size
-
-
-class EventCodes:
-    class Cursor:
-        _left_click = 1
-        _middle_click = 2
-        _right_click = 3
-
-    class Keyboard:
-        _esc = 65307
-        _f11 = 65480
-        _space_bar = 32
-        _enter = 65293
-        _arrow_up = 65362
-        _arrow_down = 65364
-        _arrow_right = 65363
-        _arrow_left = 65361
-        _back = 65288
-        _letter_f = 102
-        _letter_s = 115

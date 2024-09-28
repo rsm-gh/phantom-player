@@ -32,21 +32,21 @@ from console_printer import print_info, print_debug
 print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
 
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
-_VLC_INSTANCE: None | vlc.Instance = None
+__VLC_INSTANCE: None | vlc.Instance = None
 
 def get_instance() -> vlc.Instance:
-    global _VLC_INSTANCE
+    global __VLC_INSTANCE
 
-    if _VLC_INSTANCE is None:
+    if __VLC_INSTANCE is None:
         if 'linux' in sys.platform:
             # Inform libvlc that Xlib is not initialized for threads
-            _VLC_INSTANCE = vlc.Instance("--no-xlib")
+            __VLC_INSTANCE = vlc.Instance("--no-xlib")
         else:
-            _VLC_INSTANCE = vlc.Instance()
+            __VLC_INSTANCE = vlc.Instance()
 
-        print_debug(f"VLC instance: {_VLC_INSTANCE}")
+        print_debug(f"VLC instance: {__VLC_INSTANCE}")
 
-    return _VLC_INSTANCE
+    return __VLC_INSTANCE
 
 def video_duration(path: str) -> int:
     if not os.path.exists(path):
@@ -71,13 +71,9 @@ def parse_file(path: str, timeout: int=3000) -> vlc.Media:
     return media
 
 def release_instance() -> None:
-    global _VLC_INSTANCE
+    global __VLC_INSTANCE
 
-    if _VLC_INSTANCE is None:
-        message = "Nothing to release."
-    else:
-        message = f"VLC Instance: {_VLC_INSTANCE}"
-        _VLC_INSTANCE.release()
-        _VLC_INSTANCE = None
+    print_debug(f"VLC Instance: {__VLC_INSTANCE}")
 
-    print_debug(message)
+    if __VLC_INSTANCE is not None:
+        __VLC_INSTANCE = __VLC_INSTANCE.release()

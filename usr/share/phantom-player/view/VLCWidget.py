@@ -28,7 +28,7 @@ from console_printer import print_debug
 class VLCWidget(Gtk.DrawingArea):
     __gtype_name__ = 'VLCWidget'
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(vexpand=True, hexpand=True)
 
         #
@@ -44,22 +44,18 @@ class VLCWidget(Gtk.DrawingArea):
         self.connect('draw', self.__on_draw)
         self.connect('destroy', self.__on_destroy)
 
-    def release(self):
+    def release(self) -> None:
 
-        if self._player is None:
-            message = "Nothing to release"
-        else:
-            message = f"VLC Player: {self._player}"
+        print_debug(f"VLC Player: {self._player}")
+
+        if self._player is not None:
             self._player.stop()
-            self._player.release()
-            self._player = None
-
-        print_debug(message)
+            self._player = self._player.release()
 
         vlc_utils.release_instance()
 
 
-    def __on_realize(self, *_):
+    def __on_realize(self, *_) -> None:
 
         top_level_window = self.get_window()
 
@@ -89,13 +85,13 @@ class VLCWidget(Gtk.DrawingArea):
             else:
                 raise ValueError(f"Unsupported platform = {sys.platform}")
 
-        return True
-
     @staticmethod
-    def __on_draw(_widget, cairo_ctx):
+    def __on_draw(_widget, cairo_ctx) -> bool:
         """To redraw the black background when resized"""
         cairo_ctx.set_source_rgb(0, 0, 0)
         cairo_ctx.paint()
 
-    def __on_destroy(self, _widget):
+        return True
+
+    def __on_destroy(self, _widget) -> None:
         self.release()
