@@ -26,7 +26,7 @@
 
 class PlaylistPath:
 
-    def __init__(self, path, recursive, startup_discover):
+    def __init__(self, path: str, recursive: bool, startup_discover: bool) -> None:
         """
             The PlaylistPaths are stored in a dictionary with the path as key, so
             once created, this attribute shall not be modified.
@@ -42,17 +42,17 @@ class PlaylistPath:
         self.__recursive = recursive
         self.__startup_discover = startup_discover
 
-    def get_path(self):
+    def get_path(self) -> str:
         return self.__path
 
-    def get_recursive(self):
+    def get_recursive(self) -> bool:
         return self.__recursive
 
-    def get_startup_discover(self):
+    def get_startup_discover(self) -> bool:
         return self.__startup_discover
 
-    def set_recursive(self, value):
+    def set_recursive(self, value: bool) -> None:
         self.__recursive = value
 
-    def set_startup_discover(self, value):
+    def set_startup_discover(self, value: bool) -> None:
         self.__startup_discover = value
