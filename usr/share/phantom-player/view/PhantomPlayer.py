@@ -1062,10 +1062,6 @@ class PhantomPlayer:
         #   + Make direct calls to the GUI, use GLib.
         #
 
-        if self.__current_media.get_video_ended():
-            # To avoid updating progress on videos that went already played.
-            return
-
         self.__current_media.set_video_progress(time)
         self.__liststore_videos_update_glib(self.__current_media._playlist,
                                             self.__current_media._video,
