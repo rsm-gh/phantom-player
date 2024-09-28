@@ -20,6 +20,7 @@
 
 import sys
 import ctypes
+import cairo
 from gi.repository import Gtk
 
 import vlc_utils
@@ -55,7 +56,7 @@ class VLCWidget(Gtk.DrawingArea):
         vlc_utils.release_instance()
 
 
-    def __on_realize(self, *_) -> None:
+    def __on_realize(self, _widget: Gtk.Widget) -> None:
 
         top_level_window = self.get_window()
 
@@ -86,12 +87,13 @@ class VLCWidget(Gtk.DrawingArea):
                 raise ValueError(f"Unsupported platform = {sys.platform}")
 
     @staticmethod
-    def __on_draw(_widget, cairo_ctx) -> bool:
+    def __on_draw(_widget: Gtk.Widget, cr: cairo.Context) -> bool:
         """To redraw the black background when resized"""
-        cairo_ctx.set_source_rgb(0, 0, 0)
-        cairo_ctx.paint()
+
+        cr.set_source_rgb(0, 0, 0)
+        cr.paint()
 
         return True
 
-    def __on_destroy(self, _widget) -> None:
+    def __on_destroy(self, _widget: Gtk.Widget) -> None:
         self.release()
