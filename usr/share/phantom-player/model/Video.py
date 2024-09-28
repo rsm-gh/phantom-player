@@ -25,10 +25,12 @@
 
 import os
 
+from console_printer import print_warning
+
 
 class Video(object):
 
-    def __init__(self, vhash, path, duration, name=""):
+    def __init__(self, vhash: str, path: str, duration: int, name: str=""):
 
         if vhash == "":
             raise ValueError("Can not add a video with an empty hash.")
@@ -60,43 +62,46 @@ class Video(object):
         elif self.__name == "":
             self.__name = path_basename
 
-    def exists(self):
+    def exists(self) -> bool:
         return os.path.exists(self.__path)
 
-    def ended(self):
+    def end_progress(self):
+        self.__progress = self.__duration
+
+    def ended(self) -> bool:
         return self.__progress >= self.__duration
 
-    def get_rating(self):
+    def get_rating(self) -> int:
         return self.__rating
 
-    def get_duration(self):
+    def get_duration(self) -> int:
         return self.__duration
 
-    def get_extension(self):
+    def get_extension(self) -> str:
         return self.__extension
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.__name
 
-    def get_full_name(self):
+    def get_full_name(self) -> str:
         return self.__name + "." + self.__extension
 
-    def get_number(self):
+    def get_number(self) -> int:
         return self.__number
 
-    def get_ignore(self):
+    def get_ignore(self) -> bool:
         return self.__ignore
 
-    def get_path(self):
+    def get_path(self) -> str:
         return self.__path
 
-    def get_hash(self):
+    def get_hash(self) -> str:
         return self.__hash
 
-    def get_progress(self):
+    def get_progress(self) -> int:
         return self.__progress
 
-    def get_percent(self):
+    def get_percent(self) -> int:
 
         if self.__duration <= 0:
             return 0
@@ -104,7 +109,7 @@ class Video(object):
         percent = int(self.__progress / self.__duration * 100)
 
         if percent > 100:
-            print("Warning: un-valid percent", percent, self.__duration, self.__progress, self.__path)
+            print_warning(f"un-valid percent={percent}, duration={self.__duration}. progress={self.__progress}\n path={self.__path}")
             percent = 100
 
         elif percent == 100 and not self.ended():
@@ -112,45 +117,38 @@ class Video(object):
 
         return percent
 
-    def get_is_new(self):
+    def get_is_new(self) -> bool:
         return self.__is_new
 
-    def get_size(self):
+    def get_size(self) -> int:
         return self.__size
 
-    def set_size(self, bytes_nb):
+    def set_size(self, bytes_nb: int) -> None:
         if bytes_nb >= 0:
             self.__size = bytes_nb
 
-    def set_rating(self, value):
-        self.__rating = value
+    def set_rating(self, value: int) -> None:
+        self.__rating = int(value)
 
-    def set_path(self, path):
+    def set_path(self, path: str) -> None:
         self.__path = path
         if self.__name == "":
             self.__name = os.path.basename(path)
 
-    def set_is_new(self, value):
+    def set_is_new(self, value: bool) -> None:
         self.__is_new = value
 
-    def set_progress(self, value):
-        """
-            :value: integer or None. if filled with none, it will be set to the maximum.
-        """
+    def set_progress(self, value: int) -> None:
+        self.__progress = int(value)
 
-        if value is None:
-            self.__progress = self.__duration
-        else:
-            self.__progress = int(value)
+    def set_ignore(self, value: bool) -> None:
+        self.__ignore = value
 
-    def set_ignore(self, bool_value):
-        self.__ignore = bool_value
-
-    def set_number(self, integer):
-        if int(integer) < 0:
+    def set_number(self, value: int) -> None:
+        if int(value) < 0:
             raise ValueError("video number error " + self.__name)
         else:
-            self.__number = int(integer)
+            self.__number = int(value)
 
-    def set_name(self, name):
+    def set_name(self, name: str) -> None:
         self.__name = name

@@ -26,6 +26,8 @@
 import os
 import getpass
 
+#Todo: adapt the paths under windows
+
 __SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 __IMG_DIR = os.path.join(__SRC_DIR, "view/img")
 

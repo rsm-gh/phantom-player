@@ -289,11 +289,11 @@ class PhantomPlayer:
 
         self.__menuitem_videos_restart_prg.connect('activate',
                                                    self.__on_menuitem_videos_set_progress,
-                                                   0)
+                                                   True)
 
         self.__menuitem_videos_fill_prg.connect('activate',
                                                 self.__on_menuitem_videos_set_progress,
-                                                None)
+                                                False)
 
         self.__menuitem_videos_ignore.connect('activate', self.__on_menuitem_videos_ignore_changed, True)
         self.__menuitem_videos_unignore.connect('activate', self.__on_menuitem_videos_ignore_changed, False)
@@ -1089,7 +1089,7 @@ class PhantomPlayer:
         if self.__current_media._playlist is None:
             return
 
-        self.__current_media.set_video_progress(None)
+        self.__current_media.end_video_progress()
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
 
         self.__liststore_videos_update_glib(self.__current_media._playlist,
@@ -1414,16 +1414,16 @@ class PhantomPlayer:
         _ = self.__window_about.run()
         self.__window_about.hide()
 
-    def __on_menuitem_videos_set_progress(self, _, progress):
+    def __on_menuitem_videos_set_progress(self, _widget: Gtk.Widget, start: bool) -> None:
         """
-            :progress: integer or None. if filled with none, it will be set to the maximum.
+            :start: if true, the video progress will be at the start, if false at the end.
         """
 
         if not self.__selected_videos:
             return
 
         hash_to_skip = None
-        if progress == 0 and self.__current_media.get_video_ended():
+        if start is True and self.__current_media.get_video_ended():
             pass
         else:
             hash_to_skip = self.__current_media.get_video_hash()
@@ -1432,7 +1432,11 @@ class PhantomPlayer:
             if video.get_hash() == hash_to_skip:
                 continue
 
-            video.set_progress(progress)
+            if start:
+                video.set_progress(0)
+            else:
+                video.end_progress()
+
             self.__liststore_videos_update(video, color=False, path=False, duration=False)
 
         self.__liststore_playlists_update_progress(self.__current_media._playlist)

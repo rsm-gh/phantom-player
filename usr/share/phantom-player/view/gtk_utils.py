@@ -108,7 +108,7 @@ def treeselection_get_first_cell(gtk_selection: Gtk.TreeSelection,
 
 
 def dialog_select_directory(parent: None | Gtk.Widget,
-                            start_path=None | str) -> None | str:
+                            start_path: None | str = None) -> None | str:
     dialog = Gtk.FileChooserDialog(title=Texts.GUI._title,
                                    parent=parent,
                                    action=Gtk.FileChooserAction.SELECT_FOLDER)

@@ -24,33 +24,30 @@
 # THE SOFTWARE.
 
 from console_printer import print_error
+from model.Playlist import Playlist
+from model.Video import Video
 
 class CurrentMedia:
-    def __init__(self, playlist=None):
+    def __init__(self, playlist: None | Playlist=None) -> None:
         self._playlist = playlist
         self._video = None
 
-    def is_playlist(self, playlist):
-        if self._playlist is not None:
-            return self._playlist.get_guid() == playlist.get_guid()
-
-        return False
-
-    def get_next_video(self):
-
-        if self._playlist.get_random():
-            video = self._playlist.get_next_random_video()
-        else:
-            video = self._playlist.get_next_organized_video(self._video)
-
-        self._video = video
-
-        return video
-
-    def set_video(self, video):
+    def is_playlist(self, playlist: Playlist) -> bool:
 
         if self._playlist is None:
-            return None
+            return False
+
+        return self._playlist.get_guid() == playlist.get_guid()
+
+    def end_video_progress(self) -> None:
+
+        if self._video is not None:
+            self._video.end_progress()
+
+    def set_video(self, video: Video) -> None:
+
+        if self._playlist is None:
+            return
 
         elif not self._playlist.has_video(video):
             print_error(f"video name={video.get_name()} hash={video.get_hash()} not found in playlist={self._playlist.get_name()}")
@@ -58,38 +55,40 @@ class CurrentMedia:
         self._video = video
         self._playlist.set_current_video_hash(video.get_hash())
 
-    def get_video_by_hash(self, video_hash):
+    def set_video_progress(self, value: int) -> None:
+
+        if self._video is not None:
+            self._video.set_progress(value)
+
+    def get_next_video(self) -> None | Video:
 
         if self._playlist is None:
             return None
 
-        return self._playlist.get_video_by_hash(video_hash)
+        if self._playlist.get_random():
+            video = self._playlist.get_next_random_video()
+        else:
+            video = self._playlist.get_next_organized_video(self._video)
 
-    def get_video_hash(self):
+        return video
 
-        if self._video is None:
-            return None
-
-        return self._video.get_hash()
-
-    def set_video_progress(self, value):
-
-        if self._video is None:
-            return
-
-        self._video.set_progress(value)
-
-    def get_video_percent(self):
-
-        if self._video is None:
-            return
-
-        return self._video.get_percent()
-
-    def get_video_ended(self):
+    def get_video_ended(self) -> bool:
 
         if self._video is None:
             return True
 
         return self._video.ended()
 
+    def get_video_hash(self) -> None | str:
+
+        if self._video is None:
+            return None
+
+        return self._video.get_hash()
+
+    def get_video_by_hash(self, video_hash: str) -> None | Video:
+
+        if self._playlist is None:
+            return None
+
+        return self._playlist.get_video_by_hash(video_hash)
