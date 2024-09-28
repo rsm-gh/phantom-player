@@ -24,6 +24,7 @@
 # THE SOFTWARE.
 
 import os
+from typing import Sequence
 
 from Paths import _SERIES_DIR
 from settings import _VIDEO_HASH_SIZE
@@ -31,7 +32,7 @@ from model.Playlist import Playlist, LoadStatus
 from model.PlaylistPath import PlaylistPath
 from model.Video import Video
 from vlc_utils import video_duration
-from console_printer import print_debug, print_error
+from console_printer import print_debug, print_error, print_warning
 
 _COLUMN_SEPARATOR = "|"
 _VALUE_SEPARATOR = "="
@@ -62,7 +63,8 @@ class SaveParams:
         _videos = "[VIDEOS]"
 
 
-def load(file_path):
+def load(file_path: str) -> Playlist:
+    """Load a playlist from a file."""
     print_debug(f"Path={file_path}")
     file_lines = __get_lines(file_path)
 
@@ -71,7 +73,7 @@ def load(file_path):
 
     __load_settings(playlist, file_lines)
 
-    for playlist_path in __load_paths(file_lines):
+    for playlist_path in __load_playlist_paths(file_lines):
         added = playlist.add_playlist_path(playlist_path)
         if not added:
             print_error(f'rejected path={file_path}')
@@ -81,7 +83,8 @@ def load(file_path):
     return playlist
 
 
-def save(playlist):
+def save(playlist: Playlist) -> None:
+    """Save a playlist to its local file."""
     if playlist.get_load_status() == LoadStatus._waiting_load:
         return
 
@@ -105,40 +108,43 @@ def save(playlist):
     #
     data += f"\n\n{SaveParams.Section._sources}\n\n"
     for playlist_path in playlist.get_playlist_paths():
-        data += __join_line_attrs(playlist_path.get_path(), playlist_path, _PLAYLIST_PATH_ATTR)
+        data += __join_obj_attributes(playlist_path.get_path(), playlist_path, _PLAYLIST_PATH_ATTR)
 
     #
     # Add the video's data
     #
     data += f"\n\n{SaveParams.Section._videos}\n\n"
     for video in playlist.get_videos():
-        data += __join_line_attrs(video.get_hash(), video, _VIDEO_ATTR)
+        data += __join_obj_attributes(video.get_hash(), video, _VIDEO_ATTR)
 
     # Write the file
     with open(playlist.get_save_path(), mode='w', encoding='utf-8') as f:
         f.write(data)
 
 
-def __load_value_boolean(value, default, param_name):
-    try:
-        return value.lower().strip() == "true"
-    except Exception:
-        print_error(f"\tError getting {param_name}")
+def __load_value_boolean(value: str, default: bool, param_name: str) -> bool:
 
-    return default
+    match value.lower().strip():
+        case 'true':
+            return True
+        case 'false':
+            return False
+        case _:
+            print_warning(f"\tError getting {param_name}")
+            return default
 
 
-def __load_value_int(value, default, param_name):
+def __load_value_int(value: str, default: int, param_name: str) -> int:
     try:
         return int(value)
 
-    except Exception:
-        print_error(f"\tError getting {param_name}")
+    except ValueError:
+        print_warning(f"\tError getting {param_name}")
 
     return default
 
 
-def __load_settings(playlist, file_lines):
+def __load_settings(playlist: Playlist, file_lines: Sequence[str]) -> None:
     random = False
     keep_playing = False
     start_at = 0
@@ -189,8 +195,8 @@ def __load_settings(playlist, file_lines):
     playlist.set_current_video_hash(current_video_hash)
 
 
-def __load_paths(file_lines):
-    paths = []
+def __load_playlist_paths(file_lines: Sequence[str]) -> list[PlaylistPath]:
+    playlist_paths = []
 
     for line in __get_section_content(file_lines, SaveParams.Section._sources):
 
@@ -230,12 +236,12 @@ def __load_paths(file_lines):
                                      recursive=recursive,
                                      startup_discover=r_startup)
 
-        paths.append(playlist_path)
+        playlist_paths.append(playlist_path)
 
-    return paths
+    return playlist_paths
 
 
-def __load_videos(playlist, file_lines):
+def __load_videos(playlist: Playlist, file_lines: Sequence[str]) -> None:
     imported_hash_paths = {}
 
     for line in __get_section_content(file_lines, SaveParams.Section._videos):
@@ -343,33 +349,33 @@ def __load_videos(playlist, file_lines):
         imported_hash_paths[hash_file] = path
 
 
-def __join_line_attrs(obj_id, obj, attr_list):
+def __join_obj_attributes(obj_id: str, obj: object, attr_list: Sequence[str]) -> str:
     line_data = obj_id
     for attr_name in attr_list:
         value = getattr(obj, "get_" + attr_name)()
-        line_data += _COLUMN_SEPARATOR + "{}={}".format(attr_name, value)
+        line_data += _COLUMN_SEPARATOR + f"{attr_name}={value}"
 
     return line_data + "\n"
 
 
-def __get_section_content(lines, section_name):
+def __get_section_content(file_lines: Sequence[str], section_name: str) -> list[str]:
     content = []
 
     section_found = False
-    for line in lines:
+    for line in file_lines:
         if line == section_name:
             section_found = True
 
         elif section_found:
             if line.startswith("["):
                 break
-            else:
-                content.append(line)
+
+            content.append(line)
 
     return content
 
 
-def __get_lines(file_path):
+def __get_lines(file_path: str) -> list[str]:
     with open(file_path, mode='rt', encoding='utf-8') as f:
         lines = f.readlines()
 
