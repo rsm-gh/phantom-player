@@ -24,6 +24,7 @@
 # THE SOFTWARE.
 
 import os
+from typing import Callable, Any
 from gi.repository import Gtk, Gdk, Pango
 
 from Texts import Texts
@@ -37,15 +38,16 @@ class FontColors:
     _error = 'error_color'
 
 
-def set_css(widget, css):
+def set_css(widget: Gtk.Widget, css: str) -> None:
     provider = Gtk.CssProvider()
     provider.load_from_data(css.encode('utf-8'))
     context = widget.get_style_context()
     context.add_provider(provider, Gtk.STYLE_PROVIDER_PRIORITY_USER)
 
 
-def bind_header_click(treeview_column, bind_func):
-    label = Gtk.Label(treeview_column.get_title())
+def bind_header_click(treeview_column: Gtk.TreeViewColumn,
+                      bind_func: Callable) -> None:
+    label = Gtk.Label(label=treeview_column.get_title())
     label.show()
     treeview_column.set_widget(label)
 
@@ -56,13 +58,13 @@ def bind_header_click(treeview_column, bind_func):
     widget.connect('button-press-event', bind_func)
 
 
-def get_general_font_description():
+def get_general_font_description() -> Pango.FontDescription:
     settings = Gtk.Settings.get_default()
     font_string = settings.get_property('gtk-font-name')
     return Pango.font_description_from_string(font_string)
 
 
-def get_cellrender_font_description():
+def get_cellrender_font_description() -> Pango.FontDescription:
     settings = Gtk.Settings.get_default()
     font_string = settings.get_property('gtk-font-name')
 
@@ -73,7 +75,9 @@ def get_cellrender_font_description():
     return Pango.font_description_from_string(font_cell)
 
 
-def get_default_color(text_type='theme_text_color', widget=None, on_error='#000000'):
+def get_default_color(text_type: str='theme_text_color',
+                      widget: None | Gtk.Widget=None,
+                      on_error: str='#000000') -> tuple[bool, Gdk.RGBA]:
     """
         theme_text_color
         warning_color
@@ -92,18 +96,9 @@ def get_default_color(text_type='theme_text_color', widget=None, on_error='#0000
     return found, color
 
 
-def iconview_get_first_icon(gtk_iconview, column=0):
-    treepaths = gtk_iconview.get_selected_items()
-
-    if not treepaths:
-        return None
-
-    liststore = gtk_iconview.get_model()
-
-    return liststore[treepaths[0]][column]
-
-
-def treeselection_get_first_cell(gtk_selection, column=0):
+def treeselection_get_first_cell(gtk_selection: Gtk.TreeSelection,
+                                 column: int=0) -> Any:
+    """This function will return the first value of the column, or none if there are no rows"""
     liststore, treepaths = gtk_selection.get_selected_rows()
 
     if not treepaths:
@@ -112,21 +107,8 @@ def treeselection_get_first_cell(gtk_selection, column=0):
     return liststore[treepaths[0]][column]
 
 
-def treeselection_set_first_cell(gtk_selection, column, value):
-    liststore, treepaths = gtk_selection.get_selected_rows()
-
-    if len(treepaths) > 0:
-        liststore[treepaths[0]][column] = value
-
-
-def treeselection_remove_first_row(gtk_selection):
-    liststore, treepaths = gtk_selection.get_selected_rows()
-
-    if len(treepaths) > 0:
-        liststore.remove(liststore.get_iter(treepaths[0]))
-
-
-def dialog_select_directory(parent, start_path=None):
+def dialog_select_directory(parent: None | Gtk.Widget,
+                            start_path=None | str) -> None | str:
     dialog = Gtk.FileChooserDialog(title=Texts.GUI._title,
                                    parent=parent,
                                    action=Gtk.FileChooserAction.SELECT_FOLDER)
@@ -152,7 +134,9 @@ def dialog_select_directory(parent, start_path=None):
     return dir_path
 
 
-def dialog_select_file(parent, file_filter=None, start_path=None):
+def dialog_select_file(parent: None | Gtk.Widget,
+                       file_filter: None | Gtk.FileFilter = None,
+                       start_path: None | str =None) -> None | str:
     dialog = Gtk.FileChooserDialog(title=Texts.GUI._title,
                                    parent=parent,
                                    action=Gtk.FileChooserAction.OPEN)
@@ -185,7 +169,9 @@ def dialog_select_file(parent, file_filter=None, start_path=None):
     return file_path
 
 
-def dialog_yes_no(parent, text1, text2=None):
+def dialog_yes_no(parent: None | Gtk.Widget,
+                  text1: str,
+                  text2: None | str =None) -> bool:
     dialog = Gtk.MessageDialog(parent,
                                Gtk.DialogFlags.MODAL,
                                Gtk.MessageType.QUESTION,
@@ -208,7 +194,9 @@ def dialog_yes_no(parent, text1, text2=None):
         return False
 
 
-def dialog_info(parent, text1, text2=None):
+def dialog_info(parent: None | Gtk.Widget,
+                text1: str,
+                text2: None | str=None) -> None:
     dialog = Gtk.MessageDialog(parent,
                                Gtk.DialogFlags.MODAL,
                                Gtk.MessageType.INFO,
@@ -226,13 +214,13 @@ def dialog_info(parent, text1, text2=None):
     dialog.destroy()
 
 
-def window_is_fullscreen(gtk_window):
-    window = gtk_window.get_window()
+def window_is_fullscreen(gtk_window: Gtk.Window) -> bool:
+    root_window = gtk_window.get_window()
 
-    if window is None:
+    if root_window is None:
         return False
 
-    elif Gdk.WindowState.FULLSCREEN & window.get_state():
+    elif Gdk.WindowState.FULLSCREEN & root_window.get_state():
         return True
 
     return False
