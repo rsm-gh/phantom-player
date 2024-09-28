@@ -99,6 +99,13 @@ class VideosListstoreColumnsIndex:
     _size = 9
 
 
+class GUIView:
+    _none = -1
+    _playlists = 0
+    _videos = 1
+    _single_video = 2
+
+
 class GlobalConfigTags:
     _main_section = "phantom-player"
 
@@ -122,13 +129,6 @@ class GlobalConfigTags:
         _value_small = 'small'
         _value_medium = 'medium'
         _value_big = 'big'
-
-
-class GUIView:
-    _none = -1
-    _playlists = 0
-    _videos = 1
-    _single_video = 2
 
 
 class PhantomPlayer:

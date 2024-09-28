@@ -32,9 +32,9 @@ from console_printer import print_info, print_debug
 print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
 
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
-_VLC_INSTANCE = None
+_VLC_INSTANCE: None | vlc.Instance = None
 
-def get_instance():
+def get_instance() -> vlc.Instance:
     global _VLC_INSTANCE
 
     if _VLC_INSTANCE is None:
@@ -48,7 +48,7 @@ def get_instance():
 
     return _VLC_INSTANCE
 
-def video_duration(path):
+def video_duration(path: str) -> int:
     if not os.path.exists(path):
         return 0
 
@@ -65,17 +65,19 @@ def video_duration(path):
 
     return int(media.get_duration() / 1000)
 
-def parse_file(path, timeout=3000):
+def parse_file(path: str, timeout: int=3000) -> vlc.Media:
     media = get_instance().media_new_path(path)
     media.parse_with_options(vlc.MediaParseFlag.local, timeout)
     return media
 
-def release_instance():
+def release_instance() -> None:
     global _VLC_INSTANCE
 
-    print_debug()
-
-    if _VLC_INSTANCE is not None:
-        print_debug(f"VLC Instance: {_VLC_INSTANCE}", direct_output=True)
+    if _VLC_INSTANCE is None:
+        message = "Nothing to release."
+    else:
+        message = f"VLC Instance: {_VLC_INSTANCE}"
         _VLC_INSTANCE.release()
         _VLC_INSTANCE = None
+
+    print_debug(message)
