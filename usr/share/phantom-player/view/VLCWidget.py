@@ -45,13 +45,16 @@ class VLCWidget(Gtk.DrawingArea):
         self.connect('destroy', self.__on_destroy)
 
     def release(self):
-        print_debug()
 
-        if self._player is not None:
-            print_debug(f"VLC Player: {self._player}", direct_output=True)
+        if self._player is None:
+            message = "Nothing to release"
+        else:
+            message = f"VLC Player: {self._player}"
             self._player.stop()
             self._player.release()
             self._player = None
+
+        print_debug(message)
 
         vlc_utils.release_instance()
 
