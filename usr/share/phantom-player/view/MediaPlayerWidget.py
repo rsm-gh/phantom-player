@@ -24,14 +24,33 @@
 # THE SOFTWARE.
 
 """
-    Bugs:
-        If play=false when starting, the audio tracks are not correctly loaded.
+    Remarks:
+        + Careful when using `player.pause()`, because if the player is already paused, it may (randomly) start playing.
 
-    Patch:
-        + The control buttons had different sized, and It seems that in GTK3 it was not possible to use
-          `ToolButton.set_image`, to properly size all the images, I used a MenuButton(). The sizing works, but it's needed then to:
-            1) only listen when the button is active.
-            2) de-active the button.
+    Patches:
+        + Patch 002: `self.__vlc_widget._player.get_media()` is always returning `None`.
+            Why? To fix it, I created `self.__media`.
+
+        + The control buttons had different sized, and it seems that in GTK3 it was not possible to use
+            ToolButton.set_image to properly size all the images, so I used a MenuButton(). The sizing works,
+            but it's needed then to:
+                1) Listen only when the button is active.
+                2) De-active the button.
+
+    Bugs:
+        + It is necessary to connect the Scale of the Volume button, to avoid hiding the GUI when pressed.
+            I haven't found a solution for this, because the press signals connect to the button and not the scale.
+        + VolumeButton: it should get hidden when clicking out of the button. Is this a problem of GTK?
+        + If play=false when starting, the audio tracks are not correctly loaded.
+
+    To do:
+        + Add mute shortcut
+        + Enable video tracks?
+        + On left right arrows?
+        + When the media changes, display a label. I think it can be done with the VLC API.
+        + When using the +/- signs of the volume button, only change of 1.
+        + `player.set_track()` returns a status. It would be good to read the status and display a message in case of error.
+
 """
 
 import os
