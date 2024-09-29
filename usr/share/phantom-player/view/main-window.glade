@@ -70,11 +70,11 @@ THE SOFTWARE.
       <!-- column-name progress -->
       <column type="gint"/>
       <!-- column-name duration -->
-      <column type="glong"/>
+      <column type="gint64"/>
       <!-- column-name rating -->
       <column type="gint"/>
       <!-- column-name size -->
-      <column type="glong"/>
+      <column type="gint64"/>
     </columns>
   </object>
   <object class="GtkWindow" id="window_root">

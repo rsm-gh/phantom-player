@@ -24,7 +24,7 @@
 # THE SOFTWARE.
 
 from datetime import datetime
-from gi.repository import Gtk, Gdk, PangoCairo, GObject
+from gi.repository import Gtk, Gdk, GLib, PangoCairo, GObject
 
 from view.gtk_utils import get_general_font_description
 
@@ -40,11 +40,11 @@ class CellRendererTimeStamp(Gtk.CellRenderer):
     """ CellRenderer to display timestamps, Ex: 10000 to '1970-01-01 01:16:40' """
 
     __gproperties__ = {
-        'timestamp': ('glong',  # type
+        'timestamp': ('gint64',  # type
                       "integer prop",  # nick
                       "A property that contains a number in milliseconds",  # blurb
                       0,  # min
-                      9223372036854775807,  # max
+                      GLib.MAXINT64,  # max
                       0,  # default
                       GObject.PARAM_READWRITE  # flags
                       ),

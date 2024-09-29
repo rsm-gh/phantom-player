@@ -23,7 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from gi.repository import Gtk, Gdk, PangoCairo, GObject
+from gi.repository import Gtk, Gdk, GLib, PangoCairo, GObject
 
 from view.gtk_utils import get_general_font_description
 
@@ -66,11 +66,11 @@ class CellRendererBytes(Gtk.CellRenderer):
     """ CellRenderer to display kilobytes, ex: 234234 -> 03:54 """
 
     __gproperties__ = {
-        'bytes': ('glong',  # type
+        'bytes': ('gint64',  # type
                   "long prop",  # nick
                   "A property that contains a number of bytes.",  # blurb
                   0,  # min
-                  9223372036854775807,  # max
+                  GLib.MAXINT64,  # max
                   0,  # default
                   GObject.PARAM_READWRITE  # flags
                   ),

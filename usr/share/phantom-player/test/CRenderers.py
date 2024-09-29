@@ -24,12 +24,13 @@
 # THE SOFTWARE.
 
 import gi
-gi.require_version('Gtk', '3.0')
+gi.require_version('GLib', "2.0")
 gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository.GdkPixbuf import Pixbuf
 
-
+from Paths import _ICON_LOGO_BIG
 from view import gtk_utils
 from view.cellrenderers.CellRendererRating import CellRendererRating
 from view.cellrenderers.CellRendererTime import CellRendererTime
@@ -51,7 +52,7 @@ class Window(Gtk.Window):
 
         _, default_color = gtk_utils.get_default_color()
 
-        liststore = Gtk.ListStore(int, 'glong', str)
+        liststore = Gtk.ListStore(int, 'gint64', str)
         liststore.append([0, 100, '/home/rsm/desktop/abc.ogg'])
         liststore.append([1, 23400, '/home/rsm/desktop/abc.ogg'])
         liststore.append([2, 342342, '/home/rsm/desktop/abc.ogg'])
@@ -123,12 +124,12 @@ class Window(Gtk.Window):
             ('last value', 50)
         )
 
-        default_pixbuf = Pixbuf.new_from_file_at_scale("/home/rsm/Pictures/c1019_chip_lg.jpg",
-                                                       IconSize.Big._width,
-                                                       IconSize.Big._height,
-                                                       True)
+        default_pixbuf = Pixbuf.new_from_file_at_scale(filename=_ICON_LOGO_BIG,
+                                                       width=IconSize.Big._width,
+                                                       height=IconSize.Big._height,
+                                                       preserve_aspect_ratio=True)
 
-        cellrenderer_playlist.set_icon_size(IconSize.Big._width, IconSize.Big._height)
+        cellrenderer_playlist.set_icon_size(width=IconSize.Big._width, height=IconSize.Big._height)
 
         for name, percent in playlist_data:
             liststore.append([-1, default_pixbuf, name, percent])
