@@ -31,7 +31,7 @@ from settings import _VIDEO_HASH_SIZE
 from model.Playlist import Playlist, LoadStatus
 from model.PlaylistPath import PlaylistPath
 from model.Video import Video
-from vlc_utils import video_duration
+from vlc_utils import get_video_duration
 from console_printer import print_debug, print_error, print_warning
 
 _COLUMN_SEPARATOR = "|"
@@ -335,7 +335,7 @@ def __load_videos(playlist: Playlist, file_lines: Sequence[str]) -> None:
             # while developing the software.
 
             if duration <= 0:
-                duration = video_duration(path)
+                duration = get_video_duration(path)
 
             if size <= 0:
                 size = os.path.getsize(path)
