@@ -24,8 +24,6 @@
 # THE SOFTWARE.
 
 import os
-
-os.chdir(r"C:\msys64\ucrt64\bin")
 import vlc
 import sys
 import time
