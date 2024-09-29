@@ -24,7 +24,7 @@
 # THE SOFTWARE.
 
 from datetime import timedelta
-from gi.repository import Gtk, Gdk, PangoCairo, GObject
+from gi.repository import Gtk, Gdk, GLib, PangoCairo, GObject
 
 from view.gtk_utils import get_general_font_description
 
@@ -46,11 +46,11 @@ class CellRendererTime(Gtk.CellRenderer):
     """ CellRenderer to display milliseconds to time, ex: 234234 -> 03:54 """
 
     __gproperties__ = {
-        'time': ('glong',  # type
+        'time': ('gint64',  # type
                  "integer prop",  # nick
                  "A property that contains a number in seconds",  # blurb
                  0,  # min
-                 9223372036854775807,  # max
+                 GLib.MAXINT64,  # max
                  0,  # default
                  GObject.PARAM_READWRITE  # flags
                  ),

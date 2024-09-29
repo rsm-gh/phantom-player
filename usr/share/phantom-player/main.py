@@ -34,8 +34,9 @@ elif 'linux' in sys.platform:
     os.environ["GDK_BACKEND"] = "x11"
 
 import gi
-gi.require_version('Gtk', '3.0')
+gi.require_version('GLib', "2.0")
 gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gio
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
