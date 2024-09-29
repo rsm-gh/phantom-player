@@ -24,9 +24,8 @@
 # THE SOFTWARE.
 
 import os
+import sys
 import getpass
-
-#Todo: adapt the paths under windows
 
 __SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 __IMG_DIR = os.path.join(__SRC_DIR, "view/img")
@@ -38,11 +37,25 @@ _ICON_LOGO_BIG = os.path.join(__IMG_DIR, "movie-icon-big.png")
 _ICON_LOADING_PLAYLIST = os.path.join(__IMG_DIR, "loading-playlist.png")
 
 # Files
-if getpass.getuser() == "root":
-    _HOME_DIR = "/root"
-else:
-    _HOME_DIR = "/home/" + getpass.getuser()
+if 'linux' in sys.platform:
 
-_SERIES_DIR = os.path.join(_HOME_DIR, ".local/share/phantom-player")
-_NEW_PLAYLIST_IMG_PATH = os.path.join(_SERIES_DIR, ".png")
-_CONF_FILE = os.path.join(_HOME_DIR,  ".config/phantom-player.ini")
+    if getpass.getuser() == "root":
+        _HOME_DIR = "/root"
+    else:
+        _HOME_DIR = os.path.join("/home", getpass.getuser())
+
+    _APP_DIR = os.path.join(_HOME_DIR, ".local/share/phantom-player")
+    _SERIES_DIR = _APP_DIR
+    _NEW_PLAYLIST_IMG_PATH = os.path.join(_SERIES_DIR, ".png")
+    _CONF_FILE = os.path.join(_HOME_DIR, ".config/phantom-player.ini")
+
+elif sys.platform == 'win32':
+    _HOME_DIR = os.path.join(r"C:\Users", getpass.getuser())
+    _APP_DIR = os.path.join(_HOME_DIR, r"AppData\Local\PhantomPlayer")
+    _SERIES_DIR = os.path.join(_APP_DIR, "Series")
+    _NEW_PLAYLIST_IMG_PATH = os.path.join(_SERIES_DIR, ".png")
+    _CONF_FILE = os.path.join(_APP_DIR, "phantom-player.ini")
+
+else:
+    raise ValueError('Unsupported platform', sys.platform)
+
