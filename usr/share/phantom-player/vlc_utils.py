@@ -24,12 +24,17 @@
 # THE SOFTWARE.
 
 import os
+
+os.chdir(r"C:\msys64\ucrt64\bin")
 import vlc
 import sys
 import time
 
 from console_printer import print_info, print_debug
 print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
+
+import faulthandler
+faulthandler.enable()
 
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
 __VLC_INSTANCE: None | vlc.Instance = None
@@ -48,7 +53,8 @@ def get_instance() -> vlc.Instance:
 
     return __VLC_INSTANCE
 
-def video_duration(path: str) -> int:
+def get_video_duration(path: str) -> int:
+    """Get the duration of a video in seconds."""
     if not os.path.exists(path):
         return 0
 
@@ -60,10 +66,10 @@ def video_duration(path: str) -> int:
 
     media.release()
 
-    if duration <= 0:
+    if duration <= 1:
         return 0
 
-    return int(media.get_duration() / 1000)
+    return int(duration / 1000)
 
 def parse_file(path: str, timeout: int=3000) -> vlc.Media:
     media = get_instance().media_new_path(path)

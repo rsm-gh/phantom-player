@@ -28,7 +28,7 @@ import magic
 import hashlib
 
 from model.Video import Video
-from vlc_utils import video_duration
+from vlc_utils import get_video_duration
 from controller.playlist_factory import _COLUMN_SEPARATOR
 from console_printer import print_debug, print_warning
 
@@ -154,7 +154,7 @@ def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=
     # Why? because in that case, the video will always appear as "new" until the user
     # opens the playlist.
     #
-    new_video = Video(video_hash, file_path, video_duration(file_path))
+    new_video = Video(video_hash, file_path, get_video_duration(file_path))
     new_video.set_is_new(True)
     playlist.add_video(new_video)
     current_data[video_hash] = file_path
