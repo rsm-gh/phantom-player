@@ -61,7 +61,8 @@ class MediaPlayer(Gtk.Window):
         self.__mp_widget.set_video(path,
                                    play=False,
                                    start_at=0,
-                                   subtitles_track=2)
+                                   subtitles_track=2,
+                                   custom_title="Custom Title")
 
 
 if __name__ == '__main__':

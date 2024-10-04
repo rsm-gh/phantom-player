@@ -110,6 +110,7 @@ class GlobalConfigTags:
     _main_section = "phantom-player"
 
     _dark_theme = "dark-theme"
+    _display_video_title = "display-video_title"
 
     _playlist_missing = "playlist-missing"
     _playlist_current = "playlist-current"
@@ -186,6 +187,7 @@ class PhantomPlayer:
         self.__treeselection_playlist = builder.get_object('treeselection_playlist')
         self.__treeselection_videos = builder.get_object('treeselection_videos')
         self.__checkbox_dark_theme = builder.get_object('checkbox_dark_theme')
+        self.__checkbox_videos_title = builder.get_object('checkbox_videos_title')
         self.__checkbox_playlist_missing = builder.get_object('checkbox_playlist_missing')
 
         self.__menu_videos_header = builder.get_object('menu_videos_header')
@@ -249,6 +251,7 @@ class PhantomPlayer:
         self.__menuitem_open_file.connect("activate", self.__on_menuitem_open_file)
         self.__menuitem_about.connect("activate", self.__on_menuitem_about_activate)
         self.__checkbox_dark_theme.connect('toggled', self.__on_checkbox_dark_theme_toggled)
+        self.__checkbox_videos_title.connect('toggled', self.__on_checkbox_videos_title_toggled)
         self.__checkbox_playlist_missing.connect('toggled', self.__on_checkbox_playlist_missing_toggled)
         self.__iconview_playlists.connect('item-activated', self.__on_iconview_playlists_item_activated)
 
@@ -408,6 +411,7 @@ class PhantomPlayer:
                                                          reload_all_videos_func=self.__liststore_videos_populate)
 
         for checkbox, config_tag in ((self.__checkbox_dark_theme, GlobalConfigTags._dark_theme),
+                                     (self.__checkbox_videos_title, GlobalConfigTags._display_video_title),
                                      (self.__checkbox_playlist_missing, GlobalConfigTags._playlist_missing),
                                      (self.__checkbox_video_cnumber, GlobalConfigTags._video_cnumb),
                                      (self.__checkbox_video_cpath, GlobalConfigTags._video_cpath),
@@ -581,7 +585,8 @@ class PhantomPlayer:
                                    play=play,
                                    start_at=max(video_progress, self.__current_media._playlist.get_start_at()),
                                    subtitles_track=self.__current_media._playlist.get_subtitles_track(),
-                                   audio_track=self.__current_media._playlist.get_audio_track())
+                                   audio_track=self.__current_media._playlist.get_audio_track(),
+                                   custom_title=video.get_name())
 
         if self.__mp_widget.get_random() != self.__current_media._playlist.get_random():
             self.__mp_widget.set_random(self.__current_media._playlist.get_random())
@@ -1147,14 +1152,18 @@ class PhantomPlayer:
         else:
             fullscreen = False
 
-        if self.__is_full_screen != fullscreen:
-            self.__is_full_screen = fullscreen
+        if self.__is_full_screen == fullscreen:
+            return
 
-            if fullscreen:
-                self.__media_box.hide()
-                self.__statusbar.hide()
-            else:
-                self.__media_box.show()
+        self.__is_full_screen = fullscreen
+        self.__mp_widget.display_title(fullscreen and self.__checkbox_videos_title.get_active())
+
+        if fullscreen:
+            self.__media_box.hide()
+            self.__statusbar.hide()
+
+        else:
+            self.__media_box.show()
 
     def __on_window_psettings_playlist_add(self, playlist):
 
@@ -1380,6 +1389,11 @@ class PhantomPlayer:
 
         self.__cellrenderer_playlist.set_icon_size(self.__icons_size[0], self.__icons_size[1])
         self.__configuration.write(GlobalConfigTags.IconSize._label, config_value)
+
+
+    def __on_checkbox_videos_title_toggled(self, checkbox, *_):
+        state = checkbox.get_active()
+        self.__configuration.write(GlobalConfigTags._display_video_title, state)
 
     def __on_checkbox_dark_theme_toggled(self, checkbox, *_):
         state = checkbox.get_active()
