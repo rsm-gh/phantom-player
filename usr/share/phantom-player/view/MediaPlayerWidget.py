@@ -47,7 +47,6 @@
         + Add mute shortcut
         + Enable video tracks?
         + On left right arrows?
-        + When the media changes, display a label. I think it can be done with the VLC API.
         + When using the +/- signs of the volume button, only change of 1.
         + `player.set_track()` returns a status. It would be good to read the status and display a message in case of error.
 
@@ -175,7 +174,8 @@ class MediaPlayerWidget(Gtk.Box):
                  random_button=False,
                  keep_playing_button=False,
                  un_max_fixed_toolbar=True,
-                 volume_level=35):
+                 volume_level=35,
+                 display_title=True):
         """
              un_max_fixed_toolbar: Automatically hide the toolbar when the window is un-maximized
         """
@@ -219,6 +219,7 @@ class MediaPlayerWidget(Gtk.Box):
         # VLC Widget
         #
         self.__vlc_widget = VLCWidget()
+        self.display_title(value=display_title)
 
         self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
         self.__vlc_widget.connect('scroll_event', self.__on_player_scroll)
@@ -378,6 +379,13 @@ class MediaPlayerWidget(Gtk.Box):
         self.__thread_scan_motion = Thread(target=self.__on_thread_motion_activity)
         self.__thread_scan_motion.start()
 
+    def display_title(self, value:bool, timeout:int = 5000) -> None:
+        """Display the video title when start/resume playing. If set to false, the timeout is ignored."""
+        if value:
+            self.__vlc_widget._player.set_video_title_display(vlc.Position.top, timeout)
+        else:
+            self.__vlc_widget._player.set_video_title_display(vlc.Position.disable, timeout)
+
     def has_media(self):
         return self.__media is not None
 
@@ -421,8 +429,7 @@ class MediaPlayerWidget(Gtk.Box):
     def stop(self):
         self.__vlc_widget._player.stop()
         if self.__media is not None:
-            self.__media.release()
-            self.__media = None
+            self.__media = self.__media.release()
 
         self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._play, Gtk.IconSize.BUTTON))
         self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
@@ -491,11 +498,11 @@ class MediaPlayerWidget(Gtk.Box):
                   start_at=TimeValue._minium,
                   subtitles_track=Track.Value._undefined,
                   audio_track=Track.Value._undefined,
-                  play=True):
+                  play=True,
+                  custom_title=None):
 
         if self.__media is not None:
-            self.__media.release()
-            self.__media = None
+            self.__media = self.__media.release()
 
         self.__video_ended = False
         self.__video_is_loaded = False
@@ -515,6 +522,10 @@ class MediaPlayerWidget(Gtk.Box):
             return
 
         self.__media = vlc_utils.parse_file(file_path)
+
+        if custom_title is not None:
+            self.__media.set_meta(vlc.Meta.Title, custom_title)
+
 
         # Patch 001: Some actions will be performed when the video length be properly parsed
         self.__delayed_media_data = DelayedMediaData(start_at=int(start_at * 1000),

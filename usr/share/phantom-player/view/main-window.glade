@@ -533,6 +533,16 @@ You should have received a copy of the GNU General Public License along with thi
                         <property name="label" translatable="yes">Dark Theme</property>
                       </object>
                     </child>
+                    <child>
+                      <object class="GtkCheckMenuItem" id="checkbox_videos_title">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="tooltip-text" translatable="yes">If the player is in fullscreen: Display the current video's name, directly in the video. Otherwise, display it the window title.</property>
+                        <property name="label" translatable="yes">Display Video's Name</property>
+                        <property name="use-underline">True</property>
+                        <property name="active">True</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
               </object>
