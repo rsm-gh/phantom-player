@@ -30,22 +30,26 @@ from console_printer import print_warning
 
 class Video(object):
 
-    def __init__(self, vhash: str, path: str, duration: int, name: str=""):
+    def __init__(self,
+                 vhash: str,
+                 path: str,
+                 name: str=""):
 
         if vhash == "":
             raise ValueError("Can not add a video with an empty hash.")
 
+        self.__hash = vhash
         self.__path = path
         self.__name = name
         self.__extension = ""
-        self.__number = -1
         self.__is_new = False
-        self.__progress = 0
         self.__ignore = False
-        self.__hash = vhash
-        self.__duration = int(duration)
-        self.__rating = 0
+
+        self.__duration = 0
         self.__size = 0
+        self.__number = -1
+        self.__progress = 0
+        self.__rating = 0
 
         #
         # Initialize the attributes
@@ -126,6 +130,10 @@ class Video(object):
     def set_size(self, bytes_nb: int) -> None:
         if bytes_nb >= 0:
             self.__size = bytes_nb
+
+    def set_duration(self, seconds: int) -> None:
+        if seconds >= 0:
+            self.__duration = seconds
 
     def set_rating(self, value: int) -> None:
         self.__rating = int(value)

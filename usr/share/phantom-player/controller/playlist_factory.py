@@ -340,7 +340,8 @@ def __load_videos(playlist: Playlist, file_lines: Sequence[str]) -> None:
             if size <= 0:
                 size = os.path.getsize(path)
 
-        video = Video(hash_file, path, duration, name)
+        video = Video(vhash=hash_file, path=path, name=name)
+        video.set_duration(duration)
         video.set_progress(progress)
         video.set_ignore(ignore)
         video.set_rating(rating)
