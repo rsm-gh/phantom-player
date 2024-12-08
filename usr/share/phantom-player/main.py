@@ -23,6 +23,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+"""
+Todo: Normally files should be opened by doing:
+
+    1) app.set_flags(Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+    2) defining the action:
+        a) connecting the open signal, app.connect('open', self.__on_open..)
+        b) defining the method do_open(self, files, n_files, hint)
+
+But it I could not make it work, so the only workaround was to use HANDLES_COMMAND_LINE.
+"""
+
 import os
 import sys
 
@@ -47,17 +58,6 @@ from gi.repository import Gtk, Gio
 
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from view.PhantomPlayer import PhantomPlayer
-
-"""
-Todo: Normally files should be opened by doing:
-
-    1) app.set_flags(Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
-    2) defining the action:
-        a) connecting the open signal, app.connect('open', self.__on_open..)
-        b) defining the method do_open(self, files, n_files, hint)
-
-But it I could not make it work, so the only workaround was to use HANDLES_COMMAND_LINE.
-"""
 
 
 class PhantomApp(Gtk.Application):

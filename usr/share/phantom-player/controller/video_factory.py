@@ -77,10 +77,10 @@ def __discover_playlist_path(playlist,
         return
 
     if playlist_path.get_recursive():
-        for dp, dn, filenames in os.walk(source_path):
+        for root, directories, filenames in os.walk(source_path):
             for filename in filenames:
                 __discover_video(playlist=playlist,
-                                 file_path=os.path.join(dp, filename),
+                                 file_path=os.path.join(root, filename),
                                  exclude_paths=exclude_data,
                                  current_data=current_data,
                                  add_func=add_func,
@@ -101,7 +101,12 @@ def __discover_playlist_path(playlist,
                 return
 
 
-def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=None, update_func=None):
+def __discover_video(playlist,
+                     file_path,
+                     exclude_paths,
+                     current_data,
+                     add_func=None,
+                     update_func=None):
 
     if file_path in exclude_paths:
         return
@@ -127,6 +132,7 @@ def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=
         imported_path = current_data[video_hash]
 
         if os.path.exists(imported_path):
+            # The video is already added with a different path
             print_debug(f"\t\tSkipping video because hash exists... {video_hash}", direct_output=True)
             print_debug(f"\t\t\tImported path: {imported_path}", direct_output=True)
             print_debug(f"\t\t\tSkipped path: {file_path}", direct_output=True)
@@ -150,12 +156,14 @@ def __discover_video(playlist, file_path, exclude_paths, current_data, add_func=
     #
     # Add a new video.
     #
-    # Note it is interesting to do not save the playlist here, if a video is added.
-    # Why? because in that case, the video will always appear as "new" until the user
-    # opens the playlist.
+    # It is important to not save the playlist here when a video is added. Because
+    # it will make it appear as "new" until the playlist is opened by the user.
     #
-    new_video = Video(video_hash, file_path, get_video_duration(file_path))
+    new_video = Video(vhash=video_hash, path=file_path)
+    new_video.set_duration(get_video_duration(file_path))
+    new_video.set_size(os.path.getsize(file_path))
     new_video.set_is_new(True)
+
     playlist.add_video(new_video)
     current_data[video_hash] = file_path
     print_debug(f"\t\tAdding...{file_path}", direct_output=True)
