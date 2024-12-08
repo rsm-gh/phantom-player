@@ -72,10 +72,11 @@ class Texts:
         _playlist_path_cant_add = "The path is already in the added (or recursively included)."
 
     class DialogVideos:
-        _delete = '''Are you sure that you want to delete the selected videos?\n\nThey won't be removed from your hard drive.'''
+        _delete = "Are you sure that you want to delete the selected videos?\n\nThey won't be removed from your hard drive."
         _missing = 'The file is missing.'
         _found_x = '{0} videos have been found.'
         _other_found = '{0} other videos have been found.'
+        _cant_open_dir = 'Uh! It was not possible to open:\n\n"{0}"'
 
     class StatusBar:
         _load_playlist_cached = "Loading videos of {}..."

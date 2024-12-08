@@ -52,7 +52,7 @@ if 'linux' in sys.platform:
 elif sys.platform == 'win32':
     _HOME_DIR = os.path.join(r"C:\Users", getpass.getuser())
     _APP_DIR = os.path.join(_HOME_DIR, r"AppData\Local\PhantomPlayer")
-    _SERIES_DIR = os.path.join(_APP_DIR, "Series")
+    _SERIES_DIR = os.path.join(_APP_DIR, "Playlists")
     _NEW_PLAYLIST_IMG_PATH = os.path.join(_SERIES_DIR, ".png")
     _CONF_FILE = os.path.join(_APP_DIR, "phantom-player.ini")
 

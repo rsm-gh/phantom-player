@@ -1527,8 +1527,9 @@ class PhantomPlayer:
     def __on_menuitem_videos_open(self, *_):
 
         if len(self.__selected_videos) != 1:
-            return
+            raise ValueError('__on_menuitem_videos_open called with multiple selected videos.')
 
         dir_path = os.path.dirname(self.__selected_videos[0].get_path())
-        if os.path.exists(dir_path):
-            open_directory(dir_path)
+
+        if not open_directory(dir_path):
+            gtk_utils.dialog_info(self.__window_root, Texts.DialogVideos._cant_open_dir.format(dir_path))
