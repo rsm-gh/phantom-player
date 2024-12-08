@@ -36,9 +36,9 @@ _SAVE_EXTENSION = '.cfg'
 
 
 class LoadStatus:
-    _waiting_load = 0
-    _loading = 1
-    _loaded = 2
+    _waiting_load = 0 # Local file not yet loaded
+    _loading = 1 # Discovering files
+    _loaded = 2 # Files discovered
 
 
 class TimeValue:
@@ -292,10 +292,6 @@ class Playlist(object):
         return self.__start_at
 
     def get_icon_path(self, allow_default=True):
-
-        if allow_default:
-            if not self.get_load_status():
-                return Paths._ICON_LOADING_PLAYLIST
 
         if self.__name != "":
 

@@ -176,12 +176,12 @@ class PhantomPlayer:
 
         self.__entry_playlist_search = builder.get_object('entry_playlist_search')
         self.__menubar = builder.get_object('menubar')
-        self.__statusbar = builder.get_object('statusbar')
         self.__menuitem_open_file = builder.get_object('menuitem_open_file')
         self.__menuitem_about = builder.get_object('menuitem_about')
         self.__button_display_playlists = builder.get_object('button_display_playlists')
         self.__scrolledwindow_playlists = builder.get_object('scrolledwindow_playlists')
         self.__media_box = builder.get_object('media_box')
+        self.__label_playlist_not_fully_loaded = builder.get_object('label_playlist_not_fully_loaded')
         self.__treeview_videos = builder.get_object('treeview_videos')
         self.__iconview_playlists = builder.get_object('iconview_playlists')
         self.__treeselection_playlist = builder.get_object('treeselection_playlist')
@@ -423,7 +423,7 @@ class PhantomPlayer:
                                      (self.__checkbox_video_cprogress, GlobalConfigTags._video_cprog),
                                      (self.__checkbox_video_rhidden, GlobalConfigTags._video_rhidden)):
             # Note:
-            #   The state in glade is very important, because if the checkbox has the same state than the
+            #   The state in glade is very important, because if the checkbox has the same state as the
             #   one set by set_active, on toggle will not be called.
             checkbox.set_active(self.__configuration.get_bool_defval(config_tag, True))
 
@@ -636,7 +636,6 @@ class PhantomPlayer:
             self.__scrolledwindow_playlists.show()
             self.__entry_playlist_search.show()
             self.__menubutton_main.show()
-            self.__statusbar.show()
         else:
             self.__entry_playlist_search.hide()
             self.__menubutton_main.hide()
@@ -648,7 +647,6 @@ class PhantomPlayer:
             if only_player:
                 self.__view_status = GUIView._single_video
                 self.__button_playlist_settings.set_sensitive(False)
-                self.__statusbar.hide()
                 self.__button_playlist_settings.hide()
 
                 if self.__paned is not None:
@@ -664,7 +662,6 @@ class PhantomPlayer:
                 self.__view_status = GUIView._videos
                 self.__window_root_accel = self.__accelgroup_videos
 
-                self.__statusbar.show()
                 self.__treeview_videos.show()
                 self.__button_playlist_settings.show()
                 self.__button_playlist_settings.set_sensitive(
@@ -702,6 +699,11 @@ class PhantomPlayer:
         self.__liststore_videos_populate()
         self.__treeview_reset_sorting()
 
+        if playlist.get_load_status() == PlaylistLoadStatus._loaded:
+            self.__label_playlist_not_fully_loaded.hide()
+        else:
+            self.__label_playlist_not_fully_loaded.show()
+
         if video is None:
             video = self.__current_media._playlist.get_last_played_video()
             play = False
@@ -727,9 +729,6 @@ class PhantomPlayer:
                 self.__liststore_videos_populate()
             self.__mp_widget.set_keep_playing(playlist.get_keep_playing())
             self.__mp_widget.set_random(playlist.get_random())
-
-    def __statusbar_push(self, status):
-        self.__statusbar.push(0, status)
 
     def __treeview_reset_sorting(self):
 
@@ -969,8 +968,6 @@ class PhantomPlayer:
 
                 full_path = os.path.join(_SERIES_DIR, file_name)
 
-                GLib.idle_add(self.__statusbar_push, Texts.StatusBar._load_playlist_cached.format(file_name))
-
                 playlist = playlist_factory.load(file_path=full_path)
                 playlist.set_guid(len(self.__playlists))
                 playlist.set_load_status(PlaylistLoadStatus._loading)
@@ -1009,25 +1006,24 @@ class PhantomPlayer:
             # there is a different trigger.
 
             if playlist.requires_discover(is_startup=True):
-                GLib.idle_add(self.__statusbar_push,
-                              Texts.StatusBar._load_playlist_discover.format(playlist.get_name(), i, len(playlists)))
                 video_factory.discover(playlist,
                                        add_func=self.__liststore_videos_add_glib,
                                        update_func=self.__liststore_videos_update_glib,
                                        quit_func=self.get_quit)
 
-                GLib.idle_add(self.__liststore_playlists_update_progress, playlist)
+            playlist.set_load_status(PlaylistLoadStatus._loaded)
 
-            GLib.idle_add(playlist.set_load_status, PlaylistLoadStatus._loaded)
-            if self.__current_media.is_playlist(playlist) and playlist.get_load_status() == PlaylistLoadStatus._loaded:
+            GLib.idle_add(self.__liststore_playlists_update_progress, playlist)
+
+            if self.__current_media.is_playlist(playlist):
                 GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
+                GLib.idle_add(self.__label_playlist_not_fully_loaded.hide)
 
         #
         #   Enable the GUI
         #
         GLib.idle_add(self.__window_root.set_sensitive, True)
         GLib.idle_add(self.__button_playlist_settings.set_sensitive, True)
-        GLib.idle_add(self.__statusbar_push, Texts.StatusBar._load_playlists_ended)
 
         if killed:
             print_debug("Load playlist killed.")
@@ -1160,8 +1156,6 @@ class PhantomPlayer:
 
         if fullscreen:
             self.__media_box.hide()
-            self.__statusbar.hide()
-
         else:
             self.__media_box.show()
 
