@@ -27,7 +27,27 @@ import os
 import sys
 from PIL import Image
 
-from console_printer import print_warning
+from console_printer import print_warning, print_debug
+
+# Put the most popular (robust) at the beginning
+__POPULAR_FILE_MANAGERS = ('exo-open',
+                           'nautilus',
+                           'dolphin',
+                           'konqueror',
+                           'nemo',
+                           'pcmanfm',
+                           'doublecmd-gtk',
+                           'nnn',
+                           'krusader')
+
+# Check if a file manager exists in the system (to avoid unnecessary commands)
+_INSTALLED_FILE_MANAGERS = []
+for file_manager in __POPULAR_FILE_MANAGERS:
+    if os.path.exists(f"/usr/bin/{file_manager}"):
+        _INSTALLED_FILE_MANAGERS.append(file_manager)
+
+_INSTALLED_FILE_MANAGERS = tuple(_INSTALLED_FILE_MANAGERS)
+
 
 class EventCodes:
     class Cursor:
@@ -59,35 +79,30 @@ def has_non_empty_dirs(path: str) -> bool:
     return False
 
 
-def open_directory(path: str) -> None:
+def open_directory(path: str) -> bool:
+    print_debug()
+
     if not os.path.exists(path):
         print_warning('Path does not exist', path)
+        return False
 
     elif not os.path.isdir(path):
         print_warning('Path is not a directory', path)
+        return False
 
-    # Put the most popular (robust) at the beginning
-    file_managers = ('exo-open',
-                     'nautilus',
-                     'dolphin',
-                     'konqueror',
-                     'nemo',
-                     'pcmanfm',
-                     'doublecmd-gtk',
-                     'nnn',
-                     'krusader')
-
-    # Check if a file manager exists in the system (to avoid unnecessary commands)
-    for file_manager in file_managers:
-        if os.path.exists("/usr/bin/{}".format(file_manager)):
-            file_managers = [file_manager]
-            break
+    elif 'linux' not in sys.platform:
+        print_warning(f'Unsupported platform {sys.platform}')
+        return False
 
     # Try to open the directory
-    for program_name in file_managers:
-        exit_code = os.system('''{} "{}" &'''.format(program_name, path))
+    for program_name in _INSTALLED_FILE_MANAGERS:
+        cmd = f'{program_name} "{path}"'
+        print_debug(cmd, direct_output=True)
+        exit_code = os.system(cmd)
         if exit_code == 0:
-            break
+            return True
+
+    return False
 
 
 def turn_off_screensaver(state: bool) -> None:
@@ -99,12 +114,12 @@ def turn_off_screensaver(state: bool) -> None:
 
     if state:
         try:
-            os.system('''xset s off''')
+            os.system('xset s off')
         except Exception:
             print_warning("It wasn't possible to turn off the screensaver")
     else:
         try:
-            os.system('''xset s on''')
+            os.system('xset s on')
         except Exception:
             print_warning("It wasn't possible to turn on the screensaver")
 
