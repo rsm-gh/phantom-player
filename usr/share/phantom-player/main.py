@@ -27,8 +27,14 @@ import os
 import sys
 
 if sys.platform == 'win32':
+
+    __UCRT_PATH = r"C:\msys64\ucrt64\bin"
+
+    if not os.path.exists(__UCRT_PATH):
+        raise ValueError(__UCRT_PATH+" does not exist.")
+
     #os.add_dll_directory(r"C:\msys64\ucrt64\bin") why this is not working?
-    os.chdir(r"C:\msys64\ucrt64\bin")
+    os.chdir(__UCRT_PATH)
 
 elif 'linux' in sys.platform:
     os.environ["GDK_BACKEND"] = "x11"
@@ -102,7 +108,9 @@ class PhantomApp(Gtk.Application):
         return 0
 
 
-app = PhantomApp(application_id="com.senties-martinelli.PhantomPlayer")
-app.set_flags(Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
-app_status = app.run(sys.argv)
-sys.exit(app_status)
+if __name__ == "__main__":
+
+    _APP = PhantomApp(application_id="com.senties-martinelli.PhantomPlayer")
+    _APP.set_flags(Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
+    _APP_STATUS = _APP.run(sys.argv)
+    sys.exit(_APP_STATUS)
