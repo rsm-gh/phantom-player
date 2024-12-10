@@ -112,6 +112,7 @@ class GlobalConfigTags:
     _dark_theme = "dark-theme"
     _display_video_title = "display-video_title"
 
+    _playlist_hidden = "playlist-hidden"
     _playlist_missing = "playlist-missing"
     _playlist_current = "playlist-current"
 
@@ -189,6 +190,7 @@ class PhantomPlayer:
         self.__checkbox_dark_theme = builder.get_object('checkbox_dark_theme')
         self.__checkbox_videos_title = builder.get_object('checkbox_videos_title')
         self.__checkbox_playlist_missing = builder.get_object('checkbox_playlist_missing')
+        self.__checkbox_playlist_hidden = builder.get_object('checkbox_playlist_hidden')
 
         self.__menu_videos_header = builder.get_object('menu_videos_header')
         self.__checkbox_video_cext = builder.get_object('checkbox_video_cext')
@@ -253,6 +255,7 @@ class PhantomPlayer:
         self.__checkbox_dark_theme.connect('toggled', self.__on_checkbox_dark_theme_toggled)
         self.__checkbox_videos_title.connect('toggled', self.__on_checkbox_videos_title_toggled)
         self.__checkbox_playlist_missing.connect('toggled', self.__on_checkbox_playlist_missing_toggled)
+        self.__checkbox_playlist_hidden.connect('toggled', self.__on_checkbox_playlist_hidden_toggled)
         self.__iconview_playlists.connect('item-activated', self.__on_iconview_playlists_item_activated)
 
         self.__radio_icon_small.connect('toggled', self.__on_radio_icon_size_toggled,
@@ -314,7 +317,8 @@ class PhantomPlayer:
 
         for shortcut, accel_group, menuitem in (("o", self.__accelgroup_playlists, self.__menuitem_open_file),
                                                 ("n", self.__accelgroup_playlists, self.__menuitem_new_playlist),
-                                                ("h", self.__accelgroup_playlists, self.__checkbox_playlist_missing),
+                                                ("m", self.__accelgroup_playlists, self.__checkbox_playlist_missing),
+                                                ("h", self.__accelgroup_playlists, self.__checkbox_playlist_hidden),
                                                 ("h", self.__accelgroup_videos, self.__checkbox_video_rhidden),
                                                 ("u", self.__accelgroup_videos, self.__menuitem_videos_restart_prg),
                                                 ("v", self.__accelgroup_videos, self.__menuitem_videos_fill_prg),
@@ -413,6 +417,7 @@ class PhantomPlayer:
         for checkbox, config_tag in ((self.__checkbox_dark_theme, GlobalConfigTags._dark_theme),
                                      (self.__checkbox_videos_title, GlobalConfigTags._display_video_title),
                                      (self.__checkbox_playlist_missing, GlobalConfigTags._playlist_missing),
+                                     (self.__checkbox_playlist_hidden, GlobalConfigTags._playlist_hidden),
                                      (self.__checkbox_video_cnumber, GlobalConfigTags._video_cnumb),
                                      (self.__checkbox_video_cpath, GlobalConfigTags._video_cpath),
                                      (self.__checkbox_video_cname, GlobalConfigTags._video_cname),
@@ -426,6 +431,12 @@ class PhantomPlayer:
             #   The state in glade is very important, because if the checkbox has the same state as the
             #   one set by set_active, on toggle will not be called.
             checkbox.set_active(self.__configuration.get_bool_defval(config_tag, True))
+
+        for checkbox, config_tag in ((self.__checkbox_playlist_hidden, GlobalConfigTags._playlist_hidden),):
+            # Note:
+            #   The state in glade is very important, because if the checkbox has the same state as the
+            #   one set by set_active, on toggle will not be called.
+            checkbox.set_active(self.__configuration.get_bool_defval(config_tag, False))
 
 
         match self.__configuration.get_str(GlobalConfigTags.IconSize._label):
@@ -619,8 +630,14 @@ class PhantomPlayer:
 
             self.__mp_widget.stop()
             if self.__current_media._playlist is not None:  # This can happen on single file mode
+
                 playlist_factory.save(self.__current_media._playlist)
-                self.__liststore_playlists_update_progress(self.__current_media._playlist)
+
+                if not self.__playlist_should_be_listed(self.__current_media._playlist):
+                    self.__liststore_playlists_populate()
+                else:
+                    self.__liststore_playlists_update_progress(self.__current_media._playlist)
+
 
             self.__current_media = CurrentMedia()
 
@@ -795,8 +812,12 @@ class PhantomPlayer:
         #
         self.__liststore_playlists.clear()
         for playlist in sorted(filtered_playlists, key=lambda x: x.get_name()):
-            if not playlist.is_missing() or self.__checkbox_playlist_missing.get_active():
+            if self.__playlist_should_be_listed(playlist):
                 self.__liststore_playlists_append(playlist)
+
+    def __playlist_should_be_listed(self, playlist):
+        return (not playlist.is_missing() or self.__checkbox_playlist_missing.get_active()) and \
+               (not playlist.get_hidden() or self.__checkbox_playlist_hidden.get_active())
 
     def __liststore_videos_populate(self, *_):
 
@@ -977,7 +998,7 @@ class PhantomPlayer:
 
                 self.__playlists[playlist.get_guid()] = playlist
 
-                if not playlist.is_missing() or self.__checkbox_playlist_missing.get_active():
+                if self.__playlist_should_be_listed(playlist):
                     GLib.idle_add(self.__liststore_playlists_append, playlist)
 
         #
@@ -993,6 +1014,9 @@ class PhantomPlayer:
         if current_playlist is not None:
             playlists.remove(current_playlist)
             playlists.insert(0, current_playlist)
+
+        # Discover the hidden playlists at the end
+        playlists.sort(key=lambda p: self.__playlist_should_be_listed(p), reverse=True)
 
         for i, playlist in enumerate(playlists, 1):
 
@@ -1163,7 +1187,7 @@ class PhantomPlayer:
 
         self.__playlists[playlist.get_guid()] = playlist
 
-        if not playlist.is_missing() or self.__checkbox_playlist_missing.get_active():
+        if self.__playlist_should_be_listed(playlist):
             self.__liststore_playlists_append(playlist)
 
     def __on_window_psettings_playlist_restart(self, playlist):
@@ -1399,6 +1423,10 @@ class PhantomPlayer:
 
         for row in self.__liststore_playlists:
             row[PlaylistListstoreColumnsIndex._color] = self.__fontcolor_default
+
+    def __on_checkbox_playlist_hidden_toggled(self, checkbox, *_):
+        self.__liststore_playlists_populate()
+        self.__configuration.write(GlobalConfigTags._playlist_hidden, checkbox.get_active())
 
     def __on_checkbox_playlist_missing_toggled(self, checkbox, *_):
         self.__liststore_playlists_populate()

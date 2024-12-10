@@ -66,6 +66,7 @@ class Playlist(object):
         self.__playlist_paths = {}
         self.__random = False
         self.__keep_playing = False
+        self.__hidden = False
         self.__start_at = 0.0
         self.__audio_track = Track.Value._undefined
         self.__subtitles_track = Track.Value._undefined
@@ -275,6 +276,9 @@ class Playlist(object):
     def get_guid(self):
         return self.__number
 
+    def get_hidden(self) -> bool:
+        return self.__hidden
+
     def get_playlist_path(self, path):
         try:
             return self.__playlist_paths[path]
@@ -446,6 +450,9 @@ class Playlist(object):
 
     def set_guid(self, value):
         self.__number = value
+
+    def set_hidden(self, value:bool) -> None:
+        self.__hidden = value
 
     def set_load_status(self, value):
         if value not in (LoadStatus._waiting_load, LoadStatus._loading, LoadStatus._loaded):

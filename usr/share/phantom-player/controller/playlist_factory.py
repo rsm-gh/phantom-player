@@ -38,7 +38,8 @@ _COLUMN_SEPARATOR = "|"
 _VALUE_SEPARATOR = "="
 
 # These must be either GET or SET
-_PLAYLIST_ATTR = ('random',
+_PLAYLIST_ATTR = ('hidden',
+                  'random',
                   'keep_playing',
                   'start_at',
                   'audio_track',
@@ -145,6 +146,7 @@ def __load_value_int(value: str, default: int, param_name: str) -> int:
 
 
 def __load_settings(playlist: Playlist, file_lines: Sequence[str]) -> None:
+    hidden = False
     random = False
     keep_playing = False
     start_at = 0
@@ -162,6 +164,9 @@ def __load_settings(playlist: Playlist, file_lines: Sequence[str]) -> None:
         value = line.split(_VALUE_SEPARATOR)[1].strip()
 
         match param_name:
+
+            case "hidden":
+                hidden = __load_value_boolean(value, hidden, param_name)
 
             case "random":
                 random = __load_value_boolean(value, random, param_name)
@@ -187,6 +192,7 @@ def __load_settings(playlist: Playlist, file_lines: Sequence[str]) -> None:
     #
     # Create the playlist (without loading the videos)
     #
+    playlist.set_hidden(hidden)
     playlist.set_random(random)
     playlist.set_keep_playing(keep_playing)
     playlist.set_audio_track(audio_track)
