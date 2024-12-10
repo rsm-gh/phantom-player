@@ -111,6 +111,7 @@ class SettingsWindow:
         self.__image_playlist = builder.get_object('image_playlist')
         self.__switch_keep_playing = builder.get_object('switch_keep_playing')
         self.__switch_random_playing = builder.get_object('switch_random_playing')
+        self.__switch_hidden = builder.get_object('switch_hidden')
         self.__spinbutton_audio = builder.get_object('spinbutton_audio')
         self.__spinbutton_subtitles = builder.get_object('spinbutton_subtitles')
         self.__spinbutton_start_at_min = builder.get_object('spinbutton_start_at_min')
@@ -154,6 +155,8 @@ class SettingsWindow:
         self.__entry_playlist_name.connect('changed', self.__on_entry_playlist_name_changed)
         self.__togglebutton_edit_name.connect('button-press-event', self.__on_togglebutton_edit_name_press_event)
         self.__eventbox_image.connect('button-press-event', self.__on_eventbox_image_button_press)
+
+        self.__switch_hidden.connect('button-press-event', self.__on_switch_hidden_press_event)
         self.__switch_keep_playing.connect('button-press-event', self.__on_switch_keep_playing_press_event)
         self.__switch_random_playing.connect('button-press-event', self.__on_switch_random_playing_press_event)
         self.__spinbutton_audio.connect('value-changed', self.__on_spinbutton_audio_value_changed)
@@ -297,6 +300,7 @@ class SettingsWindow:
         self.__button_path_reload_all.set_sensitive(not self.__is_new_playlist)
 
         self.__entry_playlist_name.set_text(self.__current_playlist.get_name())
+        self.__switch_hidden.set_active(self.__current_playlist.get_hidden())
         self.__switch_keep_playing.set_active(self.__current_playlist.get_keep_playing())
         self.__switch_random_playing.set_active(self.__current_playlist.get_random())
 
@@ -466,6 +470,10 @@ class SettingsWindow:
     def __on_togglebutton_edit_name_press_event(self, widget, *_):
         status = not widget.get_active()
         self.__entry_playlist_name.set_sensitive(status)
+
+    def __on_switch_hidden_press_event(self, widget, *_):
+        status = not widget.get_active()
+        self.__current_playlist.set_hidden(status)
 
     def __on_switch_random_playing_press_event(self, widget, *_):
         status = not widget.get_active()
