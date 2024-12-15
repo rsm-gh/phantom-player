@@ -26,9 +26,10 @@
 import os
 import random
 
-import settings
 import Paths
+import settings
 from copy import copy
+from model.Video import Video
 from model.PlaylistPath import PlaylistPath
 from system_utils import format_img
 
@@ -36,9 +37,9 @@ _SAVE_EXTENSION = '.cfg'
 
 
 class LoadStatus:
-    _waiting_load = 0 # Local file not yet loaded
-    _loading = 1 # Discovering files
-    _loaded = 2 # Files discovered
+    _waiting_load = 0  # Local file not yet loaded
+    _loading = 1  # Discovering files
+    _loaded = 2  # Files discovered
 
 
 class TimeValue:
@@ -59,7 +60,7 @@ class Track:
 
 class Playlist(object):
 
-    def __init__(self):
+    def __init__(self) -> None:
 
         self.__number = -1
         self.__name = ""
@@ -67,7 +68,7 @@ class Playlist(object):
         self.__random = False
         self.__keep_playing = False
         self.__hidden = False
-        self.__start_at = 0.0
+        self.__start_at = 0
         self.__audio_track = Track.Value._undefined
         self.__subtitles_track = Track.Value._undefined
         self.__load_status = LoadStatus._waiting_load
@@ -78,10 +79,10 @@ class Playlist(object):
         self.__videos_dict = {}
         self.__active_videos_nb = 0
 
-    def has_video(self, video):
+    def has_video(self, video:Video) -> bool:
         return video.get_hash() in self.__videos_dict
 
-    def is_missing(self):
+    def is_missing(self) -> bool:
 
         if len(self.__playlist_paths) == 0:
             return False  # Playlists without paths should be displayed
@@ -92,7 +93,7 @@ class Playlist(object):
 
         return True
 
-    def can_recursive(self, rec_playlist_path):
+    def can_recursive(self, rec_playlist_path:PlaylistPath) -> bool:
 
         for playlist_path in self.__playlist_paths.values():
 
@@ -104,19 +105,11 @@ class Playlist(object):
 
         return True
 
-    def restart(self):
+    def restart(self) -> None:
         for video in self.__videos_list:
             video.set_progress(0)
 
-    def reorder(self, new_order_indexes):
-        """ Choices are "up" or "down" """
-
-        self.__videos_list = [self.__videos_list[i - 1] for i in new_order_indexes]
-
-        for i, video in enumerate(self.__videos_list, 1):
-            video.set_number(i)
-
-    def reorder_down(self, videos):
+    def reorder_down(self, videos:[Video]) -> None:
         """
             Move to the first indexes of the list.
         """
@@ -134,7 +127,7 @@ class Playlist(object):
 
         self.__recalculate_videos_nb()
 
-    def reorder_up(self, videos):
+    def reorder_up(self, videos:[Video]) -> None:
         """
             Move to the last indexes of the list.
         """
@@ -153,7 +146,7 @@ class Playlist(object):
 
         self.__recalculate_videos_nb()
 
-    def reorder_by_name(self):
+    def reorder_by_name(self) -> None:
         """
             It is not possible to create a dictionary only by name
             because multiple episodes could have the same name.
@@ -165,7 +158,7 @@ class Playlist(object):
 
         self.__recalculate_videos_nb()
 
-    def requires_discover(self, is_startup):
+    def requires_discover(self, is_startup:bool) -> bool:
 
         auto_discover = False
         for playlist_path in self.get_playlist_paths():
@@ -178,14 +171,17 @@ class Playlist(object):
 
         return False
 
-    def remove_videos(self, videos):
+    def remove_videos(self, videos:[Video]) -> None:
         for video in videos:
             self.__videos_list.remove(video)
             del self.__videos_dict[video.get_hash()]
 
         self.__recalculate_videos_nb()
 
-    def update_playlist_path(self, playlist_path, new_path):
+    def update_playlist_path(self,
+                             playlist_path:PlaylistPath,
+                             new_path:str) -> PlaylistPath:
+
         self.__playlist_paths.pop(playlist_path.get_path())
 
         new_playlist_path = PlaylistPath(new_path,
@@ -195,7 +191,9 @@ class Playlist(object):
 
         return new_playlist_path
 
-    def remove_playlist_path(self, playlist_path, only_recursive_children=False):
+    def remove_playlist_path(self,
+                             playlist_path:PlaylistPath,
+                             only_recursive_children:bool=False) -> None:
         """
             only_recursive_children is used to remove the list of
             videos when the user deactivates "Recursive".
@@ -213,7 +211,7 @@ class Playlist(object):
 
         return remove_videos
 
-    def add_playlist_path(self, new_playlist_path):
+    def add_playlist_path(self, new_playlist_path: PlaylistPath) -> bool:
 
         for playlist_path in self.__playlist_paths.values():
 
@@ -229,17 +227,17 @@ class Playlist(object):
 
         return True
 
-    def add_video(self, video):
+    def add_video(self, video:Video) -> None:
 
         if video.get_hash() in self.__videos_dict:
-            raise ValueError("Attempting to add a duplicated video hash "+video.get_hash())
+            raise ValueError(f"Attempting to add a duplicated video hash {video.get_hash()}")
 
         video.set_number(len(self.__videos_list) + 1)
         self.__videos_list.append(video)
         self.__videos_dict[video.get_hash()] = video
         self.__active_videos_nb += 1
 
-    def get_path_stats(self, playlist_path):
+    def get_path_stats(self, playlist_path:PlaylistPath) -> (int, int, int):
 
         active = 0
         ignored = 0
@@ -270,32 +268,32 @@ class Playlist(object):
 
         return active, ignored, missing
 
-    def get_load_status(self):
+    def get_load_status(self) -> int:
         return self.__load_status
 
-    def get_guid(self):
+    def get_guid(self) -> int:
         return self.__number
 
     def get_hidden(self) -> bool:
         return self.__hidden
 
-    def get_playlist_path(self, path):
+    def get_playlist_path(self, path:str) -> PlaylistPath | None:
         try:
             return self.__playlist_paths[path]
         except KeyError:
             return None
 
-    def get_playlist_paths(self):
+    def get_playlist_paths(self) -> [PlaylistPath]:
         return [playlist_path for path, playlist_path in
                 sorted(self.__playlist_paths.items(), key=lambda item: item[0])]
 
-    def get_save_path(self):
+    def get_save_path(self) -> str:
         return os.path.join(Paths._SERIES_DIR, self.__name + _SAVE_EXTENSION)
 
-    def get_start_at(self):
+    def get_start_at(self) -> int:
         return self.__start_at
 
-    def get_icon_path(self, allow_default=True):
+    def get_icon_path(self, allow_default:bool=True) -> str | None:
 
         if self.__name != "":
 
@@ -312,10 +310,10 @@ class Playlist(object):
 
         return None
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.__name
 
-    def get_percent(self):
+    def get_percent(self) -> int:
 
         total_of_videos = 0
         total_percent = 0
@@ -329,7 +327,7 @@ class Playlist(object):
 
         return int(round(total_percent / total_of_videos))
 
-    def get_next_organized_video(self, after=None):
+    def get_next_ordered_video(self, after=None):
         """
             Get the next video.
 
@@ -354,11 +352,11 @@ class Playlist(object):
 
         # Try to return a video from the beginning
         if after is not None:
-            return self.get_next_organized_video()
+            return self.get_next_ordered_video()
 
         return None
 
-    def get_next_random_video(self):
+    def get_next_random_video(self) -> Video | None:
 
         videos = []
         for video in self.__videos_list:
@@ -373,27 +371,27 @@ class Playlist(object):
 
         return random.choice(videos)
 
-    def get_audio_track(self):
+    def get_audio_track(self) -> int:
         return self.__audio_track
 
-    def get_subtitles_track(self):
+    def get_subtitles_track(self) -> int:
         return self.__subtitles_track
 
-    def get_random(self):
+    def get_random(self) -> bool:
         return self.__random
 
-    def get_current_video_hash(self):
+    def get_current_video_hash(self) -> str:
         """This method is called by a getattr(), do not remove it."""
         return self.__current_video_hash
 
-    def get_video_by_path(self, path):
+    def get_video_by_path(self, path: str) -> Video | None:
         for video in self.__videos_list:
             if video.get_path() == path:
                 return video
 
         return None
 
-    def get_video_by_hash(self, video_hash):
+    def get_video_by_hash(self, video_hash: str) -> Video | None:
         try:
             video = self.__videos_dict[video_hash]
         except KeyError:
@@ -401,19 +399,22 @@ class Playlist(object):
 
         return video
 
-    def get_videos_by_hash(self, videos_hashes):
+    def get_videos_by_hash(self, videos_hashes: [str, ...]) -> [Video, ...]:
         videos = []
 
         for video_hash in videos_hashes:
             try:
                 video = self.__videos_dict[video_hash]
-                videos.append(video)
             except KeyError:
                 pass
+            else:
+                videos.append(video)
 
         return videos
 
-    def get_videos_by_playlist_path(self, playlist_path, only_recursive_children=False):
+    def get_videos_by_playlist_path(self,
+                                    playlist_path:PlaylistPath,
+                                    only_recursive_children:bool=False) -> [Video]:
         """
             only_recursive_children is used to obtain the list of
             videos when the user deactivates "Recursive".
@@ -439,34 +440,34 @@ class Playlist(object):
 
         return videos
 
-    def get_last_played_video(self):
+    def get_last_played_video(self) -> Video | None:
         return self.get_video_by_hash(self.__current_video_hash)
 
-    def get_videos(self):
+    def get_videos(self) -> [Video, ...]:
         return copy(self.__videos_list)
 
-    def get_keep_playing(self):
+    def get_keep_playing(self) -> bool:
         return self.__keep_playing
 
-    def set_guid(self, value):
-        self.__number = value
+    def set_guid(self, value: int) -> None:
+        self.__number = int(value)
 
-    def set_hidden(self, value:bool) -> None:
+    def set_hidden(self, value: bool) -> None:
         self.__hidden = value
 
-    def set_load_status(self, value):
+    def set_load_status(self, value: LoadStatus) -> None:
         if value not in (LoadStatus._waiting_load, LoadStatus._loading, LoadStatus._loaded):
             raise ValueError("wrong value={}".format(value))
 
         self.__load_status = value
 
-    def set_keep_playing(self, value):
+    def set_keep_playing(self, value: bool) -> None:
         self.__keep_playing = value
 
-    def set_current_video_hash(self, value):
-        self.__current_video_hash = value
+    def set_current_video_hash(self, value: str) -> None:
+        self.__current_video_hash = str(value)
 
-    def set_start_at(self, value):
+    def set_start_at(self, value: int) -> None:
         try:
             value = int(value)
         except Exception as e:
@@ -483,7 +484,7 @@ class Playlist(object):
         else:
             self.__start_at = TimeValue._minium
 
-    def set_audio_track(self, value):
+    def set_audio_track(self, value: int) -> None:
         try:
             value = int(value)
         except Exception as e:
@@ -494,7 +495,7 @@ class Playlist(object):
 
         self.__audio_track = value
 
-    def set_subtitles_track(self, value):
+    def set_subtitles_track(self, value: int) -> None:
         try:
             value = int(value)
         except Exception as e:
@@ -505,10 +506,10 @@ class Playlist(object):
 
         self.__subtitles_track = value
 
-    def set_random(self, is_random):
+    def set_random(self, is_random: bool) -> None:
         self.__random = is_random
 
-    def set_name(self, new_name, force=False):
+    def set_name(self, new_name: str, force: bool = False) -> None:
         """
             Set a new name, or rename.
         """
@@ -533,7 +534,7 @@ class Playlist(object):
         if os.path.exists(old_icon_path):
             os.rename(old_icon_path, self.get_icon_path(allow_default=False))
 
-    def set_icon_path(self, src_path):
+    def set_icon_path(self, src_path: str) -> None:
 
         paste_path = self.get_icon_path(allow_default=False)
         if os.path.exists(src_path) and src_path == paste_path:
@@ -555,6 +556,6 @@ class Playlist(object):
                    height=settings.IconSize.Big._height,
                    extension="png")
 
-    def __recalculate_videos_nb(self):
+    def __recalculate_videos_nb(self) -> None:
         for i, video in enumerate(self.__videos_list, 1):
             video.set_number(i)
