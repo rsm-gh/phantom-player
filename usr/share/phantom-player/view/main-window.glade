@@ -147,8 +147,6 @@ THE SOFTWARE.
                     <property name="visible">True</property>
                     <property name="can-focus">True</property>
                     <property name="model">liststore_videos</property>
-                    <property name="enable-search">False</property>
-                    <property name="search-column">1</property>
                     <child internal-child="selection">
                       <object class="GtkTreeSelection" id="treeselection_videos">
                         <property name="mode">multiple</property>
