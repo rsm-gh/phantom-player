@@ -23,6 +23,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import settings
 from console_printer import print_error
 from model.Playlist import Playlist
 from model.Video import Video
@@ -31,6 +32,7 @@ class CurrentMedia:
     def __init__(self, playlist: None | Playlist=None) -> None:
         self._playlist = playlist
         self._video = None
+        self.__video_cached_progress = 0
 
     def is_playlist(self, playlist: Playlist) -> bool:
 
@@ -53,12 +55,22 @@ class CurrentMedia:
             print_error(f"video name={video.get_name()} hash={video.get_hash()} not found in playlist={self._playlist.get_name()}")
 
         self._video = video
+        self.__video_cached_progress = self._video.get_progress()
         self._playlist.set_current_video_hash(video.get_hash())
 
-    def set_video_progress(self, value: int) -> None:
+    def set_video_progress(self, value: int) -> bool:
 
-        if self._video is not None:
-            self._video.set_progress(value)
+        if self._video is None:
+            return False
+
+        self._video.set_progress(value)
+
+        if abs(self.__video_cached_progress - value) >= settings._SAVE_PLAYLISTS_SECONDS:
+            self.__video_cached_progress = value
+            return True
+
+        return False
+
 
     def get_next_video(self) -> None | Video:
 

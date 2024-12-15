@@ -1079,15 +1079,15 @@ class PhantomPlayer:
 
         self.__current_media._playlist.set_keep_playing(state)
 
-    def __on_media_player_time_changed(self, _, time):
+    def __on_media_player_time_changed(self, _, time: int) -> None:
         #
-        # In this method we shall not:
+        # In this method we SHALL NOT:
         #   + Update the playlist GUI -> Will be performed only once, when the user switches the GUI.
-        #   + Save the playlist -> for performance.
         #   + Make direct calls to the GUI, use GLib.
         #
 
-        self.__current_media.set_video_progress(time)
+        should_save = self.__current_media.set_video_progress(time)
+
         self.__liststore_videos_update_glib(self.__current_media._playlist,
                                             self.__current_media._video,
                                             number=False,
@@ -1097,6 +1097,14 @@ class PhantomPlayer:
                                             duration=False,
                                             size=False)
 
+        #
+        # > I set the GUI call before saving the playlist to "maybe" reduce GUI Lag.
+        # > Saving the playlist here, allows to save the progress if the software crashes, or
+        #   if suddenly it is stopped (no power, process killed, etc...). So doing it every second
+        #   seems like a waste of resources.
+        #
+        if should_save:
+            playlist_factory.save(self.__current_media._playlist)
 
     def __on_media_player_video_restart(self, *_):
         #
