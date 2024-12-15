@@ -25,7 +25,7 @@
 
 _IMAGE_FORMATS = ("jpeg", "jpg", "png", "webp", "svg")
 _VIDEO_HASH_SIZE = 64
-
+_SAVE_PLAYLISTS_SECONDS = 10 # Number of seconds that need to pass for saving a playlist
 
 class IconSize:
     class Small:
