@@ -231,6 +231,11 @@ class PhantomPlayer:
         self.__box_window.remove(self.__media_box)
 
         #
+        # Extra
+        #
+        self.__treeview_videos.set_search_equal_func(self.__treeview_videos_search_func)
+
+        #
         # Header Bar
         #
         self.__headerbar.set_show_close_button(True)
@@ -818,6 +823,13 @@ class PhantomPlayer:
     def __playlist_should_be_listed(self, playlist):
         return (not playlist.is_missing() or self.__checkbox_playlist_missing.get_active()) and \
                (not playlist.get_hidden() or self.__checkbox_playlist_hidden.get_active())
+
+    def __treeview_videos_search_func(self, model, _column, key, row_iter):
+
+        if key.lower() in model[row_iter][VideosListstoreColumnsIndex._name].lower():
+            return False # Match
+
+        return True # No match
 
     def __liststore_videos_populate(self, *_):
 
