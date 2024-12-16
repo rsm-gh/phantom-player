@@ -247,7 +247,7 @@ class MediaPlayerWidget(Gtk.Box):
         # event_manager.event_attach(vlc.EventType.MediaParsedChanged, self.__on_player_parse_changed)
 
         # Buttons Box
-        self.__buttons_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+        self.__box_buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
                                      sensitive=False,
                                      valign=Gtk.Align.END,
                                      halign=Gtk.Align.FILL)
@@ -265,25 +265,26 @@ class MediaPlayerWidget(Gtk.Box):
                                                         self.__on_menubutton_end_clicked)
 
         self.__scale_progress = Gtk.Scale(hexpand=True, draw_value=False)
-        self.__scale_progress.set_range(0, 0)  # If no video is loaded, disable the scale
+        self.__scale_progress.set_range(0, 1)
+        self.__scale_progress.set_sensitive(False)# If no video is loaded, disable the scale
 
         self.__scale_progress.connect('button-press-event', self.__on_scale_progress_press)
         self.__scale_progress.connect('button-release-event', self.__on_scale_progress_release)
 
         self.__scale_progress.connect('value-changed', self.__on_scale_progress_value_changed)
-        self.__buttons_box.pack_start(child=self.__scale_progress, expand=True, fill=True, padding=3)
+        self.__box_buttons.pack_start(child=self.__scale_progress, expand=True, fill=True, padding=3)
 
         self.__label_video_progress = Gtk.Label(label=_EMPTY__VIDEO_LENGTH,
                                                 margin_start=5,
                                                 margin_end=5,
                                                 xalign=1)
-        self.__buttons_box.pack_start(self.__label_video_progress, expand=False, fill=False, padding=0)
+        self.__box_buttons.pack_start(self.__label_video_progress, expand=False, fill=False, padding=0)
 
         self.__label_video_length = Gtk.Label(label=" / " + _EMPTY__VIDEO_LENGTH,
                                               margin_start=5,
                                               margin_end=5,
                                               xalign=0)
-        self.__buttons_box.pack_start(self.__label_video_length, expand=False, fill=False, padding=0)
+        self.__box_buttons.pack_start(self.__label_video_length, expand=False, fill=False, padding=0)
 
         if keep_playing_button:
             self.__button_keep_playing = self.__add_menu_button(ThemeButtons._keep_playing,
@@ -304,18 +305,18 @@ class MediaPlayerWidget(Gtk.Box):
                                                     tooltip_text=Texts.MediaPlayer.Tooltip._tracks)
         self.__menubutton_settings.set_relief(Gtk.ReliefStyle.NONE)
         self.__menubutton_settings.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._settings, Gtk.IconSize.BUTTON))
-        self.__buttons_box.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
+        self.__box_buttons.pack_start(self.__menubutton_settings, expand=False, fill=False, padding=3)
 
         self.__button_volume = Gtk.VolumeButton(icons=ThemeButtons._volume)
         self.__button_volume.connect('value-changed', self.__on_button_volume_changed)
 
-        self.__buttons_box.pack_start(self.__button_volume, expand=False, fill=False, padding=3)
+        self.__box_buttons.pack_start(self.__button_volume, expand=False, fill=False, padding=3)
 
         self.__menubutton_fullscreen = self.__add_menu_button(ThemeButtons._fullscreen,
                                                               Texts.MediaPlayer.Tooltip._fullscreen,
                                                               self.__on_menubutton_fullscreen_clicked)
 
-        gtk_utils.set_css(self.__buttons_box, _DEFAULT_CSS)
+        gtk_utils.set_css(self.__box_buttons, _DEFAULT_CSS)
 
         # Extra volume label
         self.__label_volume = Gtk.Label(valign=Gtk.Align.START,
@@ -339,7 +340,7 @@ class MediaPlayerWidget(Gtk.Box):
         if self.__un_maximized_fixed_toolbar:
             self.__set_fullscreen(False)
         else:
-            self.__overlay.add_overlay(self.__buttons_box)
+            self.__overlay.add_overlay(self.__box_buttons)
 
         #
         # Create the custom signals
@@ -442,8 +443,9 @@ class MediaPlayerWidget(Gtk.Box):
 
         self.__menubutton_play.set_image(Gtk.Image.new_from_icon_name(ThemeButtons._play, Gtk.IconSize.BUTTON))
         self.__menubutton_play.set_tooltip_text(Texts.MediaPlayer.Tooltip._play)
-        self.__scale_progress.set_range(0, 0)  # If no video loaded, disable the scale
-        self.__buttons_box.set_sensitive(False)
+        self.__scale_progress.set_range(0, 1)
+        self.__scale_progress.set_sensitive(False)# If no video is loaded, disable the scale
+        self.__box_buttons.set_sensitive(False)
         self.__label_video_progress.set_text(_EMPTY__VIDEO_LENGTH)
         self.__label_video_length.set_text(" / " + _EMPTY__VIDEO_LENGTH)
         self.__label_volume.hide()
@@ -467,8 +469,8 @@ class MediaPlayerWidget(Gtk.Box):
         self.__set_volume(self.__volume - 1)
 
     def hide_controls(self):
-        self.__buttons_box.hide()
-        self.__buttons_box.hide()
+        self.__box_buttons.hide()
+        self.__box_buttons.hide()
         self.__label_volume.hide()
         self.__widgets_shown = WidgetsShown._none
 
@@ -519,7 +521,7 @@ class MediaPlayerWidget(Gtk.Box):
         self.__menuitem_subtitles_file = None
         self.__emitted_time = -1
 
-        GLib.idle_add(self.__buttons_box.set_sensitive, False),
+        GLib.idle_add(self.__box_buttons.set_sensitive, False),
         GLib.idle_add(self.__menubutton_settings.set_sensitive, False)
         GLib.idle_add(self.__label_video_progress.set_text, _EMPTY__VIDEO_LENGTH)
         GLib.idle_add(self.__label_video_length.set_text, " / " + _EMPTY__VIDEO_LENGTH)
@@ -598,7 +600,7 @@ class MediaPlayerWidget(Gtk.Box):
         button.set_relief(Gtk.ReliefStyle.NONE)
         button.set_image(Gtk.Image.new_from_icon_name(icon_name, Gtk.IconSize.BUTTON))
         button.connect('toggled', on_toggle)
-        self.__buttons_box.pack_start(button, expand=False, fill=False, padding=3)
+        self.__box_buttons.pack_start(button, expand=False, fill=False, padding=3)
 
         return button
 
@@ -734,9 +736,9 @@ class MediaPlayerWidget(Gtk.Box):
     def __set_fullscreen(self, fullscreen):
 
         if self.__un_maximized_fixed_toolbar:
-            parent = self.__buttons_box.get_parent()
+            parent = self.__box_buttons.get_parent()
             if parent is not None:
-                parent.remove(self.__buttons_box)
+                parent.remove(self.__box_buttons)
 
         if fullscreen:
             self.__window_root.fullscreen()
@@ -744,14 +746,14 @@ class MediaPlayerWidget(Gtk.Box):
                 Gtk.Image.new_from_icon_name(ThemeButtons._un_fullscreen, Gtk.IconSize.BUTTON))
             self.__menubutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._unfullscreen)
             if self.__un_maximized_fixed_toolbar:
-                self.__overlay.add_overlay(self.__buttons_box)
+                self.__overlay.add_overlay(self.__box_buttons)
         else:
             self.__window_root.unfullscreen()
             self.__menubutton_fullscreen.set_image(
                 Gtk.Image.new_from_icon_name(ThemeButtons._fullscreen, Gtk.IconSize.BUTTON))
             self.__menubutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._fullscreen)
             if self.__un_maximized_fixed_toolbar:
-                self.pack_start(self.__buttons_box, expand=False, fill=True, padding=0)
+                self.pack_start(self.__box_buttons, expand=False, fill=True, padding=0)
 
         self.__menubutton_fullscreen.set_active(False)
 
@@ -793,6 +795,7 @@ class MediaPlayerWidget(Gtk.Box):
 
         GLib.idle_add(self.__label_video_length.set_text, " / " + milliseconds_to_str(video_length))
         GLib.idle_add(self.__scale_progress.set_range, 0, video_length)
+        GLib.idle_add(self.__scale_progress.set_sensitive, True)
 
         #
         # Set the audio track
@@ -826,7 +829,7 @@ class MediaPlayerWidget(Gtk.Box):
         #
         # Re-Activate the GUI
         #
-        GLib.idle_add(self.__buttons_box.set_sensitive, True)
+        GLib.idle_add(self.__box_buttons.set_sensitive, True)
 
         if play and not self.__delayed_media_data._video_settings_loaded:
             GLib.idle_add(self.__populate_settings_menubutton)
@@ -854,7 +857,7 @@ class MediaPlayerWidget(Gtk.Box):
 
                 if fullscreen in (True, None):
                     self.__widgets_shown = WidgetsShown._none
-                    GLib.idle_add(self.__buttons_box.hide)
+                    GLib.idle_add(self.__box_buttons.hide)
                 else:
                     self.__widgets_shown = WidgetsShown._toolbox
 
@@ -868,7 +871,7 @@ class MediaPlayerWidget(Gtk.Box):
         if self.__hidden_controls:
             self.__hidden_controls = False
             self.__widgets_shown = WidgetsShown._toolbox
-            self.__buttons_box.show()
+            self.__box_buttons.show()
             self.__set_cursor_default()
 
     def __on_window_root_key_pressed(self, _, event):
