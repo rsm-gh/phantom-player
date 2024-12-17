@@ -242,8 +242,14 @@ class MediaPlayerWidget(Gtk.Box):
 
         # Player events
         event_manager = self.__vlc_widget._player.event_manager()
-        event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__on_player_time_changed)
-        event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__on_player_end_reached)
+        status = event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__on_player_time_changed)
+        if status != 0:
+            raise RuntimeError('Could not attach: vlc.EventType.MediaPlayerTimeChanged')
+
+        status = event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__on_player_end_reached)
+        if status != 0:
+            raise RuntimeError('Could not attach: vlc.EventType.MediaPlayerEndReached')
+
         # event_manager.event_attach(vlc.EventType.MediaParsedChanged, self.__on_player_parse_changed)
 
         # Buttons Box
