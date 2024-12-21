@@ -38,7 +38,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-from view.MediaPlayerWidget import MediaPlayerWidget
+from view.GtkPlayer import GtkPlayer
 
 
 class MediaPlayer(Gtk.Window):
@@ -46,7 +46,7 @@ class MediaPlayer(Gtk.Window):
     def __init__(self):
         super().__init__(title="Phantom Media Player")
 
-        self.__mp_widget = MediaPlayerWidget(root_window=self)
+        self.__mp_widget = GtkPlayer(root_window=self)
         self.add(self.__mp_widget)
         self.connect('delete-event', self.quit)
 
