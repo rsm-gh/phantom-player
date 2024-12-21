@@ -26,8 +26,8 @@ from gi.repository import Gtk
 import vlc_utils
 from console_printer import print_debug
 
-class VLCWidget(Gtk.DrawingArea):
-    __gtype_name__ = 'VLCWidget'
+class GtkVlc(Gtk.DrawingArea):
+    __gtype_name__ = 'GtkVlc'
 
     def __init__(self) -> None:
         super().__init__(vexpand=True, hexpand=True)

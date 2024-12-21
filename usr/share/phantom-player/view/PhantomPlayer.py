@@ -71,7 +71,7 @@ from model.Playlist import LoadStatus as PlaylistLoadStatus
 from model.CurrentMedia import CurrentMedia
 from view.SettingsWindow import SettingsWindow
 from view.DialogRenameSingle import DialogRenameSingle
-from view.MediaPlayerWidget import MediaPlayerWidget, CustomSignals
+from view.GtkPlayer import GtkPlayer, CustomSignals
 from view.cellrenderers.CellRendererTime import CellRendererTime
 from view.cellrenderers.CellRendererRating import CellRendererRating
 from view.cellrenderers.CellRendererPlaylist import CellRendererPlaylist
@@ -386,9 +386,9 @@ class PhantomPlayer:
         #
         #    Media Player
         #
-        self.__mp_widget = MediaPlayerWidget(root_window=self.__window_root,
-                                             random_button=True,
-                                             keep_playing_button=True)
+        self.__mp_widget = GtkPlayer(root_window=self.__window_root,
+                                     random_button=True,
+                                     keep_playing_button=True)
 
         # important or VLC will not be attached to the window when the player directly plays
         # a file video instead of a playlist.

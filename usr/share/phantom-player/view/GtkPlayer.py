@@ -68,7 +68,7 @@ from console_printer import print_info, print_error
 from system_utils import EventCodes, turn_off_screensaver
 from model.Playlist import Track, TimeValue
 from view import gtk_utils
-from view.VLCWidget import VLCWidget
+from view.GtkVlc import GtkVlc
 
 print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
 if int(vlc.__version__.replace(".","")[:3]) < 302:
@@ -175,8 +175,8 @@ def format_track(track: tuple[int, str]):
 
     return '{}:   {}'.format(numb, content)
 
-class MediaPlayerWidget(Gtk.Box):
-    __gtype_name__ = 'MediaPlayerWidget'
+class GtkPlayer(Gtk.Box):
+    __gtype_name__ = 'GtkPlayer'
 
     def __init__(self,
                  root_window,
@@ -227,7 +227,7 @@ class MediaPlayerWidget(Gtk.Box):
         #
         # VLC Widget
         #
-        self.__vlc_widget = VLCWidget()
+        self.__vlc_widget = GtkVlc()
         self.display_title(value=display_title)
 
         self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
