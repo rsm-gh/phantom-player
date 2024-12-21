@@ -25,7 +25,7 @@
 
 """To create unittary tests..."""
 
-from view.MediaPlayerWidget import milliseconds_to_str, format_track
+from view.GtkPlayer import milliseconds_to_str, format_track
 
 for input_value, expected_output in ((-1, "00:00"),
                                      (0, "00:00"),
