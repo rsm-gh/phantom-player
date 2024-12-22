@@ -6,3 +6,6 @@
 .project
 .idea/
 __pycache__/
+packages/AUR/src/
+packages/AUR/pkg/
+packages/AUR/phantom*
