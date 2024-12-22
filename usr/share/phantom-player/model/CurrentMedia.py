@@ -80,7 +80,7 @@ class CurrentMedia:
         if self._playlist.get_random():
             video = self._playlist.get_next_random_video()
         else:
-            video = self._playlist.get_next_organized_video(self._video)
+            video = self._playlist.get_next_ordered_video(self._video)
 
         return video
 
