@@ -41,5 +41,5 @@ function remove_dir(){
 
 remove_dir "/usr/share/phantom-player"
 remove_dir "/usr/share/doc/phantom-player"
-remove_file "/usr/share/applications/phantom-player.desktop"
+remove_file "/usr/share/applications/com.senties-martinelli.PhantomPlayer.desktop"
 remove_file "/usr/bin/phantom-player"
