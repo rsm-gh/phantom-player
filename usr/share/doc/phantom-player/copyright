@@ -12,7 +12,7 @@ License: Linkware (Backlink to http://iconleak.com required)
 Files:
     /install.sh
     /uninstall.sh
-Copyright: 2015, 2014 Rafael Senties Martinelli.
+Copyright: 2015, 2024 Rafael Senties Martinelli.
 License: CC0 1.0 Universal
 
 Files: /share/phantom-player/view/GtkVlc.py
