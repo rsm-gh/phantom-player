@@ -1,15 +1,18 @@
 #!/usr/bin/python3
 
 #
-#  Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli.
+#  GPLv3
+#
+#  Copyright (C) 2024 Rafael Senties Martinelli.
 #                2017 Olivier Aubert <contact@olivieraubert.net> (gtkvlc.py)
+#                2014-2016 Rafael Senties Martinelli.
 #                2009-2010 the VideoLAN team (gtk2vlc.py)
 #
-#  This program is free software; you can redistribute it and/or modify
+#  GtkVlc.py is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License 3 as published by
 #   the Free Software Foundation.
 #
-#  This program is distributed in the hope that it will be useful,
+#  GtkVlc.py is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
