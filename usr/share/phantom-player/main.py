@@ -24,14 +24,8 @@
 # THE SOFTWARE.
 
 """
-Todo: Normally files should be opened by doing:
-
-    1) app.set_flags(Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
-    2) defining the action:
-        a) connecting the open signal, app.connect('open', self.__on_open..)
-        b) defining the method do_open(self, files, n_files, hint)
-
-But it I could not make it work, so the only workaround was to use HANDLES_COMMAND_LINE.
+    The "Open" file feature is implemented with HANDLES_COMMAND_LINE instead of
+    HANDLES_OPEN because there may be more commands in the future.
 """
 
 import os
@@ -73,6 +67,7 @@ class PhantomApp(Gtk.Application):
             self.__phantom_player = PhantomPlayer(application=self)
             self.__phantom_player.present()
 
+
     def do_command_line(self, command_line):
         args = command_line.get_arguments()
         args.pop(0)
@@ -92,12 +87,12 @@ class PhantomApp(Gtk.Application):
                     file_path = arg.split("=", 1)[1]
                     break
                 else:
-                    print("Error: non valid CMD argument '{}'".format(arg))
+                    print(f"Error: non valid CMD argument '{arg}'")
                     return 1
 
             if file_path != "":
                 if not os.path.exists(file_path):
-                    print("Error: requesting to open un-existing file '{}'".format(file_path))
+                    print(f"Error: requesting to open un-existing file '{file_path}'")
                     return 1
 
                 elif self.__phantom_player is not None:
