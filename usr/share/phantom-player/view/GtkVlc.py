@@ -38,8 +38,8 @@ class GtkVlc(Gtk.DrawingArea):
         #
         # VLC Player
         #
-        vlc_instance = vlc_utils.get_instance()
-        self._player = vlc_instance.media_player_new()
+        self._instance = vlc_utils.get_instance()
+        self._player = self._instance.media_player_new()
 
         #
         # GTK Signals

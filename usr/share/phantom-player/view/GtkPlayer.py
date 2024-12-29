@@ -60,7 +60,6 @@ from time import time, sleep
 from threading import Thread, current_thread
 from gi.repository import Gtk, GObject, Gdk, GLib
 
-import vlc_utils
 from Texts import Texts
 from datetime import timedelta
 from settings import ThemeButtons
@@ -242,12 +241,11 @@ class GtkPlayer(Gtk.Box):
 
         # Player events
         event_manager = self.__vlc_widget._player.event_manager()
-        status = event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__on_player_time_changed)
-        if status != 0:
+
+        if event_manager.event_attach(vlc.EventType.MediaPlayerTimeChanged, self.__on_player_time_changed) != 0:
             raise RuntimeError('Could not attach: vlc.EventType.MediaPlayerTimeChanged')
 
-        status = event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__on_player_end_reached)
-        if status != 0:
+        if event_manager.event_attach(vlc.EventType.MediaPlayerEndReached, self.__on_player_end_reached) != 0:
             raise RuntimeError('Could not attach: vlc.EventType.MediaPlayerEndReached')
 
         # event_manager.event_attach(vlc.EventType.MediaParsedChanged, self.__on_player_parse_changed)
@@ -538,7 +536,18 @@ class GtkPlayer(Gtk.Box):
         if not os.path.exists(file_path):
             return
 
-        self.__media = vlc_utils.parse_file(file_path)
+        self.__media = self.__vlc_widget._instance.media_new_path(file_path)
+        if self.__media is None:
+            print_error(f"Could not parse the media file {file_path}")
+            return
+
+        media_event_manager = self.__media.event_manager()
+
+        if media_event_manager.event_attach(vlc.EventType.MediaParsedChanged, self.__on_media_parse_changed) != 0:
+            print_error("Error 002: libvlc_event_attach -> libvlc_MediaParsedChanged\n")
+            return
+
+        self.__media.parse_with_options(vlc.MediaParseFlag.local, -1)
 
         if custom_title is not None:
             self.__media.set_meta(vlc.Meta.Title, custom_title)
@@ -776,6 +785,7 @@ class GtkPlayer(Gtk.Box):
         sleep(.2)
         self.__scale_progress.set_value(self.__scale_progress.get_adjustment().get_upper())
 
+
     def __on_thread_set_video(self, play, from_scale):
         """
            Parse video is an async function, so this must be called in a
@@ -792,39 +802,30 @@ class GtkPlayer(Gtk.Box):
             GLib.idle_add(self.__vlc_widget._player.play)
             self.__video_is_loaded = True
 
+        #
+        # Wait until the media is parsed (Necessary for media.get_duration() )
+        #
+
         while self.__media.get_parsed_status() == 0:
             sleep(.1)
 
-        video_length = self.__media.get_duration()
-        if video_length < 0:
+        if self.__media.get_parsed_status() != vlc.MediaParsedStatus.done:
+            print_error(f"Could not parse media file={self.__media.get_path()}")
             return
-
-        GLib.idle_add(self.__label_video_length.set_text, " / " + milliseconds_to_str(video_length))
-        GLib.idle_add(self.__scale_progress.set_range, 0, video_length)
-        GLib.idle_add(self.__scale_progress.set_sensitive, True)
-
-        #
-        # Set the audio track
-        #
-        if self.__delayed_media_data._audio_track != Track.Value._undefined:
-            GLib.idle_add(self.__vlc_widget._player.audio_set_track,
-                          self.__delayed_media_data._audio_track)
-
-        #
-        # Set the subtitles' track
-        #
-        if self.__delayed_media_data._sub_track != Track.Value._undefined:
-            GLib.idle_add(self.__vlc_widget._player.video_set_spu,
-                          self.__delayed_media_data._sub_track)
 
         #
         # Start the video at some position (if necessary)
         #
+
         if from_scale:
             start_time = int(self.__scale_progress.get_value())
         else:
             start_time = self.__delayed_media_data._start_at
             GLib.idle_add(self.__scale_progress.set_value, start_time)
+
+        video_length = self.__media.get_duration()
+        if video_length < 0:
+            return
 
         if start_time > video_length:
             start_time = video_length
@@ -936,6 +937,33 @@ class GtkPlayer(Gtk.Box):
 
     def __on_player_end_reached(self, _event):
         GLib.idle_add(self.__end_video, False)
+
+    def __on_media_parse_changed(self, event):
+        if event.u.new_status != vlc.MediaParsedStatus.done:
+            return
+
+        video_length = self.__media.get_duration()
+        if video_length < 0:
+            return
+
+        GLib.idle_add(self.__label_video_length.set_text, " / " + milliseconds_to_str(video_length))
+        GLib.idle_add(self.__scale_progress.set_range, 0, video_length)
+        GLib.idle_add(self.__scale_progress.set_sensitive, True)
+
+        #
+        # Set the audio track
+        #
+        if self.__delayed_media_data._audio_track != Track.Value._undefined:
+            GLib.idle_add(self.__vlc_widget._player.audio_set_track,
+                          self.__delayed_media_data._audio_track)
+
+        #
+        # Set the subtitles' track
+        #
+        if self.__delayed_media_data._sub_track != Track.Value._undefined:
+            GLib.idle_add(self.__vlc_widget._player.video_set_spu,
+                          self.__delayed_media_data._sub_track)
+
 
     def __on_player_time_changed(self, event):
 
