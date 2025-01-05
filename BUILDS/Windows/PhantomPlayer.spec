@@ -1,29 +1,50 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+#
+# MIT License
+#
+# Copyright (c) 2025 Rafael Senties Martinelli.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
 
-a = Analysis(
-    [r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\test\MediaPlayer.py"],
+import os
+
+_SPEC_ROOT = os.path.abspath(SPECPATH)
+_SRC = os.path.dirname(os.path.dirname(_SPEC_ROOT))
+_UCRT_BIN=r"C:\msys64\ucrt64\bin"
+
+a = Analysis([os.path.join(_SRC, r"usr\share\phantom-player\main.py")],
     pathex=[
-	r"C:\msys64\ucrt64\bin", 
-	r"C:\msys64\ucrt64\lib\python3.11\site-packages"
+	    _UCRT_BIN,
+        os.path.join(_SRC, r"usr\share\phantom-player"),
     ],
     binaries=[],
     datas=[
-	(r"C:\msys64\ucrt64\bin\libvlc.dll","."),
-        (r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\console_printer.py","."),
-        (r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\system_utils.py","."),
-	(r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\vlc_utils.py","."),
-	(r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\Texts.py","."),
-        (r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\Paths.py","."),
-        (r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\settings.py","."),
-	(r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\model\Video.py","model"),	        
-	(r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\model\Playlist.py","model"),
-        (r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\model\PlaylistPath.py","model"),
-        (r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\view\gtk_utils.py","view"),
-	(r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\view\GtkVlc.py","view"),
-        (r"C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\view\GtkPlayer.py","view"),
+        (os.path.join(_UCRT_BIN, "libvlc.dll"), "."),
+        (os.path.join(_SRC, r"usr\share\phantom-player\view\main-window.glade"), "view"),
+        (os.path.join(_SRC, r"usr\share\phantom-player\view\settings-window.glade"), "view"),
+        (os.path.join(_SRC, r"usr\share\phantom-player\view\single-rename.glade"), "view"),
+        (os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-big.png"), "view\img"),
+        (os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-medium.png"), "view\img"),
+        (os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-small.png"), "view\img"),
     ],
-    hiddenimports=["PIL","PIL.Image","cairo","vlc"],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
