@@ -28,30 +28,10 @@
     HANDLES_OPEN because there may be more commands in the future.
 """
 
-import os
+from env import *
+
 import sys
-
-if sys.platform == 'win32':
-
-    __UCRT_PATH = r"C:\msys64\ucrt64\bin"
-
-    if not os.path.exists(__UCRT_PATH):
-        raise ValueError(__UCRT_PATH+" does not exist.")
-
-    os.chdir(__UCRT_PATH)
-    #os.add_dll_directory(__UCRT_PATH) # why this is not working?
-    os.environ.setdefault('PYTHON_VLC_LIB_PATH', os.path.join(__UCRT_PATH, "libvlc.dll"))
-
-elif 'linux' in sys.platform:
-    os.environ["GDK_BACKEND"] = "x11"
-
-import gi
-gi.require_version('GLib', "2.0")
-gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers
-gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gio
-
-sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from view.PhantomPlayer import PhantomPlayer
 
 
