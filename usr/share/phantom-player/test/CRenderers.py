@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2014-2016, 2024 Rafael Senties Martinelli.
+# Copyright (c) 2014-2016, 2024-2025 Rafael Senties Martinelli.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,10 +23,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import gi
-gi.require_version('GLib', "2.0")
-gi.require_version('PangoCairo', '1.0')  # necessary for the cell renderers
-gi.require_version('Gtk', '3.0')
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+from env import *
+
 from gi.repository import Gtk
 from gi.repository.GdkPixbuf import Pixbuf
 
