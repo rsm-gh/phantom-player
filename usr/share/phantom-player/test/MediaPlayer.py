@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2014-2016, 2024 Rafael Senties Martinelli.
+# Copyright (c) 2014-2016, 2024-2025 Rafael Senties Martinelli.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,8 +27,16 @@ import os
 import sys
 
 if sys.platform == 'win32':
-    #os.add_dll_directory(r"C:\msys64\ucrt64\bin") why this is not working?
-    os.chdir(r"C:\msys64\ucrt64\bin")
+
+    __UCRT_PATH = r"C:\msys64\ucrt64\bin"
+
+    if not os.path.exists(__UCRT_PATH):
+        raise ValueError(__UCRT_PATH+" does not exist.")
+
+
+    os.chdir(__UCRT_PATH)
+    os.add_dll_directory(__UCRT_PATH) #why this is not working?
+    #os.environ.setdefault('PYTHON_VLC_LIB_PATH', os.path.join(__UCRT_PATH, "libvlc.dll"))
 
 elif 'linux' in sys.platform:
     os.environ["GDK_BACKEND"] = "x11"
