@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2014-2016, 2024-2025 Rafael Senties Martinelli.
+# Copyright (c) 2024-2025 Rafael Senties Martinelli.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -26,19 +26,44 @@
 import os
 import sys
 
+def __set_windows():
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): # Running on pyinstaller
+        __LIBS_PATH = os.path.join(os.path.dirname(sys.executable), "_internal")
+    else:
+        pass
+
+    __LIBS_PATH = r"C:\msys64\ucrt64\bin"
+
+    print("LIBS PATH", __LIBS_PATH, flush=True)
+
+    if not os.path.exists(__LIBS_PATH):
+        raise ValueError(__LIBS_PATH+" does not exist.")
+
+    os.chdir(__LIBS_PATH)
+    os.add_dll_directory(__LIBS_PATH) # why this is not working?
+    os.environ.setdefault('PYTHON_VLC_LIB_PATH', os.path.join(__LIBS_PATH, "libvlc.dll"))
+
+
+def __set_gnu_linux():
+    os.environ["GDK_BACKEND"] = "x11"
+
+
+#
+# Prepare the env
+#
+
 if sys.platform == 'win32':
-
-    __UCRT_PATH = r"C:\msys64\ucrt64\bin"
-
-    if not os.path.exists(__UCRT_PATH):
-        raise ValueError(__UCRT_PATH+" does not exist.")
-
-    os.chdir(__UCRT_PATH)
-    #os.add_dll_directory(__UCRT_PATH) # why this is not working?
-    os.environ.setdefault('PYTHON_VLC_LIB_PATH', os.path.join(__UCRT_PATH, "libvlc.dll"))
+    __set_windows()
 
 elif 'linux' in sys.platform:
-    os.environ["GDK_BACKEND"] = "x11"
+    __set_gnu_linux()
+
+else:
+    raise ValueError("Unsupported platform")
+
+#
+# Set the GTk versions
+#
 
 import gi
 gi.require_version('GLib', "2.0")
