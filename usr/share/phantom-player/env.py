@@ -27,21 +27,23 @@ import os
 import sys
 
 def __set_windows():
+
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): # Running on pyinstaller
-        __LIBS_PATH = os.path.join(os.path.dirname(sys.executable), "_internal")
+        libs_path = os.path.join(os.path.dirname(sys.executable), "_internal")
+        vlc_path = libs_path
     else:
-        pass
+        libs_path = r"C:\msys64\ucrt64\bin"
+        vlc_path = r"C:\Program Files\VideoLan"
 
-    __LIBS_PATH = r"C:\msys64\ucrt64\bin"
+    for path in (vlc_path, libs_path):
+        if not os.path.exists(path):
+            raise ValueError(path+" does not exist.")
 
-    print("LIBS PATH", __LIBS_PATH, flush=True)
+    os.chdir(libs_path)
+    os.add_dll_directory(libs_path) # this seems to have no effect, but I rather let it
 
-    if not os.path.exists(__LIBS_PATH):
-        raise ValueError(__LIBS_PATH+" does not exist.")
-
-    os.chdir(__LIBS_PATH)
-    os.add_dll_directory(__LIBS_PATH) # why this is not working?
-    os.environ.setdefault('PYTHON_VLC_LIB_PATH', os.path.join(__LIBS_PATH, "libvlc.dll"))
+    os.environ['PYTHON_VLC_MODULE_PATH'] = vlc_path
+    os.environ['PYTHON_VLC_LIB_PATH'] = os.path.join(vlc_path, r"VLC\libvlc.dll")
 
 
 def __set_gnu_linux():
