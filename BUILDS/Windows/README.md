@@ -26,7 +26,7 @@ python -m pip install python-vlc python-magic PyGObject-stubs
 
 1) Install VLC (x64), the installation directory should be `C:\Program Files\VideoLAN`.
 2) From an MSYS UCRT64 console compile the software by using PyInstaller with `decompressed.spec`.
-3) Generate an installer with InstallForge.
+3) Generate an installer with [InstallForge](https://installforge.net/).
 
 
 ### Post-Install script
