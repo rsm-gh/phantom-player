@@ -32,9 +32,7 @@ from vlc_utils import get_video_duration
 from controller.playlist_factory import _COLUMN_SEPARATOR
 from console_printer import print_debug, print_warning
 
-_MAGIC_MIMETYPE = magic.open(magic.MAGIC_MIME)
-_MAGIC_MIMETYPE.load()
-
+_MAGIC_MIMETYPE = magic.Magic(mime=True)
 
 def discover(playlist, playlist_paths=None, add_func=None, update_func=None, quit_func=None):
     print_debug(f"playlist name={playlist.get_name()}")
@@ -176,7 +174,7 @@ def __file_is_video(path:str) -> bool:
     if os.path.islink(path) or path.endswith(".lnk"):
         path = os.path.realpath(path)
 
-    return 'video/' in _MAGIC_MIMETYPE.file(path)
+    return 'video/' in _MAGIC_MIMETYPE.from_file(path)
 
 
 def __file_hash(file_path):
