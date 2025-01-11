@@ -40,6 +40,8 @@ a = Analysis(
     ],
     binaries=[],
     datas=[
+        (os.path.join(_UCRT_BIN, "gdbus.exe"), "."),
+        (os.path.join(_UCRT, "share\misc\magic.mgc"), "."),
         (os.path.join(_UCRT, r"lib\python3.11\site-packages\magic"), "magic"),
         (os.path.join(_UCRT_BIN, "libmagic-1.dll"), "."),
         (os.path.join(_VLC, "libvlc.dll"), "VLC"),
