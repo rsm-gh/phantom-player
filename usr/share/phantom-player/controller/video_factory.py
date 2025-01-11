@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2014-2016, 2024 Rafael Senties Martinelli.
+# Copyright (c) 2014-2016, 2024-2025 Rafael Senties Martinelli.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -171,16 +171,12 @@ def __discover_video(playlist,
         add_func(playlist, new_video)
 
 
-def __file_is_video(path):
-    if os.path.islink(path):
-        mimetype = _MAGIC_MIMETYPE.file(os.path.realpath(path))
-    else:
-        mimetype = _MAGIC_MIMETYPE.file(path)
+def __file_is_video(path:str) -> bool:
 
-    if 'video/' in mimetype:
-        return True
+    if os.path.islink(path) or path.endswith(".lnk"):
+        path = os.path.realpath(path)
 
-    return False
+    return 'video/' in _MAGIC_MIMETYPE.file(path)
 
 
 def __file_hash(file_path):
