@@ -642,8 +642,6 @@ class GtkPlayer(Gtk.Box):
             print(str(e))
 
 
-        print("AUDIO TRACKS", tracks)
-
         default_item = Gtk.RadioMenuItem(label="-1:  Disable")
         if selected_track == -1:
             default_item.set_active(True)
