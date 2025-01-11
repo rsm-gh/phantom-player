@@ -30,8 +30,11 @@ import time
 
 from console_printer import print_debug
 
-import faulthandler
-faulthandler.enable()
+if sys.stderr is not None:
+    # If built in windows, there will be no console and the library
+    # will fail because there is no stderr
+    import faulthandler
+    faulthandler.enable()
 
 # Create a single vlc.Instance() to be shared by (possible) multiple players.
 __VLC_INSTANCE: None | vlc.Instance = None
