@@ -32,7 +32,8 @@ _SRC = os.path.dirname(os.path.dirname(_SPEC_ROOT))
 _UCRT=r"C:\msys64\ucrt64"
 _UCRT_BIN=os.path.join(_UCRT, "bin")
 
-a = Analysis([os.path.join(_SRC, r"usr\share\phantom-player\main.py")],
+a = Analysis(
+    [os.path.join(_SRC, r"usr\share\phantom-player\main.py")],
     pathex=[
 	    _UCRT_BIN,
         os.path.join(_SRC, r"usr\share\phantom-player"),
@@ -45,6 +46,7 @@ a = Analysis([os.path.join(_SRC, r"usr\share\phantom-player\main.py")],
         (os.path.join(_VLC, "libvlccore.dll"), "VLC"),
         (os.path.join(_VLC, "axvlc.dll"), "VLC"),
         (os.path.join(_VLC, "npvlc.dll"), "VLC"),
+        (os.path.join(_VLC, "vlc-cache-gen.exe"), "VLC"),
         (os.path.join(_VLC, "plugins"), r"VLC\plugins"),
         (os.path.join(_SRC, r"usr\share\phantom-player\view\main-window.glade"), "view"),
         (os.path.join(_SRC, r"usr\share\phantom-player\view\settings-window.glade"), "view"),
@@ -87,6 +89,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=[os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-medium.png")],
 )
 
 coll = COLLECT(
