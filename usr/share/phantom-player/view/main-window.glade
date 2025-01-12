@@ -302,7 +302,7 @@ THE SOFTWARE.
     <property name="authors">Rafael Senties Martinelli</property>
     <property name="artists">IconArchive http://www.iconarchive.com/show/atrous-icons-by-iconleak/movie-icon.html</property>
     <property name="logo">img/movie-icon-big.png</property>
-    <property name="license-type">gpl-3-0</property>
+    <property name="license-type">gpl-3-0-only</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="aboutdialog-vbox1">
         <property name="can-focus">False</property>
