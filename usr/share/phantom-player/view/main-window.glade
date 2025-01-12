@@ -28,7 +28,7 @@ THE SOFTWARE.
   <requires lib="gtk+" version="3.24"/>
   <!-- interface-license-type mit -->
   <!-- interface-name phantom-player -->
-  <!-- interface-copyright 2014-2015, 2024 Rafael Senties Martinelli -->
+  <!-- interface-copyright 2014-2015, 2024-2025 Rafael Senties Martinelli -->
   <object class="GtkImage" id="image_back">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
