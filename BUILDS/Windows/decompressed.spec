@@ -40,22 +40,29 @@ a = Analysis(
     ],
     binaries=[],
     datas=[
+        # GBUS for GTK
         (os.path.join(_UCRT_BIN, "gdbus.exe"), "."),
-        (os.path.join(_UCRT, "share\misc\magic.mgc"), "."),
+
+        # Python Magic
+        (os.path.join(_UCRT, r"share\misc\magic.mgc"), "."),
         (os.path.join(_UCRT, r"lib\python3.11\site-packages\magic"), "magic"),
         (os.path.join(_UCRT_BIN, "libmagic-1.dll"), "."),
+
+        # VLC from the system dir
         (os.path.join(_VLC, "libvlc.dll"), "VLC"),
         (os.path.join(_VLC, "libvlccore.dll"), "VLC"),
         (os.path.join(_VLC, "axvlc.dll"), "VLC"),
         (os.path.join(_VLC, "npvlc.dll"), "VLC"),
         (os.path.join(_VLC, "vlc-cache-gen.exe"), "VLC"),
         (os.path.join(_VLC, "plugins"), r"VLC\plugins"),
+
+        # Phantom Player resources
         (os.path.join(_SRC, r"usr\share\phantom-player\view\main-window.glade"), "view"),
         (os.path.join(_SRC, r"usr\share\phantom-player\view\settings-window.glade"), "view"),
         (os.path.join(_SRC, r"usr\share\phantom-player\view\single-rename.glade"), "view"),
-        (os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-big.png"), "view\img"),
-        (os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-medium.png"), "view\img"),
-        (os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-small.png"), "view\img"),
+        (os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-big.png"), r"view\img"),
+        (os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-medium.png"), r"view\img"),
+        (os.path.join(_SRC, r"usr\share\phantom-player\view\img\movie-icon-small.png"), r"view\img"),
     ],
     hiddenimports=[],
     hookspath=[],
@@ -66,6 +73,10 @@ a = Analysis(
     optimize=0,
 )
 
+# If VLC was installed in MSYS UCRT, pyinstaller will detect these files
+# and include it in the package.
+# They are not necessary because they will be already shipped into .VLC
+# To avoid confusions and duplicating content, they are removed.
 a.binaries = a.binaries - TOC([
   ('libvlccore.dll', None, None),
   ('libvlccore.dylib', None, None),
