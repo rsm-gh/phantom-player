@@ -30,10 +30,14 @@ def __set_windows():
 
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): # Running on pyinstaller
         libs_path = os.path.join(os.path.dirname(sys.executable), "_internal")
-        vlc_path = libs_path
+        #vlc_path = libs_path
     else:
         libs_path = r"C:\msys64\ucrt64\bin"
-        vlc_path = r"C:\Program Files\VideoLan"
+        #vlc_path = r"C:\Program Files\VideoLan"
+
+    # UCRT VLC libraries work fine, but it is better to use the same for dev than for compiling,
+    # I had troubles to identify all the VLC content from UCRT, it is much more clear with the vlc installer.
+    vlc_path = r"C:\Program Files\VideoLan"
 
     for path in (vlc_path, libs_path):
         if not os.path.exists(path):
