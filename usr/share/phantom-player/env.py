@@ -28,20 +28,34 @@ import sys
 
 def __set_windows():
 
+    #
+    # Define de library paths
+    #
+
+    vlc_path = r"C:\Program Files\VideoLan"
+
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): # Running on pyinstaller
         libs_path = os.path.join(os.path.dirname(sys.executable), "_internal")
-        #vlc_path = libs_path
     else:
         libs_path = r"C:\msys64\ucrt64\bin"
-        #vlc_path = r"C:\Program Files\VideoLan"
 
-    # UCRT VLC libraries work fine, but it is better to use the same for dev than for compiling,
-    # I had troubles to identify all the VLC content from UCRT, it is much more clear with the vlc installer.
-    vlc_path = r"C:\Program Files\VideoLan"
+        if not os.path.exists(vlc_path):
+            # + UCRT VLC libraries from the bin directory work fine, but it is very difficult to collect the codecs.
+            # + It's a bad practice to use different source files for Dev and for the compilation.
+            vlc_path = libs_path
+            print("WARNING: VLC is being used from the UCRT64 directory, the build will have missing codecs.\n")
+
+    #
+    # Verify the paths
+    #
 
     for path in (vlc_path, libs_path):
         if not os.path.exists(path):
             raise ValueError(path+" does not exist.")
+
+    #
+    # Set the environment
+    #
 
     os.chdir(libs_path)
     os.add_dll_directory(libs_path) # this seems to have no effect, but I rather let it
