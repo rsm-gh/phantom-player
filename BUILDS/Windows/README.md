@@ -3,9 +3,9 @@
 
 To run the software on Windows:
 
-1) Install [MSYS2](https://www.msys2.org/).
-2) Install VLC x64 at `C:\Program Files\VideoLan`.
-2) From an MSYS console install:
+1) Install VLC x64 at `C:\Program Files\VideoLan`.
+2) Install [MSYS2](https://www.msys2.org/).
+3) From an MSYS console install:
 ```
 pacman -S mingw-w64-ucrt-x86_64-gtk3 \
           mingw-w64-ucrt-x86_64-python \
@@ -14,19 +14,18 @@ pacman -S mingw-w64-ucrt-x86_64-gtk3 \
           mingw-w64-ucrt-x86_64-python-pillow \
           mingw-w64-ucrt-x86_64-file
 ```
-3) From an MSYS UCRT64 console install:
+4) From an MSYS UCRT64 console install:
 ```
 python -m pip install python-vlc python-magic PyGObject-stubs
 ```
 
-4) From an MSYS UCRT64 console run `main.py`
+5) From an MSYS UCRT64 console run `main.py`
 
 
 ## Build
 
-1) Install VLC (x64), the installation directory should be `C:\Program Files\VideoLAN`.
-2) From an MSYS UCRT64 console compile the software by using PyInstaller with `decompressed.spec`.
-3) Generate an installer with [InstallForge](https://installforge.net/).
+1) From an MSYS UCRT64 console compile the software by using PyInstaller with `decompressed.spec`.
+2) Generate an installer with [InstallForge](https://installforge.net/).
 
 
 ### Post-Install script
