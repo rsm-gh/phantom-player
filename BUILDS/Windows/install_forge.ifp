@@ -16,26 +16,26 @@ Windows Server 2019 = 1
 Windows Server 2022 = 1
 Windows 11 = 1
 DoNotCheckOS = 0
-Company name = By Rafael Senties Martinelli
+Company name = 
 Website = https://www.phantom-player.com/
 SFA = 1
 DFA = 1
 Comp = 1
 [Graphics]
-Wizard image = <main>
-Header image = <main>
+Wizard image = C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\view\img\movie-icon-medium.png
+Header image = C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\view\img\movie-icon-medium.png
 Show Label = 1
 VisualStylesEnabled = 1
 [Files]
 Installation path = C:\Program Files\PhantomPlayer
 Autcip = 1
 [Uninstall]
-Vwau = 1
+Vwau = 0
 Website = https://www.phantom-player.com/
 Include uninstaller = 1
 Uninstaller filename = Uninstall
-UseCustomDisplayIcon = 0
-CustomDisplayIcon = <InstallPath>\
+UseCustomDisplayIcon = 1
+CustomDisplayIcon = <InstallPath>\_internal\view\img\movie-icon-medium.png
 [Licence]
 Licence dialog = 1
 [Finish]
@@ -51,15 +51,15 @@ Allows = 0
 Number = 1000
 Mask = #####-#####-#####-#####
 [SplashScreen]
-Image = C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\view\img\movie-icon-big.png
+Image = 
 Sound = 
 Time = 2
 PlaySound = 0
 Allow = 0
 [Build]
-File = C:\Users\rafae\Desktop\PhantomPlayer.exe
-SetupIconPath = ..\icons\ancient.ico
-UninstallIconPath = ..\icons\ancient.ico
+File = C:\Users\rafae\Desktop\PhantomPlayer-2.0.DEV-win64.exe
+SetupIconPath = C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\view\img\movie-icon-medium.ico
+UninstallIconPath = C:\Users\rafae\Desktop\phantom-player\usr\share\phantom-player\view\img\movie-icon-medium.ico
 CompressionMethod = 0
 CompressionLevel = 2
 [Updater]
@@ -84,32 +84,32 @@ C:\Users\rafae\Desktop\dist\PhantomPlayer\PhantomPlayer.exe
 3.3 MB
 exe
 [Licence_Begin]
-40142
+40214
 {\rtf1\ansi\ansicpg1252\deff0\nouicompat\deflang1033{\fonttbl{\f0\fnil\fcharset0 Arial;}{\f1\fnil Arial;}}
 {\colortbl ;\red0\green0\blue0;\red255\green255\blue255;\red0\green0\blue255;\red188\green190\blue196;}
-{\*\generator Riched20 10.0.22621}\viewkind4\uc1 
+{\*\generator Riched20 10.0.26100}\viewkind4\uc1 
 \pard\box\brdrdash\brdrw0 \cf1\highlight2\fs20\par
 Copyright (C) 2014-2016, 2024-2025 Rafael Senties Martinelli.\par
 \par
 Phantom Player is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License 3 as published by the Free Software Foundation.\line\line\b Phantom Player is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.\line\b0\par
 Phantom Player:\par
- * Website: {{\field{\*\fldinst{HYPERLINK https://www.phantom-player.com }}{\fldrslt{https://www.phantom-player.com\ul0\cf0}}}}\f0\fs20\par
- * Source code: {{\field{\*\fldinst{HYPERLINK https://github.com/rsm-gh/phantom-player }}{\fldrslt{https://github.com/rsm-gh/phantom-player\ul0\cf0}}}}\f0\fs20\par
+ * Website: {\cf0{\field{\*\fldinst{HYPERLINK https://www.phantom-player.com }}{\fldrslt{https://www.phantom-player.com\ul0\cf0}}}}\f0\fs20\par
+ * Source code: {\cf0{\field{\*\fldinst{HYPERLINK https://github.com/rsm-gh/phantom-player }}{\fldrslt{https://github.com/rsm-gh/phantom-player\ul0\cf0}}}}\f0\fs20\par
  \par
 Also, for creating this build we have to include the following software (and their dependencies):\par
-    * VLC ({{\field{\*\fldinst{HYPERLINK https://www.videolan.org/vlc/ }}{\fldrslt{https://www.videolan.org/vlc/\ul0\cf0}}}}\f0\fs20 ) GPL v2 ({{\field{\*\fldinst{HYPERLINK https://www.gnu.org/licenses/old-licenses/gpl-2.0.html }}{\fldrslt{https://www.gnu.org/licenses/old-licenses/gpl-2.0.html\ul0\cf0}}}}\f0\fs20 )\par
-    * GTK ({{\field{\*\fldinst{HYPERLINK https://www.gtk.org/ }}{\fldrslt{https://www.gtk.org/\ul0\cf0}}}}\f0\fs20 ) LGPL v2.1 ({{\field{\*\fldinst{HYPERLINK https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html }}{\fldrslt{https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\ul0\cf0}}}}\f0\fs20 )\par
-    * python-magic ({{\field{\*\fldinst{HYPERLINK https://github.com/ahupp/python-magic }}{\fldrslt{https://github.com/ahupp/python-magic\ul0\cf0}}}}\f0\fs20 ) MIT ({{\field{\*\fldinst{HYPERLINK https://github.com/ahupp/python-magic/blob/master/LICENSE }}{\fldrslt{https://github.com/ahupp/python-magic/blob/master/LICENSE\ul0\cf0}}}}\f0\fs20 )\par
-    * python-cairo ({{\field{\*\fldinst{HYPERLINK https://pycairo.readthedocs.io/en/latest/ }}{\fldrslt{https://pycairo.readthedocs.io/en/latest/\ul0\cf0}}}}\f0\fs20 ) LGPL-2.1-only OR MPL-1.1. ({{\field{\*\fldinst{HYPERLINK https://spdx.dev/learn/handling-license-info/ }}{\fldrslt{https://spdx.dev/learn/handling-license-info/\ul0\cf0}}}}\f0\fs20 )\par
-    * python-pillow ({{\field{\*\fldinst{HYPERLINK https://github.com/python-pillow/Pillow }}{\fldrslt{https://github.com/python-pillow/Pillow\ul0\cf0}}}}\f0\fs20 ) MIT-CMU ({{\field{\*\fldinst{HYPERLINK https://github.com/python-pillow/Pillow/blob/main/LICENSE }}{\fldrslt{https://github.com/python-pillow/Pillow/blob/main/LICENSE\ul0\cf0}}}}\f0\fs20 )\par
-    * Python3 ({{\field{\*\fldinst{HYPERLINK https://www.python.org/ }}{\fldrslt{https://www.python.org/\ul0\cf0}}}}\f0\fs20 ) Python License Agreement ({{\field{\*\fldinst{HYPERLINK https://docs.python.org/3/license.html }}{\fldrslt{https://docs.python.org/3/license.html\ul0\cf0}}}}\f0\fs20 )\par
+    * VLC ({\cf0{\field{\*\fldinst{HYPERLINK https://www.videolan.org/vlc/ }}{\fldrslt{https://www.videolan.org/vlc/\ul0\cf0}}}}\f0\fs20 ) GPL v2 ({\cf0{\field{\*\fldinst{HYPERLINK https://www.gnu.org/licenses/old-licenses/gpl-2.0.html }}{\fldrslt{https://www.gnu.org/licenses/old-licenses/gpl-2.0.html\ul0\cf0}}}}\f0\fs20 )\par
+    * GTK ({\cf0{\field{\*\fldinst{HYPERLINK https://www.gtk.org/ }}{\fldrslt{https://www.gtk.org/\ul0\cf0}}}}\f0\fs20 ) LGPL v2.1 ({\cf0{\field{\*\fldinst{HYPERLINK https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html }}{\fldrslt{https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html\ul0\cf0}}}}\f0\fs20 )\par
+    * python-magic ({\cf0{\field{\*\fldinst{HYPERLINK https://github.com/ahupp/python-magic }}{\fldrslt{https://github.com/ahupp/python-magic\ul0\cf0}}}}\f0\fs20 ) MIT ({\cf0{\field{\*\fldinst{HYPERLINK https://github.com/ahupp/python-magic/blob/master/LICENSE }}{\fldrslt{https://github.com/ahupp/python-magic/blob/master/LICENSE\ul0\cf0}}}}\f0\fs20 )\par
+    * python-cairo ({\cf0{\field{\*\fldinst{HYPERLINK https://pycairo.readthedocs.io/en/latest/ }}{\fldrslt{https://pycairo.readthedocs.io/en/latest/\ul0\cf0}}}}\f0\fs20 ) LGPL-2.1-only OR MPL-1.1. ({\cf0{\field{\*\fldinst{HYPERLINK https://spdx.dev/learn/handling-license-info/ }}{\fldrslt{https://spdx.dev/learn/handling-license-info/\ul0\cf0}}}}\f0\fs20 )\par
+    * python-pillow ({\cf0{\field{\*\fldinst{HYPERLINK https://github.com/python-pillow/Pillow }}{\fldrslt{https://github.com/python-pillow/Pillow\ul0\cf0}}}}\f0\fs20 ) MIT-CMU ({\cf0{\field{\*\fldinst{HYPERLINK https://github.com/python-pillow/Pillow/blob/main/LICENSE }}{\fldrslt{https://github.com/python-pillow/Pillow/blob/main/LICENSE\ul0\cf0}}}}\f0\fs20 )\par
+    * Python3 ({\cf0{\field{\*\fldinst{HYPERLINK https://www.python.org/ }}{\fldrslt{https://www.python.org/\ul0\cf0}}}}\f0\fs20 ) Python License Agreement ({\cf0{\field{\*\fldinst{HYPERLINK https://docs.python.org/3/license.html }}{\fldrslt{https://docs.python.org/3/license.html\ul0\cf0}}}}\f0\fs20 )\par
 \par
 \par
 \b GNU GENERAL PUBLIC LICENSE\b0\par
 \par
 \b Version 3, 29 June 2007\b0\par
 \par
-Copyright \'a9 2007 Free Software Foundation, Inc. <{{\field{\*\fldinst{HYPERLINK "https://fsf.org/"}}{\fldrslt{https://fsf.org/\ul0\cf0}}}}\f0\fs20 >\par
+Copyright \'a9 2007 Free Software Foundation, Inc. <{\cf0{\field{\*\fldinst{HYPERLINK "https://fsf.org/"}}{\fldrslt{https://fsf.org/\ul0\cf0}}}}\f0\fs20 >\par
 \par
 Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.\par
 Preamble\par
@@ -314,7 +314,7 @@ To do so, attach the following notices to the program. It is safest to attach th
     GNU General Public License for more details.\par
 \par
     You should have received a copy of the GNU General Public License\par
-    along with this program.  If not, see <{{\field{\*\fldinst{HYPERLINK "https://www.gnu.org/licenses/"}}{\fldrslt{https://www.gnu.org/licenses/\ul0\cf0}}}}\f0\fs20 >.\par
+    along with this program.  If not, see <{\cf0{\field{\*\fldinst{HYPERLINK "https://www.gnu.org/licenses/"}}{\fldrslt{https://www.gnu.org/licenses/\ul0\cf0}}}}\f0\fs20 >.\par
 \par
 Also add information on how to contact you by electronic and paper mail.\par
 \par
@@ -327,9 +327,9 @@ If the program does terminal interaction, make it output a short notice like thi
 \par
 The hypothetical commands `show w' and `show c' should show the appropriate parts of the General Public License. Of course, your program's commands might be different; for a GUI interface, you would use an \ldblquote about box\rdblquote .\par
 \par
-You should also get your employer (if you work as a programmer) or school, if any, to sign a \ldblquote copyright disclaimer\rdblquote  for the program, if necessary. For more information on this, and how to apply and follow the GNU GPL, see <{{\field{\*\fldinst{HYPERLINK "https://www.gnu.org/licenses/"}}{\fldrslt{https://www.gnu.org/licenses/\ul0\cf0}}}}\f0\fs20 >.\par
+You should also get your employer (if you work as a programmer) or school, if any, to sign a \ldblquote copyright disclaimer\rdblquote  for the program, if necessary. For more information on this, and how to apply and follow the GNU GPL, see <{\cf0{\field{\*\fldinst{HYPERLINK "https://www.gnu.org/licenses/"}}{\fldrslt{https://www.gnu.org/licenses/\ul0\cf0}}}}\f0\fs20 >.\par
 \par
-The GNU General Public License does not permit incorporating your program into proprietary programs. If your program is a subroutine library, you may consider it more useful to permit linking proprietary applications with the library. If this is what you want to do, use the GNU Lesser General Public License instead of this License. But first, please read <{{\field{\*\fldinst{HYPERLINK "https://www.gnu.org/licenses/why-not-lgpl.html"}}{\fldrslt{https://www.gnu.org/licenses/why-not-lgpl.html\ul0\cf0}}}}\f0\fs20 >.\par
+The GNU General Public License does not permit incorporating your program into proprietary programs. If your program is a subroutine library, you may consider it more useful to permit linking proprietary applications with the library. If this is what you want to do, use the GNU Lesser General Public License instead of this License. But first, please read <{\cf0{\field{\*\fldinst{HYPERLINK "https://www.gnu.org/licenses/why-not-lgpl.html"}}{\fldrslt{https://www.gnu.org/licenses/why-not-lgpl.html\ul0\cf0}}}}\f0\fs20 >.\par
 \cf4\highlight0\par
 \f1\par
 }
