@@ -4,10 +4,10 @@
 To run the software on Windows:
 
 1) Install [MSYS2](https://www.msys2.org/).
+2) Install VLC x64 at `C:\Program Files\VideoLan`.
 2) From an MSYS console install:
 ```
 pacman -S mingw-w64-ucrt-x86_64-gtk3 \
-          mingw-w64-ucrt-x86_64-vlc \
           mingw-w64-ucrt-x86_64-python \
           mingw-w64-ucrt-x86_64-python-pip \
           mingw-w64-ucrt-x86_64-python-gobject \
