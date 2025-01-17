@@ -1299,9 +1299,18 @@ class PhantomPlayer:
             Update the menuitems sensitive property because it will have an impact
             in the accel groups (keyboard shortcuts).
         """
+
+        self.__selected_videos = []
+
         model, treepaths = self.__treeselection_videos.get_selected_rows()
-        if not treepaths:
-            self.__selected_videos = []
+        if treepaths:
+            selected_hashes = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._hash] for treepath in
+                               treepaths]
+
+            self.__selected_videos = self.__current_media.get_videos_by_hash(selected_hashes)
+
+
+        if len(self.__selected_videos) == 0:
             self.__menuitem_videos_restart_prg.set_sensitive(False)
             self.__menuitem_videos_fill_prg.set_sensitive(False)
             self.__menuitem_videos_ignore.set_sensitive(False)
@@ -1311,9 +1320,6 @@ class PhantomPlayer:
             self.__menuitem_videos_delete.set_sensitive(False)
             return
 
-        selected_hashes = [self.__liststore_videos[treepath][VideosListstoreColumnsIndex._hash] for treepath in
-                           treepaths]
-        self.__selected_videos = self.__current_media._playlist.get_videos_by_hash(selected_hashes)
 
         #
         # Enable/Disable the menuitems

@@ -399,10 +399,10 @@ class Playlist(object):
 
         return video
 
-    def get_videos_by_hash(self, videos_hashes: [str, ...]) -> [Video, ...]:
+    def get_videos_by_hash(self, videos_hash: [str]) -> [Video]:
         videos = []
 
-        for video_hash in videos_hashes:
+        for video_hash in videos_hash:
             try:
                 video = self.__videos_dict[video_hash]
             except KeyError:
