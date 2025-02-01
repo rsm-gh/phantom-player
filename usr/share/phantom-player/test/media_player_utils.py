@@ -25,6 +25,11 @@
 
 """To create unittary tests..."""
 
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+from env import *
 from view.GtkPlayer import milliseconds_to_str, format_track
 
 for input_value, expected_output in ((-1, "00:00"),
