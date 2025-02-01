@@ -64,7 +64,7 @@ class CellRendererRating(Gtk.CellRenderer):
 
     def connect_rating(self, treeview, column=0, func=None):
         """
-            This should be connected once the cellrenderer has been added to the treeviewcolumn.
+            This should be connected once the cellrenderer has been added to the treeview_column.
             
             column=0 is the number of the rating column at the treeview liststore.
             
