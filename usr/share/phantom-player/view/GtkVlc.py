@@ -3,7 +3,7 @@
 #
 #  GPLv3
 #
-#  Copyright (C) 2024 Rafael Senties Martinelli.
+#  Copyright (C) 2024-2025 Rafael Senties Martinelli.
 #                2017 Olivier Aubert <contact@olivieraubert.net> (gtkvlc.py)
 #                2014-2016 Rafael Senties Martinelli.
 #                2009-2010 the VideoLAN team (gtk2vlc.py)
