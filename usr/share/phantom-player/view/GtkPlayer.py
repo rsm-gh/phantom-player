@@ -53,6 +53,7 @@
 """
 
 import os
+import sys
 import threading
 
 import vlc
@@ -68,6 +69,8 @@ from system_utils import EventCodes, turn_off_screensaver
 from model.Playlist import Track, TimeValue
 from view import gtk_utils
 from view.GtkVlc import GtkVlc
+
+_IS_WINDOWS = sys.platform == 'win32'
 
 print_info(f"python-vlc version: {vlc.__version__}, generator: {vlc.__generator_version__}, build date:{vlc.build_date}")
 if int(vlc.__version__.replace(".","")[:3]) < 302:
@@ -917,7 +920,7 @@ class GtkPlayer(Gtk.Box):
         elif event.direction == Gdk.ScrollDirection.DOWN:
             self.volume_down()
 
-        elif event.direction == Gdk.ScrollDirection.SMOOTH:
+        elif _IS_WINDOWS and event.direction == Gdk.ScrollDirection.SMOOTH:
             if event.delta_y < 0:
                 self.volume_up()
             elif event.delta_y > 0:
