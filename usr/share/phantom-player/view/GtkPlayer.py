@@ -770,6 +770,7 @@ class GtkPlayer(Gtk.Box):
             self.__menubutton_fullscreen.set_tooltip_text(Texts.MediaPlayer.Tooltip._fullscreen)
             if self.__un_maximized_fixed_toolbar:
                 self.pack_start(self.__box_buttons, expand=False, fill=True, padding=0)
+                self.__box_buttons.show()
 
         self.__menubutton_fullscreen.set_active(False)
 
