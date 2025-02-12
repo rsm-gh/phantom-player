@@ -904,6 +904,8 @@ class GtkPlayer(Gtk.Box):
 
     def __on_player_scroll(self, _, event):
 
+        print("SCROLL", event.direction)
+
         if self.__media is None:
             return
 
@@ -912,6 +914,13 @@ class GtkPlayer(Gtk.Box):
 
         elif event.direction == Gdk.ScrollDirection.DOWN:
             self.volume_down()
+
+        elif event.direction == Gdk.ScrollDirection.SMOOTH:
+            if event.delta_y < 0:
+                self.volume_up()
+            elif event.delta_y > 0:
+                self.volume_down()
+
 
     def __on_player_press(self, _, event):
 
