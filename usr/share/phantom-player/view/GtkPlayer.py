@@ -227,6 +227,9 @@ class GtkPlayer(Gtk.Box):
         # VLC Widget
         #
         self.__vlc_widget = GtkVlc()
+        self.__vlc_widget._player.video_set_mouse_input(False)
+        self.__vlc_widget._player.video_set_key_input(False)
+
         self.display_title(value=display_title)
 
         self.__vlc_widget.add_events(Gdk.EventMask.SCROLL_MASK)
@@ -912,6 +915,7 @@ class GtkPlayer(Gtk.Box):
 
         elif event.direction == Gdk.ScrollDirection.DOWN:
             self.volume_down()
+
 
     def __on_player_press(self, _, event):
 
