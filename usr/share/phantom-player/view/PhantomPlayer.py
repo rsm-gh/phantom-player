@@ -879,9 +879,10 @@ class PhantomPlayer:
             self.__liststore_videos[index][VideosListstoreColumnsIndex._path] = video.get_path()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._name] = video.get_name()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._ext] = video.get_extension()
-            self.__liststore_videos[index][VideosListstoreColumnsIndex._progress] = video.get_percent()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._duration] = video.get_duration()
+            self.__liststore_videos[index][VideosListstoreColumnsIndex._size] = video.get_size()
             self.__liststore_videos[index][VideosListstoreColumnsIndex._rating] = video.get_rating()
+            self.__liststore_videos[index][VideosListstoreColumnsIndex._progress] = video.get_percent()
 
     def __liststore_videos_update(self,
                                   video,
@@ -911,14 +912,14 @@ class PhantomPlayer:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._path] = video.get_path()
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._name] = video.get_name()
 
-                if progress:
-                    self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_percent()
-
                 if duration:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._duration] = video.get_duration()
 
                 if size:
                     self.__liststore_videos[i][VideosListstoreColumnsIndex._size] = video.get_size()
+
+                if progress:
+                    self.__liststore_videos[i][VideosListstoreColumnsIndex._progress] = video.get_percent()
 
                 return
 
@@ -1543,8 +1544,6 @@ class PhantomPlayer:
         self.__dialog_rename_single.show(self.__selected_videos[0], self.__current_media._playlist)
 
     def __on_menuitem_videos_move(self, widget, up:bool):
-
-        print(widget, up)
 
         if len(self.__selected_videos) == 0:
             return
