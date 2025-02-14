@@ -109,42 +109,30 @@ class Playlist(object):
         for video in self.__videos_list:
             video.set_progress(0)
 
-    def reorder_down(self, videos:[Video]) -> None:
-        """
-            Move to the first indexes of the list.
-        """
+    def move(self, videos:[Video], up:bool) -> None:
+
         if len(self.__videos_list) == 0 or len(videos) == 0:
             return
 
-        # already in the last position
-        elif videos[0].get_number() <= self.__videos_list[0].get_number():
-            return
+        if up:
+            if videos[0].get_number() <= self.__videos_list[0].get_number():
+                return
+
+            step = -1 # move to top
+        else:
+            if videos[-1].get_number() >= self.__videos_list[-1].get_number():
+                return
+
+            step = 1 # move to bottom
+
 
         for video in videos:
             index = self.__videos_list.index(video)
             self.__videos_list.remove(video)
-            self.__videos_list.insert(index - 1, video)
+            self.__videos_list.insert(index + step, video)
 
         self.__recalculate_videos_nb()
 
-    def reorder_up(self, videos:[Video]) -> None:
-        """
-            Move to the last indexes of the list.
-        """
-
-        if len(self.__videos_list) == 0 or len(videos) == 0:
-            return
-
-        # already in the last position
-        elif videos[-1].get_number() >= self.__videos_list[-1].get_number():
-            return
-
-        for video in reversed(videos):
-            index = self.__videos_list.index(video)
-            self.__videos_list.remove(video)
-            self.__videos_list.insert(index + 1, video)
-
-        self.__recalculate_videos_nb()
 
     def reorder_by_name(self) -> None:
         """
