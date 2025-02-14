@@ -309,8 +309,8 @@ class PhantomPlayer:
         self.__menuitem_videos_ignore.connect('activate', self.__on_menuitem_videos_ignore_changed, True)
         self.__menuitem_videos_unignore.connect('activate', self.__on_menuitem_videos_ignore_changed, False)
         self.__menuitem_videos_rename.connect('activate', self.__on_menuitem_videos_rename_single)
-        self.__menuitem_videos_move_up.connect('activate', self.__on_menuitem_videos_move_up)
-        self.__menuitem_videos_move_down.connect('activate', self.__on_menuitem_videos_move_down)
+        self.__menuitem_videos_move_up.connect('activate', self.__on_menuitem_videos_move, True)
+        self.__menuitem_videos_move_down.connect('activate', self.__on_menuitem_videos_move, False)
         self.__menuitem_videos_open.connect('activate', self.__on_menuitem_videos_open)
         self.__menuitem_videos_delete.connect('activate', self.__on_menuitem_videos_delete)
 
@@ -1542,7 +1542,10 @@ class PhantomPlayer:
 
         self.__dialog_rename_single.show(self.__selected_videos[0], self.__current_media._playlist)
 
-    def __on_menuitem_videos_move_up(self, *_):
+    def __on_menuitem_videos_move(self, widget, up:bool):
+
+        print(widget, up)
+
         if len(self.__selected_videos) == 0:
             return
 
@@ -1552,22 +1555,8 @@ class PhantomPlayer:
         # It's important to remove the sorting or the user & the liststore refresh will be messed up.
         self.__treeview_reset_sorting()
 
-        self.__current_media._playlist.reorder_down(selected_videos)
-        self.__liststore_videos_refresh()
-        self.__liststore_videos_select(selected_videos)
-        playlist_factory.save(self.__current_media._playlist)
+        self.__current_media._playlist.move(videos=selected_videos, up=up)
 
-    def __on_menuitem_videos_move_down(self, *_):
-        if len(self.__selected_videos) == 0:
-            return
-
-        # in case that the selection changes during the whole process
-        selected_videos = copy(self.__selected_videos)
-
-        # It's important to remove the sorting or the user & the liststore refresh will be messed up.
-        self.__treeview_reset_sorting()
-
-        self.__current_media._playlist.reorder_up(selected_videos)
         self.__liststore_videos_refresh()
         self.__liststore_videos_select(selected_videos)
         playlist_factory.save(self.__current_media._playlist)
