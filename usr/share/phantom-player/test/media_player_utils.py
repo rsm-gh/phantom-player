@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2014-2016, 2024 Rafael Senties Martinelli.
+# Copyright (c) 2014-2016, 2024-2025 Rafael Senties Martinelli.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from env import *
-from view.GtkPlayer import milliseconds_to_str, format_track
+from view.GtkPlayer import milliseconds_to_str
 
 for input_value, expected_output in ((-1, "00:00"),
                                      (0, "00:00"),

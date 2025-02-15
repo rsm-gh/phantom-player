@@ -149,13 +149,18 @@ def milliseconds_to_str(number: int):
     return time_string
 
 
-def format_track(track: tuple[int, str]):
+def format_track(track: tuple[int, str]) -> tuple[int, str]:
     """ Format the tracks provided by pyVLC. Track must be a tuple (int, string)"""
 
-    number = str(track[0])
+    number = track[0]
 
     try:
-        content = " ".join(track[1].replace('_', ' ').split()).replace('[', '').replace(']', '').title().strip()
+        content = " ".join(track[1].replace('_', ' ').split())
+
+        for char in ("[","]","(",")"):
+            content = content.replace(char, "")
+
+        content = content.title().strip()
 
         if 'Track' in content and "-" in content:
             content = content.split('-', 1)[1].strip()
@@ -168,14 +173,7 @@ def format_track(track: tuple[int, str]):
         print(track)
         print(str(e))
 
-    if len(number) == 0:
-        numb = '  '
-    elif len(number) == 1:
-        numb = '  {}'.format(number)
-    else:
-        numb = str(number)
-
-    return '{}:   {}'.format(numb, content)
+    return number, content
 
 class GtkPlayer(Gtk.Box):
     __gtype_name__ = 'GtkPlayer'
@@ -633,83 +631,99 @@ class GtkPlayer(Gtk.Box):
         #
         # Audio Menu
         #
-        menuitem = Gtk.MenuItem(label="Audio")
-        menu.append(menuitem)
-        submenu = Gtk.Menu()
-        menuitem.set_submenu(submenu)
-
-        selected_track = self.__vlc_widget._player.audio_get_track()
 
         try:
-            tracks = [(audio[0], audio[1].decode('utf-8')) for audio in
+            raw_tracks = [(audio[0], audio[1].decode('utf-8')) for audio in
                       self.__vlc_widget._player.audio_get_track_description()]
         except Exception as e:
-            tracks = self.__vlc_widget._player.audio_get_track_description()
+            raw_tracks = self.__vlc_widget._player.audio_get_track_description()
             print(str(e))
 
-
-        default_item = Gtk.RadioMenuItem(label="-1:  Disable")
-        if selected_track == -1:
-            default_item.set_active(True)
-        default_item.connect('activate', self.__on_menuitem_track_activate, Track.Type._audio, -1)
-        submenu.append(default_item)
-
-        for track in tracks:
-            if 'Disable' in track:
-                continue
-
-            item = Gtk.RadioMenuItem(label=format_track(track))
-            item.connect('activate', self.__on_menuitem_track_activate, Track.Type._audio, track[0])
-            item.join_group(default_item)
-
-            if selected_track == track[0]:
-                item.set_active(True)
-            submenu.append(item)
+        self.__populate_tracks_menubutton(menu,
+                                          Track.Type._audio,
+                                          raw_tracks,
+                                          self.__vlc_widget._player.audio_get_track())
 
         #
         # Subtitles
         #
-        menuitem = Gtk.MenuItem(label="Subtitles")
-        menu.append(menuitem)
-        submenu = Gtk.Menu()
-        menuitem.set_submenu(submenu)
-
-        selected_track = self.__vlc_widget._player.video_get_spu()
-
-        default_item = Gtk.RadioMenuItem(label="-1:  Disable")
-        if selected_track == -1:
-            default_item.set_active(True)
-            self.__menuitem_subtitles_activated = default_item
-        default_item.connect('activate', self.__on_menuitem_track_activate, Track.Type._subtitles, -1)
-        submenu.append(default_item)
 
         try:
-            tracks = [(video_spu[0], video_spu[1].decode('utf-8')) for video_spu in
+            raw_tracks = [(video_spu[0], video_spu[1].decode('utf-8')) for video_spu in
                       self.__vlc_widget._player.video_get_spu_description()]
         except Exception as e:
-            tracks = self.__vlc_widget._player.video_get_spu_description()
+            raw_tracks = self.__vlc_widget._player.video_get_spu_description()
             print(str(e))
 
-        for track in tracks:
-            if 'Disable' in track:
-                continue
-
-            item = Gtk.RadioMenuItem(label=format_track(track))
-            item.join_group(default_item)
-            if selected_track == track[0]:
-                item.set_active(True)
-                self.__menuitem_subtitles_activated = item
-            item.connect('activate', self.__on_menuitem_track_activate, Track.Type._subtitles, track[0])
-            submenu.append(item)
+        submenu, default_item = self.__populate_tracks_menubutton(menu,
+                                                                  Track.Type._subtitles,
+                                                                  raw_tracks,
+                                                                  self.__vlc_widget._player.video_get_spu())
 
         self.__menuitem_subtitles_file = Gtk.RadioMenuItem(label="From file...")
         self.__menuitem_subtitles_file.join_group(default_item)
         self.__menuitem_subtitles_file.connect('activate', self.__on_menuitem_file_subs_activate)
         submenu.append(self.__menuitem_subtitles_file)
 
+        #
+        # Display the menu
+        #
+
         menu.show_all()
         self.__menubutton_settings.set_sensitive(True)
         self.__delayed_media_data.set_video_settings_loaded(True)
+
+
+    def __populate_tracks_menubutton(self,
+                                     menu: Gtk.Menu,
+                                     menu_type: Track.Type,
+                                     raw_tracks: [tuple[int, str]],
+                                     selected_track: int) -> (Gtk.Menu, Gtk.MenuItem):
+
+        if menu_type == Track.Type._audio:
+            label = "Audio"
+
+        elif menu_type == Track.Type._subtitles:
+            label = "Subtitles"
+
+        else:
+            raise Exception(f"Unknown menu type {menu_type}")
+
+
+        menuitem = Gtk.MenuItem(label=label)
+        menu.append(menuitem)
+        submenu = Gtk.Menu()
+        menuitem.set_submenu(submenu)
+
+        default_item = Gtk.RadioMenuItem(label="Disable")
+
+        if selected_track == -1:
+            default_item.set_active(True)
+
+        default_item.connect('activate', self.__on_menuitem_track_activate, menu_type, -1)
+        submenu.append(default_item)
+
+
+        formatted_tracks = []
+        for track in raw_tracks:
+            formatted_tracks.append(format_track(track))
+
+        for track_number, track_value in formatted_tracks:
+
+            if track_value.startswith('Disable'):
+                continue
+
+            item = Gtk.RadioMenuItem(label=f"{track_value}   [{track_number}]")
+            item.connect('activate', self.__on_menuitem_track_activate, menu_type, track_number)
+            item.join_group(default_item)
+
+            if selected_track == track_number:
+                item.set_active(True)
+
+            submenu.append(item)
+
+        return submenu, default_item
+
 
     def __set_volume(self, value, display_label=True, update_button=True):
 
