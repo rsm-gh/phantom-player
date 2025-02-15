@@ -149,16 +149,30 @@ def milliseconds_to_str(number: int):
     return time_string
 
 
-def format_track(track: tuple[int, str]) -> tuple[int, str]:
-    """ Format the tracks provided by pyVLC. Track must be a tuple (int, string)"""
+def format_track(track: tuple[int, str], first_track:bool) -> tuple[int, str]:
+    """
+        Format the tracks provided by pyVLC. Track must be a tuple (int, string)
+    """
 
     number = track[0]
+    content = track[1]
 
     try:
-        content = " ".join(track[1].replace('_', ' ').split())
+
+        for char in ("_", "."):
+            content = content.replace(char, " ")
+
+        content = " ".join(content.split())
 
         for char in ("[","]","(",")"):
             content = content.replace(char, "")
+
+        if first_track and "-" in content:
+            # Usually the first track contains the video name with the following format:
+            # <video name> - <track name>
+            possible_name = content.rsplit("-", 1)[1].strip()
+            if len(possible_name) > 3:
+                content = possible_name
 
         content = content.title().strip()
 
@@ -705,15 +719,16 @@ class GtkPlayer(Gtk.Box):
 
 
         formatted_tracks = []
-        for track in raw_tracks:
-            formatted_tracks.append(format_track(track))
+        for i, track in enumerate(raw_tracks):
+            print(i, i==0, track)
+            formatted_tracks.append(format_track(track, i==1))
 
         for track_number, track_value in formatted_tracks:
 
             if track_value.startswith('Disable'):
                 continue
 
-            item = Gtk.RadioMenuItem(label=f"{track_value}   [{track_number}]")
+            item = Gtk.RadioMenuItem(label=f"{track_number})  {track_value}")
             item.connect('activate', self.__on_menuitem_track_activate, menu_type, track_number)
             item.join_group(default_item)
 
