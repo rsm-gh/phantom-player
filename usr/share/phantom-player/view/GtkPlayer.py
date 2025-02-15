@@ -653,7 +653,7 @@ class GtkPlayer(Gtk.Box):
             raw_tracks = self.__vlc_widget._player.audio_get_track_description()
             print(str(e))
 
-        self.__populate_tracks_menubutton(menu,
+        self.__populate_menu_tracks(menu,
                                           Track.Type._audio,
                                           raw_tracks,
                                           self.__vlc_widget._player.audio_get_track())
@@ -669,13 +669,13 @@ class GtkPlayer(Gtk.Box):
             raw_tracks = self.__vlc_widget._player.video_get_spu_description()
             print(str(e))
 
-        submenu, default_item = self.__populate_tracks_menubutton(menu,
-                                                                  Track.Type._subtitles,
-                                                                  raw_tracks,
-                                                                  self.__vlc_widget._player.video_get_spu())
+        submenu, self.__menuitem_subtitles_activated = self.__populate_menu_tracks(menu,
+                                                                                  Track.Type._subtitles,
+                                                                                  raw_tracks,
+                                                                                  self.__vlc_widget._player.video_get_spu())
 
         self.__menuitem_subtitles_file = Gtk.RadioMenuItem(label="From file...")
-        self.__menuitem_subtitles_file.join_group(default_item)
+        self.__menuitem_subtitles_file.join_group(self.__menuitem_subtitles_activated)
         self.__menuitem_subtitles_file.connect('activate', self.__on_menuitem_file_subs_activate)
         submenu.append(self.__menuitem_subtitles_file)
 
@@ -688,11 +688,11 @@ class GtkPlayer(Gtk.Box):
         self.__delayed_media_data.set_video_settings_loaded(True)
 
 
-    def __populate_tracks_menubutton(self,
-                                     menu: Gtk.Menu,
-                                     menu_type: Track.Type,
-                                     raw_tracks: [tuple[int, str]],
-                                     selected_track: int) -> (Gtk.Menu, Gtk.MenuItem):
+    def __populate_menu_tracks(self,
+                                 menu: Gtk.Menu,
+                                 menu_type: Track.Type,
+                                 raw_tracks: [tuple[int, str]],
+                                 selected_track: int) -> (Gtk.Menu, Gtk.MenuItem):
 
         if menu_type == Track.Type._audio:
             label = "Audio"
@@ -709,35 +709,34 @@ class GtkPlayer(Gtk.Box):
         submenu = Gtk.Menu()
         menuitem.set_submenu(submenu)
 
-        default_item = Gtk.RadioMenuItem(label="Disable")
+        disable_item = Gtk.RadioMenuItem(label="Disable")
+        disable_item.connect('activate', self.__on_menuitem_track_activate, menu_type, -1)
+        submenu.append(disable_item)
 
-        if selected_track == -1:
-            default_item.set_active(True)
+        active_item = None
 
-        default_item.connect('activate', self.__on_menuitem_track_activate, menu_type, -1)
-        submenu.append(default_item)
+        for i, raw_track in enumerate(raw_tracks):
 
-
-        formatted_tracks = []
-        for i, track in enumerate(raw_tracks):
-            print(i, i==0, track)
-            formatted_tracks.append(format_track(track, i==1))
-
-        for track_number, track_value in formatted_tracks:
+            track_number, track_value = format_track(raw_track, i==1)
 
             if track_value.startswith('Disable'):
                 continue
 
             item = Gtk.RadioMenuItem(label=f"{track_number})  {track_value}")
             item.connect('activate', self.__on_menuitem_track_activate, menu_type, track_number)
-            item.join_group(default_item)
+            item.join_group(disable_item)
 
             if selected_track == track_number:
                 item.set_active(True)
+                active_item = item
 
             submenu.append(item)
 
-        return submenu, default_item
+        if active_item is None:
+            disable_item.set_active(True)
+            active_item = disable_item
+
+        return submenu, active_item
 
 
     def __set_volume(self, value, display_label=True, update_button=True):
