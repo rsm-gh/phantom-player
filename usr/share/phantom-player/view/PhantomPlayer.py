@@ -1271,10 +1271,14 @@ class PhantomPlayer:
         new_playlist = Playlist()
         new_playlist.set_guid(len(self.__playlists))
         new_playlist.set_load_status(PlaylistLoadStatus._loaded)
-        self.__window_playlist_settings.show(new_playlist, is_new=True)
+        self.__window_playlist_settings.show(playlist=new_playlist,
+                                             is_new=True,
+                                             hidden_playlists=self.__checkbox_playlist_hidden.get_active())
 
     def __on_button_playlist_settings_clicked(self, *_):
-        self.__window_playlist_settings.show(self.__current_media._playlist, is_new=False)
+        self.__window_playlist_settings.show(playlist=self.__current_media._playlist,
+                                             is_new=False,
+                                             hidden_playlists=self.__checkbox_playlist_hidden.get_active())
 
     def __on_button_display_playlists_clicked(self, *_):
         self.__set_view(playlists_menu=True)
