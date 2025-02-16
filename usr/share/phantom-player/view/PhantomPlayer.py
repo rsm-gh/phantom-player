@@ -51,7 +51,6 @@ import os
 from copy import copy
 from time import sleep
 from threading import Thread
-from collections import OrderedDict
 from gi.repository import Gtk, Gdk, GLib
 from gi.repository.GdkPixbuf import Pixbuf
 
@@ -139,7 +138,7 @@ class PhantomPlayer:
 
         self.__application = application
         self.__playlist_new = None
-        self.__playlists = OrderedDict()
+        self.__playlists = {}
         self.__current_playlist_loaded = False
         self.__playlist_headers_are_loaded = False
 
