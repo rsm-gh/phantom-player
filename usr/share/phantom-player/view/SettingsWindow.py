@@ -38,6 +38,7 @@ import system_utils
 from Texts import Texts
 from view import gtk_utils
 from model.PlaylistPath import PlaylistPath
+from model.Playlist import Playlist
 from model.Playlist import LoadStatus as PlaylistLoadStatus
 from controller.playlist_factory import _COLUMN_SEPARATOR
 from controller import video_factory
@@ -76,6 +77,7 @@ class SettingsWindow:
         self.__icon_path = None
         self.__selected_playlist_path = None
         self.__edit_path_new_value = None
+        self.__display_hidden_playlists = False
 
         self.__fontcolor_default = None
         self.__fontcolor_error = None
@@ -202,7 +204,7 @@ class SettingsWindow:
         self.__window_settings.set_transient_for(parent)
         self.__window_settings.set_modal(True)
 
-    def show(self, playlist, is_new):
+    def show(self, playlist:Playlist, is_new:bool, hidden_playlists:bool) -> None:
 
         # reload the font colors in case that they have changed.
         _, self.__fontcolor_default = gtk_utils.get_default_color(gtk_utils.FontColors._default,
@@ -210,6 +212,7 @@ class SettingsWindow:
         _, self.__fontcolor_error = gtk_utils.get_default_color(gtk_utils.FontColors._error,
                                                                 on_error=settings.FontColors._error)
 
+        self.__display_hidden_playlists = hidden_playlists
         self.__current_playlist = playlist
         self.__is_new_playlist = is_new
         self.__load_playlist()
@@ -242,29 +245,42 @@ class SettingsWindow:
 
         playlist_factory.save(self.__current_playlist)  # Important in case of a crash
 
-    def __get_previous_playlist(self):
-        keys = [playlist.get_guid() for playlist in self.__playlists.values() if
-                playlist.get_load_status() == PlaylistLoadStatus._loaded]
+    def __get_filtered_playlist_guids(self):
+        playlist_guis = []
 
-        prev_index = keys.index(self.__current_playlist.get_guid()) - 1
+        for playlist in self.__playlists.values():
+
+            if not self.__display_hidden_playlists and playlist.get_hidden():
+                continue
+
+            if playlist.get_load_status() == PlaylistLoadStatus._loaded:
+                playlist_guis.append(playlist.get_guid())
+
+        return playlist_guis
+
+
+    def __get_previous_playlist(self):
+
+        playlist_guis = self.__get_filtered_playlist_guids()
+        prev_index = playlist_guis.index(self.__current_playlist.get_guid()) - 1
 
         if prev_index < 0:
             return None
 
         try:
-            prev_playlist_name = keys[prev_index]
+            prev_playlist_name = playlist_guis[prev_index]
         except IndexError:
             return None
         else:
             return self.__playlists[prev_playlist_name]
 
     def __get_next_playlist(self):
-        keys = [playlist.get_guid() for playlist in self.__playlists.values() if
-                playlist.get_load_status() == PlaylistLoadStatus._loaded]
-        next_index = keys.index(self.__current_playlist.get_guid()) + 1
+
+        playlist_guis = self.__get_filtered_playlist_guids()
+        next_index = playlist_guis.index(self.__current_playlist.get_guid()) + 1
 
         try:
-            next_playlist_name = keys[next_index]
+            next_playlist_name = playlist_guis[next_index]
         except IndexError:
             return None
         else:
