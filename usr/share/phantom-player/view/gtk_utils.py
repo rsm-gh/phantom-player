@@ -193,6 +193,9 @@ def dialog_yes_no(parent: None | Gtk.Widget,
     elif response == Gtk.ResponseType.NO:
         return False
 
+    else:
+        raise ValueError(f"Received wrong response: {response}")
+
 
 def dialog_info(parent: None | Gtk.Widget,
                 text1: str,
