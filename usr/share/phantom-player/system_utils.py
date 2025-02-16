@@ -71,6 +71,9 @@ class EventCodes:
 def has_non_empty_dirs(path: str) -> bool:
     """Check if a directory has non-empty subdirectories (only one level)."""
 
+    if not os.path.exists(path):
+        return False
+
     for name in os.listdir(path):
         abs_path = os.path.join(path, name)
         if os.path.isdir(abs_path) and len(os.listdir(abs_path)) > 0:
