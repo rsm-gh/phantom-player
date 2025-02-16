@@ -88,12 +88,15 @@ def __discover_playlist_path(playlist,
                     return
     else:
         for filename in os.listdir(source_path):
-            __discover_video(playlist=playlist,
-                             file_path=os.path.join(source_path, filename),
-                             exclude_paths=exclude_data,
-                             current_data=current_data,
-                             add_func=add_func,
-                             update_func=update_func)
+            abs_path = os.path.join(source_path, filename)
+
+            if os.path.isfile(abs_path):
+                __discover_video(playlist=playlist,
+                                 file_path=os.path.join(source_path, filename),
+                                 exclude_paths=exclude_data,
+                                 current_data=current_data,
+                                 add_func=add_func,
+                                 update_func=update_func)
 
             if quit_func is not None and quit_func():
                 return
