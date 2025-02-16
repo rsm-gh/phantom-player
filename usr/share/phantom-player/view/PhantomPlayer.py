@@ -3,7 +3,7 @@
 #
 # MIT License
 #
-# Copyright (c) 2014-2016, 2024 Rafael Senties Martinelli.
+# Copyright (c) 2014-2016, 2024-2025 Rafael Senties Martinelli.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -751,6 +751,10 @@ class PhantomPlayer:
             self.__mp_widget.set_keep_playing(playlist.get_keep_playing())
             self.__mp_widget.set_random(playlist.get_random())
 
+    def __playlist_should_be_listed(self, playlist):
+        return (not playlist.is_missing() or self.__checkbox_playlist_missing.get_active()) and \
+               (not playlist.get_hidden() or self.__checkbox_playlist_hidden.get_active())
+
     def __treeview_reset_sorting(self):
 
         if not self.__column_number.get_sort_indicator():
@@ -818,10 +822,6 @@ class PhantomPlayer:
         for playlist in sorted(filtered_playlists, key=lambda x: x.get_name()):
             if self.__playlist_should_be_listed(playlist):
                 self.__liststore_playlists_append(playlist)
-
-    def __playlist_should_be_listed(self, playlist):
-        return (not playlist.is_missing() or self.__checkbox_playlist_missing.get_active()) and \
-               (not playlist.get_hidden() or self.__checkbox_playlist_hidden.get_active())
 
     def __treeview_videos_search_func(self, model, _column, key, row_iter):
 
