@@ -75,8 +75,6 @@ class Texts:
     class DialogVideos:
         _trash_videos = "{} video(s) will be moved to the trash.\n\n Do you want to continue?"
         _missing = 'The file is missing.'
-        _found_x = '{0} videos have been found.'
-        _other_found = '{0} other videos have been found.'
         _cant_open_dir = 'Uh! It was not possible to open:\n\n"{0}"'
 
     class StatusBar:
