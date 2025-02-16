@@ -43,6 +43,7 @@ class Texts:
         _title = "Phantom Player"
 
     class DialogPlaylist:
+
         _confirm_delete = 'Are you sure that you want to delete "{0}"?\n\nThe files will not be deleted from your hard drive.'
         _confirm_reset = 'Are you sure that you want to restart "{0}"?.'
         _is_missing = 'The playlist can not be reproduced because the videos are missing.'
@@ -72,7 +73,7 @@ class Texts:
         _playlist_path_cant_add = "The path is already in the added (or recursively included)."
 
     class DialogVideos:
-        _delete = "Are you sure that you want to delete the selected videos?\n\nThey won't be removed from your hard drive."
+        _trash_videos = "{} video(s) will be moved to the trash.\n\n Do you want to continue?"
         _missing = 'The file is missing.'
         _found_x = '{0} videos have been found.'
         _other_found = '{0} other videos have been found.'
