@@ -51,8 +51,10 @@ import os
 from copy import copy
 from time import sleep
 from threading import Thread
+from send2trash import send2trash
 from gi.repository import Gtk, Gdk, GLib
 from gi.repository.GdkPixbuf import Pixbuf
+
 
 import settings
 import vlc_utils
@@ -1354,7 +1356,7 @@ class PhantomPlayer:
         self.__menuitem_videos_rename.set_sensitive(rename_and_open_video)
         self.__menuitem_videos_open.set_sensitive(rename_and_open_video)
 
-        self.__menuitem_videos_delete.set_sensitive(not any(video.exists() for video in self.__selected_videos))
+        self.__menuitem_videos_delete.set_sensitive(True)
 
     def __on_treeview_videos_header_clicked(self, _widget, event):
         """
@@ -1531,10 +1533,18 @@ class PhantomPlayer:
         if not self.__selected_videos:
             return
 
-        valid_videos = [video for video in self.__selected_videos if not video.exists()]
-        self.__current_media._playlist.remove_videos(valid_videos)
-        for video in valid_videos:
+        existent_videos = [video for video in self.__selected_videos if video.exists()]
+
+        if len(existent_videos) > 0 and not gtk_utils.dialog_yes_no(parent=self.__window_root,
+                                                                    text1=Texts.DialogVideos._trash_videos.format(len(existent_videos))):
+            return
+
+        send2trash([video.get_path() for video in existent_videos])
+
+        self.__current_media._playlist.remove_videos(self.__selected_videos)
+        for video in self.__selected_videos:
             self.__liststore_videos_remove(video)
+
         playlist_factory.save(self.__current_media._playlist)  # Important in case of a crash
         self.__on_treeselection_videos_changed()  # To reload the shortcuts
         self.__liststore_playlists_update(self.__current_media._playlist)  # to upload the progress
