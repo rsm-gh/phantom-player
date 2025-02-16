@@ -1539,6 +1539,9 @@ class PhantomPlayer:
                                                                     text1=Texts.DialogVideos._trash_videos.format(len(existent_videos))):
             return
 
+        if self.__current_media._video is not None and self.__current_media._video in self.__selected_videos:
+            self.__mp_widget.stop()
+
         send2trash([video.get_path() for video in existent_videos])
 
         self.__current_media._playlist.remove_videos(self.__selected_videos)
