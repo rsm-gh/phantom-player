@@ -92,7 +92,7 @@ def __discover_playlist_path(playlist,
 
             if os.path.isfile(abs_path):
                 __discover_video(playlist=playlist,
-                                 file_path=os.path.join(source_path, filename),
+                                 file_path=abs_path,
                                  exclude_paths=exclude_data,
                                  current_data=current_data,
                                  add_func=add_func,
