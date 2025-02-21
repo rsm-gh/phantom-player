@@ -28,6 +28,7 @@ import random
 
 import Paths
 import settings
+import system_utils
 from copy import copy
 from model.Video import Video
 from model.PlaylistPath import PlaylistPath
@@ -276,7 +277,7 @@ class Playlist(object):
                 sorted(self.__playlist_paths.items(), key=lambda item: item[0])]
 
     def get_save_path(self) -> str:
-        return os.path.join(Paths._SERIES_DIR, self.__name + _SAVE_EXTENSION)
+        return system_utils.join_path(Paths._SERIES_DIR, self.__name + _SAVE_EXTENSION)
 
     def get_start_at(self) -> int:
         return self.__start_at
@@ -285,7 +286,7 @@ class Playlist(object):
 
         if self.__name != "":
 
-            icon_path = os.path.join(Paths._SERIES_DIR, self.__name + ".png")
+            icon_path = system_utils.join_path(Paths._SERIES_DIR, self.__name + ".png")
 
             if not allow_default:
                 return icon_path

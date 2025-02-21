@@ -27,6 +27,7 @@ import os
 import magic
 import hashlib
 
+import system_utils
 from model.Video import Video
 from vlc_utils import get_video_duration
 from controller.playlist_factory import _COLUMN_SEPARATOR
@@ -78,7 +79,7 @@ def __discover_playlist_path(playlist,
         for root, directories, filenames in os.walk(source_path):
             for filename in filenames:
                 __discover_video(playlist=playlist,
-                                 file_path=os.path.join(root, filename),
+                                 file_path=system_utils.join_path(root, filename),
                                  exclude_paths=exclude_data,
                                  current_data=current_data,
                                  add_func=add_func,
@@ -88,7 +89,7 @@ def __discover_playlist_path(playlist,
                     return
     else:
         for filename in os.listdir(source_path):
-            abs_path = os.path.join(source_path, filename)
+            abs_path = system_utils.join_path(source_path, filename)
 
             if os.path.isfile(abs_path):
                 __discover_video(playlist=playlist,
