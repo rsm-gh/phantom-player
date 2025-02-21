@@ -27,13 +27,15 @@ import os
 import sys
 import getpass
 
+import system_utils
+
 __SRC_DIR = os.path.dirname(os.path.abspath(__file__))
-__IMG_DIR = os.path.join(__SRC_DIR, "view/img")
+__IMG_DIR = system_utils.join_path(__SRC_DIR, "view/img")
 
 # Icons
-_ICON_LOGO_SMALL = os.path.join(__IMG_DIR, "movie-icon-small.png")
-_ICON_LOGO_MEDIUM = os.path.join(__IMG_DIR, "movie-icon-medium.png")
-_ICON_LOGO_BIG = os.path.join(__IMG_DIR, "movie-icon-big.png")
+_ICON_LOGO_SMALL = system_utils.join_path(__IMG_DIR, "movie-icon-small.png")
+_ICON_LOGO_MEDIUM = system_utils.join_path(__IMG_DIR, "movie-icon-medium.png")
+_ICON_LOGO_BIG = system_utils.join_path(__IMG_DIR, "movie-icon-big.png")
 
 # Files
 if 'linux' in sys.platform:
@@ -41,19 +43,19 @@ if 'linux' in sys.platform:
     if getpass.getuser() == "root":
         _HOME_DIR = "/root"
     else:
-        _HOME_DIR = os.path.join("/home", getpass.getuser())
+        _HOME_DIR = system_utils.join_path("/home", getpass.getuser())
 
-    _APP_DIR = os.path.join(_HOME_DIR, ".local/share/phantom-player")
+    _APP_DIR = system_utils.join_path(_HOME_DIR, ".local/share/phantom-player")
     _SERIES_DIR = _APP_DIR
-    _NEW_PLAYLIST_IMG_PATH = os.path.join(_SERIES_DIR, ".png")
-    _CONF_FILE = os.path.join(_HOME_DIR, ".config/phantom-player.ini")
+    _NEW_PLAYLIST_IMG_PATH = system_utils.join_path(_SERIES_DIR, ".png")
+    _CONF_FILE = system_utils.join_path(_HOME_DIR, ".config/phantom-player.ini")
 
 elif sys.platform == 'win32':
-    _HOME_DIR = os.path.join(r"C:\Users", getpass.getuser())
-    _APP_DIR = os.path.join(_HOME_DIR, r"AppData\Local\PhantomPlayer")
-    _SERIES_DIR = os.path.join(_APP_DIR, "Playlists")
-    _NEW_PLAYLIST_IMG_PATH = os.path.join(_SERIES_DIR, ".png")
-    _CONF_FILE = os.path.join(_APP_DIR, "phantom-player.ini")
+    _HOME_DIR = system_utils.join_path(r"C:\Users", getpass.getuser())
+    _APP_DIR = system_utils.join_path(_HOME_DIR, r"AppData\Local\PhantomPlayer")
+    _SERIES_DIR = system_utils.join_path(_APP_DIR, "Playlists")
+    _NEW_PLAYLIST_IMG_PATH = system_utils.join_path(_SERIES_DIR, ".png")
+    _CONF_FILE = system_utils.join_path(_APP_DIR, "phantom-player.ini")
 
 else:
     raise ValueError('Unsupported platform', sys.platform)

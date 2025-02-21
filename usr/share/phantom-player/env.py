@@ -26,6 +26,8 @@
 import os
 import sys
 
+import system_utils
+
 def __set_windows():
 
     #
@@ -35,7 +37,7 @@ def __set_windows():
     vlc_path = r"C:\Program Files\VideoLan"
 
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'): # Running on pyinstaller
-        libs_path = os.path.join(os.path.dirname(sys.executable), "_internal")
+        libs_path = system_utils.join_path(os.path.dirname(sys.executable), "_internal")
     else:
         libs_path = r"C:\msys64\ucrt64\bin"
 
@@ -61,7 +63,7 @@ def __set_windows():
     os.add_dll_directory(libs_path) # this seems to have no effect, but I rather let it
 
     os.environ['PYTHON_VLC_MODULE_PATH'] = vlc_path
-    os.environ['PYTHON_VLC_LIB_PATH'] = os.path.join(vlc_path, r"VLC\libvlc.dll")
+    os.environ['PYTHON_VLC_LIB_PATH'] = system_utils.join_path(vlc_path, r"VLC\libvlc.dll")
 
 
 def __set_gnu_linux():

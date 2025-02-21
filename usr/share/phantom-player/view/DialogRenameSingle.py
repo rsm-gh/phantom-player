@@ -26,6 +26,7 @@
 import os
 from gi.repository import Gtk
 
+import system_utils
 from Texts import Texts
 from controller.playlist_factory import _COLUMN_SEPARATOR
 from controller.playlist_factory import save as save_playlist
@@ -40,7 +41,7 @@ class DialogRenameSingle:
         self.__update_func = update_func
 
         builder = Gtk.Builder()
-        builder.add_from_file(os.path.join(os.path.dirname(os.path.realpath(__file__)), "single-rename.glade"))
+        builder.add_from_file(system_utils.join_path(os.path.dirname(os.path.realpath(__file__)), "single-rename.glade"))
 
         self.__dialog_rename = builder.get_object('dialog_rename')
         self.__switch_hardrive = builder.get_object('switch_hardrive')
@@ -108,7 +109,7 @@ class DialogRenameSingle:
         if extension != "":
             full_name = full_name + "." + extension
 
-        new_path = os.path.join(os.path.dirname(current_path), full_name)
+        new_path = system_utils.join_path(os.path.dirname(current_path), full_name)
 
         if self.__switch_hardrive.get_active() and new_path != current_path:
 
