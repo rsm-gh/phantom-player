@@ -99,7 +99,7 @@ class SettingsWindow:
         # Get the GTK objects
         #
         builder = Gtk.Builder()
-        builder.add_from_file(os.path.join(_SCRIPT_DIR, "settings-window.glade"))
+        builder.add_from_file(system_utils.join_path(_SCRIPT_DIR, "settings-window.glade"))
 
         self.__headerbar_navigation = builder.get_object('headerbar_navigation')
         self.__button_previous_playlist = builder.get_object('button_previous_playlist')

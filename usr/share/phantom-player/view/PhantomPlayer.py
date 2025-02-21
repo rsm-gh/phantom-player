@@ -62,6 +62,7 @@ from Texts import Texts
 from view import gtk_utils
 from Paths import _SERIES_DIR, _CONF_FILE
 from console_printer import print_debug
+import system_utils
 from system_utils import EventCodes, open_directory
 from CCParser import CCParser
 from controller import video_factory
@@ -163,7 +164,7 @@ class PhantomPlayer:
         self.__gtk_settings = Gtk.Settings.get_default()
 
         builder = Gtk.Builder()
-        builder.add_from_file(os.path.join(os.path.dirname(os.path.realpath(__file__)), "main-window.glade"))
+        builder.add_from_file(system_utils.join_path(os.path.dirname(os.path.realpath(__file__)), "main-window.glade"))
 
         self.__window_root = builder.get_object('window_root')
         self.__window_about = builder.get_object('window_about')
@@ -1001,7 +1002,7 @@ class PhantomPlayer:
                 elif not file_name.lower().endswith(_PLAYLIST_EXTENSION):
                     continue
 
-                full_path = os.path.join(_SERIES_DIR, file_name)
+                full_path = system_utils.join_path(_SERIES_DIR, file_name)
 
                 playlist = playlist_factory.load(file_path=full_path)
                 playlist.set_guid(len(self.__playlists))

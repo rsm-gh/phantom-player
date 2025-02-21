@@ -68,6 +68,17 @@ class EventCodes:
         _letter_f = 102
         _letter_s = 115
 
+def join_path(base:str, add:str) -> str:
+    return normalize_path(os.path.join(base, add))
+
+def normalize_path(path:str):
+    if 'linux' in sys.platform:
+        path = path.replace("\\", "/")
+    else:
+        path = path.replace("/", "\\")
+
+    return path
+
 def has_non_empty_dirs(path: str) -> bool:
     """Check if a directory has non-empty subdirectories (only one level)."""
 
@@ -75,7 +86,7 @@ def has_non_empty_dirs(path: str) -> bool:
         return False
 
     for name in os.listdir(path):
-        abs_path = os.path.join(path, name)
+        abs_path = join_path(path, name)
         if os.path.isdir(abs_path) and len(os.listdir(abs_path)) > 0:
             return True
 
