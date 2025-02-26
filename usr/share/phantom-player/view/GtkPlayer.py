@@ -43,7 +43,7 @@
         + VolumeButton: it should get hidden when clicking out of the button. Is this a problem of GTK?
         + If play=false when starting, the audio tracks are not correctly loaded.
 
-    To do:
+    #TODO:
         + Add mute shortcut
         + Enable video tracks?
         + On left right arrows?
