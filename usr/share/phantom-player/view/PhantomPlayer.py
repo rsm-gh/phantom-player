@@ -24,7 +24,7 @@
 # THE SOFTWARE.
 
 """
-    To do:
+    #TODO:
         + Display the duplicated (excluded videos) at startup.
         + Finish the option "end at"
         + Improve user messages. Example: if a path is not added, or video not added, explain why.
