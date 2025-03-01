@@ -109,7 +109,7 @@ class SettingsWindow:
         self.__window_settings = builder.get_object('settings_window')
         self.__entry_playlist_name = builder.get_object('entry_playlist_name')
         self.__togglebutton_edit_name = builder.get_object('togglebutton_edit_name')
-        self.__eventbox_image = builder.get_object('eventbox_image')
+        self.__button_change_image = builder.get_object('button_change_image')
         self.__image_playlist = builder.get_object('image_playlist')
         self.__switch_keep_playing = builder.get_object('switch_keep_playing')
         self.__switch_random_playing = builder.get_object('switch_random_playing')
@@ -156,7 +156,7 @@ class SettingsWindow:
 
         self.__entry_playlist_name.connect('changed', self.__on_entry_playlist_name_changed)
         self.__togglebutton_edit_name.connect('button-press-event', self.__on_togglebutton_edit_name_press_event)
-        self.__eventbox_image.connect('button-press-event', self.__on_eventbox_image_button_press)
+        self.__button_change_image.connect('clicked', self.__on_button_change_image_clicked)
 
         self.__switch_hidden.connect('button-press-event', self.__on_switch_hidden_press_event)
         self.__switch_keep_playing.connect('button-press-event', self.__on_switch_keep_playing_press_event)
@@ -448,15 +448,12 @@ class SettingsWindow:
 
         self.__window_settings.set_title(playlist_name)
 
-    def __on_eventbox_image_button_press(self, _, event):
+    def __on_button_change_image_clicked(self, _):
         """
             Add a picture to a playlist.
             Note: set_icon_path shall not be called here,
                    because the playlist must be named / renamed first.
         """
-        if event.button != system_utils.EventCodes.Cursor._left_click:
-            return False
-
         file_filter = Gtk.FileFilter()
         file_filter.set_name('Image')
 

@@ -28,7 +28,6 @@
         + Display the duplicated (excluded videos) at startup.
         + Finish the option "end at"
         + Improve user messages. Example: if a path is not added, or video not added, explain why.
-        + Create the "delete video" option (instead of clean)
         + Create a dialog to rename multiple videos.
         + Add a 'still there?' dialog, based on time? episodes nb? activity? time of the day?
         + Add video: added & last played datetime
@@ -1032,7 +1031,6 @@ class PhantomPlayer:
 
         # Discover the hidden playlists at the end
         playlists.sort(key=lambda p: self.__playlist_should_be_listed(p), reverse=True)
-
         for i, playlist in enumerate(playlists, 1):
 
             if self.get_quit():
