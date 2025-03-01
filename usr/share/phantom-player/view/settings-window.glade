@@ -234,73 +234,6 @@ THE SOFTWARE.
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <child>
-                      <object class="GtkToggleButton" id="togglebutton_edit_name">
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="receives-default">True</property>
-                        <property name="halign">start</property>
-                        <property name="margin-start">5</property>
-                        <property name="image">image_edit_name</property>
-                        <property name="always-show-image">True</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">2</property>
-                        <property name="top-attach">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkBox">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="halign">start</property>
-                        <property name="margin-top">5</property>
-                        <property name="orientation">vertical</property>
-                        <child>
-                          <object class="GtkEventBox" id="eventbox_image">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="margin-top">10</property>
-                            <property name="margin-bottom">5</property>
-                            <child>
-                              <object class="GtkImage" id="image_playlist">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="halign">start</property>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left-attach">1</property>
-                        <property name="top-attach">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkEntry" id="entry_playlist_name">
-                        <property name="height-request">29</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="margin-bottom">3</property>
-                        <property name="invisible-char">●</property>
-                        <property name="max-width-chars">20</property>
-                        <property name="input-purpose">alpha</property>
-                      </object>
-                      <packing>
-                        <property name="left-attach">1</property>
-                        <property name="top-attach">1</property>
-                        <property name="width">2</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -396,6 +329,86 @@ THE SOFTWARE.
                       <packing>
                         <property name="left-attach">1</property>
                         <property name="top-attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEventBox" id="eventbox_image">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="margin-top">10</property>
+                        <property name="margin-bottom">5</property>
+                        <property name="border-width">2</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left-attach">2</property>
+                        <property name="top-attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="button_change_image">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="receives-default">True</property>
+                        <property name="always-show-image">True</property>
+                        <child>
+                          <object class="GtkImage" id="image_playlist">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="halign">center</property>
+                            <property name="valign">center</property>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left-attach">1</property>
+                        <property name="top-attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkBox">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="halign">start</property>
+                        <child>
+                          <object class="GtkEntry" id="entry_playlist_name">
+                            <property name="width-request">20</property>
+                            <property name="height-request">29</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="margin-bottom">3</property>
+                            <property name="invisible-char">●</property>
+                            <property name="max-width-chars">10</property>
+                            <property name="input-purpose">alpha</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkToggleButton" id="togglebutton_edit_name">
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <property name="halign">start</property>
+                            <property name="margin-start">5</property>
+                            <property name="image">image_edit_name</property>
+                            <property name="always-show-image">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left-attach">1</property>
+                        <property name="top-attach">1</property>
                       </packing>
                     </child>
                     <child>
