@@ -3,9 +3,9 @@ Upstream-Name: phantom-player
 Source: Interpreted Language
 
 Files:
-    /view/img/movie-icon-big.png
-    /view/img/movie-icon-medium.png
-    /view/img/movie-icon-small.png
+    usr/share/phantom-player/view/img/movie-icon-big.png
+    usr/share/phantom-player/view/img/movie-icon-medium.png
+    usr/share/phantom-player/view/img/movie-icon-small.png
 Copyright: http://www.iconarchive.com/show/atrous-icons-by-iconleak/movie-icon.html  
 License: Free for non-commercial use. Commercial usage not allowed.
 
