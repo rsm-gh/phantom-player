@@ -10,95 +10,104 @@ Copyright: http://www.iconarchive.com/show/atrous-icons-by-iconleak/movie-icon.h
 License: Free for non-commercial use. Commercial usage not allowed.
 
 Files:
-    /usr/bin/phantom-player
+    usr/bin/phantom-player
 Copyright: 2014, 2024 Rafael Senties Martinelli.
-License: CC0 1.0 Universal
+License: CC0-1.0
 
 Files:
-    /install.sh
-    /uninstall.sh
+    install.sh
+    uninstall.sh
 Copyright: 2015, 2024 Rafael Senties Martinelli.
-License: CC0 1.0 Universal
+License: CC0-1.0
 
 Files:
-    /usr/share/phantom-player/CCParser.py
+    usr/share/phantom-player/CCParser.py
 Copyright: 2014-2024 Rafael Senties Martinelli.
 License: MIT
 
 Files:
-    /usr/share/phantom-player/console_printer.py
+    usr/share/phantom-player/console_printer.py
 Copyright: 2018, 2024 Rafael Senties Martinelli.
 License: MIT
 
 Files:
-    /usr/share/phantom-player/controller/playlist_factory.py
-    /usr/share/phantom-player/model/Playlist.py
-    /usr/share/phantom-player/view/PhantomPlayer.glade
-    /usr/share/phantom-player/view/gtk_utils.py
-    /usr/share/phantom-player/view/settings.py
-    /usr/share/phantom-player/view/system_utils.py
-    /usr/share/phantom-player/view/Texts.py
-    /usr/share/phantom-player/view/vlc_utils.py
+    usr/share/phantom-player/controller/playlist_factory.py
+    usr/share/phantom-player/model/Playlist.py
+    usr/share/phantom-player/view/PhantomPlayer.glade
+    usr/share/phantom-player/view/gtk_utils.py
+    usr/share/phantom-player/view/settings.py
+    usr/share/phantom-player/view/system_utils.py
+    usr/share/phantom-player/view/Texts.py
+    usr/share/phantom-player/view/vlc_utils.py
 Copyright: 2014-2016, 2024 Rafael Senties Martinelli.
-License: LGPL v2.1
+License: LGPL-2.1
 
 Files:
-    /usr/share/phantom-player/controller/Video.py
+    usr/share/phantom-player/controller/Video.py
 Copyright: 2014-2015, 2024 Rafael Senties Martinelli.
-License: LGPL v2.1
+License: LGPL-2.1
 
 Files:
-    /usr/share/phantom-player/test/CRenderers.py
+    usr/share/phantom-player/test/CRenderers.py
 Copyright: 2014-2015, 2024-2025 Rafael Senties Martinelli.
-License: LGPL v2.1
+License: LGPL-2.1
 
 Files:
-    /usr/share/phantom-player/Paths.py
+    usr/share/phantom-player/Paths.py
 Copyright: 2014-2016, 2024 Rafael Senties Martinelli.
-License: LGPL v2.1
+License: LGPL-2.1
 
 Files:
-    /usr/share/phantom-player/controller/video_factory.py
-    /usr/share/phantom-player/model/CurrentMedia.py
-    /usr/share/phantom-player/test/media_player_utils.py
-    /usr/share/phantom-player/test/MediaPlayer.py
-    /usr/share/phantom-player/view/GtkPlayer.py
-    /usr/share/phantom-player/main.py
+    usr/share/phantom-player/controller/video_factory.py
+    usr/share/phantom-player/model/CurrentMedia.py
+    usr/share/phantom-player/test/media_player_utils.py
+    usr/share/phantom-player/test/MediaPlayer.py
+    usr/share/phantom-player/view/GtkPlayer.py
+    usr/share/phantom-player/main.py
 Copyright: 2014-2016, 2024-2025 Rafael Senties Martinelli.
-License: LGPL v2.1
+License: LGPL-2.1
 
 Files:
-    /usr/share/phantom-player/view/cellrenderers/CellRendererBytes.py
-    /usr/share/phantom-player/view/cellrenderers/CellRendererPlaylist.py
-    /usr/share/phantom-player/view/cellrenderers/CellRendererRating.py
-    /usr/share/phantom-player/view/cellrenderers/CellRendererTime.py
-    /usr/share/phantom-player/view/cellrenderers/CellRendererTimeStamp.py
-    /usr/share/phantom-player/view/cellrenderers/CellRendererURI.py
+    usr/share/phantom-player/view/cellrenderers/CellRendererBytes.py
+    usr/share/phantom-player/view/cellrenderers/CellRendererPlaylist.py
+    usr/share/phantom-player/view/cellrenderers/CellRendererRating.py
+    usr/share/phantom-player/view/cellrenderers/CellRendererTime.py
+    usr/share/phantom-player/view/cellrenderers/CellRendererTimeStamp.py
+    usr/share/phantom-player/view/cellrenderers/CellRendererURI.py
 Copyright: 2016, 2024 Rafael Senties Martinelli.
-License: LGPL v2.1
+License: LGPL-2.1
 
 Files:
-    /usr/share/applications/com.senties-martinelli.Phantom-Player.desktop
-    /usr/share/phantom-player/model/PlaylistPath.py
-    /usr/share/phantom-player/view/DialogRenameSingle.py
-    /usr/share/phantom-player/view/DialogRenameSingle.glade
-    /usr/share/phantom-player/view/SettingsWindow.py
-    /usr/share/phantom-player/view/SettingsWindow.glade
+    usr/share/applications/com.senties-martinelli.Phantom-Player.desktop
+    usr/share/phantom-player/model/PlaylistPath.py
+    usr/share/phantom-player/view/DialogRenameSingle.py
+    usr/share/phantom-player/view/DialogRenameSingle.glade
+    usr/share/phantom-player/view/SettingsWindow.py
+    usr/share/phantom-player/view/SettingsWindow.glade
 Copyright: 2024 Rafael Senties Martinelli.
-License: LGPL v2.1
+License: LGPL-2.1
 
 Files:
-    /usr/share/phantom-player/env.py
+    usr/share/phantom-player/env.py
 Copyright: 2024-2024 Rafael Senties Martinelli.
-License: LGPL v2.1
+License: LGPL-2.1
 
-Files: /usr/share/phantom-player/share/phantom-player/view/GtkVlc.py
+Files: usr/share/phantom-player/share/phantom-player/view/GtkVlc.py
 Copyright (C) 2024-2025 Rafael Senties Martinelli.
               2017 Olivier Aubert <contact@olivieraubert.net> (gtkvlc.py)
               2014-2016 Rafael Senties Martinelli.
               2009-2010 the VideoLAN team (gtk2vlc.py)
-License: GPL v3
+License: GPL-3.0
 
-Files:
-Copyright (C) 2014-2016, 2024 Rafael Senties Martinelli.
+
+License: CC0-1.0
+ Refer to the file usr/share/doc/phantom-player/CC0-1.0 for the full license text.
+
 License: MIT
+ Refer to the file usr/share/doc/phantom-player/MIT for the full license text.
+
+License: LGPL-2.1
+ Refer to the file usr/share/doc/phantom-player/LGPL-2.1 for the full license text.
+
+License: GPL-3.0
+ Refer to the file usr/share/doc/phantom-player/GPL-3.0 for the complete license text.
