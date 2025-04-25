@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 #
-#  GPLv3
+#    This file is part of Phantom Player.
 #
 #  Copyright (C) 2024-2025 Rafael Senties Martinelli.
 #                2017 Olivier Aubert <contact@olivieraubert.net> (gtkvlc.py)

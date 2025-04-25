@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 #
-# MIT License
+# This file is path of Phantom Player.
 #
 #  Copyright (C) 2018, 2024 Rafael Senties Martinelli.
 #
