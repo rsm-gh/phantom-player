@@ -3,7 +3,7 @@
 #
 #    This file is part of Phantom Player.
 #
-# Copyright (C) 2015, 2024 Rafael Senties Martinelli.
+# Copyright (C) 2015, 2024-2025 Rafael Senties Martinelli.
 #
 # This work is in the public domain under the CC0 1.0 Universal license.
 # To the extent possible under law, the author has waived all copyright
@@ -23,13 +23,13 @@ cd "$DIR" || exit
 #
 # Set the scripts permissions
 #
-chmod a+x ./remove
+chmod a+x ./uninstall.sh
 
 #
 # Remove previous versions
 #
 echo -e "Removing previous versions..."
-./remove
+./uninstall.sh
 
 #
 # Install the new files
