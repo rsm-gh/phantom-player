@@ -10,23 +10,19 @@ Copyright: http://www.iconarchive.com/show/atrous-icons-by-iconleak/movie-icon.h
 License: Free for non-commercial use. Commercial usage not allowed.
 
 Files:
+    usr/share/phantom-player/CCParser.py
     usr/bin/phantom-player
-Copyright: 2014, 2024 Rafael Senties Martinelli.
-License: CC0-1.0
+Copyright: 2014-2024 Rafael Senties Martinelli.
+License: MIT
 
 Files:
     uninstall.sh
 Copyright: 2015, 2024 Rafael Senties Martinelli.
-License: CC0-1.0
+License: MIT
 
 Files:
     install.sh
 Copyright: 2015, 2024-2025 Rafael Senties Martinelli.
-License: CC0-1.0
-
-Files:
-    usr/share/phantom-player/CCParser.py
-Copyright: 2014-2024 Rafael Senties Martinelli.
 License: MIT
 
 Files:
@@ -102,10 +98,6 @@ Copyright (C) 2024-2025 Rafael Senties Martinelli.
               2014-2016 Rafael Senties Martinelli.
               2009-2010 the VideoLAN team (gtk2vlc.py)
 License: GPL-3.0
-
-
-License: CC0-1.0
- Refer to the file usr/share/doc/phantom-player/CC0-1.0 for the full license text.
 
 License: MIT
  Refer to the file usr/share/doc/phantom-player/MIT for the full license text.
