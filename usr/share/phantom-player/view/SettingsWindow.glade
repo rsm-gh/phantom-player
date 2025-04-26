@@ -1056,7 +1056,7 @@ The tracks are defined inside each video and they may differ from one video to a
     <property name="default-width">900</property>
     <property name="default-height">500</property>
     <property name="destroy-with-parent">True</property>
-    <property name="icon">img/movie-icon-small.png</property>
+    <property name="icon">img/phantom-player-32.png</property>
     <property name="type-hint">dialog</property>
     <property name="deletable">False</property>
     <property name="transient-for">settings_window</property>
@@ -1186,7 +1186,7 @@ The tracks are defined inside each video and they may differ from one video to a
     <property name="default-width">900</property>
     <property name="default-height">400</property>
     <property name="destroy-with-parent">True</property>
-    <property name="icon">img/movie-icon-small.png</property>
+    <property name="icon">img/phantom-player-32.png</property>
     <property name="type-hint">dialog</property>
     <property name="deletable">False</property>
     <property name="transient-for">settings_window</property>

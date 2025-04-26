@@ -3,13 +3,6 @@ Upstream-Name: phantom-player
 Source: Interpreted Language
 
 Files:
-    usr/share/phantom-player/view/img/movie-icon-big.png
-    usr/share/phantom-player/view/img/movie-icon-medium.png
-    usr/share/phantom-player/view/img/movie-icon-small.png
-Copyright: http://www.iconarchive.com/show/atrous-icons-by-iconleak/movie-icon.html  
-License: Free for non-commercial use. Commercial usage not allowed.
-
-Files:
     usr/share/phantom-player/CCParser.py
     usr/bin/phantom-player
 Copyright: 2014-2024 Rafael Senties Martinelli.
@@ -91,6 +84,12 @@ Files:
     usr/share/phantom-player/env.py
 Copyright: 2024-2024 Rafael Senties Martinelli.
 License: LGPL-2.1
+
+Files:
+    usr/share/phantom-player/view/img/phantom-player-32.png
+    usr/share/phantom-player/view/img/phantom-player-250.png
+Copyright: 2025 Rafael Senties Martinelli
+License: GPL-3.0
 
 Files: usr/share/phantom-player/share/phantom-player/view/GtkVlc.py
 Copyright (C) 2024-2025 Rafael Senties Martinelli.

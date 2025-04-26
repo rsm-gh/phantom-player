@@ -28,9 +28,8 @@ __SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 __IMG_DIR = system_utils.join_path(__SRC_DIR, "view/img")
 
 # Icons
-_ICON_LOGO_SMALL = system_utils.join_path(__IMG_DIR, "movie-icon-small.png")
-_ICON_LOGO_MEDIUM = system_utils.join_path(__IMG_DIR, "movie-icon-medium.png")
-_ICON_LOGO_BIG = system_utils.join_path(__IMG_DIR, "movie-icon-big.png")
+_ICON_LOGO_SMALL = system_utils.join_path(__IMG_DIR, "phantom-player-32.png")
+_ICON_LOGO_BIG = system_utils.join_path(__IMG_DIR, "phantom-player-250.png")
 
 # Files
 if 'linux' in sys.platform:

@@ -5,7 +5,7 @@ GenericName=Video player
 Comment=Reproduce and organize lists of videos from a hard-drive
 Exec=/usr/bin/phantom-player --open-file=%U
 TryExec=/usr/bin/phantom-player
-Icon=/usr/share/phantom-player/view/img/movie-icon-medium.png
+Icon=/usr/share/phantom-player/view/img/phantom-player-250.png
 Terminal=false
 Type=Application
 Categories=Video;Player;
