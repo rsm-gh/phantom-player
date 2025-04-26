@@ -289,7 +289,7 @@ This file is part of Phantom Player.
     <property name="gravity">center</property>
     <property name="transient-for">window_root</property>
     <property name="program-name">Phantom Player</property>
-    <property name="version">Version 2.1</property>
+    <property name="version">Version 2.1 DEV</property>
     <property name="copyright" translatable="yes">Copyright (C) 2014-2016, 2024-2025 Rafael Senties Martinelli.</property>
     <property name="website">https://www.phantom-player.com</property>
     <property name="website-label" translatable="yes">www.phantom-player.com</property>
