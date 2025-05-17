@@ -3,7 +3,7 @@
 #
 #   This file is part of Phantom Player.
 #
-# Copyright (c) 2014-2016, 2024 Rafael Senties Martinelli.
+# Copyright (c) 2024-2025 Rafael Senties Martinelli.
 #
 # This file is free software: you can redistribute it and/or modify
 # it under the terms of either:
