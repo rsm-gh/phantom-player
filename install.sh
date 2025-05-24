@@ -29,18 +29,14 @@ if [ "$EUID" -ne 0 ]
 fi
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-cd "$DIR" || exit
 
-#
-# Set the scripts permissions
-#
-chmod a+x ./uninstall.sh
 
 #
 # Remove previous versions
 #
 echo -e "Removing previous versions..."
-./uninstall.sh
+chmod a+x "$DIR/uninstall.sh"
+"$DIR/uninstall.sh"
 
 #
 # Install the new files
