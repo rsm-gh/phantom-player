@@ -301,8 +301,8 @@ This file is part of Phantom Player.
     <property name="program-name">Phantom Player</property>
     <property name="version">Version 2.0.1</property>
     <property name="copyright" translatable="yes">Copyright (C) 2014-2016, 2024-2025 Rafael Senties Martinelli.</property>
-    <property name="website">https://www.phantom-player.rsm92.dev</property>
-    <property name="website-label" translatable="yes">www.phantom-player.rsm92.dev</property>
+    <property name="website">https://phantom-player.rsm92.dev</property>
+    <property name="website-label" translatable="yes">phantom-player.rsm92.dev</property>
     <property name="logo">img/phantom-player-250.png</property>
     <property name="license-type">gpl-3-0-only</property>
     <child internal-child="vbox">

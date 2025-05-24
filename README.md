@@ -1,4 +1,4 @@
 
 Git repository of Phantom Player.
 
-Please visit [www.phantom-player.rsm92.dev](https://www.phantom-player.rsm92.dev) for more information.
+Please visit [phantom-player.rsm92.dev](https://phantom-player.rsm92.dev) for more information.

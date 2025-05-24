@@ -55,7 +55,7 @@ _VIDEO_ATTR = ('duration', 'progress', 'ignore', 'path', 'name', 'size', 'rating
 _PLAYLIST_SETTINGS_HEADER = """
 #
 # Playlist file for Phantom-Player
-# https://www.phantom-player.rsm92.dev
+# https://phantom-player.rsm92.dev
 #
 """
 
