@@ -67,7 +67,7 @@ from Texts import Texts
 from datetime import timedelta
 from settings import ThemeButtons
 from console_printer import print_info, print_error
-from system_utils import EventCodes, turn_off_screensaver
+from system_utils import EventCodes, turn_off_screensaver, normalize_path
 from model.Playlist import Track, TimeValue
 from view import gtk_utils
 from view.GtkVlc import GtkVlc
@@ -535,6 +535,9 @@ class GtkPlayer(Gtk.Box):
                   audio_track=Track.Value._undefined,
                   play=True,
                   custom_title=None):
+                      
+                      
+        file_path = normalize_path(file_path)
 
         if self.__media is not None:
             self.__media = self.__media.release()

@@ -50,6 +50,7 @@ for file_manager in __POPULAR_FILE_MANAGERS:
 
 _INSTALLED_FILE_MANAGERS = tuple(_INSTALLED_FILE_MANAGERS)
 
+_IS_WINDOWS = any(windows_keyword in sys.platform for windows_keyword in ['win32', 'cygwin', 'msys'])
 
 class EventCodes:
     class Cursor:
@@ -73,11 +74,12 @@ class EventCodes:
 def join_path(base:str, add:str) -> str:
     return normalize_path(os.path.join(base, add))
 
-def normalize_path(path:str):
-    if 'linux' in sys.platform:
-        path = path.replace("\\", "/")
-    else:
+def normalize_path(path:str) -> str:
+    if _IS_WINDOWS:
         path = path.replace("/", "\\")
+    else:
+        # for linux, mac (darwin), bsd, etc.
+        path = path.replace("\\", "/")
 
     return path
 
