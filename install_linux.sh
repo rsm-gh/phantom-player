@@ -35,8 +35,8 @@ DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 # Remove previous versions
 #
 echo -e "Removing previous versions..."
-chmod a+x "$DIR/uninstall.sh"
-"$DIR/uninstall.sh"
+chmod a+x "$DIR/uninstall_linux.sh"
+"$DIR/uninstall_linux.sh"
 
 #
 # Install the new files
