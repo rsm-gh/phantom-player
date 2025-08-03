@@ -80,6 +80,9 @@ if sys.platform == 'win32':
 elif 'linux' in sys.platform:
     __set_gnu_linux()
 
+elif 'bsd' in sys.platform:
+	pass # bsd stills using x11 instead of wayland
+
 else:
     raise ValueError("Unsupported platform")
 

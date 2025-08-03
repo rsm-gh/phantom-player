@@ -63,9 +63,10 @@ class GtkVlc(Gtk.DrawingArea):
 
         top_level_window = self.get_window()
 
-        if 'linux' in sys.platform:
+        if 'linux' in sys.platform or 'bsd' in sys.platform:
             self._player.set_xwindow(top_level_window.get_xid())
-        else:
+            
+        elif sys.platform in ('win32','darwin'):
             # Use the window.__gpointer__ PyCapsule to get the C void* pointer to the window
             ctypes.pythonapi.PyCapsule_GetPointer.restype = ctypes.c_void_p
             ctypes.pythonapi.PyCapsule_GetPointer.argtypes = [ctypes.py_object]
@@ -86,8 +87,8 @@ class GtkVlc(Gtk.DrawingArea):
                 nsview = get_nsview(window_pointer)
                 self._player.set_nsobject(nsview)
 
-            else:
-                raise ValueError(f"Unsupported platform = {sys.platform}")
+        else:
+            raise ValueError(f"Unsupported platform")
 
     @staticmethod
     def __on_draw(_widget: Gtk.Widget, cr: cairo.Context) -> bool:

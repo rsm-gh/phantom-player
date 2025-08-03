@@ -39,7 +39,7 @@ _ICON_LOGO_SMALL = system_utils.join_path(__IMG_DIR, "phantom-player-32.png")
 _ICON_LOGO_BIG = system_utils.join_path(__IMG_DIR, "phantom-player-250.png")
 
 # Files
-if 'linux' in sys.platform:
+if 'linux' in sys.platform or 'bsd' in sys.platform:
 
     if getpass.getuser() == "root":
         _HOME_DIR = "/root"
