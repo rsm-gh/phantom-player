@@ -37,11 +37,13 @@ from controller.playlist_factory import _COLUMN_SEPARATOR
 from console_printer import print_debug, print_warning
 
 if "mime" in inspect.signature(magic.Magic).parameters: # ahupp version
+    # python3-magic: Debian, Archlinux, Fedora
     _MAGIC_MIMETYPE = magic.Magic(mime=True)
     def get_mime(path:str) -> str:
         return _MAGIC_MIMETYPE.from_file(path)
 
 elif list(__import__('inspect').signature(__import__('magic').Magic).parameters)[0] == 'ms': # very old file-magic
+    # python3-magic: Fedora (default)
     def get_mime(path:str) -> str:
         ms = magic.open(magic.MAGIC_MIME)
         ms.load()  # loads the default magic database
