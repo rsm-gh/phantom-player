@@ -27,6 +27,7 @@
 
 import os
 import magic
+import inspect
 import hashlib
 
 import system_utils
@@ -35,7 +36,23 @@ from vlc_utils import get_video_duration
 from controller.playlist_factory import _COLUMN_SEPARATOR
 from console_printer import print_debug, print_warning
 
-_MAGIC_MIMETYPE = magic.Magic(mime=True)
+if "mime" in inspect.signature(magic.Magic).parameters: # ahupp version
+    _MAGIC_MIMETYPE = magic.Magic(mime=True)
+    def get_mime(path:str) -> str:
+        return _MAGIC_MIMETYPE.from_file(path)
+
+elif list(__import__('inspect').signature(__import__('magic').Magic).parameters)[0] == 'ms': # very old file-magic
+    def get_mime(path:str) -> str:
+        ms = magic.open(magic.MAGIC_MIME)
+        ms.load()  # loads the default magic database
+        mime_type = ms.file(path)
+        ms.close()
+        return mime_type
+
+else: # python-magic-bin
+    _MAGIC_MIMETYPE = magic.Magic()
+    def get_mime(path:str) -> str:
+        return magic.from_file(path, mime=True)
 
 def discover(playlist, playlist_paths=None, add_func=None, update_func=None, quit_func=None):
     print_debug(f"playlist name={playlist.get_name()}")
@@ -180,7 +197,7 @@ def __file_is_video(path:str) -> bool:
     if os.path.islink(path) or path.endswith(".lnk"):
         path = os.path.realpath(path)
 
-    return 'video/' in _MAGIC_MIMETYPE.from_file(path)
+    return get_mime(path).startswith("video/")
 
 
 def __file_hash(file_path):
